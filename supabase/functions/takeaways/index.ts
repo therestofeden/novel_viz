@@ -7,7 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MODEL = "google/gemini-2.5-flash";
+const MODEL = "gemini-2.0-flash";
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 // ─── SSE helpers ──────────────────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ async function generateQuestions(
     ? `The non-fiction book "${title}" by ${author}.\n\nSummary: ${summary}\n\nCentral thesis: ${thesis ?? "(not provided)"}`
     : `The novel "${title}" by ${author}.\n\nSummary: ${summary}`;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const response = await fetch(GEMINI_BASE, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -164,7 +165,7 @@ async function streamSynthesis(
     .filter(Boolean)
     .join("\n");
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const response = await fetch(GEMINI_BASE, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -238,9 +239,9 @@ serve(async (req) => {
     });
   }
 
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) {
-    return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  if (!GEMINI_API_KEY) {
+    return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -287,7 +288,7 @@ serve(async (req) => {
     let generatedQuestions: Array<{ id: string; question: string }> | null = null;
     try {
       generatedQuestions = await generateQuestions(
-        LOVABLE_API_KEY,
+        GEMINI_API_KEY,
         title,
         author ?? "",
         bookType ?? "fiction",
@@ -350,7 +351,7 @@ serve(async (req) => {
           send("status", { text: "Distilling your takeaways…" });
 
           const fullTakeaways = await streamSynthesis(
-            LOVABLE_API_KEY,
+            GEMINI_API_KEY,
             title,
             author ?? "",
             bookType ?? "fiction",

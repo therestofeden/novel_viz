@@ -13,7 +13,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MODEL = "google/gemini-2.5-flash";
+const MODEL = "gemini-2.0-flash";
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const ROUTE = "recommend-anti-shelf";
 
 type Mode = "similar" | "stretch";
@@ -105,7 +106,7 @@ async function getClientIp(req: Request): Promise<string> {
 }
 
 async function hashIp(ip: string): Promise<string> {
-  const salt = Deno.env.get("LOVABLE_API_KEY") || "fallback-salt";
+  const salt = Deno.env.get("GEMINI_API_KEY") || "fallback-salt";
   return sha256Hex(`${salt}::${ip}`);
 }
 
@@ -124,7 +125,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    const lovableKey = Deno.env.get("GEMINI_API_KEY");
     if (!lovableKey) {
       return new Response(JSON.stringify({ error: "Server misconfigured" }), {
         status: 500,
@@ -315,7 +316,7 @@ TASK: ${modeBrief}
 Return 6–10 recommendations via the render_recommendations tool. For each pick, fill 'echoes' with the 1–3 shelf titles it most directly relates to (similar mode) or contrasts against (stretch mode).`;
 
     // Call Gemini
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiRes = await fetch(GEMINI_BASE, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${lovableKey}`,
