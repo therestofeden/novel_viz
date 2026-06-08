@@ -14,10 +14,21 @@ import {
 const ReactMarkdown = lazy(() => import("react-markdown"));
 const MarkdownFallback = () => <span className="meta text-muted-foreground">…</span>;
 
-import { NovelAnalysis, PlotEvent } from "@/lib/novel-types";
+import {
+  FictionAnalysis,
+  NovelAnalysis,
+  NonFictionAnalysis,
+  PlotEvent,
+  isFiction,
+  isNonFiction,
+  normalizeAnalysis,
+} from "@/lib/novel-types";
 import { TimelineView } from "@/components/TimelineView";
 import { CharacterNetwork } from "@/components/CharacterNetwork";
 import { BookDNA } from "@/components/BookDNA";
+import { ConceptMap } from "@/components/ConceptMap";
+import { ChapterBreakdown } from "@/components/ChapterBreakdown";
+import { TakeawaysTab } from "@/components/TakeawaysTab";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ShelfChip } from "@/components/ShelfChip";
 import { BuyButton } from "@/components/BuyButton";
@@ -311,7 +322,7 @@ const Index = () => {
   const [analysis, setAnalysis] = useState<NovelAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [refining, setRefining] = useState(false);
-  const [view, setView] = useState<"timeline" | "network" | "dna">("timeline");
+  const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "chapters" | "takeaways">("timeline");
   const [activeRefinement, setActiveRefinement] = useState<string | null>(null);
 
   // Random sample of seed titles, fixed for the lifetime of this mount.
@@ -659,7 +670,9 @@ const Index = () => {
           preambleAccum += data?.text ?? "";
           setPreambleText(preambleAccum);
         } else if (event === "analysis") {
-          result = data?.analysis as NovelAnalysis;
+          // Normalise: legacy cached rows have no bookType → default to fiction
+          const raw = data?.analysis;
+          result = raw ? normalizeAnalysis(raw as Record<string, unknown>) : null;
           setCachedHit(!!data?.cached);
           if (data?.cacheKey) setCacheKey(data.cacheKey);
         } else if (event === "error") {
@@ -696,12 +709,16 @@ const Index = () => {
       if (!result) throw new Error("No analysis returned");
 
       if (result.confidence === "unknown_work") {
-        toast.error("Couldn't recognize that as a work of fiction. Try another title.");
+        toast.error("Couldn't recognise that book. Try adding the author name, e.g. \"Thinking, Fast and Slow by Kahneman\".");
         if (!isRefine) setAnalysis(null);
         return;
       }
 
       setAnalysis(result);
+      // Reset to the first meaningful view for this book type
+      if (!isRefine) {
+        setView(result.bookType === "nonfiction" ? "concepts" : "timeline");
+      }
       setActiveRefinement(refinement || null);
     } catch (e) {
       console.error(e);
@@ -766,8 +783,8 @@ const Index = () => {
   const effectiveProgress = showSpoilers ? 100 : progress;
 
   const highlightedCharacterIds = useMemo(() => {
-    if (!analysis || !selectedEventId) return [];
-    return analysis.events.find((e) => e.id === selectedEventId)?.characterIds ?? [];
+    if (!analysis || !selectedEventId || !isFiction(analysis)) return [];
+    return (analysis as FictionAnalysis).events.find((e) => e.id === selectedEventId)?.characterIds ?? [];
   }, [analysis, selectedEventId]);
 
   return (
@@ -1094,9 +1111,13 @@ const Index = () => {
               <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
                 <div className="meta text-muted-foreground">Subject</div>
                 <div className="display-num mt-2 text-4xl md:text-6xl">
-                  {String(analysis.events?.length ?? 0).padStart(2, "0")}
+                  {isFiction(analysis)
+                    ? String(analysis.events?.length ?? 0).padStart(2, "0")
+                    : String((analysis as NonFictionAnalysis).concepts?.length ?? 0).padStart(2, "0")}
                 </div>
-                <div className="meta mt-2 text-muted-foreground">Events Mapped</div>
+                <div className="meta mt-2 text-muted-foreground">
+                  {isFiction(analysis) ? "Events Mapped" : "Concepts"}
+                </div>
               </div>
               <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
                 <div className="meta text-muted-foreground">
@@ -1107,7 +1128,12 @@ const Index = () => {
                 <h1 className="mt-2 font-sans text-3xl font-bold leading-[1] tracking-tight md:text-6xl">
                   {analysis.title}
                 </h1>
-                <p className="mt-4 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
+                {isNonFiction(analysis) && (analysis as NonFictionAnalysis).thesis && (
+                  <p className="mt-2 font-sans text-sm font-medium text-primary/80 italic">
+                    "{(analysis as NonFictionAnalysis).thesis}"
+                  </p>
+                )}
+                <p className="mt-3 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
                   {analysis.summary}
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -1127,15 +1153,23 @@ const Index = () => {
               </div>
               <div className="col-span-12 grid grid-cols-2 border-foreground md:col-span-3 md:border-l">
                 <div className="border-foreground p-4 md:border-b">
-                  <div className="meta text-muted-foreground">Characters</div>
+                  <div className="meta text-muted-foreground">
+                    {isFiction(analysis) ? "Characters" : "Chapters"}
+                  </div>
                   <div className="display-num mt-1 text-2xl md:text-3xl">
-                    {String(analysis.characters?.length ?? 0).padStart(2, "0")}
+                    {isFiction(analysis)
+                      ? String(analysis.characters?.length ?? 0).padStart(2, "0")
+                      : String((analysis as NonFictionAnalysis).chapters?.length ?? 0).padStart(2, "0")}
                   </div>
                 </div>
                 <div className="border-l border-foreground p-4 md:border-b">
-                  <div className="meta text-muted-foreground">Lanes</div>
+                  <div className="meta text-muted-foreground">
+                    {isFiction(analysis) ? "Lanes" : "Type"}
+                  </div>
                   <div className="display-num mt-1 text-2xl md:text-3xl">
-                    {String(analysis.lanes?.length ?? 0).padStart(2, "0")}
+                    {isFiction(analysis)
+                      ? String(analysis.lanes?.length ?? 0).padStart(2, "0")
+                      : <span className="font-sans text-sm font-semibold uppercase">Nonfiction</span>}
                   </div>
                 </div>
                 <div className="border-t border-foreground p-4">
@@ -1143,16 +1177,20 @@ const Index = () => {
                   <div className="mt-1 font-sans text-sm font-semibold capitalize">{view}</div>
                 </div>
                 <div className="border-l border-t border-foreground p-4">
-                  <div className="meta text-muted-foreground">View</div>
+                  <div className="meta text-muted-foreground">
+                    {isFiction(analysis) ? "Progress" : "DNA"}
+                  </div>
                   <div className="mt-1 font-sans text-sm font-semibold">
-                    {Math.round(effectiveProgress)}%
+                    {isFiction(analysis)
+                      ? `${Math.round(effectiveProgress)}%`
+                      : analysis.dna?.signature ?? "—"}
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* ===================== SPOILER STRIP ===================== */}
-            <section className="ink-border-b grid grid-cols-12 items-stretch">
+            {/* ===================== SPOILER STRIP — fiction only ===================== */}
+            {isFiction(analysis) && <section className="ink-border-b grid grid-cols-12 items-stretch">
               <div className="col-span-12 flex items-center gap-3 border-foreground px-4 py-3 md:col-span-3 md:border-r">
                 <button
                   onClick={() => setShowSpoilers((s) => !s)}
@@ -1213,30 +1251,56 @@ const Index = () => {
                   </button>
                 ))}
               </div>
-            </section>
+            </section>}
 
             {/* ===================== VIEW TOGGLE ===================== */}
             <section className="ink-border-b flex items-center justify-between px-4 py-3">
-              <div className="flex items-stretch border border-foreground">
-                {(["timeline", "network", "dna"] as const).map((v, i) => (
-                  <button
-                    key={v}
-                    onClick={() => setView(v)}
-                    className={cn(
-                      "meta px-4 py-2 transition-colors",
-                      i > 0 && "border-l border-foreground",
-                      view === v
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card hover:bg-primary/10",
-                    )}
-                  >
-                    {v === "timeline"
-                      ? "01 · Timeline"
-                      : v === "network"
-                        ? "02 · Network"
-                        : "03 · DNA"}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-stretch border border-foreground">
+                {isFiction(analysis) ? (
+                  (["timeline", "network", "dna", "takeaways"] as const).map((v, i) => (
+                    <button
+                      key={v}
+                      onClick={() => setView(v)}
+                      className={cn(
+                        "meta px-4 py-2 transition-colors",
+                        i > 0 && "border-l border-foreground",
+                        view === v
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card hover:bg-primary/10",
+                      )}
+                    >
+                      {v === "timeline"
+                        ? "01 · Timeline"
+                        : v === "network"
+                          ? "02 · Network"
+                          : v === "dna"
+                            ? "03 · DNA"
+                            : "04 · Takeaways"}
+                    </button>
+                  ))
+                ) : (
+                  (["concepts", "chapters", "dna", "takeaways"] as const).map((v, i) => (
+                    <button
+                      key={v}
+                      onClick={() => setView(v)}
+                      className={cn(
+                        "meta px-4 py-2 transition-colors",
+                        i > 0 && "border-l border-foreground",
+                        view === v
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card hover:bg-primary/10",
+                      )}
+                    >
+                      {v === "concepts"
+                        ? "01 · Concepts"
+                        : v === "chapters"
+                          ? "02 · Chapters"
+                          : v === "dna"
+                            ? "03 · DNA"
+                            : "04 · Takeaways"}
+                    </button>
+                  ))
+                )}
               </div>
               {refining && (
                 <div className="meta flex items-center gap-2 text-muted-foreground">
@@ -1248,22 +1312,25 @@ const Index = () => {
             {/* ===================== VIZ ===================== */}
             <section
               className={cn(
-                "ink-border-b bg-card px-4 py-6 transition-opacity md:px-8 md:py-10",
+                "ink-border-b bg-card transition-opacity",
+                view !== "takeaways" && "px-4 py-6 md:px-8 md:py-10",
                 refining && "opacity-50",
               )}
             >
-              {view === "timeline" ? (
+              {/* ── Fiction views ── */}
+              {view === "timeline" && isFiction(analysis) && (
                 <TimelineView
-                  analysis={analysis}
+                  analysis={analysis as FictionAnalysis}
                   progress={effectiveProgress}
                   selectedEventId={selectedEventId}
                   onSelectEvent={handleSelectEvent}
                   selectedCharacterId={selectedCharacterId}
                   onSelectCharacter={setSelectedCharacterId}
                 />
-              ) : view === "network" ? (
+              )}
+              {view === "network" && isFiction(analysis) && (
                 <CharacterNetwork
-                  analysis={analysis}
+                  analysis={analysis as FictionAnalysis}
                   progress={effectiveProgress}
                   onProgressChange={(next) => {
                     setShowSpoilers(false);
@@ -1281,21 +1348,37 @@ const Index = () => {
                     setView("timeline");
                   }}
                 />
-              ) : (
+              )}
+              {/* ── Non-fiction views ── */}
+              {view === "concepts" && isNonFiction(analysis) && (
+                <ConceptMap analysis={analysis as NonFictionAnalysis} />
+              )}
+              {view === "chapters" && isNonFiction(analysis) && (
+                <ChapterBreakdown analysis={analysis as NonFictionAnalysis} />
+              )}
+              {/* ── Shared views ── */}
+              {view === "dna" && (
                 <BookDNA analysis={analysis} cacheKey={cacheKey} />
+              )}
+              {view === "takeaways" && (
+                <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />
               )}
             </section>
 
-            <section className="ink-border-b px-4 py-6 md:px-8">
-              <RefinementPrompts onPick={handleRefine} disabled={refining} />
-            </section>
+            {isFiction(analysis) && view !== "takeaways" && (
+              <section className="ink-border-b px-4 py-6 md:px-8">
+                <RefinementPrompts onPick={handleRefine} disabled={refining} />
+              </section>
+            )}
 
             {/* ===================== READER'S NOTES ===================== */}
             <section className="grid grid-cols-12 gap-0">
               <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-10">
                 <div className="meta text-muted-foreground">Essay</div>
                 <div className="display-num mt-2 text-4xl md:text-6xl">02</div>
-                <div className="meta mt-2 text-muted-foreground">Reader's Notes</div>
+                <div className="meta mt-2 text-muted-foreground">
+                  {isFiction(analysis) ? "Reader's Notes" : "Critical Essay"}
+                </div>
                 <div className="mt-1 font-serif text-xs italic text-muted-foreground">An essay</div>
               </div>
               <div className="col-span-12 px-4 py-6 md:col-span-10 md:px-10 md:py-10">
@@ -1319,7 +1402,7 @@ const Index = () => {
           </div>
           <div className="col-span-6 border-foreground px-4 py-5 md:col-span-3 md:border-r">
             <div className="meta text-muted-foreground">For</div>
-            <div className="mt-1 font-sans text-sm font-semibold">Readers of Complex Fiction</div>
+            <div className="mt-1 font-sans text-sm font-semibold">Fiction &amp; Non-Fiction Readers</div>
           </div>
           <div className="col-span-6 border-r border-t border-foreground px-4 py-5 md:col-span-3 md:border-t-0">
             <div className="meta text-muted-foreground">Built with</div>

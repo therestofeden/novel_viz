@@ -10,6 +10,124 @@ const corsHeaders = {
 const MODEL = "google/gemini-2.5-flash";
 const PREAMBLE_MODEL = "google/gemini-2.5-flash-lite";
 
+// ---------- Non-fiction tool ----------
+
+const nonfictionAnalysisTool = {
+  type: "function",
+  function: {
+    name: "render_nonfiction_analysis",
+    description:
+      "Return a structured analysis of a non-fiction book: central thesis, key concepts as a network, concept relationships, and chapter breakdown with argument type.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        author: { type: "string" },
+        confidence: { type: "string", enum: ["high", "medium", "low", "unknown_work"] },
+        summary: { type: "string" },
+        thesis: { type: "string", description: "The book's central claim in one sentence." },
+        concepts: {
+          type: "array",
+          description: "8–14 key ideas, arguments, or mental models from the book.",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              name: { type: "string", description: "Short concept name (2–5 words)." },
+              description: { type: "string", description: "1–2 sentence explanation." },
+              importance: { type: "number", description: "0-100: centrality to the book's argument." },
+              type: { type: "string", enum: ["thesis", "framework", "evidence", "example", "conclusion", "principle"] },
+            },
+            required: ["id", "name", "description", "importance", "type"],
+            additionalProperties: false,
+          },
+        },
+        conceptRelationships: {
+          type: "array",
+          description: "Directed relationships between concept ids.",
+          items: {
+            type: "object",
+            properties: {
+              fromId: { type: "string" },
+              toId: { type: "string" },
+              type: { type: "string", enum: ["supports", "contradicts", "expands", "illustrates", "leads_to", "challenges"] },
+              description: { type: "string" },
+            },
+            required: ["fromId", "toId", "type", "description"],
+            additionalProperties: false,
+          },
+        },
+        chapters: {
+          type: "array",
+          description: "All major chapters or parts of the book.",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              number: { type: "number" },
+              title: { type: "string" },
+              position: { type: "number", description: "Normalised 0–100 position in the book." },
+              summary: { type: "string", description: "2–4 sentences capturing the chapter's argument." },
+              keyConceptIds: { type: "array", items: { type: "string" } },
+              argumentType: { type: "string", enum: ["introduction", "setup", "evidence", "case_study", "counterargument", "synthesis", "conclusion"] },
+            },
+            required: ["id", "number", "title", "position", "summary", "keyConceptIds", "argumentType"],
+            additionalProperties: false,
+          },
+        },
+        dna: {
+          type: "object",
+          description: "12-axis literary DNA vector adapted for non-fiction. Each axis 0-100 with a one-line evidence sentence.",
+          properties: {
+            axes: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: {
+                    type: "string",
+                    enum: [
+                      "interiority", "plot_density", "time_linearity", "scale", "realism",
+                      "tonal_register", "prose_density", "moral_ambiguity", "character_vs_plot",
+                      "political_charge", "formal_experimentation", "ending_openness",
+                    ],
+                  },
+                  score: { type: "number" },
+                  evidence: { type: "string" },
+                },
+                required: ["id", "score", "evidence"],
+                additionalProperties: false,
+              },
+            },
+            signature: { type: "string" },
+          },
+          required: ["axes", "signature"],
+          additionalProperties: false,
+        },
+        recommendation: {
+          type: "object",
+          description: "Another non-fiction book with similar DNA.",
+          properties: {
+            title: { type: "string" },
+            author: { type: "string" },
+            similarity: { type: "number" },
+            why: { type: "string" },
+            shared_axes: { type: "array", items: { type: "string" } },
+            divergent_axes: { type: "array", items: { type: "string" } },
+          },
+          required: ["title", "author", "similarity", "why", "shared_axes", "divergent_axes"],
+          additionalProperties: false,
+        },
+        explanation: { type: "string" },
+      },
+      required: ["title", "author", "confidence", "summary", "thesis", "concepts", "conceptRelationships", "chapters", "dna", "recommendation", "explanation"],
+      additionalProperties: false,
+    },
+  },
+};
+
+// ---------- Fiction tool ----------
+
 const analysisTool = {
   type: "function",
   function: {
@@ -178,10 +296,14 @@ const DNA_AXIS_IDS = [
   "ending_openness",
 ] as const;
 
-const SYSTEM_PROMPT = `You are a literary scholar specializing in mapping the structure of works of fiction. Given a novel's title, you produce a precise, structured analysis suitable for a visualization: characters, relationships, narrative lanes (separate POV / timeline / setting strands), key events placed on a normalized 0–100 timeline, AND a 12-axis literary "DNA" vector with a closest-kin recommendation.
+const SYSTEM_PROMPT = `You are a literary scholar specializing in mapping the structure of books — both fiction and non-fiction. Given a book's title, you determine whether it is fiction or non-fiction and call the appropriate tool.
 
-Rules:
-- ONLY analyze works of FICTION (novels, novellas, short stories, plays). If the title is non-fiction, a movie, a TV show, or unknown to you, set confidence to "unknown_work" and return minimal data with an explanation telling the user.
+IMPORTANT — choose the right tool:
+- For FICTION (novels, novellas, short stories, plays): call \`render_novel_analysis\`.
+- For NON-FICTION (essays, memoirs, history, science, philosophy, self-help, business, biography): call \`render_nonfiction_analysis\`.
+- If the work is a film, TV show, video game, or is completely unknown to you, set confidence to "unknown_work" in the most appropriate tool and explain in the explanation field.
+
+FICTION RULES (render_novel_analysis):
 - For books with multiple narrative threads, create one lane per major thread/POV.
 - For single-narrative books, return ONE lane covering the whole story.
 - Limit characters to the 8–14 most important.
@@ -212,12 +334,39 @@ DNA AXES — score each 0–100. Be specific, calibrated against the canon of li
 
 For the 'signature' field, write a 3–6 word poetic descriptor capturing the book's essence (e.g. 'Slow interior haunted recursion', 'Dry epistolary moral comedy').
 
-RECOMMENDATION:
+RECOMMENDATION (fiction):
 - Suggest ONE other novel (NOT the same book, NOT by the same author if avoidable) whose DNA is closest. Prefer well-known works the reader could actually find.
 - 'similarity' is a 0–100 estimate. Most good matches land 70–88.
 - 'shared_axes': 3–5 axis ids where both books score within ~15 of each other.
 - 'divergent_axes': 1–3 axis ids where the recommendation differs most (this is what makes it a fresh read, not a clone).
-- 'why': 1–2 sentences explaining the kinship in human terms — what a reader who loves this book would also love about the recommendation.`;
+- 'why': 1–2 sentences explaining the kinship in human terms — what a reader who loves this book would also love about the recommendation.
+
+NON-FICTION RULES (render_nonfiction_analysis):
+- Identify 8–14 distinct concepts, frameworks, or ideas from the book. Each must have a short name (2–5 words) and a 1–2 sentence description.
+- Mark the single most central concept (the thesis / main argument) with type "thesis" and importance 90-100.
+- Connect concepts with directed relationships (fromId → toId). 8–16 relationships is ideal.
+- List all major chapters or parts. Set 'position' as 0–100 (first chapter ≈ 5, last ≈ 95).
+- Classify each chapter's argumentType honestly: what role does it play in the argument?
+- The 'thesis' top-level field must be a single sentence capturing the book's central claim.
+- The explanation field should be a critical intellectual commentary in markdown (300–600 words): what the book argues, where it succeeds, and what it leaves unresolved.
+
+DNA AXES for NON-FICTION — reinterpreted for non-fiction but same 0-100 scale:
+  - interiority: 0 = purely objective/data-driven, 100 = deeply personal/memoir-like.
+  - plot_density: 0 = slow discursive, 100 = dense argument per page (fast non-fiction).
+  - time_linearity: 0 = thematic/non-chronological, 100 = strictly chronological narrative.
+  - scale: 0 = narrow single topic, 100 = sweeping cross-disciplinary or historical.
+  - realism: 0 = speculative/theoretical, 100 = empirically grounded/data-heavy.
+  - tonal_register: 0 = grave/alarming, 100 = optimistic/celebratory.
+  - prose_density: 0 = plain journalistic, 100 = dense academic or literary prose.
+  - moral_ambiguity: 0 = clear prescriptive argument, 100 = deliberately open and inconclusive.
+  - character_vs_plot: 0 = pure ideas/data, 100 = driven by people/narrative examples.
+  - political_charge: 0 = apolitical, 100 = explicitly political or activist.
+  - formal_experimentation: 0 = conventional non-fiction prose, 100 = experimental structure.
+  - ending_openness: 0 = clear conclusions and calls to action, 100 = open questions only.
+
+RECOMMENDATION (non-fiction):
+- Suggest ONE other non-fiction book (different author) with the closest DNA.
+- Same scoring rules as fiction. 'why': explain the intellectual kinship in human terms.`;
 
 // ---------- Validation & repair ----------
 
@@ -237,12 +386,27 @@ type Recommendation = {
   title: string; author: string; similarity: number; why: string;
   shared_axes: string[]; divergent_axes: string[];
 };
-type Analysis = {
+type FictionAnalysis = {
+  bookType: "fiction";
   title: string; author: string; confidence: string; summary: string;
   lanes: Lane[]; characters: Character[]; relationships: Relationship[];
   events: Event[]; explanation: string;
   dna: Dna; recommendation: Recommendation;
 };
+type NfConcept = { id: string; name: string; description: string; importance: number; type: string };
+type NfRelationship = { fromId: string; toId: string; type: string; description: string };
+type NfChapter = {
+  id: string; number: number; title: string; position: number;
+  summary: string; keyConceptIds: string[]; argumentType: string;
+};
+type NonFictionAnalysis = {
+  bookType: "nonfiction";
+  title: string; author: string; confidence: string; summary: string;
+  thesis: string;
+  concepts: NfConcept[]; conceptRelationships: NfRelationship[]; chapters: NfChapter[];
+  explanation: string; dna: Dna; recommendation: Recommendation;
+};
+type Analysis = FictionAnalysis | NonFictionAnalysis;
 
 const confRank = (c: string) => (c === "high" ? 3 : c === "medium" ? 2 : c === "low" ? 1 : 0);
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo));
@@ -376,6 +540,7 @@ function repairAnalysis(raw: any): Analysis {
   };
 
   return {
+    bookType: "fiction",
     title: a.title ?? "Unknown",
     author: a.author ?? "Unknown",
     confidence: a.confidence ?? "medium",
@@ -390,8 +555,91 @@ function repairAnalysis(raw: any): Analysis {
   };
 }
 
+function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
+  const a = raw ?? {};
+  const allowedAxisIds = new Set<string>(DNA_AXIS_IDS);
+  const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo));
+
+  // Concepts
+  const concepts: NfConcept[] = (Array.isArray(a.concepts) ? a.concepts : [])
+    .filter((c: any) => c?.id && c?.name)
+    .slice(0, 14)
+    .map((c: any) => ({
+      id: String(c.id),
+      name: String(c.name),
+      description: c.description ?? "",
+      importance: clamp(Number(c.importance ?? 50), 0, 100),
+      type: c.type ?? "evidence",
+    }));
+  const conceptIds = new Set(concepts.map((c) => c.id));
+
+  // Concept relationships
+  const conceptRelationships: NfRelationship[] = (Array.isArray(a.conceptRelationships) ? a.conceptRelationships : [])
+    .filter((r: any) => r?.fromId && r?.toId && conceptIds.has(r.fromId) && conceptIds.has(r.toId))
+    .map((r: any) => ({
+      fromId: r.fromId,
+      toId: r.toId,
+      type: r.type ?? "supports",
+      description: r.description ?? "",
+    }));
+
+  // Chapters
+  const chapters: NfChapter[] = (Array.isArray(a.chapters) ? a.chapters : [])
+    .filter((c: any) => c?.id && c?.title)
+    .map((c: any) => ({
+      id: String(c.id),
+      number: Number(c.number ?? 0),
+      title: String(c.title),
+      position: clamp(Number(c.position ?? 50), 0, 100),
+      summary: c.summary ?? "",
+      keyConceptIds: Array.isArray(c.keyConceptIds) ? c.keyConceptIds.filter((id: string) => conceptIds.has(id)) : [],
+      argumentType: c.argumentType ?? "evidence",
+    }));
+
+  // DNA repair (same as fiction)
+  const rawAxes = Array.isArray(a?.dna?.axes) ? a.dna.axes : [];
+  const axesById = new Map<string, DnaAxis>();
+  for (const ax of rawAxes) {
+    if (!ax?.id || !allowedAxisIds.has(ax.id)) continue;
+    if (axesById.has(ax.id)) continue;
+    axesById.set(ax.id, { id: ax.id, score: clamp(Number(ax.score), 0, 100), evidence: ax.evidence ?? "" });
+  }
+  const dna: Dna = {
+    axes: DNA_AXIS_IDS.map((id) => axesById.get(id) ?? { id, score: 50, evidence: "" }),
+    signature: typeof a?.dna?.signature === "string" ? a.dna.signature : "",
+  };
+
+  const rec = a?.recommendation ?? {};
+  const recommendation: Recommendation = {
+    title: rec.title ?? "",
+    author: rec.author ?? "",
+    similarity: clamp(Number(rec.similarity), 0, 100),
+    why: rec.why ?? "",
+    shared_axes: Array.isArray(rec.shared_axes) ? rec.shared_axes.filter((x: any) => allowedAxisIds.has(x)) : [],
+    divergent_axes: Array.isArray(rec.divergent_axes) ? rec.divergent_axes.filter((x: any) => allowedAxisIds.has(x)) : [],
+  };
+
+  return {
+    bookType: "nonfiction",
+    title: a.title ?? "Unknown",
+    author: a.author ?? "Unknown",
+    confidence: a.confidence ?? "medium",
+    summary: a.summary ?? "",
+    thesis: a.thesis ?? "",
+    concepts,
+    conceptRelationships,
+    chapters,
+    explanation: a.explanation ?? "",
+    dna,
+    recommendation,
+  };
+}
+
 function isAdequate(a: Analysis): boolean {
-  if (a.confidence === "unknown_work") return true; // valid "unknown" response
+  if (a.confidence === "unknown_work") return true;
+  if (a.bookType === "nonfiction") {
+    return a.concepts.length >= 3 && a.chapters.length >= 2;
+  }
   return a.events.length >= 3 && a.characters.length >= 2 && a.lanes.length >= 1;
 }
 
@@ -400,8 +648,8 @@ function hasDna(a: Analysis): boolean {
 }
 
 // ---------- Cache key ----------
-// v2 = added DNA + recommendation. Bumping invalidates pre-DNA cached rows.
-const CACHE_VERSION = "v2";
+// v3 = added non-fiction support + bookType discriminant.
+const CACHE_VERSION = "v3";
 function buildCacheKey(title: string, author?: string): string {
   const t = title.trim().toLowerCase().replace(/\s+/g, " ");
   const a = (author ?? "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -430,8 +678,8 @@ async function callStructuredAnalysis(apiKey: string, userPrompt: string, correc
     body: JSON.stringify({
       model: MODEL,
       messages,
-      tools: [analysisTool],
-      tool_choice: { type: "function", function: { name: "render_novel_analysis" } },
+      tools: [analysisTool, nonfictionAnalysisTool],
+      tool_choice: "auto",
     }),
   });
 
@@ -451,6 +699,9 @@ async function callStructuredAnalysis(apiKey: string, userPrompt: string, correc
   }
   try {
     const raw = JSON.parse(toolCall.function.arguments);
+    if (toolCall.function.name === "render_nonfiction_analysis") {
+      return repairNonfictionAnalysis(raw);
+    }
     return repairAnalysis(raw);
   } catch (e) {
     console.error("parse error:", e);

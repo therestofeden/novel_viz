@@ -93,7 +93,10 @@ export interface Recommendation {
   divergent_axes: DnaAxisId[];
 }
 
-export interface NovelAnalysis {
+// ─── Fiction ─────────────────────────────────────────────────────────────────
+
+export interface FictionAnalysis {
+  bookType: "fiction";
   title: string;
   author: string;
   confidence: "high" | "medium" | "low" | "unknown_work";
@@ -105,6 +108,118 @@ export interface NovelAnalysis {
   explanation: string;
   dna?: Dna;
   recommendation?: Recommendation;
+}
+
+// ─── Non-fiction ──────────────────────────────────────────────────────────────
+
+export type NfConceptType =
+  | "thesis"
+  | "framework"
+  | "evidence"
+  | "example"
+  | "conclusion"
+  | "principle";
+
+export interface NfConcept {
+  id: string;
+  name: string;
+  description: string;
+  /** 0-100: how central this concept is to the book's argument */
+  importance: number;
+  type: NfConceptType;
+}
+
+export type NfRelationshipType =
+  | "supports"
+  | "contradicts"
+  | "expands"
+  | "illustrates"
+  | "leads_to"
+  | "challenges";
+
+export interface NfConceptRelationship {
+  fromId: string;
+  toId: string;
+  type: NfRelationshipType;
+  description: string;
+}
+
+export type NfChapterType =
+  | "introduction"
+  | "setup"
+  | "evidence"
+  | "case_study"
+  | "counterargument"
+  | "synthesis"
+  | "conclusion";
+
+export interface NfChapter {
+  id: string;
+  number: number;
+  title: string;
+  /** Normalised position 0–100 in the book */
+  position: number;
+  summary: string;
+  keyConceptIds: string[];
+  argumentType: NfChapterType;
+}
+
+export interface NonFictionAnalysis {
+  bookType: "nonfiction";
+  title: string;
+  author: string;
+  confidence: "high" | "medium" | "low" | "unknown_work";
+  summary: string;
+  /** The central claim or argument of the book in one sentence */
+  thesis: string;
+  concepts: NfConcept[];
+  conceptRelationships: NfConceptRelationship[];
+  chapters: NfChapter[];
+  explanation: string;
+  dna?: Dna;
+  recommendation?: Recommendation;
+}
+
+// ─── Union ────────────────────────────────────────────────────────────────────
+
+/** Discriminated union covering both book types. */
+export type NovelAnalysis = FictionAnalysis | NonFictionAnalysis;
+
+/** Type guards */
+export function isFiction(a: NovelAnalysis): a is FictionAnalysis {
+  return a.bookType === "fiction";
+}
+export function isNonFiction(a: NovelAnalysis): a is NonFictionAnalysis {
+  return a.bookType === "nonfiction";
+}
+
+/**
+ * Normalise a raw analysis payload from the API or cache.
+ * Legacy cached rows have no bookType — default them to fiction.
+ */
+export function normalizeAnalysis(raw: Record<string, unknown>): NovelAnalysis {
+  if (raw.bookType === "nonfiction") return raw as unknown as NonFictionAnalysis;
+  return { bookType: "fiction", ...raw } as unknown as FictionAnalysis;
+}
+
+// ─── Takeaways ────────────────────────────────────────────────────────────────
+
+export interface TakeawayQuestion {
+  id: string;
+  question: string;
+}
+
+export interface TakeawayAnswer {
+  questionId: string;
+  answer: string;
+}
+
+export interface TakeawaySession {
+  questions: TakeawayQuestion[];
+  answers: TakeawayAnswer[];
+  freeNotes: string;
+  takeaways: string;
+  status: "draft" | "complete";
 }
 
 /**

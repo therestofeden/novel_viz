@@ -56,6 +56,54 @@ export type Database = {
         }
         Relationships: []
       }
+      book_takeaways: {
+        Row: {
+          answers: Json
+          author: string
+          book_type: string
+          cache_key: string
+          created_at: string
+          free_notes: string | null
+          id: string
+          questions: Json
+          status: string
+          takeaways: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          author: string
+          book_type?: string
+          cache_key: string
+          created_at?: string
+          free_notes?: string | null
+          id?: string
+          questions?: Json
+          status?: string
+          takeaways?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          author?: string
+          book_type?: string
+          cache_key?: string
+          created_at?: string
+          free_notes?: string | null
+          id?: string
+          questions?: Json
+          status?: string
+          takeaways?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       novel_analyses: {
         Row: {
           analysis: Json

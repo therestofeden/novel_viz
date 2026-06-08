@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Character, NovelAnalysis, PlotEvent, laneColor } from "@/lib/novel-types";
+import { Character, FictionAnalysis, PlotEvent, laneColor } from "@/lib/novel-types";
 import { cn } from "@/lib/utils";
 import {
   Sparkles,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 interface Props {
-  analysis: NovelAnalysis;
+  analysis: FictionAnalysis;
   /** 0–100 spoiler frontier. Events past this are masked. */
   progress: number;
   selectedEventId: string | null;

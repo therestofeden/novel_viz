@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Character,
-  NovelAnalysis,
+  FictionAnalysis,
   Relationship,
   REL_DEFAULT_STRENGTH,
   ROLE_WEIGHT,
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { ZoomIn, ZoomOut, Maximize2, Play, Pause, X } from "lucide-react";
 
 interface Props {
-  analysis: NovelAnalysis;
+  analysis: FictionAnalysis;
   /** Spoiler frontier 0–100. Characters introduced later are hidden. */
   progress?: number;
   /** Drive the global progress slider from inside the network's mini-scrubber. */

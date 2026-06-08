@@ -10,7 +10,9 @@ import {
   DNA_AXIS_IDS,
   DNA_AXIS_META,
   type DnaAxisId,
-  type NovelAnalysis,
+  type FictionAnalysis,
+  normalizeAnalysis,
+  isFiction,
 } from "@/lib/novel-types";
 import { CompareNetworks } from "@/components/CompareNetworks";
 
@@ -25,7 +27,7 @@ type Loaded = {
   cache_key: string;
   title: string;
   author: string;
-  analysis: NovelAnalysis;
+  analysis: FictionAnalysis;
 };
 
 const Compare = () => {
@@ -79,7 +81,10 @@ const Compare = () => {
       cache_key: data.cache_key,
       title: data.title,
       author: data.author,
-      analysis: data.analysis as unknown as NovelAnalysis,
+      analysis: (() => {
+        const normalized = normalizeAnalysis(data.analysis as Record<string, unknown>);
+        return isFiction(normalized) ? normalized : normalized as unknown as FictionAnalysis;
+      })(),
     };
     if (slot === "a") setA(loaded);
     else setB(loaded);
@@ -455,7 +460,7 @@ const Stat = ({ label, value, bordered }: { label: string; value: number; border
   </div>
 );
 
-function indexAxes(an: NovelAnalysis) {
+function indexAxes(an: FictionAnalysis) {
   const m = new Map<DnaAxisId, { score: number; evidence: string }>();
   for (const a of an.dna?.axes ?? []) m.set(a.id as DnaAxisId, { score: a.score, evidence: a.evidence });
   return m;

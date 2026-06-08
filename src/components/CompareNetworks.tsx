@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 import { CharacterNetwork } from "@/components/CharacterNetwork";
-import type { Character, NovelAnalysis } from "@/lib/novel-types";
+import type { Character, FictionAnalysis } from "@/lib/novel-types";
 import { cn } from "@/lib/utils";
 
 interface Loaded {
   cache_key: string;
   title: string;
   author: string;
-  analysis: NovelAnalysis;
+  analysis: FictionAnalysis;
 }
 
 interface Props {
@@ -30,7 +30,7 @@ interface ArchMatch {
   why: string;
 }
 
-function archetypeMatches(a: NovelAnalysis, b: NovelAnalysis): ArchMatch[] {
+function archetypeMatches(a: FictionAnalysis, b: FictionAnalysis): ArchMatch[] {
   // Only consider top-tier roles in both books
   const topA = a.characters.filter((c) => (ROLE_TIER[c.role] ?? 0) >= 4);
   const topB = b.characters.filter((c) => (ROLE_TIER[c.role] ?? 0) >= 4);
