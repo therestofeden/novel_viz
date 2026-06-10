@@ -3,7 +3,7 @@
 # Run from the project root: bash deploy.sh
 set -e
 
-PROJECT_REF="iycncdnondipjcqwrtkn"
+PROJECT_REF="ecsublyvcvzdkvggxwlh"
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
@@ -47,9 +47,12 @@ echo "▸ Deploying analyze-novel..."
 supabase functions deploy analyze-novel --no-verify-jwt
 
 echo "▸ Deploying takeaways..."
-supabase functions deploy takeaways
+supabase functions deploy takeaways --no-verify-jwt
+
+echo "▸ Deploying recommend-anti-shelf..."
+supabase functions deploy recommend-anti-shelf --no-verify-jwt
 
 echo ""
-echo "✓ All done! Both functions are live."
+echo "✓ All done! Functions are live."
 echo "  App: http://localhost:8080  (or npm run dev to restart)"
 echo ""

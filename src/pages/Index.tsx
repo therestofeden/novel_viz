@@ -297,6 +297,17 @@ const SUGGESTION_POOL = [
   "Couples", "The Witches of Eastwick",
   "The Things They Carried", "Going After Cacciato",
   "Tinkers", "Enon",
+  // Non-fiction — history, science, philosophy, memoir, ideas
+  "Sapiens", "Thinking, Fast and Slow", "The Emperor of All Maladies",
+  "A Short History of Nearly Everything", "The Sixth Extinction", "The Gene",
+  "Guns, Germs, and Steel", "The Silk Roads", "SPQR",
+  "The Immortal Life of Henrietta Lacks", "Into Thin Air", "Educated",
+  "When Breath Becomes Air", "Being Mortal", "The Body Keeps the Score",
+  "Meditations", "The Denial of Death", "Gödel, Escher, Bach",
+  "The Selfish Gene", "A Brief History of Time", "The Structure of Scientific Revolutions",
+  "The Power Broker", "The Right Stuff", "In Cold Blood",
+  "The Warmth of Other Suns", "Between the World and Me", "Evicted",
+  "Atomic Habits", "Deep Work", "Man's Search for Meaning",
 ];
 
 function sampleSuggestions(n: number): string[] {
@@ -804,11 +815,11 @@ const Index = () => {
               </motion.div>
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize Any Novel</div>
+                <div className="meta mt-1.5 text-muted-foreground">Visualize Any Book</div>
               </div>
             </div>
             <div className="hidden items-center px-5 md:flex">
-              <span className="meta text-muted-foreground">Characters · Relationships · Timelines</span>
+              <span className="meta text-muted-foreground">Characters · Concepts · Timelines</span>
             </div>
           </div>
           <div className="flex items-stretch">
@@ -853,9 +864,9 @@ const Index = () => {
             {/* Left rail */}
             <aside className="relative col-span-12 ink-border-b border-foreground px-4 py-6 md:col-span-2 md:border-b-0 md:border-r md:py-12">
               <div className="meta text-muted-foreground">Section</div>
-              <div className="mt-2 font-serif text-base italic">Narrative Analysis</div>
+              <div className="mt-2 font-serif text-base italic">Book Analysis</div>
               <div className="mt-3 h-px w-10 bg-foreground" />
-              <div className="meta mt-3 text-muted-foreground">Characters · Timelines</div>
+              <div className="meta mt-3 text-muted-foreground">Characters · Concepts · Timelines</div>
             </aside>
 
             {/* Hero */}
@@ -873,7 +884,7 @@ const Index = () => {
                 {[
                   <>See the</>,
                   <><span className="italic font-serif font-normal">shape</span> of any</>,
-                  <span className="text-primary">novel.</span>,
+                  <span className="text-primary">book.</span>,
                 ].map((node, i) => (
                   <span key={i} className="block overflow-hidden">
                     <motion.span
@@ -890,8 +901,8 @@ const Index = () => {
 
               <Reveal delay={0.55} duration={0.9} y={14}>
                 <p className="mt-10 max-w-2xl font-serif text-lg leading-[1.55] text-foreground md:text-xl">
-                  Type the title of a work of fiction. Receive a meticulous map of its
-                  characters, relationships, and narrative timelines.
+                  Type the title of any book. Fiction unfolds into characters,
+                  relationships, and timelines; non-fiction into concepts, arguments, and chapters.
                   <span className="italic text-muted-foreground"> One title in, one cartography out.</span>
                 </p>
               </Reveal>
@@ -931,7 +942,7 @@ const Index = () => {
                           setSuggestOpen(false);
                         }
                       }}
-                      placeholder="Start typing a title — e.g. Cloud Atlas"
+                      placeholder="Start typing a title — e.g. Cloud Atlas or Sapiens"
                       className="w-full bg-transparent py-4 font-sans text-lg placeholder:text-muted-foreground/60 focus:outline-none"
                       disabled={loading}
                       autoFocus

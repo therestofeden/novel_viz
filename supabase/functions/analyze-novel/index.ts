@@ -7,9 +7,40 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MODEL = "gemini-2.0-flash";
-const PREAMBLE_MODEL = "gemini-2.0-flash-lite";
+// gemini-2.0-* models were shut down by Google on 2026-06-01.
+// gemini-2.5-flash was constantly 503 (overloaded) as of 2026-06-10, so we
+// jumped straight to its successor. NOTE: gemini-2.5-flash-lite retires
+// 2026-10-16 — swap the preamble model when a 3.5 lite tier ships.
+const MODEL = "gemini-3.5-flash";
+const PREAMBLE_MODEL = "gemini-2.5-flash-lite";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
+// Google is load-shedding aggressively since the 2.0 shutdown (intermittent
+// 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+
+async function geminiFetchWithFallback(
+  apiKey: string,
+  payload: Record<string, unknown>,
+): Promise<Response> {
+  let last: Response | null = null;
+  for (const model of MODEL_FALLBACKS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const r = await fetch(GEMINI_BASE, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, model }),
+      });
+      if (r.ok) return r;
+      if (r.status !== 429 && r.status !== 503) return r; // hard error — retrying won't help
+      console.warn(`gemini ${model} attempt ${attempt + 1} -> ${r.status}`);
+      await r.body?.cancel().catch(() => {});
+      last = r;
+      await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
+    }
+  }
+  return last!;
+}
 
 // ---------- Non-fiction tool ----------
 
@@ -673,15 +704,10 @@ async function callStructuredAnalysis(apiKey: string, userPrompt: string, correc
   ];
   if (corrective) messages.push({ role: "user", content: corrective });
 
-  const response = await fetch(GEMINI_BASE, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      messages,
-      tools: [analysisTool, nonfictionAnalysisTool],
-      tool_choice: "auto",
-    }),
+  const response = await geminiFetchWithFallback(apiKey, {
+    messages,
+    tools: [analysisTool, nonfictionAnalysisTool],
+    tool_choice: "auto",
   });
 
   if (!response.ok) {
@@ -923,7 +949,7 @@ serve(async (req) => {
                     {
                       role: "system",
                       content:
-                        "You are a literary scholar. In ONE short sentence (max 22 words), confirm a novel and tease its narrative shape. No preamble like 'Sure'. Start with the title in italics-style markdown (*Title*). Example: '*Beloved* by Toni Morrison — a haunted house, a mother's reckoning, time folding in on itself.'",
+                        "You are a literary scholar covering fiction and non-fiction alike. In ONE short sentence (max 22 words), confirm a book and tease its shape — narrative arc for fiction, central argument for non-fiction. No preamble like 'Sure'. Start with the title in italics-style markdown (*Title*). Example: '*Beloved* by Toni Morrison — a haunted house, a mother's reckoning, time folding in on itself.'",
                     },
                     { role: "user", content: `Tease the structure of: ${title}` },
                   ],
@@ -963,14 +989,14 @@ serve(async (req) => {
         // -------- Phase B: structured analysis --------
         const userPrompt = isRefine
           ? `The user previously asked for a visualization of "${title}". Here is the previous analysis JSON:\n\n${JSON.stringify(previousAnalysis)}\n\nThe user now wants to refine the analysis with this prompt: "${refinement}"\n\nReturn an updated full analysis (same schema). Keep ids stable where possible.`
-          : `Produce a structured analysis of the novel: "${title}"`;
+          : `Produce a structured analysis of the book: "${title}"`;
 
         let analysis: Analysis | null;
         try {
           analysis = await callStructuredAnalysis(GEMINI_API_KEY, userPrompt);
         } catch (e: any) {
-          if (e.status === 429) {
-            send("error", { error: "Rate limit reached. Please try again in a moment.", status: 429 });
+          if (e.status === 429 || e.status === 503) {
+            send("error", { error: "The AI service is overloaded right now. Please try again in a minute.", status: 429 });
           } else {
             send("error", { error: "Gemini API error", status: 500 });
           }

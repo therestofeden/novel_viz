@@ -502,7 +502,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
         <div className="px-4 py-3">
           <div className="meta text-muted-foreground">Fig. 01 — DNA Constellation</div>
           <div className="mt-1 font-serif text-lg italic">
-            Your shelf, mapped against {basis.seed_corpus.length} canonical novels.
+            Your shelf, mapped against {basis.seed_corpus.length} canonical books.
           </div>
         </div>
         <div className="hidden items-center gap-4 border-l border-foreground px-4 py-3 md:flex">
@@ -828,7 +828,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
         <div className="col-span-12 px-4 py-3 md:col-span-6 md:border-r md:border-foreground">
           <div className="meta text-muted-foreground">How to read this</div>
           <p className="mt-1 font-serif text-sm italic text-muted-foreground">
-            Each dot is one novel, projected from 12 axes of literary DNA onto a fixed 2D map. Distance
+            Each dot is one book, projected from 12 axes of literary DNA onto a fixed 2D map. Distance
             ≈ formal kinship.
           </p>
         </div>

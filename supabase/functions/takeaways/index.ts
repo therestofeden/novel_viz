@@ -7,8 +7,37 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MODEL = "gemini-2.0-flash";
+// gemini-2.0-* models were shut down by Google on 2026-06-01;
+// gemini-2.5-flash was constantly 503 (overloaded) as of 2026-06-10.
+const MODEL = "gemini-3.5-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
+// Google is load-shedding aggressively since the 2.0 shutdown (intermittent
+// 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+
+async function geminiFetchWithFallback(
+  apiKey: string,
+  payload: Record<string, unknown>,
+): Promise<Response> {
+  let last: Response | null = null;
+  for (const model of MODEL_FALLBACKS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const r = await fetch(GEMINI_BASE, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, model }),
+      });
+      if (r.ok) return r;
+      if (r.status !== 429 && r.status !== 503) return r; // hard error — retrying won't help
+      console.warn(`gemini ${model} attempt ${attempt + 1} -> ${r.status}`);
+      await r.body?.cancel().catch(() => {});
+      last = r;
+      await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
+    }
+  }
+  return last!;
+}
 
 // ─── SSE helpers ──────────────────────────────────────────────────────────────
 
@@ -71,18 +100,13 @@ async function generateQuestions(
     ? `The non-fiction book "${title}" by ${author}.\n\nSummary: ${summary}\n\nCentral thesis: ${thesis ?? "(not provided)"}`
     : `The novel "${title}" by ${author}.\n\nSummary: ${summary}`;
 
-  const response = await fetch(GEMINI_BASE, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: QUESTIONS_SYSTEM },
-        { role: "user", content: `Generate reflection questions for:\n\n${bookDesc}` },
-      ],
-      tools: [questionsTool],
-      tool_choice: { type: "function", function: { name: "render_takeaway_questions" } },
-    }),
+  const response = await geminiFetchWithFallback(apiKey, {
+    messages: [
+      { role: "system", content: QUESTIONS_SYSTEM },
+      { role: "user", content: `Generate reflection questions for:\n\n${bookDesc}` },
+    ],
+    tools: [questionsTool],
+    tool_choice: { type: "function", function: { name: "render_takeaway_questions" } },
   });
 
   if (!response.ok) {
@@ -165,17 +189,12 @@ async function streamSynthesis(
     .filter(Boolean)
     .join("\n");
 
-  const response = await fetch(GEMINI_BASE, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      stream: true,
-      messages: [
-        { role: "system", content: SYNTHESIS_SYSTEM },
-        { role: "user", content: userContent },
-      ],
-    }),
+  const response = await geminiFetchWithFallback(apiKey, {
+    stream: true,
+    messages: [
+      { role: "system", content: SYNTHESIS_SYSTEM },
+      { role: "user", content: userContent },
+    ],
   });
 
   if (!response.ok) {

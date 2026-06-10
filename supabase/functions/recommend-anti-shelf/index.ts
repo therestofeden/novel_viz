@@ -13,9 +13,38 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MODEL = "gemini-2.0-flash";
+// gemini-2.0-* models were shut down by Google on 2026-06-01;
+// gemini-2.5-flash was constantly 503 (overloaded) as of 2026-06-10.
+const MODEL = "gemini-3.5-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const ROUTE = "recommend-anti-shelf";
+
+// Google is load-shedding aggressively since the 2.0 shutdown (intermittent
+// 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+
+async function geminiFetchWithFallback(
+  apiKey: string,
+  payload: Record<string, unknown>,
+): Promise<Response> {
+  let last: Response | null = null;
+  for (const model of MODEL_FALLBACKS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const r = await fetch(GEMINI_BASE, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, model }),
+      });
+      if (r.ok) return r;
+      if (r.status !== 429 && r.status !== 503) return r; // hard error — retrying won't help
+      console.warn(`gemini ${model} attempt ${attempt + 1} -> ${r.status}`);
+      await r.body?.cancel().catch(() => {});
+      last = r;
+      await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
+    }
+  }
+  return last!;
+}
 
 type Mode = "similar" | "stretch";
 
@@ -269,11 +298,11 @@ serve(async (req) => {
         ? "Recommend books that resonate deeply with the structural and thematic DNA of the shelf — same emotional register, comparable narrative architecture, kindred preoccupations. The reader should feel: 'These belong with my collection.'"
         : "Recommend STRETCH picks that intentionally diverge from the shelf's DNA — different lane structures, different cultural traditions, different relational geometries — while still being books a thoughtful reader of the above would find genuinely rewarding. The reader should feel: 'I would never have picked this myself, but it's exactly what I needed.'";
 
-    const systemPrompt = `You are the literary editor of a discerning indie magazine. You recommend novels with editorial precision — never generic bestsellers, never pandering. Each pick must feel hand-chosen.
+    const systemPrompt = `You are the literary editor of a discerning indie magazine. You recommend books — fiction and non-fiction alike — with editorial precision. Never generic bestsellers, never pandering. Each pick must feel hand-chosen.
 
 Rules:
 - NEVER recommend books that are already on the reader's shelf.
-- Prefer literary fiction, but include essential non-fiction or genre work when the DNA calls for it.
+- Match the shelf's centre of gravity: if it leans non-fiction, recommend mostly non-fiction; if fiction, mostly fiction; if mixed, mix accordingly.
 - Real, verifiable books and authors only. No fabrications.
 - Be specific in your one-liners — name the actual texture of the book, not vague praise.`;
 
@@ -316,24 +345,16 @@ TASK: ${modeBrief}
 Return 6–10 recommendations via the render_recommendations tool. For each pick, fill 'echoes' with the 1–3 shelf titles it most directly relates to (similar mode) or contrasts against (stretch mode).`;
 
     // Call Gemini
-    const aiRes = await fetch(GEMINI_BASE, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [recommendationsTool],
-        tool_choice: { type: "function", function: { name: "render_recommendations" } },
-      }),
+    const aiRes = await geminiFetchWithFallback(lovableKey, {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [recommendationsTool],
+      tool_choice: { type: "function", function: { name: "render_recommendations" } },
     });
 
-    if (aiRes.status === 429) {
+    if (aiRes.status === 429 || aiRes.status === 503) {
       return new Response(JSON.stringify({ error: "AI is rate-limited. Try again shortly." }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
