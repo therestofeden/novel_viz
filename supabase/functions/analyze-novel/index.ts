@@ -785,17 +785,22 @@ serve(async (req) => {
     });
   }
 
-  const { title, refinement, previousAnalysis, prefetch } = body ?? {};
+  const { title, refinement, previousAnalysis, prefetch, gemini_key: userGeminiKey } = body ?? {};
   if (!title || typeof title !== "string" || title.trim().length === 0) {
     return new Response(JSON.stringify({ error: "Title is required" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  // Accept the user's own Gemini key from the request body (BYOK).
+  // If not provided, fall back to the shared server key.
+  const GEMINI_API_KEY = (typeof userGeminiKey === "string" && userGeminiKey.trim())
+    ? userGeminiKey.trim()
+    : Deno.env.get("GEMINI_API_KEY");
+
   if (!GEMINI_API_KEY) {
-    return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: "No Gemini API key available. Add your key via the API Key button." }), {
+      status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 

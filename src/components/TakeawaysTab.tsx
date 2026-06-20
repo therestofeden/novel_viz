@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, CheckCircle2, Copy, Loader2, RefreshCw, Sparkles 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   NonFictionAnalysis,
   NovelAnalysis,
@@ -58,6 +59,7 @@ function QuestionProgress({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function TakeawaysTab({ analysis, cacheKey }: Props) {
+  const { geminiKey } = useAuth();
   const [phase, setPhase] = useState<Phase>("idle");
   const [questions, setQuestions] = useState<TakeawayQuestion[]>([]);
   const [answers, setAnswers] = useState<TakeawayAnswer[]>([]);
@@ -144,6 +146,7 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
           summary: analysis.summary,
           thesis,
           cacheKey,
+          ...(geminiKey ? { gemini_key: geminiKey } : {}),
         }),
       });
 
@@ -224,6 +227,7 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
           answers,
           freeNotes,
           cacheKey,
+          ...(geminiKey ? { gemini_key: geminiKey } : {}),
         }),
       });
 

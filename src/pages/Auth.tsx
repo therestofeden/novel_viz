@@ -4,7 +4,6 @@ import { Loader2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -57,15 +56,17 @@ const Auth = () => {
   const handleGoogle = async () => {
     setOauthLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}${next}`,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}${next}`,
+        },
       });
-      if (result.error) {
-        toast.error("Google sign-in failed");
+      if (error) {
+        toast.error("Google sign-in failed: " + error.message);
         setOauthLoading(false);
-        return;
       }
-      if (result.redirected) return;
+      // On success Supabase redirects the browser — no further action needed here.
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
       setOauthLoading(false);

@@ -45,7 +45,7 @@ const initial: LoadState = {
 };
 
 const AntiShelf = () => {
-  const { session, loading: authLoading, signOut } = useAuth();
+  const { session, loading: authLoading, signOut, geminiKey } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>("similar");
   const [shelfCount, setShelfCount] = useState<number | null>(null);
@@ -165,6 +165,7 @@ const AntiShelf = () => {
           disliked,
           blocked_authors: Array.from(blockedAuthors),
           blocked_tags: Array.from(blockedTags),
+          ...(geminiKey ? { gemini_key: geminiKey } : {}),
         },
       });
       if (error) {

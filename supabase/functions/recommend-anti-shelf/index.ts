@@ -154,10 +154,24 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableKey = Deno.env.get("GEMINI_API_KEY");
+
+    // Parse body first so we can read the user-supplied Gemini key (BYOK).
+    const body = await req.json().catch(() => ({}));
+    const mode: Mode = body?.mode === "stretch" ? "stretch" : "similar";
+    const force: boolean = !!body?.force;
+    const liked: string[] = Array.isArray(body?.liked) ? body.liked.slice(0, 100) : [];
+    const disliked: string[] = Array.isArray(body?.disliked) ? body.disliked.slice(0, 100) : [];
+    const blockedAuthors: string[] = Array.isArray(body?.blocked_authors) ? body.blocked_authors.slice(0, 100) : [];
+    const blockedTags: string[] = Array.isArray(body?.blocked_tags) ? body.blocked_tags.slice(0, 100) : [];
+
+    // BYOK: prefer the user's own Gemini key; fall back to the shared server key.
+    const lovableKey = (typeof body?.gemini_key === "string" && body.gemini_key.trim())
+      ? body.gemini_key.trim()
+      : Deno.env.get("GEMINI_API_KEY");
+
     if (!lovableKey) {
-      return new Response(JSON.stringify({ error: "Server misconfigured" }), {
-        status: 500,
+      return new Response(JSON.stringify({ error: "No Gemini API key available. Add your key via the API Key button." }), {
+        status: 402,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -174,15 +188,6 @@ serve(async (req) => {
       });
     }
     const userId = userData.user.id;
-
-    // Parse body
-    const body = await req.json().catch(() => ({}));
-    const mode: Mode = body?.mode === "stretch" ? "stretch" : "similar";
-    const force: boolean = !!body?.force;
-    const liked: string[] = Array.isArray(body?.liked) ? body.liked.slice(0, 100) : [];
-    const disliked: string[] = Array.isArray(body?.disliked) ? body.disliked.slice(0, 100) : [];
-    const blockedAuthors: string[] = Array.isArray(body?.blocked_authors) ? body.blocked_authors.slice(0, 100) : [];
-    const blockedTags: string[] = Array.isArray(body?.blocked_tags) ? body.blocked_tags.slice(0, 100) : [];
 
     // Service-role client for cache + cross-table reads
     const admin = createClient(supabaseUrl, serviceKey);

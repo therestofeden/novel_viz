@@ -22,6 +22,9 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# Cowork / Claude local plugin cache — never belongs in the repo
+.claude/
 *.suo
 *.ntvs*
 *.njsproj

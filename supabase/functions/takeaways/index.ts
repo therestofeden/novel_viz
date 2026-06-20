@@ -250,7 +250,7 @@ serve(async (req) => {
     });
   }
 
-  const { phase, title, author, bookType, summary, thesis, questions, answers, freeNotes, cacheKey } = body ?? {};
+  const { phase, title, author, bookType, summary, thesis, questions, answers, freeNotes, cacheKey, gemini_key: userGeminiKey } = body ?? {};
 
   if (!phase || !title) {
     return new Response(JSON.stringify({ error: "phase and title are required" }), {
@@ -258,10 +258,14 @@ serve(async (req) => {
     });
   }
 
-  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  // BYOK: use the user's own key if provided, otherwise fall back to server key.
+  const GEMINI_API_KEY = (typeof userGeminiKey === "string" && userGeminiKey.trim())
+    ? userGeminiKey.trim()
+    : Deno.env.get("GEMINI_API_KEY");
+
   if (!GEMINI_API_KEY) {
-    return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: "No Gemini API key available. Add your key via the API Key button." }), {
+      status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 

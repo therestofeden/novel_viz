@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense, FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Loader2, Search, RefreshCw, Eye, EyeOff, LogIn, Library } from "lucide-react";
+import { BookOpen, Loader2, Search, RefreshCw, Eye, EyeOff, LogIn, Library, Key } from "lucide-react";
 import {
   Reveal,
   StaggerGroup,
@@ -33,6 +33,7 @@ import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ShelfChip } from "@/components/ShelfChip";
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
+import { GeminiKeyDialog } from "@/components/GeminiKeyDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -354,7 +355,7 @@ const Index = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ title: bookTitle, prefetch: true }),
+      body: JSON.stringify({ title: bookTitle, prefetch: true, ...(geminiKey ? { gemini_key: geminiKey } : {}) }),
       keepalive: true,
     }).catch(() => {
       // Silent — prefetch is best-effort.
@@ -593,7 +594,8 @@ const Index = () => {
   const [preambleText, setPreambleText] = useState<string>("");
   const [cachedHit, setCachedHit] = useState(false);
   const [cacheKey, setCacheKey] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, geminiKey } = useAuth();
+  const [geminiDialogOpen, setGeminiDialogOpen] = useState(false);
 
   const fetchAnalysis = async (bookTitle: string, refinement?: string) => {
     const isRefine = !!refinement;
@@ -631,6 +633,7 @@ const Index = () => {
               title: bookTitle,
               refinement,
               previousAnalysis: isRefine ? analysis : undefined,
+              ...(geminiKey ? { gemini_key: geminiKey } : {}),
             }),
           });
           if (resp.ok && resp.body) break;
@@ -840,6 +843,16 @@ const Index = () => {
               >
                 <LogIn className="h-3.5 w-3.5" /> Sign in
               </Link>
+            )}
+            {user && (
+              <button
+                onClick={() => setGeminiDialogOpen(true)}
+                className={`meta flex items-center gap-2 border-l border-foreground px-5 py-5 hover:bg-foreground hover:text-background ${geminiKey ? "text-green-600" : "text-muted-foreground"}`}
+                title={geminiKey ? "Gemini key configured" : "Add your Gemini API key"}
+              >
+                <Key className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{geminiKey ? "Key ✓" : "API Key"}</span>
+              </button>
             )}
             {analysis && (
               <button
@@ -1425,6 +1438,7 @@ const Index = () => {
           </div>
         </div>
       </footer></Reveal>
+      <GeminiKeyDialog open={geminiDialogOpen} onClose={() => setGeminiDialogOpen(false)} />
     </div>
   );
 };
