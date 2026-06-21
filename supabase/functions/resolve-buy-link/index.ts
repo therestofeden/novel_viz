@@ -46,7 +46,7 @@ const BOOKSHOP_ORG: Vendor = {
   name: "Bookshop.org",
   kind: "indie",
   build: (t, a, tag) =>
-    `https://bookshop.org/beta-search?keywords=${q(t, a)}${tag ? `&aid=${enc(tag)}` : ""}`,
+    `https://bookshop.org/search?keywords=${q(t, a)}${tag ? `&aid=${enc(tag)}` : ""}`,
 };
 
 const BOOKSHOP_UK: Vendor = {
@@ -54,7 +54,7 @@ const BOOKSHOP_UK: Vendor = {
   name: "Bookshop.org UK",
   kind: "indie",
   build: (t, a, tag) =>
-    `https://uk.bookshop.org/beta-search?keywords=${q(t, a)}${tag ? `&aid=${enc(tag)}` : ""}`,
+    `https://uk.bookshop.org/search?keywords=${q(t, a)}${tag ? `&aid=${enc(tag)}` : ""}`,
 };
 
 const BOOKSHOP_ES: Vendor = {
@@ -62,7 +62,7 @@ const BOOKSHOP_ES: Vendor = {
   name: "Bookshop.org España",
   kind: "indie",
   build: (t, a, tag) =>
-    `https://es.bookshop.org/beta-search?keywords=${q(t, a)}${tag ? `&aid=${enc(tag)}` : ""}`,
+    `https://es.bookshop.org/search?keywords=${q(t, a)}${tag ? `&aid=${enc(tag)}` : ""}`,
 };
 
 const GENIALOKAL_DE: Vendor = {
@@ -90,7 +90,7 @@ const LALIBRAIRIE_FR: Vendor = {
   key: "lalibrairie_fr",
   name: "Lalibrairie.com",
   kind: "indie",
-  build: (t, a) => `https://www.lalibrairie.com/recherche.html?q=${q(t, a)}`,
+  build: (t, a) => `https://www.lalibrairie.com/livres/recherche.html?search=${q(t, a)}`,
 };
 
 const LIBRERIA_UNIVERSITARIA_IT: Vendor = {
