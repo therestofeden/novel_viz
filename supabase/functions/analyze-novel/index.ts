@@ -19,24 +19,65 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/cha
 // 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
 const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
+// ---------- Circuit breaker ----------
+// Tracks per-model transient failure counts within this isolate.
+// After CIRCUIT_TRIP_AFTER consecutive 429/503 responses the circuit opens and
+// the model is skipped entirely for CIRCUIT_OPEN_MS — turning a 15s timeout
+// cascade into a <1ms reroute.
+const CIRCUIT_OPEN_MS = 60_000;
+const CIRCUIT_TRIP_AFTER = 2;
+type CircuitState = { fails: number; openUntil: number };
+const modelCircuit = new Map<string, CircuitState>();
+
+function circuitIsOpen(model: string): boolean {
+  const s = modelCircuit.get(model);
+  if (!s) return false;
+  if (Date.now() < s.openUntil) return true;
+  modelCircuit.delete(model); // window expired — reset
+  return false;
+}
+function circuitRecordFail(model: string): void {
+  const s = modelCircuit.get(model) ?? { fails: 0, openUntil: 0 };
+  s.fails += 1;
+  if (s.fails >= CIRCUIT_TRIP_AFTER) {
+    s.openUntil = Date.now() + CIRCUIT_OPEN_MS;
+    console.warn(JSON.stringify({ circuit: "open", model, until: new Date(s.openUntil).toISOString() }));
+  }
+  modelCircuit.set(model, s);
+}
+function circuitRecordSuccess(model: string): void {
+  modelCircuit.delete(model);
+}
+
 async function geminiFetchWithFallback(
   apiKey: string,
   payload: Record<string, unknown>,
 ): Promise<Response> {
   let last: Response | null = null;
   for (const model of MODEL_FALLBACKS) {
+    if (circuitIsOpen(model)) {
+      console.log(JSON.stringify({ circuit: "skipped", model }));
+      continue;
+    }
     for (let attempt = 0; attempt < 2; attempt++) {
       const r = await fetch(GEMINI_BASE, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ ...payload, model }),
       });
-      if (r.ok) return r;
+      if (r.ok) {
+        circuitRecordSuccess(model);
+        return r;
+      }
       if (r.status !== 429 && r.status !== 503) return r; // hard error — retrying won't help
       console.warn(`gemini ${model} attempt ${attempt + 1} -> ${r.status}`);
       await r.body?.cancel().catch(() => {});
       last = r;
-      await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
+      circuitRecordFail(model);
+      if (circuitIsOpen(model)) break; // tripped — jump to next model immediately
+      // Exponential backoff with jitter so concurrent retries don't all fire at once.
+      const base = 1000 * (attempt + 1);
+      await new Promise((res) => setTimeout(res, base + Math.random() * 500));
     }
   }
   return last!;
@@ -771,6 +812,13 @@ const LIMITS = {
   prefetchPerHour: 120,
 } as const;
 
+// ---------- In-flight deduplication ----------
+// Maps cacheKey → Promise that resolves when the Gemini call completes.
+// If a second request arrives for the same book while one is in progress,
+// it waits for the first to finish and then serves from cache — one Gemini
+// call instead of N.
+const inFlight = new Map<string, Promise<void>>();
+
 // ---------- Main handler ----------
 
 serve(async (req) => {
@@ -852,6 +900,47 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } },
       );
     }
+  }
+
+  // ---------- Deduplication: coalesce concurrent requests for the same book ----------
+  // Only for fresh analyses (not refinements, which are user-specific).
+  if (!isRefine && inFlight.has(cacheKey)) {
+    // Another request is already calling Gemini for this book. Wait for it,
+    // then serve from cache — zero extra Gemini calls.
+    await inFlight.get(cacheKey);
+    const { data: cached } = await supabase
+      .from("novel_analyses")
+      .select("analysis, id, hit_count")
+      .eq("cache_key", cacheKey)
+      .eq("is_validated", true)
+      .maybeSingle();
+
+    if (cached?.analysis) {
+      supabase
+        .from("novel_analyses")
+        .update({ hit_count: (cached.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
+        .eq("id", cached.id)
+        .then(() => {}).catch(() => {});
+
+      const sseBody = [
+        sseFrame("status", { text: "Found in library — restoring instantly." }),
+        sseFrame("analysis", { analysis: cached.analysis, cached: true, cacheKey }),
+        sseFrame("done", {}),
+      ].join("");
+
+      console.log(JSON.stringify({ fn: "analyze-novel", outcome: "dedup_hit", cache_key: cacheKey }));
+      return new Response(sseBody, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+      });
+    }
+    // First request failed to produce a result — fall through and try independently.
+  }
+
+  // Register this request as the in-flight owner for this cache key.
+  let resolveInFlight!: () => void;
+  if (!isRefine) {
+    const p = new Promise<void>((res) => { resolveInFlight = res; });
+    inFlight.set(cacheKey, p);
   }
 
   // ---------- Rate-limit gate (only reached on cache misses / refinements) ----------
@@ -1055,11 +1144,15 @@ serve(async (req) => {
           characters: analysis.characters?.length ?? 0,
           events: analysis.events?.length ?? 0,
         });
+        // Unblock any requests that were waiting on this in-flight call.
+        if (resolveInFlight) { resolveInFlight(); inFlight.delete(cacheKey); }
         controller.close();
       } catch (e) {
         console.error("handler error:", e);
         send("error", { error: e instanceof Error ? e.message : "Unknown error", status: 500 });
         metric("error", { message: e instanceof Error ? e.message : String(e) });
+        // Unblock waiters even on failure so they can retry independently.
+        if (resolveInFlight) { resolveInFlight(); inFlight.delete(cacheKey); }
         controller.close();
       }
     },

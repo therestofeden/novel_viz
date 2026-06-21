@@ -16,24 +16,60 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/cha
 // 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
 const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
+// ---------- Circuit breaker ----------
+const CIRCUIT_OPEN_MS = 60_000;
+const CIRCUIT_TRIP_AFTER = 2;
+type CircuitState = { fails: number; openUntil: number };
+const modelCircuit = new Map<string, CircuitState>();
+
+function circuitIsOpen(model: string): boolean {
+  const s = modelCircuit.get(model);
+  if (!s) return false;
+  if (Date.now() < s.openUntil) return true;
+  modelCircuit.delete(model);
+  return false;
+}
+function circuitRecordFail(model: string): void {
+  const s = modelCircuit.get(model) ?? { fails: 0, openUntil: 0 };
+  s.fails += 1;
+  if (s.fails >= CIRCUIT_TRIP_AFTER) {
+    s.openUntil = Date.now() + CIRCUIT_OPEN_MS;
+    console.warn(JSON.stringify({ circuit: "open", model, until: new Date(s.openUntil).toISOString() }));
+  }
+  modelCircuit.set(model, s);
+}
+function circuitRecordSuccess(model: string): void {
+  modelCircuit.delete(model);
+}
+
 async function geminiFetchWithFallback(
   apiKey: string,
   payload: Record<string, unknown>,
 ): Promise<Response> {
   let last: Response | null = null;
   for (const model of MODEL_FALLBACKS) {
+    if (circuitIsOpen(model)) {
+      console.log(JSON.stringify({ circuit: "skipped", model }));
+      continue;
+    }
     for (let attempt = 0; attempt < 2; attempt++) {
       const r = await fetch(GEMINI_BASE, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ ...payload, model }),
       });
-      if (r.ok) return r;
+      if (r.ok) {
+        circuitRecordSuccess(model);
+        return r;
+      }
       if (r.status !== 429 && r.status !== 503) return r; // hard error — retrying won't help
       console.warn(`gemini ${model} attempt ${attempt + 1} -> ${r.status}`);
       await r.body?.cancel().catch(() => {});
       last = r;
-      await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
+      circuitRecordFail(model);
+      if (circuitIsOpen(model)) break; // tripped — jump to next model immediately
+      const base = 1000 * (attempt + 1);
+      await new Promise((res) => setTimeout(res, base + Math.random() * 500));
     }
   }
   return last!;
