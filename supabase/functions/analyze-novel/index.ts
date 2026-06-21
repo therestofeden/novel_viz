@@ -808,11 +808,53 @@ serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // ---------- Rate-limit gate ----------
-  // Refines are tied to a previous analysis the user already paid for cognitively;
-  // we still throttle them but under the "real" budget.
-  const isRefineEarly = !!refinement && !!previousAnalysis;
-  const isPrefetch = !!prefetch && !isRefineEarly;
+  const isRefine = !!refinement && !!previousAnalysis;
+  const isPrefetch = !!prefetch && !isRefine;
+  const { title: cleanTitle, author: cleanAuthor } = splitTitleAuthor(title);
+  const cacheKey = buildCacheKey(cleanTitle, cleanAuthor);
+
+  // ---------- Cache-first: skip rate limiting entirely on hits ----------
+  // ~90% of requests for popular books are cache hits. Checking the cache
+  // before rate-limiting saves 2 DB RPC round-trips on every hit.
+  if (!isRefine) {
+    const { data: cached } = await supabase
+      .from("novel_analyses")
+      .select("analysis, id, hit_count")
+      .eq("cache_key", cacheKey)
+      .eq("is_validated", true)
+      .maybeSingle();
+
+    if (cached?.analysis) {
+      // Bump stats async — never block the response on it.
+      supabase
+        .from("novel_analyses")
+        .update({ hit_count: (cached.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
+        .eq("id", cached.id)
+        .then(() => {}).catch((e: any) => console.error("hit bump error:", e));
+
+      const sseBody = [
+        sseFrame("status", { text: "Found in library — restoring instantly." }),
+        sseFrame("analysis", { analysis: cached.analysis, cached: true, cacheKey }),
+        sseFrame("done", {}),
+      ].join("");
+
+      console.log(JSON.stringify({ fn: "analyze-novel", outcome: "cache_hit_early", cache_key: cacheKey }));
+
+      return new Response(sseBody, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+      });
+    }
+
+    // Prefetches bail on a miss — they exist solely to warm the cache.
+    if (isPrefetch) {
+      return new Response(
+        [sseFrame("status", { text: "Prefetch miss — skipping." }), sseFrame("done", { prefetched: false })].join(""),
+        { headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } },
+      );
+    }
+  }
+
+  // ---------- Rate-limit gate (only reached on cache misses / refinements) ----------
   const ip = getClientIp(req);
   const ipHash = await hashIp(ip, GEMINI_API_KEY);
   const route = "analyze-novel";
@@ -867,10 +909,6 @@ serve(async (req) => {
     console.error("rate-limit gate error (failing open):", e);
   }
 
-  const isRefine = isRefineEarly;
-  const { title: cleanTitle, author: cleanAuthor } = splitTitleAuthor(title);
-  const cacheKey = buildCacheKey(cleanTitle, cleanAuthor);
-
   const t0 = performance.now();
   const metric = (outcome: string, extra: Record<string, unknown> = {}) => {
     try {
@@ -894,46 +932,9 @@ serve(async (req) => {
       };
 
       try {
-        // -------- Cache lookup (skip for refinements) --------
-        if (!isRefine) {
-          const { data: cached, error: cacheErr } = await supabase
-            .from("novel_analyses")
-            .select("analysis, id, hit_count")
-            .eq("cache_key", cacheKey)
-            .eq("is_validated", true)
-            .maybeSingle();
-
-          if (cacheErr) console.error("cache read error:", cacheErr);
-
-          if (cached?.analysis) {
-            send("status", { text: "Found in library — restoring instantly." });
-            send("analysis", { analysis: cached.analysis, cached: true, cacheKey });
-            send("done", {});
-            // Bump stats async, don't block response
-            supabase
-              .from("novel_analyses")
-              .update({
-                hit_count: (cached.hit_count ?? 0) + 1,
-                last_accessed_at: new Date().toISOString(),
-              })
-              .eq("id", cached.id)
-              .then(() => {})
-              .catch((e: any) => console.error("hit bump error:", e));
-            metric("cache_hit", { hit_count: (cached.hit_count ?? 0) + 1 });
-            controller.close();
-            return;
-          }
-
-          // Prefetch requests bail out on a cache miss — they exist solely to warm
-          // the cache cheaply on hover; we won't burn a Gemini call speculatively.
-          if (prefetch) {
-            send("status", { text: "Prefetch miss — skipping speculative analysis." });
-            send("done", { prefetched: false });
-            metric("prefetch_miss");
-            controller.close();
-            return;
-          }
-        }
+        // Cache hits and prefetch misses are handled before this stream is opened
+        // (cache-first block above). By the time we get here it's always a genuine
+        // cache miss that needs a Gemini call.
 
         // -------- Phase A: streaming preamble (only for fresh analyses) --------
         if (!isRefine) {
