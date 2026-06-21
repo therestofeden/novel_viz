@@ -193,6 +193,10 @@ serve(async (req) => {
 
     // Parse body first so we can read the user-supplied Gemini key (BYOK).
     const body = await req.json().catch(() => ({}));
+
+    // Keep-warm ping: return immediately before touching DB or Gemini.
+    if (body?.is_warmup) return new Response("ok", { status: 200, headers: corsHeaders });
+
     const mode: Mode = body?.mode === "stretch" ? "stretch" : "similar";
     const force: boolean = !!body?.force;
     const liked: string[] = Array.isArray(body?.liked) ? body.liked.slice(0, 100) : [];

@@ -1,0 +1,51 @@
+name: Keep Edge Functions Warm
+
+# Pings all three edge functions every 5 minutes with is_warmup: true.
+# Each function returns 200 immediately — no DB or Gemini calls are made.
+# This prevents Supabase cold starts (~1-2s penalty) on the first real request.
+#
+# Setup required (one-time):
+#   GitHub → repo Settings → Secrets and variables → Actions → New repository secret
+#   Name: SUPABASE_ANON_KEY
+#   Value: the anon/publishable key from your Supabase project (already in your .env)
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub Actions may delay by a minute or two — that's fine.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: # allow manual trigger for testing
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping analyze-novel
+        run: |
+          curl -sf -o /dev/null \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -d '{"is_warmup":true}' \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/analyze-novel
+        continue-on-error: true
+
+      - name: Ping takeaways
+        run: |
+          curl -sf -o /dev/null \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -d '{"is_warmup":true}' \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/takeaways
+        continue-on-error: true
+
+      - name: Ping recommend-anti-shelf
+        run: |
+          curl -sf -o /dev/null \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -d '{"is_warmup":true}' \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/recommend-anti-shelf
+        continue-on-error: true

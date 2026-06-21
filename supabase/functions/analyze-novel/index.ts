@@ -833,6 +833,9 @@ serve(async (req) => {
     });
   }
 
+  // Keep-warm ping: return immediately before touching DB or Gemini.
+  if (body?.is_warmup) return new Response("ok", { status: 200, headers: corsHeaders });
+
   const { title, refinement, previousAnalysis, prefetch, gemini_key: userGeminiKey } = body ?? {};
   if (!title || typeof title !== "string" || title.trim().length === 0) {
     return new Response(JSON.stringify({ error: "Title is required" }), {
@@ -1122,20 +1125,19 @@ serve(async (req) => {
 
         // -------- Cache write (only fresh analyses with real content) --------
         if (!isRefine && analysis.confidence !== "unknown_work" && isAdequate(analysis)) {
-          const { error: insertErr } = await supabase
+          // upsert + ignoreDuplicates: if two isolates race on the same cache_key,
+          // the second write silently no-ops instead of throwing a 23505.
+          const { error: upsertErr } = await supabase
             .from("novel_analyses")
-            .insert({
+            .upsert({
               cache_key: cacheKey,
               title: analysis.title || cleanTitle,
               author: analysis.author || cleanAuthor || "",
               analysis,
               model: MODEL,
               is_validated: true,
-            });
-          if (insertErr && insertErr.code !== "23505") {
-            // 23505 = unique violation (race), safe to ignore
-            console.error("cache write error:", insertErr);
-          }
+            }, { onConflict: "cache_key", ignoreDuplicates: true });
+          if (upsertErr) console.error("cache write error:", upsertErr);
         }
 
         send("analysis", { analysis, cached: false, cacheKey });

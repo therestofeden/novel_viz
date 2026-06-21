@@ -286,6 +286,9 @@ serve(async (req) => {
     });
   }
 
+  // Keep-warm ping: return immediately before touching DB or Gemini.
+  if (body?.is_warmup) return new Response("ok", { status: 200, headers: corsHeaders });
+
   const { phase, title, author, bookType, summary, thesis, questions, answers, freeNotes, cacheKey, gemini_key: userGeminiKey } = body ?? {};
 
   if (!phase || !title) {
