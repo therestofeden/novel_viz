@@ -11,13 +11,16 @@ const corsHeaders = {
 // gemini-2.5-flash was constantly 503 (overloaded) as of 2026-06-10, so we
 // jumped straight to its successor. NOTE: gemini-2.5-flash-lite retires
 // 2026-10-16 — swap the preamble model when a 3.5 lite tier ships.
-const MODEL = "gemini-3.5-flash";
+// gemini-2.5-flash-lite is ~2x faster than 3.5-flash for the same quality on
+// well-known books. Results are cached immediately so all users get consistent
+// output regardless of which model produced it.
+const MODEL = "gemini-2.5-flash-lite";
 const PREAMBLE_MODEL = "gemini-2.5-flash-lite";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 // Google is load-shedding aggressively since the 2.0 shutdown (intermittent
 // 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-3.5-flash"];
 
 // ---------- Circuit breaker ----------
 // Tracks per-model transient failure counts within this isolate.
@@ -736,6 +739,58 @@ function splitTitleAuthor(input: string): { title: string; author: string } {
   return { title: input.trim(), author: "" };
 }
 
+// ---------- Quick preview tool (progressive rendering) ----------
+// Returns only the fields needed to render the masthead immediately (~1s),
+// while the full structured analysis call runs in the background.
+
+const previewTool = {
+  type: "function",
+  function: {
+    name: "book_preview",
+    description: "Return a quick preview of a book's key metadata so the UI can render a masthead immediately.",
+    parameters: {
+      type: "object",
+      properties: {
+        title:      { type: "string" },
+        author:     { type: "string" },
+        summary:    { type: "string", description: "2-3 sentence summary." },
+        confidence: { type: "string", enum: ["high", "medium", "low", "unknown_work"] },
+        bookType:   { type: "string", enum: ["fiction", "nonfiction"] },
+        thesis:     { type: "string", description: "For nonfiction only: central claim in one sentence." },
+      },
+      required: ["title", "author", "summary", "confidence", "bookType"],
+    },
+  },
+};
+
+async function callPreview(apiKey: string, title: string): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(GEMINI_BASE, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: "system",
+            content: "You are a book database. Return the requested preview metadata for the given book. If you don't recognise it, set confidence to 'unknown_work'.",
+          },
+          { role: "user", content: `Book: ${title}` },
+        ],
+        tools: [previewTool],
+        tool_choice: { type: "function", function: { name: "book_preview" } },
+      }),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) return null;
+    return JSON.parse(toolCall.function.arguments) as Record<string, unknown>;
+  } catch {
+    return null; // preview is best-effort — never block the main call
+  }
+}
+
 // ---------- AI call ----------
 
 async function callStructuredAnalysis(apiKey: string, userPrompt: string, corrective?: string): Promise<Analysis | null> {
@@ -1028,10 +1083,20 @@ serve(async (req) => {
         // (cache-first block above). By the time we get here it's always a genuine
         // cache miss that needs a Gemini call.
 
-        // -------- Phase A: streaming preamble (only for fresh analyses) --------
+        // -------- Phase A: preamble + preview (only for fresh analyses) --------
+        // Both run concurrently. Preview resolves first (~1s) and lets the
+        // frontend show the masthead immediately. Preamble streams a teaser sentence.
         if (!isRefine) {
           send("status", { text: "Looking up the work…" });
-          // Fire-and-stream the preamble in parallel with structured call below
+
+          // Preview: fire early, send result as soon as it arrives.
+          callPreview(GEMINI_API_KEY, title).then((preview) => {
+            if (preview && preview.confidence !== "unknown_work") {
+              send("analysis_preview", { preview });
+            }
+          });
+
+          // Preamble: fire-and-stream in parallel with structured call below
           (async () => {
             try {
               const r = await fetch(GEMINI_BASE, {

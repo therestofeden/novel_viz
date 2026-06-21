@@ -15,13 +15,13 @@ const corsHeaders = {
 
 // gemini-2.0-* models were shut down by Google on 2026-06-01;
 // gemini-2.5-flash was constantly 503 (overloaded) as of 2026-06-10.
-const MODEL = "gemini-3.5-flash";
+const MODEL = "gemini-2.5-flash-lite";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const ROUTE = "recommend-anti-shelf";
 
 // Google is load-shedding aggressively since the 2.0 shutdown (intermittent
 // 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-3.5-flash"];
 
 // ---------- Circuit breaker ----------
 const CIRCUIT_OPEN_MS = 60_000;

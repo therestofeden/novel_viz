@@ -332,6 +332,7 @@ type BookSuggestion = {
 const Index = () => {
   const [title, setTitle] = useState("");
   const [analysis, setAnalysis] = useState<NovelAnalysis | null>(null);
+  const [analysisPreview, setAnalysisPreview] = useState<{ title: string; author: string; summary: string; thesis?: string; bookType?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [refining, setRefining] = useState(false);
   const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "chapters" | "takeaways">("timeline");
@@ -603,6 +604,7 @@ const Index = () => {
     else setLoading(true);
     setStatusText("");
     setPreambleText("");
+    setAnalysisPreview(null);
     setCachedHit(false);
     if (!isRefine) setCacheKey(null);
 
@@ -683,12 +685,17 @@ const Index = () => {
         } else if (event === "preamble") {
           preambleAccum += data?.text ?? "";
           setPreambleText(preambleAccum);
+        } else if (event === "analysis_preview") {
+          // Quick preview (~1s) — show masthead before full analysis arrives.
+          const p = data?.preview;
+          if (p?.title) setAnalysisPreview({ title: p.title, author: p.author ?? "", summary: p.summary ?? "", thesis: p.thesis, bookType: p.bookType });
         } else if (event === "analysis") {
           // Normalise: legacy cached rows have no bookType → default to fiction
           const raw = data?.analysis;
           result = raw ? normalizeAnalysis(raw as Record<string, unknown>) : null;
           setCachedHit(!!data?.cached);
           if (data?.cacheKey) setCacheKey(data.cacheKey);
+          setAnalysisPreview(null); // full analysis supersedes preview
         } else if (event === "error") {
           errorMsg = data?.error ?? "Something went wrong";
         }
@@ -742,6 +749,7 @@ const Index = () => {
       setRefining(false);
       setStatusText("");
       setPreambleText("");
+      setAnalysisPreview(null);
     }
   };
 
@@ -1126,6 +1134,47 @@ const Index = () => {
               )}
             </div>
           </section>
+        )}
+
+        {/* Preview masthead — shown ~1s after search while full analysis loads */}
+        {!analysis && loading && analysisPreview && (
+          <div>
+            <section className="grid grid-cols-12 gap-0 ink-border-b">
+              <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
+                <div className="meta text-muted-foreground">Subject</div>
+                <div className="display-num mt-2 text-4xl text-muted-foreground/40 md:text-6xl">—</div>
+                <div className="meta mt-2 text-muted-foreground">Mapping…</div>
+              </div>
+              <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
+                <div className="meta text-muted-foreground">
+                  {analysisPreview.author ? `By ${analysisPreview.author}` : "Visualization"}
+                </div>
+                <h1 className="mt-2 font-sans text-3xl font-bold leading-[1] tracking-tight md:text-6xl">
+                  {analysisPreview.title}
+                </h1>
+                {analysisPreview.thesis && (
+                  <p className="mt-2 font-sans text-sm font-medium text-primary/80 italic">
+                    "{analysisPreview.thesis}"
+                  </p>
+                )}
+                <p className="mt-3 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
+                  {analysisPreview.summary}
+                </p>
+              </div>
+              <div className="col-span-12 px-4 py-6 md:col-span-3 md:border-l md:py-8">
+                <div className="meta text-muted-foreground">Building visualization…</div>
+                <div className="mt-3 space-y-2">
+                  {[60, 80, 45].map((w, i) => (
+                    <div key={i} className="h-2 animate-pulse rounded bg-muted-foreground/20" style={{ width: `${w}%` }} />
+                  ))}
+                </div>
+              </div>
+            </section>
+            <div className="ink-border-b px-4 py-6 text-center text-sm text-muted-foreground">
+              <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+              Building the full visualization…
+            </div>
+          </div>
         )}
 
         {analysis && (
