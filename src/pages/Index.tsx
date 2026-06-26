@@ -601,8 +601,9 @@ const Index = () => {
   const { user, geminiKey } = useAuth();
   const [geminiDialogOpen, setGeminiDialogOpen] = useState(false);
 
-  const fetchAnalysis = async (bookTitle: string, refinement?: string) => {
-    const isRefine = !!refinement;
+  const fetchAnalysis = async (bookTitle: string, refinement?: string, opts?: { reanalyze?: boolean }) => {
+    const isReanalyze = !!opts?.reanalyze;
+    const isRefine = !!refinement && !isReanalyze;
     if (isRefine) setRefining(true);
     else setLoading(true);
     setStatusText("");
@@ -636,8 +637,9 @@ const Index = () => {
             },
             body: JSON.stringify({
               title: bookTitle,
-              refinement,
+              refinement: isRefine ? refinement : undefined,
               previousAnalysis: isRefine ? analysis : undefined,
+              reanalyze: isReanalyze || undefined,
               ...(geminiKey ? { gemini_key: geminiKey } : {}),
             }),
           });
@@ -1435,12 +1437,7 @@ const Index = () => {
                 <IdeasTab
                   analysis={analysis as NonFictionAnalysis}
                   cacheKey={cacheKey}
-                  onReanalyze={() =>
-                    fetchAnalysis(
-                      analysis.title,
-                      "Regenerate the full analysis including argument_pillars and idea_cards — these fields are missing from the cached version.",
-                    )
-                  }
+                  onReanalyze={() => fetchAnalysis(analysis.title, undefined, { reanalyze: true })}
                 />
               )}
               {view === "concepts" && isNonFiction(analysis) && (
