@@ -1435,7 +1435,12 @@ const Index = () => {
                 <IdeasTab
                   analysis={analysis as NonFictionAnalysis}
                   cacheKey={cacheKey}
-                  onReanalyze={() => fetchAnalysis(analysis.title)}
+                  onReanalyze={() =>
+                    fetchAnalysis(
+                      analysis.title,
+                      "Regenerate the full analysis including argument_pillars and idea_cards — these fields are missing from the cached version.",
+                    )
+                  }
                 />
               )}
               {view === "concepts" && isNonFiction(analysis) && (

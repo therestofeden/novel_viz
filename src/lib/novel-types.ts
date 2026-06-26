@@ -217,21 +217,20 @@ export interface NonFictionAnalysis {
 }
 
 // ─── Non-fiction DNA ──────────────────────────────────────────────────────────
-//
-// 8 axes chosen for model-reliability: all can be confidently scored from
-// training knowledge about a book (reviews, reputation, structure, genre).
-// Dropped: prose_density, tone, structural_innovation, idea_density —
-// those four require actually reading the text to assess accurately.
 
 export const NF_DNA_AXIS_IDS = [
   "accessibility",
+  "idea_density",
+  "structure",
   "scope",
   "evidence_rigor",
-  "theory_vs_case",
+  "tone",
+  "prose_density",
   "certainty",
-  "actionability",
+  "theory_vs_case",
   "political_charge",
-  "structure",
+  "structural_innovation",
+  "actionability",
 ] as const;
 
 export type NfDnaAxisId = (typeof NF_DNA_AXIS_IDS)[number];
@@ -246,6 +245,18 @@ export const NF_DNA_AXIS_META: Record<
     high: "Anyone can read",
     description: "How much prior knowledge the reader needs. Heidegger sits near zero; Gladwell assumes almost none.",
   },
+  idea_density: {
+    name: "Idea density",
+    low: "Slow and spacious",
+    high: "Dense argument per page",
+    description: "How many distinct arguments or insights appear per chapter.",
+  },
+  structure: {
+    name: "Structure",
+    low: "Essayistic / wandering",
+    high: "Tight linear argument",
+    description: "Whether the book builds one cumulative case or meanders through related essays.",
+  },
   scope: {
     name: "Scope",
     low: "Single case / narrow",
@@ -258,11 +269,17 @@ export const NF_DNA_AXIS_META: Record<
     high: "RCTs & meta-analysis",
     description: "Whether the book's claims rest on controlled experiments and data or on illustrative stories.",
   },
-  theory_vs_case: {
-    name: "Theory vs. case",
-    low: "Abstract framework",
-    high: "Concrete stories",
-    description: "Whether the argument is built from first principles or assembled from real-world examples.",
+  tone: {
+    name: "Tone",
+    low: "Detached / clinical",
+    high: "Personal / passionate",
+    description: "How much the author's voice and conviction show through the prose.",
+  },
+  prose_density: {
+    name: "Prose density",
+    low: "Spare / plain",
+    high: "Rich / literary",
+    description: "Sentence-level richness — Strunk & White at one end, Montaigne at the other.",
   },
   certainty: {
     name: "Certainty",
@@ -270,11 +287,11 @@ export const NF_DNA_AXIS_META: Record<
     high: "Bold prescriptions",
     description: "How confidently the author closes the argument. Taleb hedges everything; Covey tells you exactly what to do.",
   },
-  actionability: {
-    name: "Actionability",
-    low: "Open questions",
-    high: "Step-by-step system",
-    description: "Whether the book ends with frameworks to act on or a richer sense of the problem.",
+  theory_vs_case: {
+    name: "Theory vs. case",
+    low: "Abstract framework",
+    high: "Concrete stories",
+    description: "Whether the argument is built from first principles or assembled from real-world examples.",
   },
   political_charge: {
     name: "Political charge",
@@ -282,11 +299,17 @@ export const NF_DNA_AXIS_META: Record<
     high: "Explicitly activist",
     description: "How directly the book engages with power, ideology, or social critique.",
   },
-  structure: {
-    name: "Structure",
-    low: "Essayistic / wandering",
-    high: "Tight linear argument",
-    description: "Whether the book builds one cumulative case or meanders through related essays.",
+  structural_innovation: {
+    name: "Structural innovation",
+    low: "Conventional chapters",
+    high: "Experimental form",
+    description: "Whether the book respects or reinvents the conventions of non-fiction.",
+  },
+  actionability: {
+    name: "Actionability",
+    low: "Open questions",
+    high: "Step-by-step system",
+    description: "Whether the book ends with frameworks to act on or a richer sense of the problem.",
   },
 };
 

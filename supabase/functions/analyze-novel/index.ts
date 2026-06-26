@@ -181,7 +181,7 @@ const nonfictionAnalysisTool = {
         },
         dna: {
           type: "object",
-          description: "8-axis DNA vector for non-fiction. For each axis: first write one concrete observation sentence as 'evidence', then assign the score.",
+          description: "12-axis DNA vector for non-fiction. For each axis: write one concrete evidence sentence first, then assign the score.",
           properties: {
             axes: {
               type: "array",
@@ -191,12 +191,13 @@ const nonfictionAnalysisTool = {
                   id: {
                     type: "string",
                     enum: [
-                      "accessibility", "scope", "evidence_rigor", "theory_vs_case",
-                      "certainty", "actionability", "political_charge", "structure",
+                      "accessibility", "idea_density", "structure", "scope", "evidence_rigor",
+                      "tone", "prose_density", "certainty", "theory_vs_case",
+                      "political_charge", "structural_innovation", "actionability",
                     ],
                   },
                   score: { type: "number", description: "0-100. Avoid 40-60 unless you have specific evidence the book is genuinely mid-range." },
-                  evidence: { type: "string", description: "One concrete sentence about THIS BOOK that drives the score. Name specific chapters, methods, or structural features." },
+                  evidence: { type: "string", description: "One concrete sentence about THIS BOOK that drives the score. Name specific stylistic, structural, or methodological features." },
                 },
                 required: ["id", "score", "evidence"],
                 additionalProperties: false,
@@ -468,41 +469,47 @@ CONCEPTS: 8–14 distinct concepts, frameworks, or ideas. Short name (2–5 word
 
 CHAPTERS: List all major chapters or parts. Set 'position' 0–100. Classify each chapter's argumentType honestly.
 
-DNA AXES for NON-FICTION — 8 axes, each 0-100.
+DNA AXES for NON-FICTION — 12 axes, each 0-100.
 
 SCORING PROTOCOL — for each axis:
-1. Write 'evidence' first: one concrete sentence about THIS BOOK (name a specific method, chapter structure, citation pattern, or stated intent).
+1. Write 'evidence' first: one concrete sentence about THIS BOOK (cite a specific stylistic feature, structural choice, methodological approach, or critical consensus).
 2. Then assign 'score'. Let the evidence determine the number.
-3. Do NOT cluster around 50. Only score 40-60 if you can state a specific reason the book sits genuinely in the middle of that dimension.
+3. Do NOT cluster around 50. Only score 40-60 if you have specific evidence the book genuinely sits in the middle of that dimension. Most books are not mediocre on most axes.
 
 CALIBRATION TABLE — use as reference:
-Axis key: acc=accessibility, sc=scope, ev=evidence_rigor, tc=theory_vs_case, ce=certainty, ac=actionability, po=political_charge, st=structure
+Cols: acc=accessibility, id=idea_density, st=structure, sc=scope, ev=evidence_rigor, to=tone, pr=prose_density, ce=certainty, tc=theory_vs_case, po=political_charge, si=structural_innovation, ac=actionability
 
-Book                          | acc | sc  | ev  | tc  | ce  | ac  | po  | st
-------------------------------|-----|-----|-----|-----|-----|-----|-----|----
-Thinking Fast and Slow        |  62 |  70 |  92 |  35 |  50 |  38 |   8 |  80
-Sapiens (Harari)              |  82 |  98 |  38 |  55 |  68 |  12 |  52 |  62
-Atomic Habits (Clear)         |  94 |  35 |  45 |  78 |  96 |  98 |   2 |  92
-Antifragile (Taleb)           |  48 |  92 |  55 |  40 |  10 |  28 |  38 |  20
-The New Jim Crow (Alexander)  |  72 |  62 |  82 |  68 |  84 |  40 |  98 |  85
-Being and Time (Heidegger)    |   4 |  82 |  18 |   5 |  65 |   4 |  20 |  38
+Book                          | acc | id  | st  | sc  | ev  | to  | pr  | ce  | tc  | po  | si  | ac
+------------------------------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|----
+Thinking Fast and Slow        |  62 |  85 |  78 |  70 |  92 |  35 |  38 |  50 |  35 |   8 |  25 |  38
+Sapiens (Harari)              |  82 |  58 |  62 |  98 |  38 |  62 |  65 |  68 |  55 |  52 |  42 |  12
+Atomic Habits (Clear)         |  94 |  45 |  92 |  35 |  45 |  72 |  22 |  96 |  78 |   2 |  15 |  98
+Antifragile (Taleb)           |  48 |  78 |  20 |  92 |  55 |  55 |  60 |  10 |  40 |  38 |  65 |  28
+The New Jim Crow (Alexander)  |  72 |  65 |  85 |  62 |  82 |  75 |  62 |  84 |  68 |  98 |  30 |  40
+Being and Time (Heidegger)    |   4 |  72 |  38 |  82 |  18 |  20 |  78 |  65 |   5 |  20 |  55 |   4
+Quiet (Susan Cain)            |  80 |  30 |  70 |  48 |  68 |  68 |  52 |  72 |  72 |  28 |  20 |  65
+The Elements of Style         |  88 |  55 |  95 |  22 |  35 |  42 |  30 |  98 |  45 |   5 |  38 |  96
 
 AXIS DEFINITIONS:
-  - accessibility: prerequisite knowledge and cognitive effort required. Low = graduate seminar; high = beach read.
-  - scope: how widely the argument generalises. Low = one company/case; high = all of human civilisation.
-  - evidence_rigor: quality of evidence. Low = anecdote and assertion; high = RCTs, meta-analyses, named datasets.
-  - theory_vs_case: what the argument is built from. Low = abstract first principles; high = real-world stories and examples.
-  - certainty: how closed the author is. Low = tentative, many caveats; high = prescriptive rules and systems.
-  - actionability: what the reader walks away with. Low = richer understanding of a problem; high = step-by-step system.
+  - accessibility: prerequisite knowledge and cognitive effort. Low = graduate seminar; high = beach read.
+  - idea_density: number of new arguments or insights per chapter. Low = one big idea slowly developed; high = new claim every few pages.
+  - structure: how tightly organised the argument is. Low = wandering essays; high = cumulative case, one thesis per chapter.
+  - scope: how widely the argument generalises. Low = one company/event; high = all of human civilisation.
+  - evidence_rigor: quality of evidence. Low = anecdote and assertion; high = named RCTs, meta-analyses, datasets.
+  - tone: author's presence and emotional register. Low = cold and clinical; high = intimate and passionate.
+  - prose_density: sentence-level richness. Low = plain business prose; high = literary, Montaigne-style.
+  - certainty: how closed the author's argument is. Low = tentative, many caveats; high = prescriptive rules and systems.
+  - theory_vs_case: what drives the argument. Low = abstract first principles; high = assembled from real-world stories.
   - political_charge: engagement with power and ideology. Low = explicitly apolitical; high = call to political action.
-  - structure: how the argument is organized. Low = wandering essays; high = tight cumulative case, one thesis per chapter.
+  - structural_innovation: how conventional the form is. Low = standard chapters; high = genre-bending experimental form.
+  - actionability: what the reader walks away with. Low = richer sense of a problem; high = step-by-step system.
 
 For 'signature': 3-7 word intellectual fingerprint. E.g. "rigorous empiricism wearing a storytelling mask", "sweeping grand theory, thin on evidence", "polemical framework, wildly digressive execution".
 
 RECOMMENDATION (non-fiction):
 - Suggest ONE other non-fiction book (different author) with the closest DNA.
 - 'why': explain the intellectual kinship in one or two human sentences.
-- shared_axes and divergent_axes MUST use these axis IDs only: accessibility, scope, evidence_rigor, theory_vs_case, certainty, actionability, political_charge, structure.`;
+- shared_axes and divergent_axes MUST use these axis IDs: accessibility, idea_density, structure, scope, evidence_rigor, tone, prose_density, certainty, theory_vs_case, political_charge, structural_innovation, actionability.`;
 
 // ---------- Validation & repair ----------
 
@@ -692,8 +699,9 @@ function repairAnalysis(raw: any): Analysis {
 }
 
 const NF_DNA_AXIS_IDS = [
-  "accessibility", "scope", "evidence_rigor", "theory_vs_case",
-  "certainty", "actionability", "political_charge", "structure",
+  "accessibility", "idea_density", "structure", "scope", "evidence_rigor",
+  "tone", "prose_density", "certainty", "theory_vs_case",
+  "political_charge", "structural_innovation", "actionability",
 ] as const;
 
 function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
@@ -814,9 +822,8 @@ function isAdequate(a: Analysis): boolean {
 
 function hasDna(a: Analysis): boolean {
   if (!a?.dna || !Array.isArray(a.dna.axes)) return false;
-  // Fiction needs 12 axes; NF needs 8. Accept >= 6 to be resilient to partial responses.
-  const minAxes = a.bookType === "nonfiction" ? 6 : 10;
-  return a.dna.axes.length >= minAxes && !!a?.recommendation?.title;
+  // Both fiction and NF target 12 axes. Accept >= 10 to be resilient to 1-2 missing.
+  return a.dna.axes.length >= 10 && !!a?.recommendation?.title;
 }
 
 // ---------- Cache key ----------
