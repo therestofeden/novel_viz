@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeftRight, BookOpen, ChevronDown, Loader2, X } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, Loader2, X } from "lucide-react";
+import { NovelVizLogo } from "@/components/NovelVizLogo";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -131,7 +132,7 @@ const Compare = () => {
             className="flex items-center gap-3 border-r border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
           >
             <div className="flex h-9 w-9 items-center justify-center bg-foreground text-background">
-              <BookOpen className="h-4 w-4" />
+              <NovelVizLogo size={22} className="text-background" />
             </div>
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>

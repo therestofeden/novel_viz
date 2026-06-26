@@ -22,7 +22,9 @@ export function ShareButton({ title, author, signature, className }: ShareButton
 
   const buildUrl = () => {
     if (typeof window === "undefined") return "";
-    const u = new URL(window.location.origin + "/");
+    // /og?book=X returns a page with per-book OG meta tags for social crawlers
+    // and instantly redirects real users to the SPA /?book=X.
+    const u = new URL(window.location.origin + "/og");
     u.searchParams.set("book", title);
     return u.toString();
   };

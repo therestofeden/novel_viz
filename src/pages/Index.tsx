@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense, FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Loader2, Search, RefreshCw, Eye, EyeOff, LogIn, Library, Key } from "lucide-react";
+import { Loader2, Search, RefreshCw, Eye, EyeOff, LogIn, Library, Key } from "lucide-react";
+import { NovelVizLogo } from "@/components/NovelVizLogo";
 import {
   Reveal,
   StaggerGroup,
@@ -30,6 +31,7 @@ import { ConceptMap } from "@/components/ConceptMap";
 import { ChapterBreakdown } from "@/components/ChapterBreakdown";
 import { TakeawaysTab } from "@/components/TakeawaysTab";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
+import { ReaderNotes } from "@/components/ReaderNotes";
 import { ShelfChip } from "@/components/ShelfChip";
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
@@ -666,7 +668,9 @@ const Index = () => {
           msg = j?.error ?? msg;
         } catch { /* ignore */ }
         if (resp.status === 429) msg = "Rate limit reached. Please try again in a moment.";
-        if (resp.status === 402) msg = "AI credits exhausted. Please add credits to your Lovable workspace.";
+        if (resp.status === 402) msg = user
+          ? "This book isn't cached yet and no server API key is configured. Add your Gemini key via the key button above."
+          : "This book isn't in our library yet. Sign in and add a Gemini API key to analyze it, or try one of the suggested titles.";
         if (isTransientStatus(resp.status))
           msg = "The backend is warming up. Please retry in a few seconds.";
         throw new Error(msg);
@@ -761,7 +765,9 @@ const Index = () => {
   };
 
   // Deep-link: /?book=Title triggers an analysis on mount and survives refresh.
-  // The URL is preserved so users can refresh, copy, or share the same view.
+  // Also handles /og?book=Title redirects coming back from social share links —
+  // the /og edge function redirects to /?book=Title so we only need to check
+  // the standard ?book= param here.
   const deepLinkHandled = useRef(false);
   const deepLinkPending = useRef<string | null>(null);
   useEffect(() => {
@@ -818,11 +824,11 @@ const Index = () => {
           <div className="flex items-stretch">
             <div className="flex items-center gap-4 border-r border-foreground px-4 py-5">
               <motion.div
-                whileHover={{ rotate: 90 }}
-                transition={{ duration: 0.6, ease: ease.out }}
+                whileHover={{ scale: 1.08 }}
+                transition={{ duration: 0.5, ease: ease.out }}
                 className="flex h-11 w-11 items-center justify-center bg-foreground text-background"
               >
-                <BookOpen className="h-4 w-4" />
+                <NovelVizLogo size={28} className="text-background" />
               </motion.div>
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
@@ -1328,14 +1334,15 @@ const Index = () => {
 
             {/* ===================== VIEW TOGGLE ===================== */}
             <section className="ink-border-b flex items-center justify-between px-4 py-3">
-              <div className="flex flex-wrap items-stretch border border-foreground">
+              <div className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max items-stretch border border-foreground">
                 {isFiction(analysis) ? (
                   (["timeline", "network", "dna", "takeaways"] as const).map((v, i) => (
                     <button
                       key={v}
                       onClick={() => setView(v)}
                       className={cn(
-                        "meta px-4 py-2 transition-colors",
+                        "meta whitespace-nowrap px-4 py-2.5 transition-colors",
                         i > 0 && "border-l border-foreground",
                         view === v
                           ? "bg-primary text-primary-foreground"
@@ -1357,7 +1364,7 @@ const Index = () => {
                       key={v}
                       onClick={() => setView(v)}
                       className={cn(
-                        "meta px-4 py-2 transition-colors",
+                        "meta whitespace-nowrap px-4 py-2.5 transition-colors",
                         i > 0 && "border-l border-foreground",
                         view === v
                           ? "bg-primary text-primary-foreground"
@@ -1374,6 +1381,7 @@ const Index = () => {
                     </button>
                   ))
                 )}
+              </div>
               </div>
               {refining && (
                 <div className="meta flex items-center gap-2 text-muted-foreground">
@@ -1444,6 +1452,9 @@ const Index = () => {
               </section>
             )}
 
+            {/* ===================== READING NOTES ===================== */}
+            <ReaderNotes cacheKey={cacheKey} bookTitle={analysis.title} />
+
             {/* ===================== READER'S NOTES ===================== */}
             <section className="grid grid-cols-12 gap-0">
               <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-10">
@@ -1467,7 +1478,7 @@ const Index = () => {
       </main>
 
       {/* ===================== FOOTER ===================== */}
-      <Reveal as="div" duration={0.7} className="ink-border-t mt-0"><footer>
+      <Reveal as="div" duration={0.7} className="ink-border-t mt-0"><footer className="pb-safe">
         <div className="container mx-auto grid grid-cols-12 gap-0">
           <div className="col-span-6 border-r border-foreground px-4 py-5 md:col-span-3">
             <div className="meta text-muted-foreground">Project</div>
