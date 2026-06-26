@@ -822,13 +822,12 @@ const Index = () => {
       <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
         <div className="container mx-auto flex items-stretch justify-between">
           <div className="flex items-stretch">
-            <div className="flex items-center gap-4 border-r border-foreground px-4 py-5">
+            <div className="flex items-center gap-3 border-r border-foreground px-4 py-5">
               <motion.div
-                whileHover={{ scale: 1.08 }}
-                transition={{ duration: 0.5, ease: ease.out }}
-                className="flex h-11 w-11 items-center justify-center bg-foreground text-primary"
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.4, ease: ease.out }}
               >
-                <NovelVizLogo size={28} className="text-primary" />
+                <NovelVizLogo size={44} className="text-foreground" />
               </motion.div>
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>

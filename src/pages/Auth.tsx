@@ -83,9 +83,7 @@ const Auth = () => {
             to="/"
             className="flex items-center gap-3 border-r border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
           >
-            <div className="flex h-9 w-9 items-center justify-center bg-foreground text-primary">
-              <NovelVizLogo size={22} className="text-primary" />
-            </div>
+            <NovelVizLogo size={38} className="text-foreground" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
               <div className="meta mt-1 text-muted-foreground">← Back to issue</div>
