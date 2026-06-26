@@ -217,20 +217,21 @@ export interface NonFictionAnalysis {
 }
 
 // ─── Non-fiction DNA ──────────────────────────────────────────────────────────
+//
+// 8 axes chosen for model-reliability: all can be confidently scored from
+// training knowledge about a book (reviews, reputation, structure, genre).
+// Dropped: prose_density, tone, structural_innovation, idea_density —
+// those four require actually reading the text to assess accurately.
 
 export const NF_DNA_AXIS_IDS = [
   "accessibility",
-  "idea_density",
-  "structure",
   "scope",
   "evidence_rigor",
-  "tone",
-  "prose_density",
-  "certainty",
   "theory_vs_case",
-  "political_charge",
-  "structural_innovation",
+  "certainty",
   "actionability",
+  "political_charge",
+  "structure",
 ] as const;
 
 export type NfDnaAxisId = (typeof NF_DNA_AXIS_IDS)[number];
@@ -241,75 +242,51 @@ export const NF_DNA_AXIS_META: Record<
 > = {
   accessibility: {
     name: "Accessibility",
-    low: "Dense / academic",
-    high: "Breezy / popular",
-    description: "How much prior knowledge the reader needs. Kahneman demands patience; Gladwell assumes none.",
-  },
-  idea_density: {
-    name: "Idea density",
-    low: "Slow and discursive",
-    high: "Dense argument per page",
-    description: "How many new ideas or arguments appear per chapter. Some books breathe; others hammer.",
-  },
-  structure: {
-    name: "Structure",
-    low: "Essayistic / fragmented",
-    high: "Linear argument",
-    description: "Whether the book builds a single cumulative argument or meanders through related essays.",
+    low: "Requires expertise",
+    high: "Anyone can read",
+    description: "How much prior knowledge the reader needs. Heidegger sits near zero; Gladwell assumes almost none.",
   },
   scope: {
     name: "Scope",
-    low: "Narrow case study",
-    high: "Grand unified theory",
-    description: "How ambitiously the book generalises — from a single company to all of human civilisation.",
+    low: "Single case / narrow",
+    high: "Civilizational",
+    description: "How ambitiously the argument generalises — from a single company to all of human history.",
   },
   evidence_rigor: {
     name: "Evidence rigor",
-    low: "Anecdotal",
-    high: "Rigorous empirical",
-    description: "Whether the book leans on stories and intuition or controlled experiments and data.",
+    low: "Anecdote & intuition",
+    high: "RCTs & meta-analysis",
+    description: "Whether the book's claims rest on controlled experiments and data or on illustrative stories.",
   },
-  tone: {
-    name: "Tone",
-    low: "Detached / clinical",
-    high: "Personal / passionate",
-    description: "How much the author's voice and conviction show through the prose.",
-  },
-  prose_density: {
-    name: "Prose density",
-    low: "Spare / plain",
-    high: "Rich / baroque",
-    description: "Sentence-level richness — Strunk & White at one end, Montaigne at the other.",
+  theory_vs_case: {
+    name: "Theory vs. case",
+    low: "Abstract framework",
+    high: "Concrete stories",
+    description: "Whether the argument is built from first principles or assembled from real-world examples.",
   },
   certainty: {
     name: "Certainty",
     low: "Heavily hedged",
-    high: "Assertive / prescriptive",
-    description: "How confidently the author states conclusions. Taleb hedges everything; Covey tells you what to do.",
-  },
-  theory_vs_case: {
-    name: "Theory vs. case",
-    low: "Pure theory",
-    high: "Case-study driven",
-    description: "Whether the argument rests on abstract frameworks or concrete real-world examples.",
-  },
-  political_charge: {
-    name: "Political charge",
-    low: "Apolitical",
-    high: "Explicitly political",
-    description: "How directly the book engages with power, ideology, or social critique.",
-  },
-  structural_innovation: {
-    name: "Structural innovation",
-    low: "Conventional non-fiction",
-    high: "Experimental form",
-    description: "Whether the book respects or reinvents the conventions of the non-fiction essay.",
+    high: "Bold prescriptions",
+    description: "How confidently the author closes the argument. Taleb hedges everything; Covey tells you exactly what to do.",
   },
   actionability: {
     name: "Actionability",
     low: "Open questions",
-    high: "Clear prescriptions",
-    description: "Whether the book leaves you with frameworks to act on, or a richer sense of the problem.",
+    high: "Step-by-step system",
+    description: "Whether the book ends with frameworks to act on or a richer sense of the problem.",
+  },
+  political_charge: {
+    name: "Political charge",
+    low: "Apolitical",
+    high: "Explicitly activist",
+    description: "How directly the book engages with power, ideology, or social critique.",
+  },
+  structure: {
+    name: "Structure",
+    low: "Essayistic / wandering",
+    high: "Tight linear argument",
+    description: "Whether the book builds one cumulative case or meanders through related essays.",
   },
 };
 

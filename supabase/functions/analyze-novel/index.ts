@@ -181,7 +181,7 @@ const nonfictionAnalysisTool = {
         },
         dna: {
           type: "object",
-          description: "12-axis DNA vector for non-fiction. Each axis 0-100 with a one-line evidence sentence.",
+          description: "8-axis DNA vector for non-fiction. For each axis: first write one concrete observation sentence as 'evidence', then assign the score.",
           properties: {
             axes: {
               type: "array",
@@ -191,19 +191,18 @@ const nonfictionAnalysisTool = {
                   id: {
                     type: "string",
                     enum: [
-                      "accessibility", "idea_density", "structure", "scope", "evidence_rigor",
-                      "tone", "prose_density", "certainty", "theory_vs_case",
-                      "political_charge", "structural_innovation", "actionability",
+                      "accessibility", "scope", "evidence_rigor", "theory_vs_case",
+                      "certainty", "actionability", "political_charge", "structure",
                     ],
                   },
-                  score: { type: "number" },
-                  evidence: { type: "string" },
+                  score: { type: "number", description: "0-100. Avoid 40-60 unless you have specific evidence the book is genuinely mid-range." },
+                  evidence: { type: "string", description: "One concrete sentence about THIS BOOK that drives the score. Name specific chapters, methods, or structural features." },
                 },
                 required: ["id", "score", "evidence"],
                 additionalProperties: false,
               },
             },
-            signature: { type: "string", description: "A 3-7 word signature capturing the book's intellectual character. E.g. 'rigorous empiricism disguised as storytelling'." },
+            signature: { type: "string", description: "A 3-7 word intellectual fingerprint. E.g. 'rigorous empiricism wearing a storytelling mask'." },
           },
           required: ["axes", "signature"],
           additionalProperties: false,
@@ -469,26 +468,41 @@ CONCEPTS: 8–14 distinct concepts, frameworks, or ideas. Short name (2–5 word
 
 CHAPTERS: List all major chapters or parts. Set 'position' 0–100. Classify each chapter's argumentType honestly.
 
-DNA AXES for NON-FICTION — score each 0-100. Do NOT bunch around 50. Be opinionated.
-  - accessibility: 0 = requires PhD (Heidegger = 5), 100 = reads like a thriller (Gladwell = 90).
-  - idea_density: 0 = one idea per chapter (Quiet = 30), 100 = new argument every paragraph (Kahneman = 85).
-  - structure: 0 = essayistic/wandering (Montaigne = 10), 100 = tight linear argument (The Lean Startup = 90).
-  - scope: 0 = single narrow case (The Devil in the White City = 15), 100 = all of human civilisation (Sapiens = 95).
-  - evidence_rigor: 0 = pure anecdote (most self-help = 20), 100 = rigorous RCTs and meta-analysis (Thinking Fast and Slow = 90).
-  - tone: 0 = cold and clinical (academic textbook = 5), 100 = intimate and impassioned (The Body Keeps the Score = 80).
-  - prose_density: 0 = airport-lounge plain (most business books = 20), 100 = literary/baroque (Susan Sontag = 85).
-  - certainty: 0 = everything is uncertain/tentative (Taleb = 15), 100 = clear prescriptions and rules (7 Habits = 90).
-  - theory_vs_case: 0 = pure abstract framework (Being and Time = 5), 100 = all concrete cases/stories (The Power of Habit = 85).
-  - political_charge: 0 = apolitical (A Brief History of Time = 5), 100 = explicitly political/activist (The New Jim Crow = 95).
-  - structural_innovation: 0 = conventional chapters (most = 20), 100 = radical form (Invisible Cities = 90).
-  - actionability: 0 = open questions only (Being Mortal ends with questions), 100 = step-by-step prescriptions (Getting Things Done = 95).
+DNA AXES for NON-FICTION — 8 axes, each 0-100.
 
-For 'signature': write a 3-7 word intellectual fingerprint. E.g. "rigorous empiricism wearing a storytelling mask", "sweeping grand theory, thin on evidence".
+SCORING PROTOCOL — for each axis:
+1. Write 'evidence' first: one concrete sentence about THIS BOOK (name a specific method, chapter structure, citation pattern, or stated intent).
+2. Then assign 'score'. Let the evidence determine the number.
+3. Do NOT cluster around 50. Only score 40-60 if you can state a specific reason the book sits genuinely in the middle of that dimension.
+
+CALIBRATION TABLE — use as reference:
+Axis key: acc=accessibility, sc=scope, ev=evidence_rigor, tc=theory_vs_case, ce=certainty, ac=actionability, po=political_charge, st=structure
+
+Book                          | acc | sc  | ev  | tc  | ce  | ac  | po  | st
+------------------------------|-----|-----|-----|-----|-----|-----|-----|----
+Thinking Fast and Slow        |  62 |  70 |  92 |  35 |  50 |  38 |   8 |  80
+Sapiens (Harari)              |  82 |  98 |  38 |  55 |  68 |  12 |  52 |  62
+Atomic Habits (Clear)         |  94 |  35 |  45 |  78 |  96 |  98 |   2 |  92
+Antifragile (Taleb)           |  48 |  92 |  55 |  40 |  10 |  28 |  38 |  20
+The New Jim Crow (Alexander)  |  72 |  62 |  82 |  68 |  84 |  40 |  98 |  85
+Being and Time (Heidegger)    |   4 |  82 |  18 |   5 |  65 |   4 |  20 |  38
+
+AXIS DEFINITIONS:
+  - accessibility: prerequisite knowledge and cognitive effort required. Low = graduate seminar; high = beach read.
+  - scope: how widely the argument generalises. Low = one company/case; high = all of human civilisation.
+  - evidence_rigor: quality of evidence. Low = anecdote and assertion; high = RCTs, meta-analyses, named datasets.
+  - theory_vs_case: what the argument is built from. Low = abstract first principles; high = real-world stories and examples.
+  - certainty: how closed the author is. Low = tentative, many caveats; high = prescriptive rules and systems.
+  - actionability: what the reader walks away with. Low = richer understanding of a problem; high = step-by-step system.
+  - political_charge: engagement with power and ideology. Low = explicitly apolitical; high = call to political action.
+  - structure: how the argument is organized. Low = wandering essays; high = tight cumulative case, one thesis per chapter.
+
+For 'signature': 3-7 word intellectual fingerprint. E.g. "rigorous empiricism wearing a storytelling mask", "sweeping grand theory, thin on evidence", "polemical framework, wildly digressive execution".
 
 RECOMMENDATION (non-fiction):
 - Suggest ONE other non-fiction book (different author) with the closest DNA.
-- Same scoring rules as fiction. 'why': explain the intellectual kinship in human terms.
-- shared_axes and divergent_axes MUST use the new non-fiction axis IDs: accessibility, idea_density, structure, scope, evidence_rigor, tone, prose_density, certainty, theory_vs_case, political_charge, structural_innovation, actionability.`;
+- 'why': explain the intellectual kinship in one or two human sentences.
+- shared_axes and divergent_axes MUST use these axis IDs only: accessibility, scope, evidence_rigor, theory_vs_case, certainty, actionability, political_charge, structure.`;
 
 // ---------- Validation & repair ----------
 
@@ -678,9 +692,8 @@ function repairAnalysis(raw: any): Analysis {
 }
 
 const NF_DNA_AXIS_IDS = [
-  "accessibility", "idea_density", "structure", "scope", "evidence_rigor",
-  "tone", "prose_density", "certainty", "theory_vs_case",
-  "political_charge", "structural_innovation", "actionability",
+  "accessibility", "scope", "evidence_rigor", "theory_vs_case",
+  "certainty", "actionability", "political_charge", "structure",
 ] as const;
 
 function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
@@ -800,7 +813,10 @@ function isAdequate(a: Analysis): boolean {
 }
 
 function hasDna(a: Analysis): boolean {
-  return !!a?.dna && Array.isArray(a.dna.axes) && a.dna.axes.length === 12 && !!a?.recommendation?.title;
+  if (!a?.dna || !Array.isArray(a.dna.axes)) return false;
+  // Fiction needs 12 axes; NF needs 8. Accept >= 6 to be resilient to partial responses.
+  const minAxes = a.bookType === "nonfiction" ? 6 : 10;
+  return a.dna.axes.length >= minAxes && !!a?.recommendation?.title;
 }
 
 // ---------- Cache key ----------
