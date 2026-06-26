@@ -397,11 +397,12 @@ function CardsView({
 interface Props {
   analysis: NonFictionAnalysis;
   cacheKey?: string | null;
+  onReanalyze?: () => void;
 }
 
 type View = "outline" | "cards";
 
-export function IdeasTab({ analysis, cacheKey }: Props) {
+export function IdeasTab({ analysis, cacheKey, onReanalyze }: Props) {
   const [view, setView] = useState<View>("outline");
   const [stars, setStars] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -446,8 +447,22 @@ export function IdeasTab({ analysis, cacheKey }: Props) {
 
   if (!hasIdeas) {
     return (
-      <div className="px-6 py-16 text-center text-sm text-muted-foreground">
-        Argument structure not available — re-analyze this book to generate it.
+      <div className="flex flex-col items-center gap-5 px-6 py-20 text-center">
+        <p className="font-serif text-base italic text-foreground/70">
+          No argument structure yet for <span className="not-italic font-semibold">{analysis.title}</span>.
+        </p>
+        <p className="text-xs text-muted-foreground max-w-sm">
+          This book was analyzed before the Ideas feature launched. A quick re-analyze will extract
+          the thesis, argument pillars, and idea cards.
+        </p>
+        {onReanalyze && (
+          <button
+            onClick={onReanalyze}
+            className="meta border border-foreground px-5 py-2.5 text-sm transition-colors hover:bg-foreground hover:text-background"
+          >
+            Re-analyze book
+          </button>
+        )}
       </div>
     );
   }

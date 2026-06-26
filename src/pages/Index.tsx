@@ -1432,7 +1432,11 @@ const Index = () => {
               )}
               {/* ── Non-fiction views ── */}
               {view === "ideas" && isNonFiction(analysis) && (
-                <IdeasTab analysis={analysis as NonFictionAnalysis} cacheKey={cacheKey} />
+                <IdeasTab
+                  analysis={analysis as NonFictionAnalysis}
+                  cacheKey={cacheKey}
+                  onReanalyze={() => fetchAnalysis(analysis.title)}
+                />
               )}
               {view === "concepts" && isNonFiction(analysis) && (
                 <ConceptMap analysis={analysis as NonFictionAnalysis} />

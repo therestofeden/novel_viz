@@ -57,23 +57,22 @@ export function ChapterBreakdown({ analysis }: Props) {
     <div className="flex flex-col gap-0">
       {/* Thesis callout */}
       {analysis.thesis && (
-        <div className="ink-border-b bg-card px-4 py-4 md:px-8">
-          <p className="meta text-xs text-muted-foreground">Central Thesis</p>
-          <p className="mt-1 font-serif text-sm italic text-foreground/80">
-            "{analysis.thesis}"
+        <div className="ink-border-b bg-foreground px-6 py-5 md:px-8">
+          <p className="meta text-xs text-background/60">Central Thesis</p>
+          <p className="mt-2 font-serif text-base italic text-background/90 md:text-lg">
+            {analysis.thesis}
           </p>
         </div>
       )}
 
       {/* Timeline scroll area */}
-      <div className="ink-border-b overflow-x-auto px-4 py-6 md:px-8">
+      <div className="ink-border-b overflow-x-auto px-4 py-8 md:px-8">
         {/* Spine line */}
-        <div className="relative mb-6 h-px w-full bg-foreground/15">
-          {/* Markers at each chapter position */}
+        <div className="relative mb-8 h-px w-full bg-foreground/15">
           {chapters.map((ch) => (
             <div
               key={ch.id}
-              className="absolute -top-1 h-2 w-px bg-foreground/30"
+              className="absolute -top-1.5 h-3 w-px bg-foreground/30"
               style={{ left: `${ch.position}%` }}
             />
           ))}
@@ -81,8 +80,8 @@ export function ChapterBreakdown({ analysis }: Props) {
 
         {/* Chapter cards — scrollable row */}
         <div
-          className="flex gap-3"
-          style={{ minWidth: `${Math.max(chapters.length * 160, 600)}px` }}
+          className="flex gap-4"
+          style={{ minWidth: `${Math.max(chapters.length * 200, 700)}px` }}
         >
           {chapters.map((ch) => {
             const meta = CHAPTER_TYPE_META[ch.argumentType] ?? CHAPTER_TYPE_META.setup;
@@ -92,7 +91,7 @@ export function ChapterBreakdown({ analysis }: Props) {
                 key={ch.id}
                 onClick={() => setSelectedId(isSelected ? null : ch.id)}
                 className={cn(
-                  "relative flex min-w-[140px] flex-col gap-1 border p-3 text-left transition-colors",
+                  "relative flex min-w-[180px] flex-col gap-2 border p-4 text-left transition-colors",
                   isSelected
                     ? "border-foreground bg-foreground text-background"
                     : "border-foreground/25 bg-card hover:border-foreground/60",
@@ -101,7 +100,7 @@ export function ChapterBreakdown({ analysis }: Props) {
               >
                 {/* Type badge */}
                 <span
-                  className="meta inline-block px-1.5 py-0.5 text-xs"
+                  className="meta inline-block px-1.5 py-0.5 text-[10px]"
                   style={{
                     background: isSelected
                       ? "hsl(var(--background) / 0.15)"
@@ -111,23 +110,23 @@ export function ChapterBreakdown({ analysis }: Props) {
                       : `hsl(var(${meta.colorVar}))`,
                   }}
                 >
-                  {meta.short}
+                  {meta.label}
                 </span>
 
                 {/* Chapter number */}
                 <p
                   className={cn(
-                    "meta text-xs",
+                    "meta text-[10px]",
                     isSelected ? "text-background/60" : "text-muted-foreground",
                   )}
                 >
-                  Ch. {ch.number}
+                  Chapter {ch.number}
                 </p>
 
                 {/* Title */}
                 <p
                   className={cn(
-                    "font-sans text-xs font-semibold leading-snug",
+                    "font-sans text-sm font-semibold leading-snug",
                     isSelected ? "text-background" : "text-foreground",
                   )}
                 >
@@ -142,11 +141,11 @@ export function ChapterBreakdown({ analysis }: Props) {
       {/* Detail panel */}
       {selectedChapter ? (
         <div className="ink-border-b grid grid-cols-12 gap-0">
-          <div className="col-span-12 border-foreground px-4 py-5 md:col-span-3 md:border-r md:py-8">
+          <div className="col-span-12 border-foreground px-6 py-7 md:col-span-3 md:border-r md:px-8 md:py-10">
             <p className="meta text-xs text-muted-foreground">Chapter {selectedChapter.number}</p>
-            <p className="mt-1 font-sans text-base font-bold">{selectedChapter.title}</p>
+            <p className="mt-2 font-sans text-lg font-bold leading-snug">{selectedChapter.title}</p>
             <span
-              className="meta mt-2 inline-block px-1.5 py-0.5 text-xs"
+              className="meta mt-3 inline-block px-1.5 py-0.5 text-[10px]"
               style={{
                 background: `hsl(var(${CHAPTER_TYPE_META[selectedChapter.argumentType]?.colorVar ?? "--lane-1"}) / 0.2)`,
                 color: `hsl(var(${CHAPTER_TYPE_META[selectedChapter.argumentType]?.colorVar ?? "--lane-1"}))`,
@@ -155,13 +154,13 @@ export function ChapterBreakdown({ analysis }: Props) {
               {CHAPTER_TYPE_META[selectedChapter.argumentType]?.label ?? selectedChapter.argumentType}
             </span>
             {chapterConcepts.length > 0 && (
-              <div className="mt-3">
+              <div className="mt-5">
                 <p className="meta text-xs text-muted-foreground">Key Concepts</p>
-                <div className="mt-1.5 flex flex-wrap gap-1">
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {chapterConcepts.map((c) => (
                     <span
                       key={c.id}
-                      className="meta border border-foreground/20 px-1.5 py-0.5 text-xs text-foreground/70"
+                      className="meta border border-foreground/20 px-2 py-1 text-xs text-foreground/70"
                     >
                       {c.name}
                     </span>
@@ -170,16 +169,16 @@ export function ChapterBreakdown({ analysis }: Props) {
               </div>
             )}
           </div>
-          <div className="col-span-12 px-4 py-5 md:col-span-9 md:px-8 md:py-8">
-            <p className="font-serif text-sm leading-relaxed text-foreground/85">
+          <div className="col-span-12 px-6 py-7 md:col-span-9 md:px-10 md:py-10">
+            <p className="font-serif text-base leading-relaxed text-foreground/85">
               {selectedChapter.summary}
             </p>
           </div>
         </div>
       ) : (
-        <div className="px-4 py-5 md:px-8">
+        <div className="px-6 py-8 md:px-8">
           <p className="font-serif text-sm italic text-muted-foreground">
-            Click a chapter card to see its summary and key concepts.
+            Select a chapter above to see its summary and key concepts.
           </p>
         </div>
       )}
