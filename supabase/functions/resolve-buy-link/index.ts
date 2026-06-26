@@ -17,7 +17,6 @@
 // We deliberately do NOT call an external IP→geo API here: that adds
 // 150–400ms and a dependency we don't need for country-level routing.
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -311,7 +310,7 @@ function detectCountry(req: Request): { country: string; source: string } {
 
 // --- Handler -------------------------------------------------------------
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {

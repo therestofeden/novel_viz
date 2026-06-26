@@ -2,7 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { NovelAnalysis, DnaAxisId, DNA_AXIS_META, DNA_AXIS_IDS } from "@/lib/novel-types";
+import {
+  NovelAnalysis,
+  DnaAxisId,
+  DNA_AXIS_META,
+  DNA_AXIS_IDS,
+  NfDnaAxisId,
+  NF_DNA_AXIS_META,
+  NF_DNA_AXIS_IDS,
+  isNonFiction,
+} from "@/lib/novel-types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -90,6 +99,13 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const { user } = useAuth();
   const dna = analysis.dna;
   const rec = analysis.recommendation;
+  const nf = isNonFiction(analysis);
+
+  // Use non-fiction axis IDs and meta when applicable
+  const AXIS_IDS = nf ? (NF_DNA_AXIS_IDS as unknown as readonly DnaAxisId[]) : DNA_AXIS_IDS;
+  const AXIS_META = nf
+    ? (NF_DNA_AXIS_META as unknown as typeof DNA_AXIS_META)
+    : DNA_AXIS_META;
 
   const [hoveredAxis, setHoveredAxis] = useState<DnaAxisId | null>(null);
   const [perturbations, setPerturbations] = useState<Partial<Record<DnaAxisId, number>>>({});
@@ -106,10 +122,10 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const sharedSet = useMemo(() => new Set(rec?.shared_axes ?? []), [rec]);
   const divergentSet = useMemo(() => new Set(rec?.divergent_axes ?? []), [rec]);
 
-  const focusAxis = hoveredAxis ?? rec?.shared_axes?.[0] ?? DNA_AXIS_IDS[0];
-  const focusAxisMeta = DNA_AXIS_META[focusAxis];
+  const focusAxis = hoveredAxis ?? rec?.shared_axes?.[0] ?? AXIS_IDS[0];
+  const focusAxisMeta = AXIS_META[focusAxis] ?? DNA_AXIS_META[focusAxis as DnaAxisId];
   const focusAxisData = axesById.get(focusAxis);
-  const focusIdx = DNA_AXIS_IDS.indexOf(focusAxis);
+  const focusIdx = AXIS_IDS.indexOf(focusAxis);
 
   const effectiveScore = (id: DnaAxisId): number => {
     const base = axesById.get(id)?.score ?? 50;
@@ -211,7 +227,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         <div className="grid grid-cols-12 border-b border-foreground md:pl-8">
           <div className="col-span-3 border-r border-foreground p-4">
             <div className="meta text-muted-foreground">Specimen</div>
-            <div className="display-num mt-2 text-3xl">12</div>
+            <div className="display-num mt-2 text-3xl">{AXIS_IDS.length}</div>
             <div className="meta mt-1 text-muted-foreground">Axes</div>
           </div>
           <div className="col-span-9 p-4">
@@ -242,8 +258,8 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
 
         {/* The strand */}
         <div className="md:pl-8">
-          {DNA_AXIS_IDS.map((id, idx) => {
-            const meta = DNA_AXIS_META[id];
+          {AXIS_IDS.map((id, idx) => {
+            const meta = AXIS_META[id] ?? DNA_AXIS_META[id as DnaAxisId];
             const score = effectiveScore(id);
             const isHover = hoveredAxis === id;
             const isShared = sharedSet.has(id);

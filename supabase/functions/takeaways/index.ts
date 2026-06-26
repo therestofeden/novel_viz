@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,8 +16,8 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/cha
 const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-3.5-flash"];
 
 // ---------- Circuit breaker ----------
-const CIRCUIT_OPEN_MS = 60_000;
-const CIRCUIT_TRIP_AFTER = 2;
+const CIRCUIT_OPEN_MS = 30_000;
+const CIRCUIT_TRIP_AFTER = 1;
 type CircuitState = { fails: number; openUntil: number };
 const modelCircuit = new Map<string, CircuitState>();
 
@@ -52,7 +51,7 @@ async function geminiFetchWithFallback(
       console.log(JSON.stringify({ circuit: "skipped", model }));
       continue;
     }
-    for (let attempt = 0; attempt < 2; attempt++) {
+    {
       const r = await fetch(GEMINI_BASE, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -62,14 +61,12 @@ async function geminiFetchWithFallback(
         circuitRecordSuccess(model);
         return r;
       }
-      if (r.status !== 429 && r.status !== 503) return r; // hard error — retrying won't help
-      console.warn(`gemini ${model} attempt ${attempt + 1} -> ${r.status}`);
+      if (r.status !== 429 && r.status !== 503) return r; // hard error — no retry
+      console.warn(`gemini ${model} -> ${r.status}, tripping circuit`);
       await r.body?.cancel().catch(() => {});
       last = r;
       circuitRecordFail(model);
-      if (circuitIsOpen(model)) break; // tripped — jump to next model immediately
-      const base = 1000 * (attempt + 1);
-      await new Promise((res) => setTimeout(res, base + Math.random() * 500));
+      // Circuit trips after first 503/429 (CIRCUIT_TRIP_AFTER=1), jump to next model immediately.
     }
   }
   return last!;
@@ -274,7 +271,7 @@ async function streamSynthesis(
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   let body: any;

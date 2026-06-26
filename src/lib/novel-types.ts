@@ -164,6 +164,38 @@ export interface NfChapter {
   argumentType: NfChapterType;
 }
 
+// ─── Argument architecture (Phase 1 Ideas tab) ───────────────────────────────
+
+export type IdeaCardTag =
+  | "core_thesis"
+  | "supporting_argument"
+  | "evidence"
+  | "implication"
+  | "counterpoint";
+
+export interface IdeaCard {
+  id: string;
+  /** Full sentence claim — not a topic name */
+  claim: string;
+  /** 1-2 sentences of evidence or illustrative example */
+  evidence: string;
+  tag: IdeaCardTag;
+  /** Which pillar this card belongs to (optional) */
+  pillarId?: string;
+}
+
+export interface ArgumentPillar {
+  id: string;
+  /** The pillar argument stated as a full claim */
+  claim: string;
+  /** Key evidence or experiment supporting this pillar */
+  evidence: string;
+  /** Practical implication — so what? */
+  implication: string;
+  /** IDs of idea cards that belong to this pillar */
+  ideaIds: string[];
+}
+
 export interface NonFictionAnalysis {
   bookType: "nonfiction";
   title: string;
@@ -172,6 +204,10 @@ export interface NonFictionAnalysis {
   summary: string;
   /** The central claim or argument of the book in one sentence */
   thesis: string;
+  /** Structured argument architecture — 3-5 pillars supporting the thesis */
+  argumentPillars?: ArgumentPillar[];
+  /** Up to 10 key ideas stated as full claims, not topic names */
+  ideaCards?: IdeaCard[];
   concepts: NfConcept[];
   conceptRelationships: NfConceptRelationship[];
   chapters: NfChapter[];
@@ -179,6 +215,103 @@ export interface NonFictionAnalysis {
   dna?: Dna;
   recommendation?: Recommendation;
 }
+
+// ─── Non-fiction DNA ──────────────────────────────────────────────────────────
+
+export const NF_DNA_AXIS_IDS = [
+  "accessibility",
+  "idea_density",
+  "structure",
+  "scope",
+  "evidence_rigor",
+  "tone",
+  "prose_density",
+  "certainty",
+  "theory_vs_case",
+  "political_charge",
+  "structural_innovation",
+  "actionability",
+] as const;
+
+export type NfDnaAxisId = (typeof NF_DNA_AXIS_IDS)[number];
+
+export const NF_DNA_AXIS_META: Record<
+  NfDnaAxisId,
+  { name: string; low: string; high: string; description: string }
+> = {
+  accessibility: {
+    name: "Accessibility",
+    low: "Dense / academic",
+    high: "Breezy / popular",
+    description: "How much prior knowledge the reader needs. Kahneman demands patience; Gladwell assumes none.",
+  },
+  idea_density: {
+    name: "Idea density",
+    low: "Slow and discursive",
+    high: "Dense argument per page",
+    description: "How many new ideas or arguments appear per chapter. Some books breathe; others hammer.",
+  },
+  structure: {
+    name: "Structure",
+    low: "Essayistic / fragmented",
+    high: "Linear argument",
+    description: "Whether the book builds a single cumulative argument or meanders through related essays.",
+  },
+  scope: {
+    name: "Scope",
+    low: "Narrow case study",
+    high: "Grand unified theory",
+    description: "How ambitiously the book generalises — from a single company to all of human civilisation.",
+  },
+  evidence_rigor: {
+    name: "Evidence rigor",
+    low: "Anecdotal",
+    high: "Rigorous empirical",
+    description: "Whether the book leans on stories and intuition or controlled experiments and data.",
+  },
+  tone: {
+    name: "Tone",
+    low: "Detached / clinical",
+    high: "Personal / passionate",
+    description: "How much the author's voice and conviction show through the prose.",
+  },
+  prose_density: {
+    name: "Prose density",
+    low: "Spare / plain",
+    high: "Rich / baroque",
+    description: "Sentence-level richness — Strunk & White at one end, Montaigne at the other.",
+  },
+  certainty: {
+    name: "Certainty",
+    low: "Heavily hedged",
+    high: "Assertive / prescriptive",
+    description: "How confidently the author states conclusions. Taleb hedges everything; Covey tells you what to do.",
+  },
+  theory_vs_case: {
+    name: "Theory vs. case",
+    low: "Pure theory",
+    high: "Case-study driven",
+    description: "Whether the argument rests on abstract frameworks or concrete real-world examples.",
+  },
+  political_charge: {
+    name: "Political charge",
+    low: "Apolitical",
+    high: "Explicitly political",
+    description: "How directly the book engages with power, ideology, or social critique.",
+  },
+  structural_innovation: {
+    name: "Structural innovation",
+    low: "Conventional non-fiction",
+    high: "Experimental form",
+    description: "Whether the book respects or reinvents the conventions of the non-fiction essay.",
+  },
+  actionability: {
+    name: "Actionability",
+    low: "Open questions",
+    high: "Clear prescriptions",
+    description: "Whether the book leaves you with frameworks to act on, or a richer sense of the problem.",
+  },
+};
 
 // ─── Union ────────────────────────────────────────────────────────────────────
 

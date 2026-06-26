@@ -28,6 +28,7 @@ import { TimelineView } from "@/components/TimelineView";
 import { CharacterNetwork } from "@/components/CharacterNetwork";
 import { BookDNA } from "@/components/BookDNA";
 import { ConceptMap } from "@/components/ConceptMap";
+import { IdeasTab } from "@/components/IdeasTab";
 import { ChapterBreakdown } from "@/components/ChapterBreakdown";
 import { TakeawaysTab } from "@/components/TakeawaysTab";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
@@ -337,7 +338,7 @@ const Index = () => {
   const [analysisPreview, setAnalysisPreview] = useState<{ title: string; author: string; summary: string; thesis?: string; bookType?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [refining, setRefining] = useState(false);
-  const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "chapters" | "takeaways">("timeline");
+  const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "ideas" | "chapters" | "takeaways">("timeline");
   const [activeRefinement, setActiveRefinement] = useState<string | null>(null);
 
   // Random sample of seed titles, fixed for the lifetime of this mount.
@@ -742,7 +743,7 @@ const Index = () => {
       setAnalysis(result);
       // Reset to the first meaningful view for this book type
       if (!isRefine) {
-        setView(result.bookType === "nonfiction" ? "concepts" : "timeline");
+        setView(result.bookType === "nonfiction" ? "ideas" : "timeline");
       }
       setActiveRefinement(refinement || null);
     } catch (e) {
@@ -1358,7 +1359,7 @@ const Index = () => {
                     </button>
                   ))
                 ) : (
-                  (["concepts", "chapters", "dna", "takeaways"] as const).map((v, i) => (
+                  (["ideas", "chapters", "dna", "takeaways"] as const).map((v, i) => (
                     <button
                       key={v}
                       onClick={() => setView(v)}
@@ -1370,8 +1371,8 @@ const Index = () => {
                           : "bg-card hover:bg-primary/10",
                       )}
                     >
-                      {v === "concepts"
-                        ? "01 · Concepts"
+                      {v === "ideas"
+                        ? "01 · Ideas"
                         : v === "chapters"
                           ? "02 · Chapters"
                           : v === "dna"
@@ -1430,6 +1431,9 @@ const Index = () => {
                 />
               )}
               {/* ── Non-fiction views ── */}
+              {view === "ideas" && isNonFiction(analysis) && (
+                <IdeasTab analysis={analysis as NonFictionAnalysis} cacheKey={cacheKey} />
+              )}
               {view === "concepts" && isNonFiction(analysis) && (
                 <ConceptMap analysis={analysis as NonFictionAnalysis} />
               )}

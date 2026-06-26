@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,8 +26,8 @@ const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-3.5-flash"];
 // After CIRCUIT_TRIP_AFTER consecutive 429/503 responses the circuit opens and
 // the model is skipped entirely for CIRCUIT_OPEN_MS — turning a 15s timeout
 // cascade into a <1ms reroute.
-const CIRCUIT_OPEN_MS = 60_000;
-const CIRCUIT_TRIP_AFTER = 2;
+const CIRCUIT_OPEN_MS = 30_000;
+const CIRCUIT_TRIP_AFTER = 1;
 type CircuitState = { fails: number; openUntil: number };
 const modelCircuit = new Map<string, CircuitState>();
 
@@ -62,7 +61,7 @@ async function geminiFetchWithFallback(
       console.log(JSON.stringify({ circuit: "skipped", model }));
       continue;
     }
-    for (let attempt = 0; attempt < 2; attempt++) {
+    {
       const r = await fetch(GEMINI_BASE, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -72,15 +71,12 @@ async function geminiFetchWithFallback(
         circuitRecordSuccess(model);
         return r;
       }
-      if (r.status !== 429 && r.status !== 503) return r; // hard error — retrying won't help
-      console.warn(`gemini ${model} attempt ${attempt + 1} -> ${r.status}`);
+      if (r.status !== 429 && r.status !== 503) return r; // hard error — no retry
+      console.warn(`gemini ${model} -> ${r.status}, tripping circuit`);
       await r.body?.cancel().catch(() => {});
       last = r;
       circuitRecordFail(model);
-      if (circuitIsOpen(model)) break; // tripped — jump to next model immediately
-      // Exponential backoff with jitter so concurrent retries don't all fire at once.
-      const base = 1000 * (attempt + 1);
-      await new Promise((res) => setTimeout(res, base + Math.random() * 500));
+      // Circuit trips after first 503/429 (CIRCUIT_TRIP_AFTER=1), jump to next model immediately.
     }
   }
   return last!;
@@ -93,7 +89,7 @@ const nonfictionAnalysisTool = {
   function: {
     name: "render_nonfiction_analysis",
     description:
-      "Return a structured analysis of a non-fiction book: central thesis, key concepts as a network, concept relationships, and chapter breakdown with argument type.",
+      "Return a structured analysis of a non-fiction book: central thesis, argument pillars, idea cards (claims), concept network, chapter breakdown, and DNA.",
     parameters: {
       type: "object",
       properties: {
@@ -101,7 +97,39 @@ const nonfictionAnalysisTool = {
         author: { type: "string" },
         confidence: { type: "string", enum: ["high", "medium", "low", "unknown_work"] },
         summary: { type: "string" },
-        thesis: { type: "string", description: "The book's central claim in one sentence." },
+        thesis: { type: "string", description: "The book's central claim in one sentence. A full grammatical sentence stating the author's position, not a topic." },
+        argument_pillars: {
+          type: "array",
+          description: "3-5 major pillars supporting the thesis. Each is a distinct line of argument.",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              claim: { type: "string", description: "The pillar argument stated as a full claim sentence." },
+              evidence: { type: "string", description: "The key experiment, data point, or case study supporting this pillar. 1-2 sentences." },
+              implication: { type: "string", description: "Practical so-what. What this means for the reader. 1 sentence." },
+              ideaIds: { type: "array", items: { type: "string" }, description: "IDs of idea_cards that belong to this pillar." },
+            },
+            required: ["id", "claim", "evidence", "implication", "ideaIds"],
+            additionalProperties: false,
+          },
+        },
+        idea_cards: {
+          type: "array",
+          description: "Exactly 8-10 key ideas from the book. EACH MUST be stated as a full claim sentence — not a topic name. E.g. 'The availability heuristic causes people to overestimate the probability of vivid events' not 'Availability heuristic'.",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              claim: { type: "string", description: "The idea as a complete, specific claim sentence." },
+              evidence: { type: "string", description: "1-2 sentences: the key evidence, experiment, or example that supports this claim." },
+              tag: { type: "string", enum: ["core_thesis", "supporting_argument", "evidence", "implication", "counterpoint"] },
+              pillarId: { type: "string", description: "ID of the argument_pillar this card belongs to (if applicable)." },
+            },
+            required: ["id", "claim", "evidence", "tag"],
+            additionalProperties: false,
+          },
+        },
         concepts: {
           type: "array",
           description: "8–14 key ideas, arguments, or mental models from the book.",
@@ -153,7 +181,7 @@ const nonfictionAnalysisTool = {
         },
         dna: {
           type: "object",
-          description: "12-axis literary DNA vector adapted for non-fiction. Each axis 0-100 with a one-line evidence sentence.",
+          description: "12-axis DNA vector for non-fiction. Each axis 0-100 with a one-line evidence sentence.",
           properties: {
             axes: {
               type: "array",
@@ -163,9 +191,9 @@ const nonfictionAnalysisTool = {
                   id: {
                     type: "string",
                     enum: [
-                      "interiority", "plot_density", "time_linearity", "scale", "realism",
-                      "tonal_register", "prose_density", "moral_ambiguity", "character_vs_plot",
-                      "political_charge", "formal_experimentation", "ending_openness",
+                      "accessibility", "idea_density", "structure", "scope", "evidence_rigor",
+                      "tone", "prose_density", "certainty", "theory_vs_case",
+                      "political_charge", "structural_innovation", "actionability",
                     ],
                   },
                   score: { type: "number" },
@@ -175,7 +203,7 @@ const nonfictionAnalysisTool = {
                 additionalProperties: false,
               },
             },
-            signature: { type: "string" },
+            signature: { type: "string", description: "A 3-7 word signature capturing the book's intellectual character. E.g. 'rigorous empiricism disguised as storytelling'." },
           },
           required: ["axes", "signature"],
           additionalProperties: false,
@@ -196,7 +224,7 @@ const nonfictionAnalysisTool = {
         },
         explanation: { type: "string" },
       },
-      required: ["title", "author", "confidence", "summary", "thesis", "concepts", "conceptRelationships", "chapters", "dna", "recommendation", "explanation"],
+      required: ["title", "author", "confidence", "summary", "thesis", "argument_pillars", "idea_cards", "concepts", "conceptRelationships", "chapters", "dna", "recommendation", "explanation"],
       additionalProperties: false,
     },
   },
@@ -418,31 +446,49 @@ RECOMMENDATION (fiction):
 - 'why': 1–2 sentences explaining the kinship in human terms — what a reader who loves this book would also love about the recommendation.
 
 NON-FICTION RULES (render_nonfiction_analysis):
-- Identify 8–14 distinct concepts, frameworks, or ideas from the book. Each must have a short name (2–5 words) and a 1–2 sentence description.
-- Mark the single most central concept (the thesis / main argument) with type "thesis" and importance 90-100.
-- Connect concepts with directed relationships (fromId → toId). 8–16 relationships is ideal.
-- List all major chapters or parts. Set 'position' as 0–100 (first chapter ≈ 5, last ≈ 95).
-- Classify each chapter's argumentType honestly: what role does it play in the argument?
-- The 'thesis' top-level field must be a single sentence capturing the book's central claim.
-- The explanation field should be a critical intellectual commentary in markdown (300–600 words): what the book argues, where it succeeds, and what it leaves unresolved.
 
-DNA AXES for NON-FICTION — reinterpreted for non-fiction but same 0-100 scale:
-  - interiority: 0 = purely objective/data-driven, 100 = deeply personal/memoir-like.
-  - plot_density: 0 = slow discursive, 100 = dense argument per page (fast non-fiction).
-  - time_linearity: 0 = thematic/non-chronological, 100 = strictly chronological narrative.
-  - scale: 0 = narrow single topic, 100 = sweeping cross-disciplinary or historical.
-  - realism: 0 = speculative/theoretical, 100 = empirically grounded/data-heavy.
-  - tonal_register: 0 = grave/alarming, 100 = optimistic/celebratory.
-  - prose_density: 0 = plain journalistic, 100 = dense academic or literary prose.
-  - moral_ambiguity: 0 = clear prescriptive argument, 100 = deliberately open and inconclusive.
-  - character_vs_plot: 0 = pure ideas/data, 100 = driven by people/narrative examples.
-  - political_charge: 0 = apolitical, 100 = explicitly political or activist.
-  - formal_experimentation: 0 = conventional non-fiction prose, 100 = experimental structure.
-  - ending_openness: 0 = clear conclusions and calls to action, 100 = open questions only.
+THESIS: One complete grammatical sentence stating the author's central claim — not a topic label. E.g. "Human cognitive biases are systematic, predictable, and stem from the clash between two distinct mental systems" not "Cognitive biases".
+
+ARGUMENT PILLARS (argument_pillars): 3-5 major lines of argument that together support the thesis.
+- Each pillar is a distinct argument, not a chapter summary.
+- 'claim': full sentence stating what this pillar argues.
+- 'evidence': the key experiment, dataset, or case study the author uses. 1-2 sentences, specific.
+- 'implication': one sentence — what this means for the reader in practice.
+- 'ideaIds': list IDs of idea_cards that belong to this pillar.
+
+IDEA CARDS (idea_cards): EXACTLY 8-10 cards. This is the most important field.
+- EVERY card's 'claim' MUST be a full, specific sentence — never a topic name.
+  BAD: "Anchoring effect"
+  GOOD: "People's numerical estimates are systematically pulled toward an arbitrary number they encountered first, even when they know it's irrelevant"
+- 'evidence': 1-2 sentences. Name the specific experiment, statistic, or story. Be concrete.
+- 'tag': classify as core_thesis / supporting_argument / evidence / implication / counterpoint.
+- 'pillarId': match to one of the argument_pillar IDs where applicable.
+- Spread tags — don't make all cards "supporting_argument". Include at least 1 implication and 1 evidence.
+
+CONCEPTS: 8–14 distinct concepts, frameworks, or ideas. Short name (2–5 words) + 1–2 sentence description. Mark the most central with type "thesis" and importance 90-100. Connect with 8–16 directed relationships.
+
+CHAPTERS: List all major chapters or parts. Set 'position' 0–100. Classify each chapter's argumentType honestly.
+
+DNA AXES for NON-FICTION — score each 0-100. Do NOT bunch around 50. Be opinionated.
+  - accessibility: 0 = requires PhD (Heidegger = 5), 100 = reads like a thriller (Gladwell = 90).
+  - idea_density: 0 = one idea per chapter (Quiet = 30), 100 = new argument every paragraph (Kahneman = 85).
+  - structure: 0 = essayistic/wandering (Montaigne = 10), 100 = tight linear argument (The Lean Startup = 90).
+  - scope: 0 = single narrow case (The Devil in the White City = 15), 100 = all of human civilisation (Sapiens = 95).
+  - evidence_rigor: 0 = pure anecdote (most self-help = 20), 100 = rigorous RCTs and meta-analysis (Thinking Fast and Slow = 90).
+  - tone: 0 = cold and clinical (academic textbook = 5), 100 = intimate and impassioned (The Body Keeps the Score = 80).
+  - prose_density: 0 = airport-lounge plain (most business books = 20), 100 = literary/baroque (Susan Sontag = 85).
+  - certainty: 0 = everything is uncertain/tentative (Taleb = 15), 100 = clear prescriptions and rules (7 Habits = 90).
+  - theory_vs_case: 0 = pure abstract framework (Being and Time = 5), 100 = all concrete cases/stories (The Power of Habit = 85).
+  - political_charge: 0 = apolitical (A Brief History of Time = 5), 100 = explicitly political/activist (The New Jim Crow = 95).
+  - structural_innovation: 0 = conventional chapters (most = 20), 100 = radical form (Invisible Cities = 90).
+  - actionability: 0 = open questions only (Being Mortal ends with questions), 100 = step-by-step prescriptions (Getting Things Done = 95).
+
+For 'signature': write a 3-7 word intellectual fingerprint. E.g. "rigorous empiricism wearing a storytelling mask", "sweeping grand theory, thin on evidence".
 
 RECOMMENDATION (non-fiction):
 - Suggest ONE other non-fiction book (different author) with the closest DNA.
-- Same scoring rules as fiction. 'why': explain the intellectual kinship in human terms.`;
+- Same scoring rules as fiction. 'why': explain the intellectual kinship in human terms.
+- shared_axes and divergent_axes MUST use the new non-fiction axis IDs: accessibility, idea_density, structure, scope, evidence_rigor, tone, prose_density, certainty, theory_vs_case, political_charge, structural_innovation, actionability.`;
 
 // ---------- Validation & repair ----------
 
@@ -631,10 +677,42 @@ function repairAnalysis(raw: any): Analysis {
   };
 }
 
+const NF_DNA_AXIS_IDS = [
+  "accessibility", "idea_density", "structure", "scope", "evidence_rigor",
+  "tone", "prose_density", "certainty", "theory_vs_case",
+  "political_charge", "structural_innovation", "actionability",
+] as const;
+
 function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
   const a = raw ?? {};
-  const allowedAxisIds = new Set<string>(DNA_AXIS_IDS);
+  const allowedAxisIds = new Set<string>(NF_DNA_AXIS_IDS);
   const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo));
+
+  // Argument pillars
+  const VALID_TAGS = new Set(["core_thesis", "supporting_argument", "evidence", "implication", "counterpoint"]);
+  const argumentPillars = (Array.isArray(a.argument_pillars) ? a.argument_pillars : [])
+    .filter((p: any) => p?.id && p?.claim)
+    .slice(0, 5)
+    .map((p: any) => ({
+      id: String(p.id),
+      claim: String(p.claim),
+      evidence: p.evidence ?? "",
+      implication: p.implication ?? "",
+      ideaIds: Array.isArray(p.ideaIds) ? p.ideaIds.map(String) : [],
+    }));
+  const pillarIds = new Set(argumentPillars.map((p: any) => p.id));
+
+  // Idea cards
+  const ideaCards = (Array.isArray(a.idea_cards) ? a.idea_cards : [])
+    .filter((c: any) => c?.id && c?.claim)
+    .slice(0, 10)
+    .map((c: any) => ({
+      id: String(c.id),
+      claim: String(c.claim),
+      evidence: c.evidence ?? "",
+      tag: VALID_TAGS.has(c.tag) ? c.tag : "supporting_argument",
+      ...(c.pillarId && pillarIds.has(String(c.pillarId)) ? { pillarId: String(c.pillarId) } : {}),
+    }));
 
   // Concepts
   const concepts: NfConcept[] = (Array.isArray(a.concepts) ? a.concepts : [])
@@ -672,7 +750,7 @@ function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
       argumentType: c.argumentType ?? "evidence",
     }));
 
-  // DNA repair (same as fiction)
+  // DNA repair — non-fiction axis IDs
   const rawAxes = Array.isArray(a?.dna?.axes) ? a.dna.axes : [];
   const axesById = new Map<string, DnaAxis>();
   for (const ax of rawAxes) {
@@ -681,7 +759,7 @@ function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
     axesById.set(ax.id, { id: ax.id, score: clamp(Number(ax.score), 0, 100), evidence: ax.evidence ?? "" });
   }
   const dna: Dna = {
-    axes: DNA_AXIS_IDS.map((id) => axesById.get(id) ?? { id, score: 50, evidence: "" }),
+    axes: NF_DNA_AXIS_IDS.map((id) => axesById.get(id) ?? { id, score: 50, evidence: "" }),
     signature: typeof a?.dna?.signature === "string" ? a.dna.signature : "",
   };
 
@@ -702,6 +780,8 @@ function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
     confidence: a.confidence ?? "medium",
     summary: a.summary ?? "",
     thesis: a.thesis ?? "",
+    argumentPillars,
+    ideaCards,
     concepts,
     conceptRelationships,
     chapters,
@@ -803,7 +883,7 @@ async function callStructuredAnalysis(apiKey: string, userPrompt: string, correc
   const response = await geminiFetchWithFallback(apiKey, {
     messages,
     tools: [analysisTool, nonfictionAnalysisTool],
-    tool_choice: "auto",
+    tool_choice: "required", // never let the model skip the tool and return plain text
   });
 
   if (!response.ok) {
@@ -834,9 +914,13 @@ async function callStructuredAnalysis(apiKey: string, userPrompt: string, correc
 
 // ---------- SSE helpers ----------
 
-function sseFrame(event: string, data: unknown): Uint8Array {
-  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  return new TextEncoder().encode(payload);
+// Returns the SSE frame as a plain string.
+// Use sseBytes() when feeding into a ReadableStream controller (needs Uint8Array).
+function sseFrame(event: string, data: unknown): string {
+  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+function sseBytes(event: string, data: unknown): Uint8Array {
+  return new TextEncoder().encode(sseFrame(event, data));
 }
 
 // ---------- Rate-limit helpers ----------
@@ -876,7 +960,7 @@ const inFlight = new Map<string, Promise<void>>();
 
 // ---------- Main handler ----------
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   let body: any;
@@ -951,13 +1035,9 @@ serve(async (req) => {
       });
     }
 
-    // Prefetches bail on a miss — they exist solely to warm the cache.
-    if (isPrefetch) {
-      return new Response(
-        [sseFrame("status", { text: "Prefetch miss — skipping." }), sseFrame("done", { prefetched: false })].join(""),
-        { headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } },
-      );
-    }
+    // On a cache miss, prefetch requests fall through to generate and cache the
+    // analysis — that's the whole point of the seeder. Rate-limiting below uses
+    // the generous prefetch budget (120/hr) to prevent abuse.
   }
 
   // ---------- Deduplication: coalesce concurrent requests for the same book ----------
@@ -1003,7 +1083,14 @@ serve(async (req) => {
 
   // ---------- Rate-limit gate (only reached on cache misses / refinements) ----------
   const ip = getClientIp(req);
-  const ipHash = await hashIp(ip, GEMINI_API_KEY);
+  // Use a dedicated salt so rotating the Gemini key doesn't invalidate all
+  // rate-limit history, and BYOK users don't get fresh independent buckets.
+  // Falls back to the service role key (always present) if not explicitly set.
+  const rateLimitSalt =
+    Deno.env.get("RATE_LIMIT_SALT") ??
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+    "novelviz-rl-default";
+  const ipHash = await hashIp(ip, rateLimitSalt);
   const route = "analyze-novel";
 
   try {
@@ -1075,7 +1162,7 @@ serve(async (req) => {
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: string, data: unknown) => {
-        try { controller.enqueue(sseFrame(event, data)); } catch { /* closed */ }
+        try { controller.enqueue(sseBytes(event, data)); } catch { /* closed */ }
       };
 
       try {
@@ -1167,16 +1254,19 @@ serve(async (req) => {
           return;
         }
 
-        // Retry once if inadequate
-        if (analysis && !isAdequate(analysis) && analysis.confidence !== "unknown_work") {
-          console.log("retry: inadequate result", { events: analysis.events.length, chars: analysis.characters.length });
+        // Retry on null result (model skipped tool call) OR inadequate result (too few events/chars).
+        // Previously only retried on the inadequate branch — null fell straight through to "AI did not
+        // return structured output". Now we catch both cases.
+        if (!analysis || (!isAdequate(analysis) && analysis.confidence !== "unknown_work")) {
+          const retryReason = !analysis ? "null_result" : "inadequate_result";
+          console.log("retry:", retryReason);
+          const corrective = !analysis
+            ? "You MUST call either render_novel_analysis (for fiction) or render_nonfiction_analysis (for non-fiction). Do NOT reply in plain text — always call one of the provided tools with a complete, structured response."
+            : "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).";
           try {
-            const retry = await callStructuredAnalysis(
-              GEMINI_API_KEY,
-              userPrompt,
-              "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).",
-            );
-            if (retry && isAdequate(retry)) analysis = retry;
+            const retry = await callStructuredAnalysis(GEMINI_API_KEY, userPrompt, corrective);
+            // Accept any non-null retry — even a thin result is better than a hard failure.
+            if (retry) analysis = retry;
           } catch (e) {
             console.error("retry error:", e);
           }
@@ -1189,13 +1279,21 @@ serve(async (req) => {
         }
 
         // -------- Cache write (only fresh analyses with real content) --------
+        // Build the canonical key from what the AI actually identified.
+        // This normalises title variants so "Sapiens" and "Sapiens by Harari"
+        // share a single cache slot instead of generating two Gemini calls.
+        const canonicalCacheKey =
+          !isRefine && analysis.confidence !== "unknown_work"
+            ? buildCacheKey(analysis.title || cleanTitle, analysis.author || cleanAuthor)
+            : cacheKey;
+
         if (!isRefine && analysis.confidence !== "unknown_work" && isAdequate(analysis)) {
-          // upsert + ignoreDuplicates: if two isolates race on the same cache_key,
-          // the second write silently no-ops instead of throwing a 23505.
+          // Primary write under the canonical (AI-resolved) key.
+          // upsert + ignoreDuplicates: if two isolates race, the second silently no-ops.
           const { error: upsertErr } = await supabase
             .from("novel_analyses")
             .upsert({
-              cache_key: cacheKey,
+              cache_key: canonicalCacheKey,
               title: analysis.title || cleanTitle,
               author: analysis.author || cleanAuthor || "",
               analysis,
@@ -1203,9 +1301,29 @@ serve(async (req) => {
               is_validated: true,
             }, { onConflict: "cache_key", ignoreDuplicates: true });
           if (upsertErr) console.error("cache write error:", upsertErr);
+
+          // Also write an alias under the raw input key if it differs from
+          // the canonical one — ensures this exact search string is a cache
+          // hit next time without another Gemini call.
+          if (canonicalCacheKey !== cacheKey) {
+            await supabase
+              .from("novel_analyses")
+              .upsert({
+                cache_key: cacheKey,
+                title: analysis.title || cleanTitle,
+                author: analysis.author || cleanAuthor || "",
+                analysis,
+                model: MODEL,
+                is_validated: true,
+              }, { onConflict: "cache_key", ignoreDuplicates: true })
+              .then(() => {})
+              .catch((e: any) => console.error("alias write error:", e));
+          }
         }
 
-        send("analysis", { analysis, cached: false, cacheKey });
+        // Send the canonical key to the frontend so shelf/compare/DNA always
+        // reference the same slot regardless of how the title was typed.
+        send("analysis", { analysis, cached: false, cacheKey: canonicalCacheKey });
         send("done", {});
         metric("fresh", {
           characters: analysis.characters?.length ?? 0,
