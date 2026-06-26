@@ -110,7 +110,7 @@ const Shelf = () => {
             to="/"
             className="flex items-center gap-3 border-r border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
           >
-            <NovelVizLogo size={38} className="text-foreground" />
+            <NovelVizLogo size={48} className="text-foreground" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
               <div className="meta mt-1 text-muted-foreground">← Back to issue</div>

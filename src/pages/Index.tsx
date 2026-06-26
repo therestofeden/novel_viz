@@ -827,7 +827,7 @@ const Index = () => {
                 whileHover={{ scale: 1.1 }}
                 transition={{ duration: 0.4, ease: ease.out }}
               >
-                <NovelVizLogo size={44} className="text-foreground" />
+                <NovelVizLogo size={56} className="text-foreground" />
               </motion.div>
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
