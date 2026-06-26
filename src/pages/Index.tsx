@@ -604,7 +604,7 @@ const Index = () => {
   const fetchAnalysis = async (bookTitle: string, refinement?: string, opts?: { reanalyze?: boolean }) => {
     const isReanalyze = !!opts?.reanalyze;
     const isRefine = !!refinement && !isReanalyze;
-    if (isRefine) setRefining(true);
+    if (isRefine || isReanalyze) setRefining(true);
     else setLoading(true);
     setStatusText("");
     setPreambleText("");
