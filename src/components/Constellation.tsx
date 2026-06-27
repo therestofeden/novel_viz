@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Lasso, X, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -334,7 +334,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
   const onLassoDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!clusterMode || pendingMembers !== null) return;
     e.preventDefault();
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
     setDrawing([svgPointFromEvent(e)]);
   };
   const onLassoMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -658,22 +658,56 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
             ))}
           {scaled
             .filter((p) => p.isShelf)
-            .map((p) => (
-              <g
-                key={p.cache_key}
-                onMouseEnter={() => setHover(p)}
-                onMouseLeave={() => setHover((h) => (h?.cache_key === p.cache_key ? null : h))}
-                onClick={(e) => {
-                  if (clusterMode) return; // suppress in cluster mode
-                  e.stopPropagation();
-                  onSelect?.(p.cache_key);
-                }}
-                style={{ cursor: clusterMode ? "crosshair" : "pointer" }}
-              >
-                <circle cx={p.sx} cy={p.sy} r={isNarrow ? 7 : 9} fill="hsl(var(--primary) / 0.18)" />
-                <circle cx={p.sx} cy={p.sy} r={isNarrow ? 4 : 5} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={1.5} />
-              </g>
-            ))}
+            .map((p) => {
+              const isHovered = hover?.cache_key === p.cache_key;
+              const label = p.title.length > 20 ? p.title.slice(0, 18) + "…" : p.title;
+              const dotR = isNarrow ? 5 : 6;
+              const haloR = isNarrow ? 10 : 13;
+              const hitR = isNarrow ? 18 : 22;
+              return (
+                <g
+                  key={p.cache_key}
+                  onMouseEnter={() => setHover(p)}
+                  onMouseLeave={() => setHover((h) => (h?.cache_key === p.cache_key ? null : h))}
+                  onClick={(e) => {
+                    if (clusterMode) return;
+                    e.stopPropagation();
+                    onSelect?.(p.cache_key);
+                  }}
+                  style={{ cursor: clusterMode ? "crosshair" : "pointer" }}
+                >
+                  {/* Large transparent hit / hover area */}
+                  <circle cx={p.sx} cy={p.sy} r={hitR} fill="transparent" />
+                  {/* Halo */}
+                  <circle
+                    cx={p.sx} cy={p.sy} r={haloR}
+                    fill={`hsl(var(--primary) / ${isHovered ? 0.32 : 0.18})`}
+                  />
+                  {/* Core dot */}
+                  <circle
+                    cx={p.sx} cy={p.sy} r={dotR}
+                    fill="hsl(var(--primary))"
+                    stroke="hsl(var(--background))"
+                    strokeWidth={1.5}
+                  />
+                  {/* Title label — always visible, bolder on hover */}
+                  {!isNarrow && (
+                    <text
+                      x={p.sx}
+                      y={p.sy + haloR + 5}
+                      textAnchor="middle"
+                      dominantBaseline="hanging"
+                      fontFamily="'JetBrains Mono', ui-monospace, monospace"
+                      fontSize={9}
+                      fill={`hsl(var(--foreground) / ${isHovered ? 0.9 : 0.55})`}
+                      style={{ letterSpacing: "0.04em", pointerEvents: "none" } as React.CSSProperties}
+                    >
+                      {label}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
 
           {/* Reading fingerprint */}
           {scaledFingerprint && (
@@ -695,18 +729,39 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
               <circle cx={scaledFingerprint.sx} cy={scaledFingerprint.sy} r={2.5} fill="hsl(var(--accent))" />
             </g>
           )}
-        </svg>
 
-        {/* Axis labels */}
-        <div className="meta pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2 text-muted-foreground">
-          ← {basis.x_axis_label} →
-        </div>
-        <div
-          className="meta pointer-events-none absolute left-1 top-1/2 origin-left -translate-y-1/2 -rotate-90 text-muted-foreground"
-          style={{ transformOrigin: "left center" }}
-        >
-          ← {basis.y_axis_label} →
-        </div>
+          {/* Axis labels — SVG text so rotation is exact and never clipped */}
+          {size.w > 0 && size.h > 0 && (
+            <>
+              <text
+                x={size.w / 2}
+                y={size.h - (isNarrow ? 5 : 7)}
+                textAnchor="middle"
+                fill="hsl(var(--muted-foreground))"
+                fontFamily="'JetBrains Mono', ui-monospace, monospace"
+                fontSize={isNarrow ? 9 : 10}
+                style={{ letterSpacing: "0.18em", textTransform: "uppercase" } as React.CSSProperties}
+                pointerEvents="none"
+              >
+                {`← ${basis.x_axis_label} →`}
+              </text>
+              <text
+                x={isNarrow ? 10 : 14}
+                y={size.h / 2}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="hsl(var(--muted-foreground))"
+                fontFamily="'JetBrains Mono', ui-monospace, monospace"
+                fontSize={isNarrow ? 9 : 10}
+                style={{ letterSpacing: "0.18em", textTransform: "uppercase" } as React.CSSProperties}
+                transform={`rotate(-90, ${isNarrow ? 10 : 14}, ${size.h / 2})`}
+                pointerEvents="none"
+              >
+                {`← ${basis.y_axis_label} →`}
+              </text>
+            </>
+          )}
+        </svg>
 
         {/* Hover card */}
         {hover && !clusterMode && (() => {

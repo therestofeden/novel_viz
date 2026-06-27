@@ -86,7 +86,7 @@ const Auth = () => {
             <NovelVizLogo size={48} className="text-foreground" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
-              <div className="meta mt-1 text-muted-foreground">← Back to issue</div>
+              <div className="meta mt-1 text-muted-foreground">← Back to home</div>
             </div>
           </Link>
         </div>

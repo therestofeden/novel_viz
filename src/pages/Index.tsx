@@ -1498,8 +1498,8 @@ const Index = () => {
             <div className="mt-1 font-sans text-sm font-semibold">Fiction &amp; Non-Fiction Readers</div>
           </div>
           <div className="col-span-6 border-r border-t border-foreground px-4 py-5 md:col-span-3 md:border-t-0">
-            <div className="meta text-muted-foreground">Built with</div>
-            <div className="mt-1 font-sans text-sm font-semibold">Care &amp; AI</div>
+            <div className="meta text-muted-foreground">Stack</div>
+            <div className="mt-1 font-sans text-sm font-semibold">React · TypeScript</div>
           </div>
           <div className="col-span-6 border-t border-foreground px-4 py-5 md:col-span-3 md:border-t-0">
             <div className="meta text-muted-foreground">Made for</div>

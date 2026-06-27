@@ -30,7 +30,6 @@ const Shelf = () => {
   const [busy, setBusy] = useState(true);
   const [displayName, setDisplayName] = useState<string>("");
   const [defaultShelfId, setDefaultShelfId] = useState<string | null>(null);
-  const [compareArm, setCompareArm] = useState<string | null>(null); // first cache_key picked for compare
 
   useEffect(() => {
     if (!loading && !session) navigate("/auth?next=/shelf", { replace: true });
@@ -113,7 +112,7 @@ const Shelf = () => {
             <NovelVizLogo size={48} className="text-foreground" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
-              <div className="meta mt-1 text-muted-foreground">← Back to issue</div>
+              <div className="meta mt-1 text-muted-foreground">← Back to home</div>
             </div>
           </Link>
           <div className="flex items-stretch">
@@ -186,29 +185,10 @@ const Shelf = () => {
           ) : (
             <>
               <div className="mt-12">
-                {/* Compare-mode banner */}
                 <div className="ink-border border-b-0 flex items-center justify-between bg-card px-4 py-2.5">
                   <div className="meta text-muted-foreground">
-                    {compareArm ? (
-                      <>
-                        <span className="text-accent">●</span> Pick a second book on the map to{" "}
-                        <span className="text-foreground">compare</span>
-                        <span className="ml-2 text-foreground/50">
-                          (armed: {books.find((x) => x.cache_key === compareArm)?.title ?? "—"})
-                        </span>
-                      </>
-                    ) : (
-                      <>Tip: click any two dots in sequence to <span className="text-foreground">compare them side by side</span></>
-                    )}
+                    Tip: click a dot to open it · use <span className="text-foreground">Compare</span> in the nav to compare two books side by side
                   </div>
-                  {compareArm && (
-                    <button
-                      onClick={() => setCompareArm(null)}
-                      className="meta border border-foreground bg-background px-2 py-1 hover:bg-foreground hover:text-background"
-                    >
-                      ✕ Cancel
-                    </button>
-                  )}
                 </div>
                 <Constellation
                   shelfId={defaultShelfId}
@@ -219,24 +199,8 @@ const Shelf = () => {
                     author: b.author,
                   }))}
                   onSelect={(ck) => {
-                    if (!compareArm) {
-                      setCompareArm(ck);
-                      toast("Armed for compare", {
-                        description: "Click another dot to open the side-by-side view, or pick the same one again to open it.",
-                      });
-                      return;
-                    }
-                    if (compareArm === ck) {
-                      // same dot twice → open the book
-                      const book = books.find((x) => x.cache_key === ck);
-                      setCompareArm(null);
-                      if (book) navigate(`/?book=${encodeURIComponent(book.title)}`);
-                      return;
-                    }
-                    // second distinct dot → compare
-                    const a = compareArm;
-                    setCompareArm(null);
-                    navigate(`/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(ck)}`);
+                    const book = books.find((x) => x.cache_key === ck);
+                    if (book) navigate(`/?book=${encodeURIComponent(book.title)}`);
                   }}
                 />
               </div>
