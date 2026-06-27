@@ -56,14 +56,50 @@ function projectVector(scores: number[], basis: PcaBasis): [number, number] {
   return [x, y];
 }
 
+/**
+ * Approximate mapping from non-fiction DNA axis IDs onto fiction DNA axis IDs.
+ * Tuple: [targetFictionAxisId, invertScore?]
+ * Used when a book's analysis has NF axes so it can still be projected into
+ * the fiction-based PCA space (placement is approximate, not exact).
+ */
+const NF_TO_FICTION: Partial<Record<string, [DnaAxisId, boolean?]>> = {
+  accessibility:         ["interiority",           true],  // harder → more interior
+  idea_density:          ["plot_density"                ],  // both = content density/page
+  structure:             ["time_linearity"              ],  // tight structure ≈ linear time
+  scope:                 ["scale"                       ],  // same concept, same direction
+  evidence_rigor:        ["realism"                    ],  // rigour ≈ factual realism
+  tone:                  ["tonal_register"              ],  // warmth/feeling axis
+  prose_density:         ["prose_density"               ],  // exact match
+  certainty:             ["moral_ambiguity",      true],  // certain = unambiguous
+  theory_vs_case:        ["character_vs_plot"           ],  // abstract vs concrete
+  political_charge:      ["political_charge"            ],  // exact match
+  structural_innovation: ["formal_experimentation"      ],  // exact match
+  actionability:         ["ending_openness",      true],  // actionable = resolved ending
+};
+
 function vectorFromAnalysis(analysis: any, axisOrder: DnaAxisId[]): number[] | null {
   const axes = analysis?.dna?.axes;
-  if (!Array.isArray(axes) || axes.length < axisOrder.length) return null;
+  if (!Array.isArray(axes) || axes.length === 0) return null;
+
   const byId: Record<string, number> = {};
   for (const a of axes) byId[a.id] = Number(a.score);
-  const vec = axisOrder.map((id) => byId[id]);
-  if (vec.some((v) => Number.isNaN(v) || v == null)) return null;
-  return vec;
+
+  // ── Fiction path: all fiction axis IDs present → use directly ──
+  const fictionVec = axisOrder.map((id) => byId[id]);
+  if (!fictionVec.some((v) => Number.isNaN(v) || v == null)) return fictionVec;
+
+  // ── Non-fiction fallback: map NF axes onto fiction equivalents ──
+  const mapped: Record<string, number> = {};
+  for (const [nfId, entry] of Object.entries(NF_TO_FICTION)) {
+    const score = byId[nfId];
+    if (score == null || Number.isNaN(score)) continue;
+    const [targetId, invert] = entry!;
+    mapped[targetId] = invert ? 100 - score : score;
+  }
+  // Return mapped vector; any still-unmapped axis defaults to midpoint (50)
+  // so NF books always appear rather than silently disappearing.
+  if (Object.keys(mapped).length === 0) return null; // no NF axes found either → truly unknown
+  return axisOrder.map((id) => mapped[id] ?? 50);
 }
 
 /** Ray-casting point-in-polygon. */
