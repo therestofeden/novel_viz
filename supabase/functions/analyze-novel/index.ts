@@ -6,20 +6,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// gemini-2.0-* models were shut down by Google on 2026-06-01.
-// gemini-2.5-flash was constantly 503 (overloaded) as of 2026-06-10, so we
-// jumped straight to its successor. NOTE: gemini-2.5-flash-lite retires
-// 2026-10-16 — swap the preamble model when a 3.5 lite tier ships.
-// gemini-2.5-flash-lite is ~2x faster than 3.5-flash for the same quality on
-// well-known books. Results are cached immediately so all users get consistent
-// output regardless of which model produced it.
-const MODEL = "gemini-2.5-flash-lite";
-const PREAMBLE_MODEL = "gemini-2.5-flash-lite";
+// gemini-2.0-* shut down 2026-06-01; gemini-2.5-flash was 503-prone.
+// Primary model is gemini-3.5-flash (latest Flash tier as of 2026-06).
+// Since every analysis is DB-cached after the first call, the speed cost of
+// a heavier model is borne exactly once per book — all subsequent users get
+// an instant cache hit regardless of which model produced the result.
+// Use the best model so the cached copy is as good as possible.
+const MODEL = "gemini-3.5-flash";
+const PREAMBLE_MODEL = "gemini-3.5-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
-// Google is load-shedding aggressively since the 2.0 shutdown (intermittent
-// 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-3.5-flash"];
+// Fallback chain: newest → older lite (last resort for 503/429 surges).
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 // ---------- Circuit breaker ----------
 // Tracks per-model transient failure counts within this isolate.
