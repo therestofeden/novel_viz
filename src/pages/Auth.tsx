@@ -81,9 +81,9 @@ const Auth = () => {
         <div className="container mx-auto flex items-stretch">
           <Link
             to="/"
-            className="flex items-center gap-3 border-r border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
+            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground hover:text-background"
           >
-            <NovelVizLogo size={48} className="text-foreground" />
+            <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
               <div className="meta mt-1 text-muted-foreground">← Back to home</div>

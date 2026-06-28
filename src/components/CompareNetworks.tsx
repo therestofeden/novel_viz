@@ -1,13 +1,14 @@
 import { useMemo } from "react";
 import { CharacterNetwork } from "@/components/CharacterNetwork";
-import type { Character, FictionAnalysis } from "@/lib/novel-types";
+import type { Character, FictionAnalysis, NovelAnalysis } from "@/lib/novel-types";
+import { isFiction } from "@/lib/novel-types";
 import { cn } from "@/lib/utils";
 
 interface Loaded {
   cache_key: string;
   title: string;
   author: string;
-  analysis: FictionAnalysis;
+  analysis: NovelAnalysis;
 }
 
 interface Props {
@@ -30,10 +31,11 @@ interface ArchMatch {
   why: string;
 }
 
-function archetypeMatches(a: FictionAnalysis, b: FictionAnalysis): ArchMatch[] {
-  // Only consider top-tier roles in both books
-  const topA = a.characters.filter((c) => (ROLE_TIER[c.role] ?? 0) >= 4);
-  const topB = b.characters.filter((c) => (ROLE_TIER[c.role] ?? 0) >= 4);
+function archetypeMatches(a: NovelAnalysis, b: NovelAnalysis): ArchMatch[] {
+  // Only available for fiction books with character data
+  if (!isFiction(a) || !isFiction(b)) return [];
+  const topA = (a.characters ?? []).filter((c) => (ROLE_TIER[c.role] ?? 0) >= 4);
+  const topB = (b.characters ?? []).filter((c) => (ROLE_TIER[c.role] ?? 0) >= 4);
   if (topA.length === 0 || topB.length === 0) return [];
 
   const matches: ArchMatch[] = [];
@@ -77,26 +79,39 @@ export const CompareNetworks = ({ a, b }: Props) => {
         <div className="meta">Networks · side by side</div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2">
-        <div className={cn("border-foreground", "md:border-r")}>
-          <div className="border-b border-foreground/30 px-4 py-2">
-            <div className="meta text-muted-foreground">A</div>
-            <div className="font-serif text-base italic">{a.title}</div>
+      {isFiction(a.analysis) && isFiction(b.analysis) ? (
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          <div className={cn("border-foreground", "md:border-r")}>
+            <div className="border-b border-foreground/30 px-4 py-2">
+              <div className="meta text-muted-foreground">A</div>
+              <div className="font-serif text-base italic">{a.title}</div>
+            </div>
+            <div className="[&_h3]:hidden [&_button[aria-label='Zoom_in']]:hidden">
+              <CharacterNetwork analysis={a.analysis} cacheKey={a.cache_key} />
+            </div>
           </div>
-          <div className="[&_h3]:hidden [&_button[aria-label='Zoom_in']]:hidden">
-            <CharacterNetwork analysis={a.analysis} cacheKey={a.cache_key} />
+          <div className="border-t border-foreground md:border-l-0 md:border-t-0">
+            <div className="border-b border-foreground/30 px-4 py-2">
+              <div className="meta text-muted-foreground">B</div>
+              <div className="font-serif text-base italic">{b.title}</div>
+            </div>
+            <div>
+              <CharacterNetwork analysis={b.analysis} cacheKey={b.cache_key} />
+            </div>
           </div>
         </div>
-        <div className="border-t border-foreground md:border-l-0 md:border-t-0">
-          <div className="border-b border-foreground/30 px-4 py-2">
-            <div className="meta text-muted-foreground">B</div>
-            <div className="font-serif text-base italic">{b.title}</div>
-          </div>
-          <div>
-            <CharacterNetwork analysis={b.analysis} cacheKey={b.cache_key} />
-          </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-0 md:grid-cols-2">
+          {[{ slot: "A", loaded: a }, { slot: "B", loaded: b }].map(({ slot, loaded }) => (
+            <div key={slot} className={cn("px-4 py-5", slot === "B" && "border-t border-foreground/30 md:border-l md:border-t-0")}>
+              <div className="meta text-muted-foreground">{slot} · {loaded.title}</div>
+              <div className="meta mt-2 text-muted-foreground italic">
+                {isFiction(loaded.analysis) ? "Fiction — character network not shown in side-by-side" : "Non-fiction — no character network"}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
 
       {matches.length > 0 && (
         <div className="border-t border-foreground px-4 py-4">

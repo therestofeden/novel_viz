@@ -14,6 +14,7 @@ const Auth = lazy(() => import("./pages/Auth.tsx"));
 const Shelf = lazy(() => import("./pages/Shelf.tsx"));
 const AntiShelf = lazy(() => import("./pages/AntiShelf.tsx"));
 const Compare = lazy(() => import("./pages/Compare.tsx"));
+const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/shelf" element={<Shelf />} />
                 <Route path="/anti-shelf" element={<AntiShelf />} />
                 <Route path="/compare" element={<Compare />} />
+                <Route path="/privacy" element={<Privacy />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

@@ -825,18 +825,16 @@ const Index = () => {
       <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
         <div className="container mx-auto flex items-stretch justify-between">
           <div className="flex items-stretch">
-            <div className="flex items-center gap-3 border-r border-foreground px-4 py-5">
-              <motion.div
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.4, ease: ease.out }}
-              >
-                <NovelVizLogo size={56} className="text-foreground" />
-              </motion.div>
+            <Link
+              to="/"
+              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
+            >
+              <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
                 <div className="meta mt-1.5 text-muted-foreground">Visualize Any Book</div>
               </div>
-            </div>
+            </Link>
             <div className="hidden items-center px-5 md:flex">
               <span className="meta text-muted-foreground">Characters · Concepts · Timelines</span>
             </div>

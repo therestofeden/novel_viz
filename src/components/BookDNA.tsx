@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 import {
   NovelAnalysis,
+  Recommendation,
   DnaAxisId,
   DNA_AXIS_META,
   DNA_AXIS_IDS,
@@ -113,6 +114,46 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimer = useRef<number | null>(null);
 
+  // Dynamic recommendation — re-fetched from recommend-by-dna whenever the
+  // user adjusts DNA sliders. Null means "use the original inline rec".
+  const [dynamicRec, setDynamicRec] = useState<Recommendation | null>(null);
+  const [recLoading, setRecLoading] = useState(false);
+  const recTimer = useRef<number | null>(null);
+
+  const fetchDynamicRec = useCallback(async () => {
+    // Build axes with current perturbations applied
+    const effectiveAxes = AXIS_IDS.map((id) => {
+      const base = (axesById.get(id)?.score ?? 50);
+      const delta = perturbations[id] ?? 0;
+      return { id, score: Math.max(0, Math.min(100, base + delta)) };
+    });
+    setRecLoading(true);
+    try {
+      // Retrieve user's BYOK key from auth metadata (same pattern as AntiShelf/Index).
+      const { data: { session } } = await supabase.auth.getSession();
+      const geminiKey: string | undefined =
+        (session?.user?.user_metadata?.gemini_key as string | undefined) ?? undefined;
+
+      const res = await supabase.functions.invoke("recommend-by-dna", {
+        body: {
+          title: analysis.title,
+          author: analysis.author,
+          bookType: analysis.bookType,
+          axes: effectiveAxes,
+          ...(geminiKey ? { gemini_key: geminiKey } : {}),
+        },
+      });
+      if (!res.error && res.data?.recommendation) {
+        setDynamicRec(res.data.recommendation as Recommendation);
+      }
+    } catch (e) {
+      console.error("recommend-by-dna error", e);
+    } finally {
+      setRecLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis, perturbations, AXIS_IDS, axesById]);
+
   const axesById = useMemo(() => {
     const m = new Map<DnaAxisId, { score: number; evidence: string }>();
     for (const a of dna?.axes ?? []) m.set(a.id as DnaAxisId, { score: a.score, evidence: a.evidence });
@@ -121,6 +162,16 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
 
   const sharedSet = useMemo(() => new Set(rec?.shared_axes ?? []), [rec]);
   const divergentSet = useMemo(() => new Set(rec?.divergent_axes ?? []), [rec]);
+
+  // Debounced recommendation refresh whenever DNA sliders change.
+  // Works for all users (logged-in or not) as long as the server has a Gemini key.
+  useEffect(() => {
+    if (Object.keys(perturbations).length === 0) return;
+    if (recTimer.current) window.clearTimeout(recTimer.current);
+    recTimer.current = window.setTimeout(() => { fetchDynamicRec(); }, 1000);
+    return () => { if (recTimer.current) window.clearTimeout(recTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perturbations]);
 
   const focusAxis = hoveredAxis ?? rec?.shared_axes?.[0] ?? AXIS_IDS[0];
   const focusAxisMeta = AXIS_META[focusAxis] ?? DNA_AXIS_META[focusAxis as DnaAxisId];
@@ -432,7 +483,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             </div>
             {totalDrift > 0 && (
               <button
-                onClick={() => setPerturbations({})}
+                onClick={() => { setPerturbations({}); setDynamicRec(null); }}
                 className="meta border border-foreground bg-card px-3 py-1.5 hover:bg-foreground hover:text-background"
               >
                 ↺ Reset
@@ -477,74 +528,106 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         </div>
 
         <Reveal className="bg-foreground text-background">
-          <div className="flex items-center justify-between border-b border-background/30 px-5 py-3">
-            <div className="meta text-background/70 flex items-center gap-2">
-              <Sparkles className="h-3 w-3" />
-              {totalDrift > 0 ? "If you shift the DNA…" : "Closest DNA in the canon"}
-            </div>
-            <div className="display-num text-2xl">
-              {Math.round(rec.similarity)}
-              <span className="meta ml-1 text-background/60">% MATCH</span>
-            </div>
-          </div>
-          <div className="px-5 py-5">
-            <div className="meta text-background/60">You'll likely also love</div>
-            <div className="mt-2 font-serif text-2xl italic leading-tight md:text-3xl">{rec.title}</div>
-            <div className="meta mt-2 text-background/70">By {rec.author}</div>
-            <p className="mt-4 font-serif text-sm leading-relaxed text-background/90">{rec.why}</p>
-
-            <div className="mt-5 grid gap-1.5">
-              {rec.shared_axes.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="meta text-background/60">Shared</span>
-                  {rec.shared_axes.map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onMouseEnter={() => setHoveredAxis(id)}
-                      onMouseLeave={() => setHoveredAxis(null)}
-                      onClick={() => setHoveredAxis(id)}
-                      className="meta border border-primary bg-primary px-1.5 py-0.5 text-primary-foreground transition-transform hover:-translate-y-[1px]"
-                    >
-                      {DNA_AXIS_META[id]?.name}
-                    </button>
-                  ))}
+          {(() => {
+            const activeRec = dynamicRec ?? rec;
+            const isDynamic = !!dynamicRec;
+            return (
+              <>
+                <div className="flex items-center justify-between border-b border-background/30 px-5 py-3">
+                  <div className="meta text-background/70 flex items-center gap-2">
+                    {recLoading
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : <Sparkles className="h-3 w-3" />}
+                    {recLoading
+                      ? "Finding your DNA match…"
+                      : isDynamic
+                        ? "Your DNA, your match"
+                        : "Canon match · drag sliders to personalise"}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {isDynamic && !recLoading && (
+                      <button
+                        onClick={fetchDynamicRec}
+                        title="Refresh recommendation"
+                        className="meta text-background/50 hover:text-background transition-colors"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                      </button>
+                    )}
+                    <div className="display-num text-2xl">
+                      {recLoading ? "—" : Math.round(activeRec.similarity)}
+                      <span className="meta ml-1 text-background/60">% MATCH</span>
+                    </div>
+                  </div>
                 </div>
-              )}
-              {rec.divergent_axes.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="meta text-background/60">Differs</span>
-                  {rec.divergent_axes.map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onMouseEnter={() => setHoveredAxis(id)}
-                      onMouseLeave={() => setHoveredAxis(null)}
-                      onClick={() => setHoveredAxis(id)}
-                      className="meta border border-accent bg-accent px-1.5 py-0.5 text-accent-foreground transition-transform hover:-translate-y-[1px]"
-                    >
-                      {DNA_AXIS_META[id]?.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {totalDrift > 0 && (
-              <div className="meta mt-5 border-t border-background/20 pt-3 text-background/60">
-                ⓘ Recommendation reflects the original DNA. Re-analyze a perturbed book to find a new neighbor.
-              </div>
-            )}
+                {recLoading ? (
+                  <div className="flex items-center justify-center px-5 py-12">
+                    <Loader2 className="h-5 w-5 animate-spin text-background/40" />
+                  </div>
+                ) : (
+                  <motion.div
+                    key={activeRec.title}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, ease: ease.out }}
+                    className="px-5 py-5"
+                  >
+                    <div className="meta text-background/60">You'll likely also love</div>
+                    <div className="mt-2 font-serif text-2xl italic leading-tight md:text-3xl">{activeRec.title}</div>
+                    <div className="meta mt-2 text-background/70">By {activeRec.author}</div>
+                    <p className="mt-4 font-serif text-sm leading-relaxed text-background/90">{activeRec.why}</p>
 
-            <div className="mt-5">
-              <BuyButton
-                title={rec.title}
-                author={rec.author}
-                size="md"
-                className="border-background bg-background text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
-              />
-            </div>
-          </div>
+                    <div className="mt-5 grid gap-1.5">
+                      {activeRec.shared_axes.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="meta text-background/60">Shared</span>
+                          {activeRec.shared_axes.map((id) => (
+                            <button
+                              key={id}
+                              type="button"
+                              onMouseEnter={() => setHoveredAxis(id as DnaAxisId)}
+                              onMouseLeave={() => setHoveredAxis(null)}
+                              onClick={() => setHoveredAxis(id as DnaAxisId)}
+                              className="meta border border-primary bg-primary px-1.5 py-0.5 text-primary-foreground transition-transform hover:-translate-y-[1px]"
+                            >
+                              {DNA_AXIS_META[id as DnaAxisId]?.name ?? id}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {activeRec.divergent_axes.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="meta text-background/60">Differs</span>
+                          {activeRec.divergent_axes.map((id) => (
+                            <button
+                              key={id}
+                              type="button"
+                              onMouseEnter={() => setHoveredAxis(id as DnaAxisId)}
+                              onMouseLeave={() => setHoveredAxis(null)}
+                              onClick={() => setHoveredAxis(id as DnaAxisId)}
+                              className="meta border border-accent bg-accent px-1.5 py-0.5 text-accent-foreground transition-transform hover:-translate-y-[1px]"
+                            >
+                              {DNA_AXIS_META[id as DnaAxisId]?.name ?? id}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-5">
+                      <BuyButton
+                        title={activeRec.title}
+                        author={activeRec.author}
+                        size="md"
+                        className="border-background bg-background text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </>
+            );
+          })()}
         </Reveal>
       </div>
     </div>

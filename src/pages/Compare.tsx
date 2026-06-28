@@ -10,8 +10,12 @@ import { cn } from "@/lib/utils";
 import {
   DNA_AXIS_IDS,
   DNA_AXIS_META,
+  NF_DNA_AXIS_IDS,
+  NF_DNA_AXIS_META,
   type DnaAxisId,
+  type NfDnaAxisId,
   type FictionAnalysis,
+  type NovelAnalysis,
   normalizeAnalysis,
   isFiction,
 } from "@/lib/novel-types";
@@ -28,7 +32,7 @@ type Loaded = {
   cache_key: string;
   title: string;
   author: string;
-  analysis: FictionAnalysis;
+  analysis: NovelAnalysis;
 };
 
 const Compare = () => {
@@ -82,10 +86,7 @@ const Compare = () => {
       cache_key: data.cache_key,
       title: data.title,
       author: data.author,
-      analysis: (() => {
-        const normalized = normalizeAnalysis(data.analysis as Record<string, unknown>);
-        return isFiction(normalized) ? normalized : normalized as unknown as FictionAnalysis;
-      })(),
+      analysis: normalizeAnalysis(data.analysis as Record<string, unknown>),
     };
     if (slot === "a") setA(loaded);
     else setB(loaded);
@@ -128,13 +129,13 @@ const Compare = () => {
       <header className="ink-border-b">
         <div className="container mx-auto flex items-stretch justify-between">
           <Link
-            to="/shelf"
-            className="flex items-center gap-3 border-r border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
+            to="/"
+            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground hover:text-background"
           >
-            <NovelVizLogo size={48} className="text-foreground" />
+            <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
-              <div className="meta mt-1 text-muted-foreground">← Back to shelf</div>
+              <div className="meta mt-1 text-muted-foreground">← Home</div>
             </div>
           </Link>
           <div className="meta flex items-center gap-2 border-l border-foreground px-4 py-4">
@@ -293,16 +294,37 @@ interface DiffBodyProps {
   b: Loaded;
 }
 
+// Lookup axis meta from either fiction or NF dictionaries
+function getAxisMeta(id: string) {
+  return (
+    DNA_AXIS_META[id as DnaAxisId] ??
+    NF_DNA_AXIS_META[id as NfDnaAxisId] ?? { name: id, low: "", high: "", description: "" }
+  );
+}
+
 const DiffBody = ({ a, b }: DiffBodyProps) => {
   const aAxes = useMemo(() => indexAxes(a.analysis), [a]);
   const bAxes = useMemo(() => indexAxes(b.analysis), [b]);
 
+  // Build ordered axis list from both books' actual DNA axes
+  // (preserves canonical order: fiction axes first, then NF)
+  const allAxisIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const ax of a.analysis.dna?.axes ?? []) ids.add(ax.id);
+    for (const ax of b.analysis.dna?.axes ?? []) ids.add(ax.id);
+    const canonical = [...DNA_AXIS_IDS, ...NF_DNA_AXIS_IDS] as string[];
+    const ordered = canonical.filter((id) => ids.has(id));
+    // Append any unrecognised axis IDs at the end
+    for (const id of ids) if (!ordered.includes(id)) ordered.push(id);
+    return ordered;
+  }, [a, b]);
+
   // Per-axis deltas
-  const rows = DNA_AXIS_IDS.map((id) => {
+  const rows = allAxisIds.map((id) => {
     const av = aAxes.get(id)?.score ?? null;
     const bv = bAxes.get(id)?.score ?? null;
     const delta = av != null && bv != null ? Math.abs(av - bv) : null;
-    return { id, meta: DNA_AXIS_META[id], a: av, b: bv, delta };
+    return { id, meta: getAxisMeta(id), a: av, b: bv, delta };
   });
 
   const validDeltas = rows.filter((r) => r.delta != null) as Array<typeof rows[number] & { delta: number }>;
@@ -425,9 +447,10 @@ const ScoreCell = ({ value }: { value: number | null }) => {
 };
 
 const SidePanel = ({ side, loaded }: { side: string; loaded: Loaded }) => {
-  const chars = loaded.analysis.characters ?? [];
-  const lanes = loaded.analysis.lanes ?? [];
-  const events = loaded.analysis.events ?? [];
+  const fiction = isFiction(loaded.analysis) ? loaded.analysis : null;
+  const chars = fiction?.characters ?? [];
+  const lanes = fiction?.lanes ?? [];
+  const events = fiction?.events ?? [];
   return (
     <div className="ink-border bg-card">
       <div className="border-b border-foreground px-4 py-3">
@@ -459,9 +482,9 @@ const Stat = ({ label, value, bordered }: { label: string; value: number; border
   </div>
 );
 
-function indexAxes(an: FictionAnalysis) {
-  const m = new Map<DnaAxisId, { score: number; evidence: string }>();
-  for (const a of an.dna?.axes ?? []) m.set(a.id as DnaAxisId, { score: a.score, evidence: a.evidence });
+function indexAxes(an: NovelAnalysis) {
+  const m = new Map<string, { score: number; evidence: string }>();
+  for (const a of an.dna?.axes ?? []) m.set(a.id, { score: a.score, evidence: a.evidence });
   return m;
 }
 

@@ -249,10 +249,39 @@ Deno.serve(async (req) => {
       .select("rec_key, title, author, signal")
       .eq("user_id", userId);
 
+    // Pull the user's own DNA overrides for shelf books.
+    // axis_overrides stores effective scores { [axisId]: number }.
+    const { data: overrideRows } = await admin
+      .from("book_overrides")
+      .select("cache_key, axis_overrides")
+      .eq("user_id", userId)
+      .in("cache_key", shelfBooks.map((b) => b.cache_key));
+
+    const overrideByKey = new Map<string, Record<string, number>>();
+    for (const row of overrideRows ?? []) {
+      if (row.axis_overrides && typeof row.axis_overrides === "object") {
+        overrideByKey.set(row.cache_key, row.axis_overrides as Record<string, number>);
+      }
+    }
+
     const fbByKey = new Map<string, { title: string; author: string; signal: number }>();
     for (const r of feedbackRows ?? []) fbByKey.set(r.rec_key, r);
 
-    const signature = await shelfSignature(shelfBooks, liked, disliked, blockedAuthors, blockedTags);
+    // Stable string of all user DNA overrides, included in the signature so
+    // the recommendation cache invalidates whenever the user edits any axis.
+    const overridesDigest = JSON.stringify(
+      [...overrideByKey.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => [k, Object.entries(v).sort(([a], [b]) => a.localeCompare(b))]),
+    );
+
+    const signature = await shelfSignature(
+      shelfBooks,
+      liked,
+      disliked,
+      blockedAuthors,
+      [...blockedTags, overridesDigest],
+    );
 
     // Cache lookup
     if (!force) {
@@ -317,19 +346,37 @@ Deno.serve(async (req) => {
     const dnaByKey = new Map<string, any>();
     (dnas || []).forEach((d) => dnaByKey.set(d.cache_key, d));
 
-    // Build a compact DNA digest for the prompt (cap to keep tokens reasonable)
+    // Build a compact DNA digest for the prompt (cap to keep tokens reasonable).
+    // For each book we now include the 12-axis DNA profile, applying the user's
+    // own overrides so recommendations respond to their reading fingerprint.
     const digest = shelfBooks.slice(0, 12).map((b) => {
       const d = dnaByKey.get(b.cache_key);
       const a: any = d?.analysis;
-      const lanes = a?.lanes?.map((l: any) => l.name).join(" / ") || "—";
-      const themes = a?.summary?.slice(0, 220) || "—";
-      const characters = a?.characters?.slice(0, 4).map((c: any) => `${c.name} (${c.role})`).join(", ") || "—";
+      const themes = a?.summary?.slice(0, 200) || "—";
+      const userOverrides: Record<string, number> = overrideByKey.get(b.cache_key) ?? {};
+
+      // Merge user overrides into the base DNA axes.
+      const baseAxes: Array<{ id: string; score: number }> = Array.isArray(a?.dna?.axes)
+        ? a.dna.axes
+        : [];
+      const effectiveAxes = baseAxes.map((ax: { id: string; score: number }) => ({
+        id: ax.id,
+        score: typeof userOverrides[ax.id] === "number" ? userOverrides[ax.id] : ax.score,
+      }));
+
+      const dnaStr =
+        effectiveAxes.length > 0
+          ? effectiveAxes.map((ax) => `${ax.id}:${Math.round(ax.score)}`).join(" · ")
+          : "—";
+
+      const hasOverrides = Object.keys(userOverrides).length > 0;
+
       return {
         title: b.title,
         author: b.author || "Unknown",
-        lanes,
-        characters,
         summary: themes,
+        dna: dnaStr,
+        userAdjusted: hasOverrides,
       };
     });
 
@@ -374,15 +421,16 @@ ${blockedTags.length ? "BLOCKED tags (avoid these vibes): " + blockedTags.join("
 ${digest
   .map(
     (d, i) =>
-      `${i + 1}. ${d.title} — ${d.author}
-   Narrative lanes: ${d.lanes}
-   Key figures: ${d.characters}
+      `${i + 1}. ${d.title} — ${d.author}${d.userAdjusted ? " ★ reader-adjusted DNA" : ""}
+   DNA (0=low, 100=high): ${d.dna}
    Notes: ${d.summary}`,
   )
   .join("\n\n")}
 ${signalSection}
 
 TASK: ${modeBrief}
+
+Use the DNA profiles above as the primary signal for matching. Books marked ★ have reader-adjusted DNA — weight those axes more heavily as they reflect the reader's actual perception, not just the text's surface properties.
 
 Return 6–10 recommendations via the render_recommendations tool. For each pick, fill 'echoes' with the 1–3 shelf titles it most directly relates to (similar mode) or contrasts against (stretch mode).`;
 
