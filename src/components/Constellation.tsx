@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Lasso, X, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { DNA_AXIS_IDS, type DnaAxisId } from "@/lib/novel-types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+type BookType = "fiction" | "nonfiction";
+
 type PcaBasis = {
-  axis_order: DnaAxisId[];
+  axis_order: string[];
   means: number[];
   components: number[][]; // 2 x N
   x_axis_label: string;
@@ -57,49 +58,17 @@ function projectVector(scores: number[], basis: PcaBasis): [number, number] {
 }
 
 /**
- * Approximate mapping from non-fiction DNA axis IDs onto fiction DNA axis IDs.
- * Tuple: [targetFictionAxisId, invertScore?]
- * Used when a book's analysis has NF axes so it can still be projected into
- * the fiction-based PCA space (placement is approximate, not exact).
+ * Extract a score vector from an analysis matching the given axis order.
+ * Returns null if any axis score is missing (book belongs to wrong constellation).
  */
-const NF_TO_FICTION: Partial<Record<string, [DnaAxisId, boolean?]>> = {
-  accessibility:         ["interiority",           true],  // harder → more interior
-  idea_density:          ["plot_density"                ],  // both = content density/page
-  structure:             ["time_linearity"              ],  // tight structure ≈ linear time
-  scope:                 ["scale"                       ],  // same concept, same direction
-  evidence_rigor:        ["realism"                    ],  // rigour ≈ factual realism
-  tone:                  ["tonal_register"              ],  // warmth/feeling axis
-  prose_density:         ["prose_density"               ],  // exact match
-  certainty:             ["moral_ambiguity",      true],  // certain = unambiguous
-  theory_vs_case:        ["character_vs_plot"           ],  // abstract vs concrete
-  political_charge:      ["political_charge"            ],  // exact match
-  structural_innovation: ["formal_experimentation"      ],  // exact match
-  actionability:         ["ending_openness",      true],  // actionable = resolved ending
-};
-
-function vectorFromAnalysis(analysis: any, axisOrder: DnaAxisId[]): number[] | null {
+function vectorFromAnalysis(analysis: any, axisOrder: string[]): number[] | null {
   const axes = analysis?.dna?.axes;
   if (!Array.isArray(axes) || axes.length === 0) return null;
-
   const byId: Record<string, number> = {};
   for (const a of axes) byId[a.id] = Number(a.score);
-
-  // ── Fiction path: all fiction axis IDs present → use directly ──
-  const fictionVec = axisOrder.map((id) => byId[id]);
-  if (!fictionVec.some((v) => Number.isNaN(v) || v == null)) return fictionVec;
-
-  // ── Non-fiction fallback: map NF axes onto fiction equivalents ──
-  const mapped: Record<string, number> = {};
-  for (const [nfId, entry] of Object.entries(NF_TO_FICTION)) {
-    const score = byId[nfId];
-    if (score == null || Number.isNaN(score)) continue;
-    const [targetId, invert] = entry!;
-    mapped[targetId] = invert ? 100 - score : score;
-  }
-  // Return mapped vector; any still-unmapped axis defaults to midpoint (50)
-  // so NF books always appear rather than silently disappearing.
-  if (Object.keys(mapped).length === 0) return null; // no NF axes found either → truly unknown
-  return axisOrder.map((id) => mapped[id] ?? 50);
+  const vec = axisOrder.map((id) => byId[id]);
+  if (vec.some((v) => v == null || Number.isNaN(v))) return null;
+  return vec;
 }
 
 /** Ray-casting point-in-polygon. */
@@ -153,6 +122,7 @@ function padHull(hull: { x: number; y: number }[], pad: number): { x: number; y:
 
 const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<BookType>("fiction");
   const [basis, setBasis] = useState<PcaBasis | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [fingerprint, setFingerprint] = useState<{ x: number; y: number; sourceCount: number } | null>(null);
@@ -189,6 +159,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
       const { data: basisRow } = await supabase
         .from("pca_basis")
         .select("*")
+        .eq("book_type", activeTab)
         .order("version", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -306,7 +277,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
     return () => {
       cancelled = true;
     };
-  }, [shelfBooks, user, shelfId, clustersEnabled]);
+  }, [shelfBooks, user, shelfId, clustersEnabled, activeTab]);
 
   useEffect(() => {
     if (!wrapEl) return;
@@ -533,12 +504,30 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
 
   return (
     <div className="ink-border bg-card">
+      {/* Fiction / Non-fiction tab strip */}
+      <div className="flex ink-border-b">
+        {(["fiction", "nonfiction"] as BookType[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "meta px-4 py-2 capitalize transition-colors first:border-r first:border-foreground",
+              activeTab === tab
+                ? "bg-foreground text-background"
+                : "bg-background text-muted-foreground hover:bg-foreground/10",
+            )}
+          >
+            {tab === "fiction" ? "Fiction" : "Non-fiction"}
+          </button>
+        ))}
+      </div>
+
       {/* Header strip */}
       <div className="flex items-stretch justify-between ink-border-b">
         <div className="px-4 py-3">
           <div className="meta text-muted-foreground">Fig. 01 — DNA Constellation</div>
           <div className="mt-1 font-serif text-lg italic">
-            Your shelf, mapped against {basis.seed_corpus.length} canonical books.
+            Your {activeTab === "nonfiction" ? "non-fiction" : "fiction"} shelf, mapped against {basis.seed_corpus.length} canonical books.
           </div>
         </div>
         <div className="hidden items-center gap-4 border-l border-foreground px-4 py-3 md:flex">
@@ -919,8 +908,9 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
         <div className="col-span-12 px-4 py-3 md:col-span-6 md:border-r md:border-foreground">
           <div className="meta text-muted-foreground">How to read this</div>
           <p className="mt-1 font-serif text-sm italic text-muted-foreground">
-            Each dot is one book, projected from 12 axes of literary DNA onto a fixed 2D map. Distance
-            ≈ formal kinship.
+            Each dot is one book, projected from{" "}
+            {activeTab === "nonfiction" ? "12 non-fiction" : "12 literary"} DNA axes onto a fixed 2D map.
+            Distance ≈ formal kinship.
           </p>
         </div>
         <div className="col-span-12 px-4 py-3 md:col-span-6">
