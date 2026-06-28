@@ -67,8 +67,8 @@ function pickLatinAuthor(primary: string | undefined, alts: string[] | undefined
 
 // ---------- Cache key (must mirror analyze-novel's buildCacheKey EXACTLY) ----------
 // analyze-novel builds: `${CACHE_VERSION}|${title}||${author}` with both sides lowercased,
-// trimmed, and whitespace-collapsed. CACHE_VERSION is "v2".
-const CACHE_VERSION = "v2";
+// trimmed, and whitespace-collapsed. Must match analyze-novel's CACHE_VERSION exactly.
+const CACHE_VERSION = "v3";
 function buildAnalysisCacheKey(title: string, author: string): string {
   const t = title.trim().toLowerCase().replace(/\s+/g, " ");
   const a = (author ?? "").trim().toLowerCase().replace(/\s+/g, " ");

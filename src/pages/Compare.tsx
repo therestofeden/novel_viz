@@ -129,13 +129,13 @@ const Compare = () => {
       <header className="ink-border-b">
         <div className="container mx-auto flex items-stretch justify-between">
           <Link
-            to="/"
+            to="/shelf"
             className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground hover:text-background"
           >
             <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
-              <div className="meta mt-1 text-muted-foreground">← Home</div>
+              <div className="meta mt-1 text-muted-foreground">← My shelf</div>
             </div>
           </Link>
           <div className="meta flex items-center gap-2 border-l border-foreground px-4 py-4">

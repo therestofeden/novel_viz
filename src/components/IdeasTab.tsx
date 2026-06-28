@@ -23,12 +23,16 @@ import { cn } from "@/lib/utils";
 
 // ─── Tag meta ─────────────────────────────────────────────────────────────────
 
-const TAG_META: Record<IdeaCardTag, { label: string; color: string }> = {
-  core_thesis:        { label: "Core thesis",        color: "hsl(var(--lane-1))" },
-  supporting_argument:{ label: "Argument",           color: "hsl(var(--lane-4))" },
-  evidence:           { label: "Evidence",           color: "hsl(var(--lane-7))" },
-  implication:        { label: "Implication",        color: "hsl(var(--lane-10))" },
-  counterpoint:       { label: "Counterpoint",       color: "hsl(var(--destructive))" },
+const TAG_META: Record<IdeaCardTag, { label: string; bg: string; text: string }> = {
+  // core_thesis: inverted (foreground bg) — highest emphasis, always legible in any theme
+  core_thesis:        { label: "Core thesis",  bg: "hsl(var(--foreground))",          text: "hsl(var(--background))" },
+  // supporting_argument: lane-4 is a dark medium-blue → needs light text
+  supporting_argument:{ label: "Argument",     bg: "hsl(var(--lane-4))",              text: "hsl(var(--background))" },
+  // evidence / implication: lighter lanes (60 / 56 % lightness) → dark foreground text readable
+  evidence:           { label: "Evidence",     bg: "hsl(var(--lane-7))",              text: "hsl(var(--foreground))" },
+  implication:        { label: "Implication",  bg: "hsl(var(--lane-10))",             text: "hsl(var(--foreground))" },
+  // counterpoint: destructive token already ships with a paired foreground
+  counterpoint:       { label: "Counterpoint", bg: "hsl(var(--destructive))",         text: "hsl(var(--destructive-foreground))" },
 };
 
 // ─── Persistence helpers (localStorage Phase 1) ───────────────────────────────
@@ -155,7 +159,7 @@ function PillarRow({
                         <p className="font-sans text-xs leading-relaxed text-foreground/80">
                           <span
                             className="meta mr-1.5 inline-block px-1 py-px text-[9px]"
-                            style={{ background: tm.color, color: "hsl(var(--foreground))" }}
+                            style={{ background: tm.bg, color: tm.text }}
                           >
                             {tm.label}
                           </span>
@@ -241,7 +245,7 @@ function IdeaCardItem({ card, starred, note, onStar, onNoteChange }: CardProps) 
       <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-2">
         <span
           className="meta px-1.5 py-0.5 text-[9px]"
-          style={{ background: tm.color, color: "hsl(var(--foreground))" }}
+          style={{ background: tm.bg, color: tm.text }}
         >
           {tm.label}
         </span>

@@ -3,15 +3,45 @@
 // already applied) and returns a single Recommendation from Gemini.
 // Called by BookDNA.tsx whenever the user saves a perturbed DNA.
 
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+// ---------- Rate limiting ----------
+const ROUTE = "recommend-by-dna";
+const RATE_LIMIT = 30; // requests per hour per IP
+
+async function sha256Hex(input: string): Promise<string> {
+  const encoded = new TextEncoder().encode(input);
+  const hashBuf = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(hashBuf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function getClientIp(req: Request): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
+async function hashIp(ip: string): Promise<string> {
+  const salt =
+    Deno.env.get("RATE_LIMIT_SALT") ??
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+    "fallback-salt";
+  return sha256Hex(salt + ip);
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MODEL = "gemini-2.5-flash-lite";
+const MODEL = "gemini-3.5-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-3.5-flash"];
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 // ---------- Circuit breaker ----------
 const CIRCUIT_OPEN_MS = 30_000;
@@ -113,6 +143,27 @@ Deno.serve(async (req) => {
 
   if (body?.is_warmup) return new Response("ok", { status: 200, headers: corsHeaders });
 
+  // IP rate-limit check (30 req/hr per IP, only for non-BYOK calls)
+  const ip = getClientIp(req);
+  const ipHash = await hashIp(ip);
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  const { data: rlCount } = await admin.rpc("count_recent_events", {
+    p_ip_hash: ipHash,
+    p_route: ROUTE,
+    p_window_seconds: 3600,
+    p_prefetch_only: false,
+  });
+  if (typeof rlCount === "number" && rlCount >= RATE_LIMIT) {
+    return new Response(
+      JSON.stringify({ error: "Rate limit exceeded. Please wait before requesting more DNA recommendations." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
   const { title, author, bookType, axes, gemini_key: userKey } = body ?? {};
 
   if (!title || !Array.isArray(axes) || axes.length === 0) {
@@ -185,6 +236,12 @@ Recommend the single best DNA neighbour from the canon.`;
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  // Log rate event (fire-and-forget; don't block the response)
+  admin
+    .from("rate_limit_events")
+    .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
+    .then(() => {});
 
   return new Response(JSON.stringify({ recommendation }), {
     status: 200,

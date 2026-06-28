@@ -1147,14 +1147,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   // Require the seed secret to prevent abuse.
-  // CLAUDE_SEED_BYPASS is a temporary hardcoded token for automated seeding runs.
-  // It only writes to the cache, so exposure risk is low. Remove after seeding completes.
-  const CLAUDE_SEED_BYPASS = "claudeseeder2026";
+  // Set SEED_SECRET in Supabase Dashboard → Project Settings → Edge Functions → Secrets.
   const secret = req.headers.get("x-seed-secret") ?? "";
   const expectedSecret = Deno.env.get("SEED_SECRET") ?? "";
-  const authorized =
-    (expectedSecret && secret === expectedSecret) ||
-    secret === CLAUDE_SEED_BYPASS;
+  const authorized = expectedSecret.length > 0 && secret === expectedSecret;
   if (!authorized) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },

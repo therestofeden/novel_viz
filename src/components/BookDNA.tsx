@@ -120,6 +120,17 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const [recLoading, setRecLoading] = useState(false);
   const recTimer = useRef<number | null>(null);
 
+  // Define derived maps/sets before the callback that closes over them,
+  // so they are already initialised when useCallback evaluates its deps array.
+  const axesById = useMemo(() => {
+    const m = new Map<DnaAxisId, { score: number; evidence: string }>();
+    for (const a of dna?.axes ?? []) m.set(a.id as DnaAxisId, { score: a.score, evidence: a.evidence });
+    return m;
+  }, [dna]);
+
+  const sharedSet = useMemo(() => new Set(rec?.shared_axes ?? []), [rec]);
+  const divergentSet = useMemo(() => new Set(rec?.divergent_axes ?? []), [rec]);
+
   const fetchDynamicRec = useCallback(async () => {
     // Build axes with current perturbations applied
     const effectiveAxes = AXIS_IDS.map((id) => {
@@ -151,17 +162,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     } finally {
       setRecLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analysis, perturbations, AXIS_IDS, axesById]);
-
-  const axesById = useMemo(() => {
-    const m = new Map<DnaAxisId, { score: number; evidence: string }>();
-    for (const a of dna?.axes ?? []) m.set(a.id as DnaAxisId, { score: a.score, evidence: a.evidence });
-    return m;
-  }, [dna]);
-
-  const sharedSet = useMemo(() => new Set(rec?.shared_axes ?? []), [rec]);
-  const divergentSet = useMemo(() => new Set(rec?.divergent_axes ?? []), [rec]);
 
   // Debounced recommendation refresh whenever DNA sliders change.
   // Works for all users (logged-in or not) as long as the server has a Gemini key.
@@ -185,8 +186,8 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   };
 
   const totalDrift = useMemo(
-    () => DNA_AXIS_IDS.reduce((sum, id) => sum + Math.abs(perturbations[id] ?? 0), 0),
-    [perturbations],
+    () => AXIS_IDS.reduce((sum, id) => sum + Math.abs(perturbations[id] ?? 0), 0),
+    [perturbations, AXIS_IDS],
   );
 
   // Hydrate user overrides
@@ -208,7 +209,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
       if (cancelled) return;
       if (data?.axis_overrides && typeof data.axis_overrides === "object") {
         const next: Partial<Record<DnaAxisId, number>> = {};
-        for (const id of DNA_AXIS_IDS) {
+        for (const id of AXIS_IDS) {
           const stored = (data.axis_overrides as Record<string, number>)[id];
           const base = axesById.get(id)?.score;
           if (typeof stored === "number" && typeof base === "number") {
@@ -232,7 +233,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     saveTimer.current = window.setTimeout(async () => {
       setSaveState("saving");
       const axis_overrides: Record<string, number> = {};
-      for (const id of DNA_AXIS_IDS) {
+      for (const id of AXIS_IDS) {
         const delta = perturbations[id] ?? 0;
         if (Math.abs(delta) > 0.001) {
           const base = axesById.get(id)?.score ?? 50;
