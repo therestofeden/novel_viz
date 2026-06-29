@@ -206,9 +206,8 @@ const Shelf = () => {
                     title: b.title,
                     author: b.author,
                   }))}
-                  onSelect={(ck) => {
-                    const book = books.find((x) => x.cache_key === ck);
-                    if (book) navigate(`/?book=${encodeURIComponent(book.title)}`);
+                  onSelect={(_ck, title) => {
+                    navigate(`/?book=${encodeURIComponent(title)}`);
                   }}
                 />
               </div>

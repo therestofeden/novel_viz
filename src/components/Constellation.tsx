@@ -38,7 +38,8 @@ interface ConstellationProps {
   shelfBooks: ShelfBookLite[];
   /** Required for cluster persistence. If absent, cluster mode is hidden. */
   shelfId?: string | null;
-  onSelect?: (cacheKey: string) => void;
+  /** Called when any book dot is clicked (shelf or reference). */
+  onSelect?: (cacheKey: string, title: string, author: string) => void;
 }
 
 const CLUSTER_COLORS = [
@@ -527,7 +528,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
         <div className="px-4 py-3">
           <div className="meta text-muted-foreground">Fig. 01 — DNA Constellation</div>
           <div className="mt-1 font-serif text-lg italic">
-            Your {activeTab === "nonfiction" ? "non-fiction" : "fiction"} shelf, mapped against {basis.seed_corpus.length} canonical books.
+            Your {activeTab === "nonfiction" ? "non-fiction" : "fiction"} shelf, mapped against {basis.seed_corpus.length} canonical books. Click any dot to analyse.
           </div>
         </div>
         <div className="hidden items-center gap-4 border-l border-foreground px-4 py-3 md:flex">
@@ -668,19 +669,34 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
           {/* Points: reference first, then shelf on top */}
           {scaled
             .filter((p) => !p.isShelf)
-            .map((p) => (
-              <g key={p.cache_key}>
-                <circle
-                  cx={p.sx}
-                  cy={p.sy}
-                  r={isNarrow ? 2.5 : 3}
-                  fill="hsl(var(--foreground) / 0.35)"
+            .map((p) => {
+              const isHovered = hover?.cache_key === p.cache_key;
+              const dotR = isNarrow ? 2.5 : 3;
+              const hitR = isNarrow ? 12 : 14;
+              return (
+                <g
+                  key={p.cache_key}
                   onMouseEnter={() => setHover(p)}
                   onMouseLeave={() => setHover((h) => (h?.cache_key === p.cache_key ? null : h))}
-                  className="cursor-default"
-                />
-              </g>
-            ))}
+                  onClick={(e) => {
+                    if (clusterMode) return;
+                    e.stopPropagation();
+                    onSelect?.(p.cache_key, p.title, p.author);
+                  }}
+                  style={{ cursor: clusterMode ? "crosshair" : "pointer" }}
+                >
+                  <circle cx={p.sx} cy={p.sy} r={hitR} fill="transparent" />
+                  <circle
+                    cx={p.sx}
+                    cy={p.sy}
+                    r={dotR}
+                    fill={`hsl(var(--foreground) / ${isHovered ? 0.7 : 0.35})`}
+                    stroke={isHovered ? "hsl(var(--background))" : "none"}
+                    strokeWidth={1}
+                  />
+                </g>
+              );
+            })}
           {scaled
             .filter((p) => p.isShelf)
             .map((p) => {
@@ -697,7 +713,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
                   onClick={(e) => {
                     if (clusterMode) return;
                     e.stopPropagation();
-                    onSelect?.(p.cache_key);
+                    onSelect?.(p.cache_key, p.title, p.author);
                   }}
                   style={{ cursor: clusterMode ? "crosshair" : "pointer" }}
                 >
@@ -794,16 +810,14 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
           if (!pt) return null;
           const cardW = isNarrow ? Math.min(220, size.w - 16) : 240;
           const left = Math.max(8, Math.min(Math.max(8, size.w - cardW - 8), pt.sx + 12));
-          const top = Math.max(8, Math.min(Math.max(8, size.h - 80), pt.sy - 48));
+          const top = Math.max(8, Math.min(Math.max(8, size.h - 90), pt.sy - 48));
           return (
             <div
-              className={cn(
-                "pointer-events-none absolute z-10 ink-border bg-background px-3 py-2 shadow-none",
-              )}
+              className="pointer-events-none absolute z-10 ink-border bg-background px-3 py-2 shadow-none"
               style={{ left, top, width: cardW }}
             >
               <div className="meta text-muted-foreground">
-                {hover.isShelf ? "On your shelf" : "Reference"}
+                {hover.isShelf ? "On your shelf" : "Canonical · click to analyse"}
               </div>
               <div className="font-serif text-base italic leading-tight">{hover.title}</div>
               <div className="meta mt-0.5 text-muted-foreground">
