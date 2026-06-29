@@ -254,6 +254,16 @@
   .dateline-strip {
     background: hsl(var(--foreground));
     color: hsl(var(--background));
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2em;
   }
 }
 

@@ -59,29 +59,36 @@ async function geminiFetchWithFallback(
       console.log(JSON.stringify({ circuit: "skipped", model }));
       continue;
     }
-    {
-      const r = await fetch(GEMINI_BASE, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, model }),
-      });
-      if (r.ok) {
-        circuitRecordSuccess(model);
-        return r;
-      }
-      // Retry on rate-limit, service-unavailable, bad-gateway, and internal errors.
-      // 4xx client errors (400, 401, 403, 404 …) are hard failures — no retry.
-      // 429 is a 4xx but IS retryable (rate-limit). 5xx are always retryable.
-      const isRetryable = r.status === 429 || r.status >= 500;
-      if (!isRetryable) return r; // client error — no retry
-      console.warn(`gemini ${model} -> ${r.status}, tripping circuit`);
-      await r.body?.cancel().catch(() => {});
-      last = r;
+    const r = await fetch(GEMINI_BASE, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, model }),
+    });
+    if (r.ok) {
+      circuitRecordSuccess(model);
+      return r;
+    }
+    // Log ALL errors — critical for diagnosing what Gemini is actually returning.
+    const errBody = await r.clone().text().catch(() => "");
+    console.error(JSON.stringify({ fn: "geminiFetch", model, status: r.status, body: errBody.slice(0, 400) }));
+    await r.body?.cancel().catch(() => {});
+    last = r;
+    // Trip circuit only for 429/5xx (transient). For 4xx client errors, don't trip —
+    // but DO continue to the next model: a 400 from model A may not affect model B
+    // (e.g. if model A is unknown/unavailable, model B may work fine).
+    if (r.status === 429 || r.status >= 500) {
       circuitRecordFail(model);
-      // Circuit trips after first 503/429 (CIRCUIT_TRIP_AFTER=1), jump to next model immediately.
     }
   }
-  return last!;
+  // All models exhausted. If last is still null, every circuit was already open.
+  if (last === null) {
+    console.error(JSON.stringify({ fn: "geminiFetch", error: "all_circuits_open" }));
+    return new Response(
+      JSON.stringify({ error: "All model circuits are open — try again shortly." }),
+      { status: 503 },
+    );
+  }
+  return last;
 }
 
 // ---------- Non-fiction tool ----------

@@ -102,6 +102,14 @@ const Shelf = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Dateline strip */}
+      <div className="dateline-strip">
+        <span>NovelViz</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Literary Cartography</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Est. 2024</span>
+      </div>
       {/* Masthead */}
       <header className="ink-border-b">
         <div className="container mx-auto flex items-stretch justify-between">
@@ -112,7 +120,7 @@ const Shelf = () => {
             <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
-              <div className="meta mt-1 text-muted-foreground">← Back to home</div>
+              <div className="meta mt-1 text-muted-foreground">Literary Cartography</div>
             </div>
           </Link>
           <div className="flex items-stretch">

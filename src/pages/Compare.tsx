@@ -125,6 +125,14 @@ const Compare = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Dateline strip */}
+      <div className="dateline-strip">
+        <span>NovelViz</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Literary Cartography</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Est. 2024</span>
+      </div>
       {/* Masthead */}
       <header className="ink-border-b">
         <div className="container mx-auto flex items-stretch justify-between">

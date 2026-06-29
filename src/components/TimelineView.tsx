@@ -200,6 +200,23 @@ export const TimelineView = ({
     ? charById.get(selectedCharacterId)?.name
     : null;
 
+  // Guard: if the analysis has no lanes or events, the book is too new/sparse for a
+  // full timeline. Show a friendly empty state rather than a blank/broken canvas.
+  if (analysis.lanes.length === 0 || analysis.events.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-4 px-6 py-20 text-center">
+        <p className="font-serif text-base italic text-foreground/70">
+          Not enough data to render a timeline for{" "}
+          <span className="not-italic font-semibold">{analysis.title}</span>.
+        </p>
+        <p className="text-xs text-muted-foreground max-w-sm">
+          This book may be too recently published for the AI to map its narrative structure.
+          Try adding the author's name to the search, or add your Gemini API key for a deeper attempt.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="relative space-y-4">
       {/* ===== Top bar ===== */}

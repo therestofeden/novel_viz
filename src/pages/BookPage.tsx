@@ -148,6 +148,13 @@ const BookPage = () => {
   if (loadState === "loading") {
     return (
       <div className="flex min-h-screen flex-col">
+        <div className="dateline-strip">
+          <span>NovelViz</span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span>Literary Cartography</span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span>Est. 2024</span>
+        </div>
         <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
           <div className="container mx-auto flex items-stretch justify-between">
             <Link
@@ -157,7 +164,7 @@ const BookPage = () => {
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize Any Book</div>
+                <div className="meta mt-1.5 text-muted-foreground">Literary Cartography</div>
               </div>
             </Link>
           </div>
@@ -179,6 +186,13 @@ const BookPage = () => {
       : "";
     return (
       <div className="flex min-h-screen flex-col">
+        <div className="dateline-strip">
+          <span>NovelViz</span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span>Literary Cartography</span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span>Est. 2024</span>
+        </div>
         <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
           <div className="container mx-auto flex items-stretch justify-between">
             <Link
@@ -188,7 +202,7 @@ const BookPage = () => {
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize Any Book</div>
+                <div className="meta mt-1.5 text-muted-foreground">Literary Cartography</div>
               </div>
             </Link>
           </div>
@@ -226,6 +240,14 @@ const BookPage = () => {
   // ── Full analysis display ──────────────────────────────────────────────────
   return (
     <div className="min-h-screen">
+      {/* ===================== DATELINE STRIP ===================== */}
+      <div className="dateline-strip">
+        <span>NovelViz</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Literary Cartography</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Est. 2024</span>
+      </div>
       {/* ===================== HEADER ===================== */}
       <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
         <div className="container mx-auto flex items-stretch justify-between">
@@ -237,12 +259,9 @@ const BookPage = () => {
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize Any Book</div>
+                <div className="meta mt-1.5 text-muted-foreground">Literary Cartography</div>
               </div>
             </Link>
-            <div className="hidden items-center px-5 md:flex">
-              <span className="meta text-muted-foreground">Characters · Concepts · Timelines</span>
-            </div>
           </div>
           <div className="flex items-stretch">
             <Link
@@ -282,12 +301,12 @@ const BookPage = () => {
             </div>
           </div>
           <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
-            <div className="meta text-muted-foreground">
+            <div className={analysis.author && analysis.author !== "Unknown" ? "font-serif italic text-lg text-muted-foreground" : "meta text-muted-foreground"}>
               {analysis.author && analysis.author !== "Unknown"
                 ? `By ${analysis.author}`
                 : "Visualization"}
             </div>
-            <h1 className="mt-2 font-sans text-3xl font-bold leading-[1] tracking-tight md:text-6xl">
+            <h1 className="mt-2 font-sans text-3xl font-extrabold leading-[1] tracking-tight md:text-6xl">
               {analysis.title}
             </h1>
             {isNonFiction(analysis) && (analysis as NonFictionAnalysis).thesis && (
@@ -314,7 +333,7 @@ const BookPage = () => {
               <div className="meta text-muted-foreground">
                 {isFiction(analysis) ? "Characters" : "Chapters"}
               </div>
-              <div className="display-num mt-1 text-2xl md:text-3xl">
+              <div className="display-num mt-1 text-3xl md:text-4xl">
                 {isFiction(analysis)
                   ? String(analysis.characters?.length ?? 0).padStart(2, "0")
                   : String((analysis as NonFictionAnalysis).chapters?.length ?? 0).padStart(2, "0")}
@@ -324,7 +343,7 @@ const BookPage = () => {
               <div className="meta text-muted-foreground">
                 {isFiction(analysis) ? "Lanes" : "Type"}
               </div>
-              <div className="display-num mt-1 text-2xl md:text-3xl">
+              <div className="display-num mt-1 text-3xl md:text-4xl">
                 {isFiction(analysis)
                   ? String(analysis.lanes?.length ?? 0).padStart(2, "0")
                   : <span className="font-sans text-sm font-semibold uppercase">Nonfiction</span>}
@@ -555,29 +574,6 @@ const BookPage = () => {
         </section>
       </main>
 
-      {/* ===================== FOOTER ===================== */}
-      <Reveal as="div" duration={0.7} className="ink-border-t mt-0">
-        <footer className="pb-safe">
-          <div className="container mx-auto grid grid-cols-12 gap-0">
-            <div className="col-span-6 border-r border-foreground px-4 py-5 md:col-span-3">
-              <div className="meta text-muted-foreground">Project</div>
-              <div className="mt-1 font-sans text-sm font-semibold">NovelViz</div>
-            </div>
-            <div className="col-span-6 border-foreground px-4 py-5 md:col-span-3 md:border-r">
-              <div className="meta text-muted-foreground">For</div>
-              <div className="mt-1 font-sans text-sm font-semibold">Fiction &amp; Non-Fiction Readers</div>
-            </div>
-            <div className="col-span-6 border-r border-t border-foreground px-4 py-5 md:col-span-3 md:border-t-0">
-              <div className="meta text-muted-foreground">Stack</div>
-              <div className="mt-1 font-sans text-sm font-semibold">React · TypeScript</div>
-            </div>
-            <div className="col-span-6 border-t border-foreground px-4 py-5 md:col-span-3 md:border-t-0">
-              <div className="meta text-muted-foreground">Made for</div>
-              <div className="mt-1 font-sans text-sm font-semibold">Curious Readers</div>
-            </div>
-          </div>
-        </footer>
-      </Reveal>
     </div>
   );
 };

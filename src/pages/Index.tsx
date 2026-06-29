@@ -864,6 +864,15 @@ const Index = () => {
   return (
     <div className="min-h-screen">
 
+      {/* ===================== DATELINE STRIP ===================== */}
+      <div className="dateline-strip">
+        <span>NovelViz</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Literary Cartography</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Est. 2024</span>
+      </div>
+
       {/* ===================== HEADER — editorial masthead ===================== */}
       <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
         <div className="container mx-auto flex items-stretch justify-between">
@@ -875,17 +884,11 @@ const Index = () => {
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize Any Book</div>
+                <div className="meta mt-1.5 text-muted-foreground">Literary Cartography</div>
               </div>
             </Link>
-            <div className="hidden items-center px-5 md:flex">
-              <span className="meta text-muted-foreground">Characters · Concepts · Timelines</span>
-            </div>
           </div>
           <div className="flex items-stretch">
-            <div className="hidden items-center border-l border-foreground px-5 md:flex">
-              <span className="meta text-muted-foreground">Reading Tool</span>
-            </div>
             {user ? (
               <Link
                 to="/shelf"
@@ -911,20 +914,6 @@ const Index = () => {
                 <span className="hidden sm:inline">{geminiKey ? "Key ✓" : "API Key"}</span>
               </button>
             )}
-            {analysis && (
-              <button
-                onClick={() => {
-                  setAnalysis(null);
-                  setTitle("");
-                  setActiveRefinement(null);
-                  setCacheKey(null);
-                  setSlug(null);
-                }}
-                className="meta border-l border-foreground bg-foreground px-5 py-5 text-background hover:bg-primary hover:text-primary-foreground"
-              >
-                ← New Book
-              </button>
-            )}
           </div>
         </div>
       </Reveal>
@@ -934,10 +923,13 @@ const Index = () => {
           <section className="grid grid-cols-12 gap-0">
             {/* Left rail */}
             <aside className="relative col-span-12 ink-border-b border-foreground px-4 py-6 md:col-span-2 md:border-b-0 md:border-r md:py-12">
-              <div className="meta text-muted-foreground">Section</div>
-              <div className="mt-2 font-serif text-base italic">Book Analysis</div>
-              <div className="mt-3 h-px w-10 bg-foreground" />
-              <div className="meta mt-3 text-muted-foreground">Characters · Concepts · Timelines</div>
+              <div className="meta text-muted-foreground" style={{ letterSpacing: "0.28em" }}>Vol. I</div>
+              <div className="display-num mt-1 text-5xl md:text-7xl" style={{ opacity: 0.12, letterSpacing: "-0.05em" }}>001</div>
+              <div className="mt-4 h-px w-10 bg-foreground" />
+              <div className="meta mt-4 text-muted-foreground">Book Analysis</div>
+              <div className="hidden md:block absolute bottom-12 left-0 w-full flex items-end justify-center" style={{ paddingLeft: "1.5rem" }}>
+                <span className="side-label text-muted-foreground/50">Literary Cartography</span>
+              </div>
             </aside>
 
             {/* Hero */}
@@ -949,12 +941,14 @@ const Index = () => {
                   transition={{ duration: 2.6, repeat: Infinity, ease: ease.inOut }}
                 />
                 A Reading Tool
+                <span className="hidden md:inline-block h-px w-8 bg-foreground/30" />
+                <span className="hidden md:inline">Literary Cartography</span>
               </Reveal>
 
-              <h1 className="text-balance font-sans text-6xl font-bold leading-[0.88] tracking-[-0.04em] md:text-8xl lg:text-[9.5rem]">
+              <h1 className="text-balance font-sans text-6xl font-bold leading-[0.88] tracking-[-0.04em] md:text-8xl lg:text-[10.5rem]">
                 {[
                   <>See the</>,
-                  <><span className="italic font-serif font-normal">shape</span> of any</>,
+                  <><span className="italic font-serif font-normal" style={{ fontSize: "1.05em" }}>shape</span> of any</>,
                   <span className="text-primary">book.</span>,
                 ].map((node, i) => (
                   <span key={i} className="block overflow-hidden">
@@ -970,8 +964,12 @@ const Index = () => {
                 ))}
               </h1>
 
+              <Reveal delay={0.5} duration={0.7} y={8}>
+                <hr className="mt-10 border-foreground/30" />
+              </Reveal>
+
               <Reveal delay={0.55} duration={0.9} y={14}>
-                <p className="mt-10 max-w-2xl font-serif text-lg leading-[1.55] text-foreground md:text-xl">
+                <p className="mt-8 max-w-2xl font-serif text-lg leading-[1.55] text-foreground md:text-xl">
                   Type the title of any book. Fiction unfolds into characters,
                   relationships, and timelines; non-fiction into concepts, arguments, and chapters.
                   <span className="italic text-muted-foreground"> One title in, one cartography out.</span>
@@ -1013,7 +1011,7 @@ const Index = () => {
                           setSuggestOpen(false);
                         }
                       }}
-                      placeholder="Start typing a title — e.g. Cloud Atlas or Sapiens"
+                      placeholder="Enter a title — fiction or nonfiction"
                       className="w-full bg-transparent py-4 font-sans text-lg placeholder:text-muted-foreground/60 focus:outline-none"
                       disabled={loading}
                       autoFocus
@@ -1027,7 +1025,7 @@ const Index = () => {
                       disabled={loading || !title.trim()}
                       className="meta flex items-center gap-2 border-l border-foreground bg-primary px-6 text-primary-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
                     >
-                      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><span>→</span> Visualize</>}
+                      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <>Visualize</>}
                     </MagneticButton>
                   </div>
 
@@ -1147,7 +1145,7 @@ const Index = () => {
               <Reveal delay={0.85} duration={0.8} y={16} className="mt-12">
                 <div className="meta mb-4 flex items-center gap-3 text-muted-foreground">
                   <span className="inline-block h-2 w-2 bg-accent" />
-                  Recommended Reading
+                  {`Reading List · No. ${new Date().getFullYear()}`}
                   <span className="inline-block h-px w-12 bg-foreground/40" />
                 </div>
                 <StaggerGroup className="ink-border grid grid-cols-2 bg-card md:grid-cols-3">
@@ -1165,7 +1163,7 @@ const Index = () => {
                         initial="rest"
                         animate="rest"
                         className={cn(
-                          "group relative flex h-full min-h-[88px] w-full flex-col justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-foreground hover:text-background",
+                          "group relative flex h-full min-h-[120px] w-full flex-col justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-foreground hover:text-background",
                           (i % 2 !== 1) && "border-r border-foreground md:border-r-0",
                           ((i + 1) % 3 !== 0) && "md:border-r md:border-foreground",
                           i < seedSuggestions.length - 2 && "border-b border-foreground md:border-b-0",
@@ -1175,7 +1173,8 @@ const Index = () => {
                         <motion.span
                           variants={{ rest: { y: 0 }, hover: { y: -2 } }}
                           transition={{ duration: 0.4, ease: ease.out }}
-                          className="display-num text-2xl text-foreground/30 group-hover:text-background/60"
+                          className="font-serif italic text-3xl text-foreground/25 group-hover:text-background/50"
+                          style={{ letterSpacing: "-0.04em" }}
                         >
                           {String(i + 1).padStart(2, "0")}
                         </motion.span>
@@ -1240,10 +1239,10 @@ const Index = () => {
                 </div>
               </div>
               <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
-                <div className="meta text-muted-foreground">
+                <div className={analysisPreview.author ? "font-serif italic text-lg text-muted-foreground" : "meta text-muted-foreground"}>
                   {analysisPreview.author ? `By ${analysisPreview.author}` : "Visualization"}
                 </div>
-                <h1 className="mt-2 font-sans text-3xl font-bold leading-[1] tracking-tight md:text-6xl">
+                <h1 className="mt-2 font-sans text-3xl font-extrabold leading-[1] tracking-tight md:text-6xl">
                   {analysisPreview.title}
                 </h1>
                 {analysisPreview.thesis && (
@@ -1299,12 +1298,12 @@ const Index = () => {
                 </div>
               </div>
               <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
-                <div className="meta text-muted-foreground">
+                <div className={analysis.author && analysis.author !== "Unknown" ? "font-serif italic text-lg text-muted-foreground" : "meta text-muted-foreground"}>
                   {analysis.author && analysis.author !== "Unknown"
                     ? `By ${analysis.author}`
                     : "Visualization"}
                 </div>
-                <h1 className="mt-2 font-sans text-3xl font-bold leading-[1] tracking-tight md:text-6xl">
+                <h1 className="mt-2 font-sans text-3xl font-extrabold leading-[1] tracking-tight md:text-6xl">
                   {analysis.title}
                 </h1>
                 {isNonFiction(analysis) && (analysis as NonFictionAnalysis).thesis && (
@@ -1336,7 +1335,7 @@ const Index = () => {
                   <div className="meta text-muted-foreground">
                     {isFiction(analysis) ? "Characters" : "Chapters"}
                   </div>
-                  <div className="display-num mt-1 text-2xl md:text-3xl">
+                  <div className="display-num mt-1 text-3xl md:text-4xl">
                     {isFiction(analysis)
                       ? String(analysis.characters?.length ?? 0).padStart(2, "0")
                       : String((analysis as NonFictionAnalysis).chapters?.length ?? 0).padStart(2, "0")}
@@ -1346,7 +1345,7 @@ const Index = () => {
                   <div className="meta text-muted-foreground">
                     {isFiction(analysis) ? "Lanes" : "Type"}
                   </div>
-                  <div className="display-num mt-1 text-2xl md:text-3xl">
+                  <div className="display-num mt-1 text-3xl md:text-4xl">
                     {isFiction(analysis)
                       ? String(analysis.lanes?.length ?? 0).padStart(2, "0")
                       : <span className="font-sans text-sm font-semibold uppercase">Nonfiction</span>}
@@ -1585,27 +1584,6 @@ const Index = () => {
         )}
       </main>
 
-      {/* ===================== FOOTER ===================== */}
-      <Reveal as="div" duration={0.7} className="ink-border-t mt-0"><footer className="pb-safe">
-        <div className="container mx-auto grid grid-cols-12 gap-0">
-          <div className="col-span-6 border-r border-foreground px-4 py-5 md:col-span-3">
-            <div className="meta text-muted-foreground">Project</div>
-            <div className="mt-1 font-sans text-sm font-semibold">NovelViz</div>
-          </div>
-          <div className="col-span-6 border-foreground px-4 py-5 md:col-span-3 md:border-r">
-            <div className="meta text-muted-foreground">For</div>
-            <div className="mt-1 font-sans text-sm font-semibold">Fiction &amp; Non-Fiction Readers</div>
-          </div>
-          <div className="col-span-6 border-r border-t border-foreground px-4 py-5 md:col-span-3 md:border-t-0">
-            <div className="meta text-muted-foreground">Stack</div>
-            <div className="mt-1 font-sans text-sm font-semibold">React · TypeScript</div>
-          </div>
-          <div className="col-span-6 border-t border-foreground px-4 py-5 md:col-span-3 md:border-t-0">
-            <div className="meta text-muted-foreground">Made for</div>
-            <div className="mt-1 font-sans text-sm font-semibold">Curious Readers</div>
-          </div>
-        </div>
-      </footer></Reveal>
       <GeminiKeyDialog open={geminiDialogOpen} onClose={() => setGeminiDialogOpen(false)} />
     </div>
   );
