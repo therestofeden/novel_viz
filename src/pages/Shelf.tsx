@@ -106,7 +106,7 @@ const Shelf = () => {
       <div className="dateline-strip">
         <span>NovelViz</span>
         <span style={{ opacity: 0.4 }}>·</span>
-        <span>Literary Cartography</span>
+        <span>Visualize any book</span>
         <span style={{ opacity: 0.4 }}>·</span>
         <span>Est. 2024</span>
       </div>
@@ -120,7 +120,7 @@ const Shelf = () => {
             <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
               <div className="font-sans text-xl font-bold tracking-tight">NovelViz</div>
-              <div className="meta mt-1 text-muted-foreground">Literary Cartography</div>
+              <div className="meta mt-1 text-muted-foreground">Visualize any book</div>
             </div>
           </Link>
           <div className="flex items-stretch">

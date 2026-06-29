@@ -129,7 +129,7 @@ const Compare = () => {
       <div className="dateline-strip">
         <span>NovelViz</span>
         <span style={{ opacity: 0.4 }}>·</span>
-        <span>Literary Cartography</span>
+        <span>Visualize any book</span>
         <span style={{ opacity: 0.4 }}>·</span>
         <span>Est. 2024</span>
       </div>
