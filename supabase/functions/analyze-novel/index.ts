@@ -555,6 +555,15 @@ type NonFictionAnalysis = {
 };
 type Analysis = FictionAnalysis | NonFictionAnalysis;
 
+type BookMetadata = {
+  title?: string;
+  author?: string;
+  description?: string;
+  pageCount?: number;
+  publishedYear?: number;
+  genres?: string[];
+};
+
 const confRank = (c: string) => (c === "high" ? 3 : c === "medium" ? 2 : c === "low" ? 1 : 0);
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo));
 
@@ -896,6 +905,74 @@ async function callPreview(apiKey: string, title: string): Promise<Record<string
   } catch {
     return null; // preview is best-effort — never block the main call
   }
+}
+
+// ---------- Metadata fetch ----------
+
+async function fetchBookMetadata(title: string, author: string): Promise<BookMetadata> {
+  const gbQuery = author
+    ? `intitle:${encodeURIComponent(title)}+inauthor:${encodeURIComponent(author)}`
+    : `intitle:${encodeURIComponent(title)}`;
+  const olQuery = author
+    ? `title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}`
+    : `title=${encodeURIComponent(title)}`;
+
+  const [gbRes, olRes] = await Promise.allSettled([
+    fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=${gbQuery}&maxResults=3&printType=books`,
+      { signal: AbortSignal.timeout(4000) },
+    ).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    fetch(
+      `https://openlibrary.org/search.json?${olQuery}&fields=title,author_name,first_publish_year,number_of_pages_median,subject&limit=1`,
+      { signal: AbortSignal.timeout(4000) },
+    ).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  ]);
+
+  const gb = gbRes.status === "fulfilled" ? gbRes.value : null;
+  const ol = olRes.status === "fulfilled" ? olRes.value : null;
+
+  const meta: BookMetadata = {};
+
+  // Google Books — primary source for description, page count, year, genres
+  const gbItem = gb?.items?.[0]?.volumeInfo;
+  if (gbItem) {
+    if (gbItem.title) meta.title = gbItem.title;
+    if (gbItem.authors?.length) meta.author = gbItem.authors[0];
+    if (gbItem.description) meta.description = gbItem.description.slice(0, 600);
+    if (gbItem.pageCount) meta.pageCount = gbItem.pageCount;
+    if (gbItem.publishedDate) meta.publishedYear = parseInt(gbItem.publishedDate.slice(0, 4), 10) || undefined;
+    if (gbItem.categories?.length) meta.genres = gbItem.categories.slice(0, 5);
+  }
+
+  // OpenLibrary — fills gaps
+  const olDoc = ol?.docs?.[0];
+  if (olDoc) {
+    if (!meta.author && olDoc.author_name?.[0]) meta.author = olDoc.author_name[0];
+    if (!meta.publishedYear && olDoc.first_publish_year) meta.publishedYear = olDoc.first_publish_year;
+    if (!meta.pageCount && olDoc.number_of_pages_median) meta.pageCount = olDoc.number_of_pages_median;
+    if (!meta.genres?.length && olDoc.subject?.length) {
+      meta.genres = (olDoc.subject as string[]).slice(0, 5);
+    }
+  }
+
+  return meta;
+}
+
+function buildMetadataBlock(meta: BookMetadata): string {
+  if (!Object.keys(meta).some((k) => meta[k as keyof BookMetadata] !== undefined)) return "";
+  const lines: string[] = [];
+  if (meta.title)       lines.push(`Title: ${meta.title}`);
+  if (meta.author)      lines.push(`Author: ${meta.author}`);
+  if (meta.publishedYear) lines.push(`First published: ${meta.publishedYear}`);
+  if (meta.pageCount)   lines.push(`Pages: ${meta.pageCount}`);
+  if (meta.genres?.length) lines.push(`Genres/categories: ${meta.genres.join(", ")}`);
+  if (meta.description) lines.push(`Publisher description:\n${meta.description}`);
+  if (!lines.length) return "";
+  return [
+    "CONFIRMED BOOK METADATA (sourced from Google Books / Open Library — treat as factual ground truth; do not contradict title, author, year, or genre):",
+    ...lines,
+    "",
+  ].join("\n");
 }
 
 // ---------- AI call ----------
@@ -1272,9 +1349,24 @@ Deno.serve(async (req) => {
           ? `The user previously asked for a visualization of "${title}". Here is the previous analysis JSON:\n\n${JSON.stringify(previousAnalysis)}\n\nThe user now wants to refine the analysis with this prompt: "${refinement}"\n\nReturn an updated full analysis (same schema). Keep ids stable where possible.`
           : `Produce a structured analysis of the book: "${title}"`;
 
+        // Fetch real metadata before calling Gemini (non-blocking — if it fails, proceed without)
+        let metadataBlock = "";
+        if (!isRefine) {
+          try {
+            const meta = await fetchBookMetadata(cleanTitle, cleanAuthor);
+            metadataBlock = buildMetadataBlock(meta);
+          } catch (e) {
+            console.warn("metadata fetch failed (non-fatal):", e);
+          }
+        }
+
+        const enrichedPrompt = metadataBlock
+          ? `${metadataBlock}\n${userPrompt}`
+          : userPrompt;
+
         let analysis: Analysis | null;
         try {
-          analysis = await callStructuredAnalysis(GEMINI_API_KEY, userPrompt);
+          analysis = await callStructuredAnalysis(GEMINI_API_KEY, enrichedPrompt);
         } catch (e: any) {
           if (e.status === 429 || e.status === 503) {
             send("error", { error: "The AI service is overloaded right now. Please try again in a minute.", status: 429 });
@@ -1298,7 +1390,7 @@ Deno.serve(async (req) => {
             ? "You MUST call either render_novel_analysis (for fiction) or render_nonfiction_analysis (for non-fiction). Do NOT reply in plain text — always call one of the provided tools with a complete, structured response."
             : "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).";
           try {
-            const retry = await callStructuredAnalysis(GEMINI_API_KEY, userPrompt, corrective);
+            const retry = await callStructuredAnalysis(GEMINI_API_KEY, enrichedPrompt, corrective);
             // Accept any non-null retry — even a thin result is better than a hard failure.
             if (retry) analysis = retry;
           } catch (e) {

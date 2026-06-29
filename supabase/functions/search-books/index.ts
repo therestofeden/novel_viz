@@ -144,6 +144,29 @@ interface OLDoc {
   language?: string[];
 }
 
+type GBVolumeInfo = {
+  title?: string;
+  authors?: string[];
+  description?: string;
+  publishedDate?: string;
+  pageCount?: number;
+  categories?: string[];
+};
+
+type GBItem = { volumeInfo: GBVolumeInfo };
+
+async function fetchGoogleBooks(query: string): Promise<GBItem[]> {
+  try {
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&printType=books`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    if (!r.ok) return [];
+    const json = await r.json();
+    return (json?.items ?? []) as GBItem[];
+  } catch {
+    return [];
+  }
+}
+
 interface Ranked {
   key: string;
   title: string;
@@ -152,6 +175,7 @@ interface Ranked {
   score: number;
   cached: boolean;
   shelfBoost: boolean;
+  description?: string;
 }
 
 function lexicalScore(query: string, title: string, author: string): number {
@@ -323,31 +347,56 @@ Deno.serve(async (req) => {
       ? `https://openlibrary.org/search.json?author=${encodeURIComponent(q)}&limit=20&fields=${OL_FIELDS}`
       : null;
 
-    let docs: OLDoc[];
-    try {
+    // Run OpenLibrary fetch logic + Google Books in parallel
+    const olFetchPromise = (async (): Promise<OLDoc[]> => {
       const fetches: Promise<OLDoc[]>[] = [olFetch(baseUrl)];
       if (authorUrl) fetches.push(olFetch(authorUrl).catch(() => [] as OLDoc[]));
       const arrays = await Promise.all(fetches);
-      docs = arrays.flat();
+      let result = arrays.flat();
 
       // Typo fallback: if base returned nothing usable, retry with fuzzy operator
-      if (docs.filter((d) => d.title && isLatin(d.title)).length === 0) {
+      if (result.filter((d) => d.title && isLatin(d.title)).length === 0) {
         const fuzzyUrl =
           `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`;
         try {
           const fuzzy = await olFetch(fuzzyUrl);
-          docs = docs.concat(fuzzy);
+          result = result.concat(fuzzy);
           timings.fuzzy_used = 1;
         } catch (_e) { /* ignore */ }
       }
-    } catch (e) {
-      console.error(JSON.stringify({ fn: "search-books", error: "ol_fetch_failed", message: String(e) }));
+      return result;
+    })();
+
+    const [olResult, gbResult] = await Promise.allSettled([
+      olFetchPromise,
+      fetchGoogleBooks(q),
+    ]);
+
+    let docs: OLDoc[];
+    if (olResult.status === "fulfilled") {
+      docs = olResult.value;
+    } else {
+      console.error(JSON.stringify({ fn: "search-books", error: "ol_fetch_failed", message: String(olResult.reason) }));
       return new Response(JSON.stringify({ results: [], error: "upstream_failed" }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const gbItems: GBItem[] = gbResult.status === "fulfilled" ? gbResult.value : [];
     timings.ol_fetch = Math.round(performance.now() - olT0);
+
+    // Build description map from Google Books (key = "title_lower|author0_lower")
+    const descriptionMap = new Map<string, string>();
+    for (const item of gbItems) {
+      const vi = item.volumeInfo;
+      if (!vi.title || !vi.description) continue;
+      const gbTitle = vi.title.toLowerCase().trim();
+      const gbAuthor = (vi.authors?.[0] ?? "").toLowerCase().trim();
+      const gbKey = `${gbTitle}|${gbAuthor}`;
+      if (!descriptionMap.has(gbKey)) {
+        descriptionMap.set(gbKey, vi.description);
+      }
+    }
 
     // First pass — Latinize, dedupe, score
     const seen = new Set<string>();
@@ -359,6 +408,7 @@ Deno.serve(async (req) => {
       const dedupKey = `${d.title.toLowerCase()}::${author.toLowerCase()}`;
       if (seen.has(dedupKey)) continue;
       seen.add(dedupKey);
+      const descKey = `${d.title.toLowerCase().trim()}|${author.toLowerCase().trim()}`;
       candidates.push({
         key: d.key,
         title: d.title,
@@ -367,6 +417,28 @@ Deno.serve(async (req) => {
         score: lexicalScore(q, d.title, author) + popularityScore(d),
         cached: false,
         shelfBoost: false,
+        description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
+      });
+    }
+
+    // Merge Google Books items that aren't already in OL results
+    for (const item of gbItems) {
+      const vi = item.volumeInfo;
+      if (!vi.title || !isLatin(vi.title)) continue;
+      const gbAuthor = vi.authors?.[0] ?? "Unknown";
+      const dedupKey = `${vi.title.toLowerCase()}::${gbAuthor.toLowerCase()}`;
+      if (seen.has(dedupKey)) continue;
+      seen.add(dedupKey);
+      const descKey = `${vi.title.toLowerCase().trim()}|${gbAuthor.toLowerCase().trim()}`;
+      candidates.push({
+        key: `gb:${encodeURIComponent(vi.title)}`,
+        title: vi.title,
+        author: gbAuthor,
+        year: vi.publishedDate ? parseInt(vi.publishedDate.slice(0, 4), 10) : undefined,
+        score: lexicalScore(q, vi.title, gbAuthor) + 200,
+        cached: false,
+        shelfBoost: false,
+        description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
       });
     }
 
