@@ -8,6 +8,8 @@ interface ShareButtonProps {
   title: string;
   author?: string;
   signature?: string;
+  /** Slug for the stable /book/:slug URL. Falls back to /?book=title if absent. */
+  slug?: string;
   className?: string;
 }
 
@@ -16,15 +18,18 @@ interface ShareButtonProps {
  * - Mobile: opens the native share sheet (Web Share API) on tap.
  * - Desktop / unsupported: opens an inline panel with copy-link + X share.
  */
-export function ShareButton({ title, author, signature, className }: ShareButtonProps) {
+export function ShareButton({ title, author, signature, slug, className }: ShareButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const buildUrl = () => {
     if (typeof window === "undefined") return "";
-    // /og?book=X returns a page with per-book OG meta tags for social crawlers
-    // and instantly redirects real users to the SPA /?book=X.
-    const u = new URL(window.location.origin + "/og");
+    if (slug) {
+      // Stable, shareable /book/:slug URL — the canonical form.
+      return new URL(window.location.origin + "/book/" + slug).toString();
+    }
+    // Fallback: /?book=Title (same as before, for books without a slug yet).
+    const u = new URL(window.location.origin + "/");
     u.searchParams.set("book", title);
     return u.toString();
   };

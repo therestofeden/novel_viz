@@ -10,6 +10,7 @@ import { SmoothScroll } from "@/components/SmoothScroll";
 import { PageScrollRule } from "@/lib/motion";
 
 // Route-split: only Index ships in the initial bundle. The rest load on navigation.
+const BookPage = lazy(() => import("./pages/BookPage.tsx"));
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const Shelf = lazy(() => import("./pages/Shelf.tsx"));
 const AntiShelf = lazy(() => import("./pages/AntiShelf.tsx"));
@@ -37,6 +38,7 @@ const App = () => (
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/book/:slug" element={<BookPage />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/shelf" element={<Shelf />} />
                 <Route path="/anti-shelf" element={<AntiShelf />} />

@@ -634,6 +634,7 @@ const Index = () => {
   const [preambleText, setPreambleText] = useState<string>("");
   const [cachedHit, setCachedHit] = useState(false);
   const [cacheKey, setCacheKey] = useState<string | null>(null);
+  const [slug, setSlug] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const { user, geminiKey } = useAuth();
   const [geminiDialogOpen, setGeminiDialogOpen] = useState(false);
@@ -647,7 +648,7 @@ const Index = () => {
     setPreambleText("");
     setAnalysisPreview(null);
     setCachedHit(false);
-    if (!isRefine) setCacheKey(null);
+    if (!isRefine) { setCacheKey(null); setSlug(null); }
 
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-novel`;
 
@@ -739,6 +740,7 @@ const Index = () => {
           result = raw ? normalizeAnalysis(raw as Record<string, unknown>) : null;
           setCachedHit(!!data?.cached);
           if (data?.cacheKey) setCacheKey(data.cacheKey);
+          if (data?.slug) setSlug(data.slug);
           setAnalysisPreview(null); // full analysis supersedes preview
         } else if (event === "error") {
           errorMsg = data?.error ?? "Something went wrong";
@@ -774,7 +776,11 @@ const Index = () => {
       if (!result) throw new Error("No analysis returned");
 
       if (result.confidence === "unknown_work") {
-        toast.error("Couldn't recognise that book. Try adding the author name, e.g. \"Thinking, Fast and Slow by Kahneman\".");
+        toast.error(
+          "This book may be too recent for our AI, or the title wasn't recognized. " +
+          "Try adding the author's name (e.g. \"Book Title by Author Name\") or add your Gemini API key to unlock extended analysis.",
+          { duration: 7000 }
+        );
         if (!isRefine) setAnalysis(null);
         return;
       }
@@ -912,6 +918,7 @@ const Index = () => {
                   setTitle("");
                   setActiveRefinement(null);
                   setCacheKey(null);
+                  setSlug(null);
                 }}
                 className="meta border-l border-foreground bg-foreground px-5 py-5 text-background hover:bg-primary hover:text-primary-foreground"
               >
@@ -1315,6 +1322,7 @@ const Index = () => {
                     title={analysis.title}
                     author={analysis.author || ""}
                     signature={analysis.dna?.signature}
+                    slug={slug ?? undefined}
                   />
                   {activeRefinement && (
                     <div className="meta inline-flex items-center gap-2 border border-foreground bg-foreground px-3 py-1.5 text-background">

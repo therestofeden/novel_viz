@@ -406,10 +406,16 @@ const SYSTEM_PROMPT = `You are a literary scholar specializing in mapping the st
 
 OBSCURE OR LESSER-KNOWN BOOKS: Always attempt a best-effort analysis. Return confidence "low" if your knowledge is limited. NEVER use "unknown_work" for a real book just because it is obscure — only use "unknown_work" when the input is clearly NOT a book (a film, TV show, video game, or complete gibberish). Even a thin analysis with confidence "low" is far more useful than refusing.
 
+RECENTLY PUBLISHED BOOKS (2024-2026): These books may post-date your training cutoff. Even so, do NOT return "unknown_work". Instead:
+1. Use any confirmed metadata provided above (title, author, publisher description, genres) as factual ground truth.
+2. Return confidence "low" and produce a best-effort structural scaffold: infer genre conventions, likely chapter flow, and thematic arcs from the publisher description and genre signals.
+3. State clearly in the explanation field that your analysis is based on limited pre-publication or metadata information rather than full reading of the text.
+A low-confidence scaffold is always better than an "unknown_work" refusal for real books.
+
 IMPORTANT — choose the right tool:
 - For FICTION (novels, novellas, short stories, plays): call \`render_novel_analysis\`.
 - For NON-FICTION (essays, memoirs, history, science, philosophy, self-help, business, biography): call \`render_nonfiction_analysis\`.
-- If the work is a film, TV show, video game, or is completely unknown to you, set confidence to "unknown_work" in the most appropriate tool and explain in the explanation field.
+- If the work is a film, TV show, video game, or is completely unknown to you AND no metadata is available, set confidence to "unknown_work" in the most appropriate tool and explain in the explanation field.
 
 FICTION RULES (render_novel_analysis):
 - For books with multiple narrative threads, create one lane per major thread/POV.
@@ -848,6 +854,16 @@ function buildCacheKey(title: string, author?: string): string {
   return `${CACHE_VERSION}|${t}||${a}`;
 }
 
+// ---------- Slug ----------
+// Matches the SQL: lower, collapse non-alphanumeric runs to hyphens, trim edges.
+function slugify(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 // Heuristic split: "Title by Author" → { title, author }
 function splitTitleAuthor(input: string): { title: string; author: string } {
   const m = input.match(/^(.+?)\s+by\s+(.+)$/i);
@@ -1114,7 +1130,7 @@ Deno.serve(async (req) => {
   if (!isRefine && !isReanalyze) {
     const { data: cached } = await supabase
       .from("novel_analyses")
-      .select("analysis, id, hit_count")
+      .select("analysis, id, hit_count, slug, title")
       .eq("cache_key", cacheKey)
       .eq("is_validated", true)
       .maybeSingle();
@@ -1127,9 +1143,12 @@ Deno.serve(async (req) => {
         .eq("id", cached.id)
         .then(() => {}).catch((e: any) => console.error("hit bump error:", e));
 
+      // If slug is missing on this row (alias row), compute it from the title.
+      const cachedSlug = cached.slug ?? (cached.title ? slugify(cached.title) : null);
+
       const sseBody = [
         sseFrame("status", { text: "Found in library — restoring instantly." }),
-        sseFrame("analysis", { analysis: cached.analysis, cached: true, cacheKey }),
+        sseFrame("analysis", { analysis: cached.analysis, cached: true, cacheKey, ...(cachedSlug ? { slug: cachedSlug } : {}) }),
         sseFrame("done", {}),
       ].join("");
 
@@ -1153,7 +1172,7 @@ Deno.serve(async (req) => {
     await inFlight.get(cacheKey);
     const { data: cached } = await supabase
       .from("novel_analyses")
-      .select("analysis, id, hit_count")
+      .select("analysis, id, hit_count, slug, title")
       .eq("cache_key", cacheKey)
       .eq("is_validated", true)
       .maybeSingle();
@@ -1165,9 +1184,10 @@ Deno.serve(async (req) => {
         .eq("id", cached.id)
         .then(() => {}).catch(() => {});
 
+      const cachedSlug = cached.slug ?? (cached.title ? slugify(cached.title) : null);
       const sseBody = [
         sseFrame("status", { text: "Found in library — restoring instantly." }),
-        sseFrame("analysis", { analysis: cached.analysis, cached: true, cacheKey }),
+        sseFrame("analysis", { analysis: cached.analysis, cached: true, cacheKey, ...(cachedSlug ? { slug: cachedSlug } : {}) }),
         sseFrame("done", {}),
       ].join("");
 
@@ -1413,6 +1433,8 @@ Deno.serve(async (req) => {
             ? buildCacheKey(analysis.title || cleanTitle, analysis.author || cleanAuthor)
             : cacheKey;
 
+        const canonicalSlug = slugify(analysis.title || cleanTitle);
+
         if ((!isRefine || isReanalyze) && analysis.confidence !== "unknown_work" && isAdequate(analysis)) {
           // isReanalyze: ignoreDuplicates:false → overwrites the stale cached entry.
           // Fresh analyses: ignoreDuplicates:true → races between isolates silently no-op.
@@ -1425,12 +1447,15 @@ Deno.serve(async (req) => {
               analysis,
               model: MODEL,
               is_validated: true,
+              slug: canonicalSlug,
             }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze });
           if (upsertErr) console.error("cache write error:", upsertErr);
 
           // Also write an alias under the raw input key if it differs from
           // the canonical one — ensures this exact search string is a cache
           // hit next time without another Gemini call.
+          // Alias rows intentionally omit slug so the unique index is only
+          // set on the canonical row.
           if (canonicalCacheKey !== cacheKey) {
             await supabase
               .from("novel_analyses")
@@ -1447,9 +1472,9 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Send the canonical key to the frontend so shelf/compare/DNA always
+        // Send the canonical key and slug to the frontend so shelf/compare/DNA always
         // reference the same slot regardless of how the title was typed.
-        send("analysis", { analysis, cached: false, cacheKey: canonicalCacheKey });
+        send("analysis", { analysis, cached: false, cacheKey: canonicalCacheKey, slug: canonicalSlug });
         send("done", {});
         metric("fresh", {
           characters: analysis.characters?.length ?? 0,
