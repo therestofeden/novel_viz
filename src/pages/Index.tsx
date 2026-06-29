@@ -332,6 +332,34 @@ type BookSuggestion = {
   shelfBoost?: boolean;
 };
 
+// ── Cover image fetching ─────────────────────────────────────────────────────
+const coverCache = new Map<string, string | null>();
+
+async function fetchCoverUrl(title: string, author: string): Promise<string | null> {
+  const cacheKey = `${title.toLowerCase()}|${(author ?? "").toLowerCase()}`;
+  if (coverCache.has(cacheKey)) return coverCache.get(cacheKey)!;
+  try {
+    const q = author && author !== "Unknown"
+      ? `intitle:${encodeURIComponent(title)}+inauthor:${encodeURIComponent(author)}`
+      : `intitle:${encodeURIComponent(title)}`;
+    const r = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&printType=books`,
+    );
+    if (!r.ok) { coverCache.set(cacheKey, null); return null; }
+    const json = await r.json();
+    const raw = json?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail as string | undefined;
+    const url = raw
+      ? raw.replace("http://", "https://").replace("&edge=curl", "") + "&fife=w300"
+      : null;
+    coverCache.set(cacheKey, url);
+    return url;
+  } catch {
+    coverCache.set(cacheKey, null);
+    return null;
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const Index = () => {
   const [title, setTitle] = useState("");
   const [analysis, setAnalysis] = useState<NovelAnalysis | null>(null);
@@ -594,10 +622,19 @@ const Index = () => {
     setSelectedCharacterId(null);
   }, [analysis?.title]);
 
+  // Fetch cover art as soon as we have a title (preview or full analysis).
+  useEffect(() => {
+    const t = analysis?.title || analysisPreview?.title;
+    const a = analysis?.author || analysisPreview?.author || "";
+    if (!t) { setCoverUrl(null); return; }
+    fetchCoverUrl(t, a).then(setCoverUrl);
+  }, [analysis?.title, analysisPreview?.title]);
+
   const [statusText, setStatusText] = useState<string>("");
   const [preambleText, setPreambleText] = useState<string>("");
   const [cachedHit, setCachedHit] = useState(false);
   const [cacheKey, setCacheKey] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const { user, geminiKey } = useAuth();
   const [geminiDialogOpen, setGeminiDialogOpen] = useState(false);
 
@@ -1179,9 +1216,21 @@ const Index = () => {
           <div>
             <section className="grid grid-cols-12 gap-0 ink-border-b">
               <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
-                <div className="meta text-muted-foreground">Subject</div>
-                <div className="display-num mt-2 text-4xl text-muted-foreground/40 md:text-6xl">—</div>
-                <div className="meta mt-2 text-muted-foreground">Mapping…</div>
+                <div className="flex items-start gap-4 md:flex-col md:gap-0">
+                  {coverUrl && (
+                    <img
+                      src={coverUrl}
+                      alt=""
+                      className="w-14 flex-shrink-0 rounded shadow-lg ring-1 ring-foreground/10 md:mb-4 md:w-full md:max-w-[108px]"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  )}
+                  <div>
+                    <div className="meta text-muted-foreground">Subject</div>
+                    <div className="display-num mt-2 text-4xl text-muted-foreground/40 md:text-6xl">—</div>
+                    <div className="meta mt-2 text-muted-foreground">Mapping…</div>
+                  </div>
+                </div>
               </div>
               <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
                 <div className="meta text-muted-foreground">
@@ -1220,14 +1269,26 @@ const Index = () => {
             {/* ===================== ANALYSIS MASTHEAD ===================== */}
             <section id="analysis-anchor" className="grid grid-cols-12 gap-0 ink-border-b scroll-mt-20">
               <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
-                <div className="meta text-muted-foreground">Subject</div>
-                <div className="display-num mt-2 text-4xl md:text-6xl">
-                  {isFiction(analysis)
-                    ? String(analysis.events?.length ?? 0).padStart(2, "0")
-                    : String((analysis as NonFictionAnalysis).concepts?.length ?? 0).padStart(2, "0")}
-                </div>
-                <div className="meta mt-2 text-muted-foreground">
-                  {isFiction(analysis) ? "Events Mapped" : "Concepts"}
+                <div className="flex items-start gap-4 md:flex-col md:gap-0">
+                  {coverUrl && (
+                    <img
+                      src={coverUrl}
+                      alt={`${analysis.title} cover`}
+                      className="w-14 flex-shrink-0 rounded shadow-lg ring-1 ring-foreground/10 md:mb-4 md:w-full md:max-w-[108px]"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  )}
+                  <div>
+                    <div className="meta text-muted-foreground">Subject</div>
+                    <div className="display-num mt-2 text-4xl md:text-6xl">
+                      {isFiction(analysis)
+                        ? String(analysis.events?.length ?? 0).padStart(2, "0")
+                        : String((analysis as NonFictionAnalysis).concepts?.length ?? 0).padStart(2, "0")}
+                    </div>
+                    <div className="meta mt-2 text-muted-foreground">
+                      {isFiction(analysis) ? "Events Mapped" : "Concepts"}
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
