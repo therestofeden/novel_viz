@@ -40,7 +40,7 @@ import { GeminiKeyDialog } from "@/components/GeminiKeyDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, normalizeForSearch } from "@/lib/utils";
 
 // Curated pool of literary titles. We sample 6 per page-load for variety.
 // Mix of canon, contemporary, world lit, and structurally interesting works.
@@ -429,7 +429,7 @@ const Index = () => {
   // Loaded once on mount, filtered in-memory on every keystroke.
   // Covers ~80% of searches without any backend call.
   // ============================================================
-  type IndexedBook = { title: string; author: string; popularity: number; haystack: string };
+  type IndexedBook = { title: string; author: string; popularity: number; haystack: string; normTitle: string; normAuthor: string; normHaystack: string };
   const popularIndexRef = useRef<IndexedBook[]>([]);
 
   useEffect(() => {
@@ -442,13 +442,20 @@ const Index = () => {
     })
       .then((r) => r.json())
       .then((j) => {
-        const rows = (j?.results ?? []) as Array<{ title: string; author: string; popularity: number }>;
-        popularIndexRef.current = rows.map((b) => ({
-          title: b.title,
-          author: b.author ?? "",
-          popularity: b.popularity ?? 0,
-          haystack: `${b.title} ${b.author ?? ""}`.toLowerCase(),
-        }));
+        const rows = (j?.results ?? []) as Array<{ title: string; author: string; popularity: number; normTitle?: string; normAuthor?: string }>;
+        popularIndexRef.current = rows.map((b) => {
+          const normTitle = b.normTitle ?? normalizeForSearch(b.title);
+          const normAuthor = b.normAuthor ?? normalizeForSearch(b.author ?? "");
+          return {
+            title: b.title,
+            author: b.author ?? "",
+            popularity: b.popularity ?? 0,
+            haystack: `${b.title} ${b.author ?? ""}`.toLowerCase(),
+            normTitle,
+            normAuthor,
+            normHaystack: `${normTitle} ${normAuthor}`,
+          };
+        });
         // Warm the top-N most popular analyses in the background. These are
         // already-cached on the server (popular-books surfaces analyzed titles),
         // so the prefetch round-trip just confirms the hit and primes our local
@@ -463,22 +470,38 @@ const Index = () => {
   }, []);
 
   function searchLocalIndex(q: string, limit = 8): BookSuggestion[] {
-    const lower = q.toLowerCase().trim();
-    if (!lower) return [];
+    const norm = normalizeForSearch(q);
+    if (!norm) return [];
     const idx = popularIndexRef.current;
     if (idx.length === 0) return [];
     const scored: Array<{ b: IndexedBook; score: number }> = [];
+    // Pre-tokenize the query for the fuzzy pass (≥2-char tokens only)
+    const qTokens = norm.split(" ").filter((t) => t.length >= 2);
     for (const b of idx) {
-      const t = b.title.toLowerCase();
-      const a = b.author.toLowerCase();
+      const t = b.normTitle;
+      const a = b.normAuthor;
+      const h = b.normHaystack;
       let score = 0;
-      if (t === lower || a === lower) score = 1000;
-      else if (t.startsWith(lower)) score = 700;
-      else if (a.startsWith(lower)) score = 600;
-      else if (t.split(/\s+/).some((w) => w.startsWith(lower))) score = 450;
-      else if (a.split(/\s+/).some((w) => w.startsWith(lower))) score = 400;
-      else if (b.haystack.includes(lower)) score = 200;
-      else continue;
+      // Tier 1: exact / prefix / substring (accent-insensitive via normHaystack)
+      if (t === norm || a === norm) score = 1000;
+      else if (t.startsWith(norm)) score = 700;
+      else if (a.startsWith(norm)) score = 600;
+      else if (t.split(" ").some((w) => w.startsWith(norm))) score = 450;
+      else if (a.split(" ").some((w) => w.startsWith(norm))) score = 400;
+      else if (h.includes(norm)) score = 200;
+      else if (qTokens.length >= 2) {
+        // Tier 2: token-overlap fuzzy — handles "love at the time" ≈ "love in the time"
+        const hWords = h.split(" ");
+        const hSet = new Set(hWords);
+        let matched = 0;
+        for (const qt of qTokens) {
+          if (hSet.has(qt)) matched++;
+          else if (hWords.some((hw) => hw.startsWith(qt) || qt.startsWith(hw))) matched += 0.6;
+        }
+        const overlap = matched / qTokens.length;
+        if (overlap >= 0.6) score = Math.round(overlap * 180); // max ~180, below all Tier-1 scores
+      }
+      if (score === 0) continue;
       scored.push({ b, score: score + b.popularity * 0.3 });
     }
     scored.sort((x, y) => y.score - x.score);
@@ -868,7 +891,7 @@ const Index = () => {
       <div className="dateline-strip">
         <span>NovelViz</span>
         <span style={{ opacity: 0.4 }}>·</span>
-        <span>Literary Cartography</span>
+        <span>Visualize any book</span>
         <span style={{ opacity: 0.4 }}>·</span>
         <span>Est. 2024</span>
       </div>
@@ -877,16 +900,25 @@ const Index = () => {
       <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
         <div className="container mx-auto flex items-stretch justify-between">
           <div className="flex items-stretch">
-            <Link
-              to="/"
+            <button
+              type="button"
+              onClick={() => {
+                setAnalysis(null);
+                setAnalysisPreview(null);
+                setTitle("");
+                setLoading(false);
+                setStatusText("");
+                setPreambleText("");
+                setCachedHit(false);
+              }}
               className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
             >
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
                 <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Literary Cartography</div>
+                <div className="meta mt-1.5 text-muted-foreground">Visualize any book</div>
               </div>
-            </Link>
+            </button>
           </div>
           <div className="flex items-stretch">
             {user ? (
@@ -928,7 +960,7 @@ const Index = () => {
               <div className="mt-4 h-px w-10 bg-foreground" />
               <div className="meta mt-4 text-muted-foreground">Book Analysis</div>
               <div className="hidden md:block absolute bottom-12 left-0 w-full flex items-end justify-center" style={{ paddingLeft: "1.5rem" }}>
-                <span className="side-label text-muted-foreground/50">Literary Cartography</span>
+                <span className="side-label text-muted-foreground/50">Visualize any book</span>
               </div>
             </aside>
 
@@ -942,7 +974,7 @@ const Index = () => {
                 />
                 A Reading Tool
                 <span className="hidden md:inline-block h-px w-8 bg-foreground/30" />
-                <span className="hidden md:inline">Literary Cartography</span>
+                <span className="hidden md:inline">Visualize any book</span>
               </Reveal>
 
               <h1 className="text-balance font-sans text-6xl font-bold leading-[0.88] tracking-[-0.04em] md:text-8xl lg:text-[10.5rem]">
