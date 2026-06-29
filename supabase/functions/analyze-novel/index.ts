@@ -69,7 +69,11 @@ async function geminiFetchWithFallback(
         circuitRecordSuccess(model);
         return r;
       }
-      if (r.status !== 429 && r.status !== 503) return r; // hard error — no retry
+      // Retry on rate-limit, service-unavailable, bad-gateway, and internal errors.
+      // 4xx client errors (400, 401, 403, 404 …) are hard failures — no retry.
+      // 429 is a 4xx but IS retryable (rate-limit). 5xx are always retryable.
+      const isRetryable = r.status === 429 || r.status >= 500;
+      if (!isRetryable) return r; // client error — no retry
       console.warn(`gemini ${model} -> ${r.status}, tripping circuit`);
       await r.body?.cancel().catch(() => {});
       last = r;
@@ -399,6 +403,8 @@ const DNA_AXIS_IDS = [
 ] as const;
 
 const SYSTEM_PROMPT = `You are a literary scholar specializing in mapping the structure of books — both fiction and non-fiction. Given a book's title, you determine whether it is fiction or non-fiction and call the appropriate tool.
+
+OBSCURE OR LESSER-KNOWN BOOKS: Always attempt a best-effort analysis. Return confidence "low" if your knowledge is limited. NEVER use "unknown_work" for a real book just because it is obscure — only use "unknown_work" when the input is clearly NOT a book (a film, TV show, video game, or complete gibberish). Even a thin analysis with confidence "low" is far more useful than refusing.
 
 IMPORTANT — choose the right tool:
 - For FICTION (novels, novellas, short stories, plays): call \`render_novel_analysis\`.
@@ -1273,7 +1279,10 @@ Deno.serve(async (req) => {
           if (e.status === 429 || e.status === 503) {
             send("error", { error: "The AI service is overloaded right now. Please try again in a minute.", status: 429 });
           } else {
-            send("error", { error: "Gemini API error", status: 500 });
+            send("error", {
+              error: "Couldn't analyze this book — it may be too obscure for the AI. Try adding 'by [Author Name]' to the title, or try again in a moment.",
+              status: 500,
+            });
           }
           controller.close();
           return;

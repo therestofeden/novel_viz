@@ -987,6 +987,38 @@ const Index = () => {
                     </MagneticButton>
                   </div>
 
+                  {/* Loading state — local index empty, waiting for network */}
+                  {suggestOpen && suggestions.length === 0 && suggestLoading && title.trim().length >= 2 && (
+                    <ul className="ink-border absolute left-0 right-0 top-full z-20 mt-[-1px] bg-card">
+                      <li className="meta flex items-center gap-2 px-4 py-3 text-muted-foreground">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Searching Open Library…
+                      </li>
+                    </ul>
+                  )}
+
+                  {/* No-results state — press Enter to analyze directly */}
+                  {suggestOpen && suggestions.length === 0 && !suggestLoading && title.trim().length >= 2 && (
+                    <ul className="ink-border absolute left-0 right-0 top-full z-20 mt-[-1px] bg-card">
+                      <li className="meta border-b border-foreground/30 bg-background px-4 py-2 text-muted-foreground">
+                        Not in search index — analyze directly
+                      </li>
+                      <li role="option">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSuggestOpen(false);
+                            fetchAnalysis(title.trim());
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground hover:text-background"
+                        >
+                          <span className="font-serif italic flex-1 truncate">{title.trim()}</span>
+                          <span className="meta text-muted-foreground shrink-0 group-hover:text-background">→ Analyze directly</span>
+                        </button>
+                      </li>
+                    </ul>
+                  )}
+
                   {suggestOpen && suggestions.length > 0 && (
                     <ul
                       role="listbox"
