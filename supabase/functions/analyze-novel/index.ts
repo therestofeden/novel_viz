@@ -16,8 +16,10 @@ const MODEL = "gemini-3.5-flash";
 const PREAMBLE_MODEL = "gemini-3.5-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
-// Fallback chain: newest → older lite (last resort for 503/429 surges).
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+// Fallback chain: newest → older versions (last resort for 503/429 surges).
+// gemini-1.5-flash is the guaranteed-stable backstop — it predates all quota/503
+// issues and will always be available even if newer models are flaky.
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"];
 
 // ---------- Circuit breaker ----------
 // Tracks per-model transient failure counts within this isolate.
@@ -71,8 +73,14 @@ async function geminiFetchWithFallback(
     // Log ALL errors — critical for diagnosing what Gemini is actually returning.
     const errBody = await r.clone().text().catch(() => "");
     console.error(JSON.stringify({ fn: "geminiFetch", model, status: r.status, body: errBody.slice(0, 400) }));
+    // Cancel the original body stream now that we've cloned it for logging.
+    // IMPORTANT: store a FRESH synthesized response so callers can safely call
+    // .text() and .ok without hitting a "body already used" TypeError.
     await r.body?.cancel().catch(() => {});
-    last = r;
+    last = new Response(errBody || JSON.stringify({ error: `${model} returned ${r.status}` }), {
+      status: r.status,
+      headers: { "Content-Type": "application/json" },
+    });
     // Trip circuit only for 429/5xx (transient). For 4xx client errors, don't trip —
     // but DO continue to the next model: a 400 from model A may not affect model B
     // (e.g. if model A is unknown/unavailable, model B may work fine).
@@ -1010,7 +1018,10 @@ async function callStructuredAnalysis(apiKey: string, userPrompt: string, correc
   const response = await geminiFetchWithFallback(apiKey, {
     messages,
     tools: [analysisTool, nonfictionAnalysisTool],
-    tool_choice: "required", // never let the model skip the tool and return plain text
+    // "required" was returning HTTP 400 from Gemini's OpenAI-compat endpoint.
+    // "auto" lets the model choose; the system prompt + retry logic handle the
+    // rare case where the model skips a tool call and returns plain text instead.
+    tool_choice: "auto",
   });
 
   if (!response.ok) {
@@ -1142,7 +1153,7 @@ Deno.serve(async (req) => {
       .eq("is_validated", true)
       .maybeSingle();
 
-    if (cached?.analysis) {
+    if (cached?.analysis && isAdequate(cached.analysis as Analysis)) {
       // Bump stats async — never block the response on it.
       supabase
         .from("novel_analyses")
@@ -1184,7 +1195,7 @@ Deno.serve(async (req) => {
       .eq("is_validated", true)
       .maybeSingle();
 
-    if (cached?.analysis) {
+    if (cached?.analysis && isAdequate(cached.analysis as Analysis)) {
       supabase
         .from("novel_analyses")
         .update({ hit_count: (cached.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
@@ -1203,7 +1214,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
       });
     }
-    // First request failed to produce a result — fall through and try independently.
+    // First request failed to produce a result (or cached entry was inadequate) — fall through and try independently.
   }
 
   // Register this request as the in-flight owner for this cache key.
@@ -1395,14 +1406,21 @@ Deno.serve(async (req) => {
         try {
           analysis = await callStructuredAnalysis(GEMINI_API_KEY, enrichedPrompt);
         } catch (e: any) {
-          if (e.status === 429 || e.status === 503) {
-            send("error", { error: "The AI service is overloaded right now. Please try again in a minute.", status: 429 });
+          const s: number | undefined = e?.status;
+          console.error(JSON.stringify({ fn: "analyze-novel", stage: "callStructuredAnalysis", errStatus: s, errMsg: e?.message }));
+          let errMsg: string;
+          if (s === 429 || s === 503) {
+            errMsg = "The AI service is overloaded right now. Please try again in a minute.";
+          } else if (s === 401 || s === 403) {
+            errMsg = "There's an issue with the AI service credentials. Please try again later or add your own Gemini API key.";
+          } else if (s && s >= 400 && s < 500) {
+            // 400/404 etc — API-level rejection, not an AI knowledge gap.
+            errMsg = "The AI service rejected this request. Please try again, or try a different search (e.g. add 'by Author Name').";
           } else {
-            send("error", {
-              error: "Couldn't analyze this book — it may be too obscure for the AI. Try adding 'by [Author Name]' to the title, or try again in a moment.",
-              status: 500,
-            });
+            // Generic / unknown — only this branch should say "too obscure".
+            errMsg = "Couldn't analyze this book — it may be too obscure for the AI. Try adding 'by [Author Name]' to the title, or try again in a moment.";
           }
+          send("error", { error: errMsg, status: s ?? 500 });
           controller.close();
           return;
         }

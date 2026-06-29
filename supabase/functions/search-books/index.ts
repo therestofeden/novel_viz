@@ -80,6 +80,16 @@ function buildSearchCacheKey(q: string): string {
   return q.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+// Accent-strip + lowercase for accent-insensitive matching (e.g. "garcia" matches "García").
+function normalizeForSearch(s: string): string {
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 const MEMORY_CACHE_TTL_MS = 10 * 60 * 1000;
 const MEMORY_CACHE_MAX = 256;
 
@@ -179,9 +189,10 @@ interface Ranked {
 }
 
 function lexicalScore(query: string, title: string, author: string): number {
-  const q = buildSearchCacheKey(query);
-  const t = buildSearchCacheKey(title);
-  const a = buildSearchCacheKey(author);
+  // Use accent-stripped normalization so "garcia" matches "García Márquez"
+  const q = normalizeForSearch(query);
+  const t = normalizeForSearch(title);
+  const a = normalizeForSearch(author);
 
   let score = 0;
 
@@ -341,9 +352,11 @@ Deno.serve(async (req) => {
     const baseUrl =
       `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=30&fields=${OL_FIELDS}`;
 
-    // Single-word query → also fan out to author= search in parallel (P1 author-prefix mode).
-    const isSingleWord = !q.includes(" ") && q.length >= 3;
-    const authorUrl = isSingleWord
+    // Fan out to author= search for 1–2 word queries: catches "garcia marquez", "toni morrison", etc.
+    const words = q.split(/\s+/).filter(Boolean);
+    const isSingleWord = words.length === 1 && q.length >= 3;
+    const looksLikeAuthor = words.length === 2; // 2-word queries are often author names
+    const authorUrl = (isSingleWord || looksLikeAuthor)
       ? `https://openlibrary.org/search.json?author=${encodeURIComponent(q)}&limit=20&fields=${OL_FIELDS}`
       : null;
 
@@ -467,7 +480,19 @@ Deno.serve(async (req) => {
       return (b.year ?? 0) - (a.year ?? 0);
     });
 
-    const baseResults = candidates.slice(0, Math.max(limit, 8)).map((c) => ({
+    // Post-dedup: drop "Unknown" author entries when a real-author result for
+    // the same title already exists. Prevents duplicates like "Pale Fire / —"
+    // alongside "Pale Fire / Vladimir Nabokov".
+    const titlesWithRealAuthor = new Set(
+      candidates
+        .filter((c) => c.author && c.author !== "Unknown")
+        .map((c) => c.title.toLowerCase()),
+    );
+    const deduped = candidates.filter(
+      (c) => !(c.author === "Unknown" && titlesWithRealAuthor.has(c.title.toLowerCase())),
+    );
+
+    const baseResults = deduped.slice(0, Math.max(limit, 8)).map((c) => ({
       ...c,
       shelfBoost: false,
     }));

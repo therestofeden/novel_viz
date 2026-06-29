@@ -206,12 +206,11 @@ export const TimelineView = ({
     return (
       <div className="flex flex-col items-center gap-4 px-6 py-20 text-center">
         <p className="font-serif text-base italic text-foreground/70">
-          Not enough data to render a timeline for{" "}
+          The AI returned an incomplete analysis for{" "}
           <span className="not-italic font-semibold">{analysis.title}</span>.
         </p>
         <p className="text-xs text-muted-foreground max-w-sm">
-          This book may be too recently published for the AI to map its narrative structure.
-          Try adding the author's name to the search, or add your Gemini API key for a deeper attempt.
+          Try searching again with the author's name (e.g. "Pale Fire by Nabokov"), or add your Gemini API key for a deeper attempt.
         </p>
       </div>
     );
