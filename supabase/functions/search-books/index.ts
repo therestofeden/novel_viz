@@ -237,7 +237,16 @@ const OL_FIELDS =
   "key,title,author_name,author_alternative_name,first_publish_year,edition_count,ratings_count,ia_count,language";
 
 async function olFetch(url: string): Promise<OLDoc[]> {
-  const res = await fetch(url, { headers: { "User-Agent": "novelviz-search/1.1" } });
+  // Open Library has a long tail of slow/hanging responses (search-books
+  // already runs 2-5s typically). Unlike fetchGoogleBooks (3s timeout) this
+  // call had no bound at all, so a hung OL request could stall the whole
+  // search past whatever timeout the browser/edge runtime enforces — which
+  // surfaces to the client as an aborted/failed fetch instead of a clean,
+  // partial result.
+  const res = await fetch(url, {
+    headers: { "User-Agent": "novelviz-search/1.1" },
+    signal: AbortSignal.timeout(5000),
+  });
   if (!res.ok) throw new Error(`upstream ${res.status}`);
   const json = await res.json();
   return (json?.docs ?? []) as OLDoc[];
@@ -418,7 +427,9 @@ Deno.serve(async (req) => {
       if (!d.title) continue;
       if (!isLatin(d.title)) continue;
       const author = pickLatinAuthor(d.author_name?.[0], d.author_alternative_name);
-      const dedupKey = `${d.title.toLowerCase()}::${author.toLowerCase()}`;
+      // Normalize both sides so minor transliteration/spacing differences don't
+      // produce duplicate candidates (e.g. "Dostoevsky" vs "Dostoyevsky").
+      const dedupKey = `${normalizeForSearch(d.title)}::${normalizeForSearch(author)}`;
       if (seen.has(dedupKey)) continue;
       seen.add(dedupKey);
       const descKey = `${d.title.toLowerCase().trim()}|${author.toLowerCase().trim()}`;
@@ -439,7 +450,7 @@ Deno.serve(async (req) => {
       const vi = item.volumeInfo;
       if (!vi.title || !isLatin(vi.title)) continue;
       const gbAuthor = vi.authors?.[0] ?? "Unknown";
-      const dedupKey = `${vi.title.toLowerCase()}::${gbAuthor.toLowerCase()}`;
+      const dedupKey = `${normalizeForSearch(vi.title)}::${normalizeForSearch(gbAuthor)}`;
       if (seen.has(dedupKey)) continue;
       seen.add(dedupKey);
       const descKey = `${vi.title.toLowerCase().trim()}|${gbAuthor.toLowerCase().trim()}`;
@@ -492,7 +503,23 @@ Deno.serve(async (req) => {
       (c) => !(c.author === "Unknown" && titlesWithRealAuthor.has(c.title.toLowerCase())),
     );
 
-    const baseResults = deduped.slice(0, Math.max(limit, 8)).map((c) => ({
+    // Title-only dedup: same title with different author-name transliterations
+    // (e.g. "Dostoevsky" vs "Dostoyevsky" vs "F.M. Dostoevsky") produces multiple
+    // OL docs for the same work. OL also indexes "The Brothers Karamazov" and
+    // "Brothers Karamazov" as separate works. After sorting by score, keep only
+    // the first (best-scored) entry per normalized, article-stripped title.
+    function normalizeTitleForDedup(title: string): string {
+      return normalizeForSearch(title).replace(/^(the|a|an)\s+/, "");
+    }
+    const seenTitles = new Set<string>();
+    const titleDeduped = deduped.filter((c) => {
+      const normTitle = normalizeTitleForDedup(c.title);
+      if (seenTitles.has(normTitle)) return false;
+      seenTitles.add(normTitle);
+      return true;
+    });
+
+    const baseResults = titleDeduped.slice(0, Math.max(limit, 8)).map((c) => ({
       ...c,
       shelfBoost: false,
     }));

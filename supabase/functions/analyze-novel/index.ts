@@ -17,9 +17,9 @@ const PREAMBLE_MODEL = "gemini-3.5-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 // Fallback chain: newest → older versions (last resort for 503/429 surges).
-// gemini-1.5-flash is the guaranteed-stable backstop — it predates all quota/503
-// issues and will always be available even if newer models are flaky.
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"];
+// gemini-1.5-flash and gemini-2.0-flash are both shut down (June 2026).
+// gemini-2.5-flash and gemini-2.5-flash-lite are deprecated but active until Oct 2026.
+const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 // ---------- Circuit breaker ----------
 // Tracks per-model transient failure counts within this isolate.
@@ -27,7 +27,14 @@ const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite", "ge
 // the model is skipped entirely for CIRCUIT_OPEN_MS — turning a 15s timeout
 // cascade into a <1ms reroute.
 const CIRCUIT_OPEN_MS = 30_000;
-const CIRCUIT_TRIP_AFTER = 1;
+// Was 1: a single 429/503 blip took a model fully offline for 30s. Under any
+// moderate concurrency (e.g. the seed-cache cron running alongside live
+// traffic) this cascaded — model A trips on one fail, model B catches the
+// next request's fail and trips too, model C absorbs everything until it
+// also trips, and every in-flight request in that window gets a hard error
+// instead of a transparent reroute. Require 2 consecutive fails before
+// giving up on a model.
+const CIRCUIT_TRIP_AFTER = 2;
 type CircuitState = { fails: number; openUntil: number };
 const modelCircuit = new Map<string, CircuitState>();
 
@@ -128,7 +135,7 @@ const nonfictionAnalysisTool = {
               ideaIds: { type: "array", items: { type: "string" }, description: "IDs of idea_cards that belong to this pillar." },
             },
             required: ["id", "claim", "evidence", "implication", "ideaIds"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         idea_cards: {
@@ -144,7 +151,7 @@ const nonfictionAnalysisTool = {
               pillarId: { type: "string", description: "ID of the argument_pillar this card belongs to (if applicable)." },
             },
             required: ["id", "claim", "evidence", "tag"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         concepts: {
@@ -160,7 +167,7 @@ const nonfictionAnalysisTool = {
               type: { type: "string", enum: ["thesis", "framework", "evidence", "example", "conclusion", "principle"] },
             },
             required: ["id", "name", "description", "importance", "type"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         conceptRelationships: {
@@ -175,7 +182,7 @@ const nonfictionAnalysisTool = {
               description: { type: "string" },
             },
             required: ["fromId", "toId", "type", "description"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         chapters: {
@@ -193,7 +200,7 @@ const nonfictionAnalysisTool = {
               argumentType: { type: "string", enum: ["introduction", "setup", "evidence", "case_study", "counterargument", "synthesis", "conclusion"] },
             },
             required: ["id", "number", "title", "position", "summary", "keyConceptIds", "argumentType"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         dna: {
@@ -217,13 +224,13 @@ const nonfictionAnalysisTool = {
                   evidence: { type: "string", description: "One concrete sentence about THIS BOOK that drives the score. Name specific stylistic, structural, or methodological features." },
                 },
                 required: ["id", "score", "evidence"],
-                additionalProperties: false,
+                // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
               },
             },
             signature: { type: "string", description: "A 3-7 word intellectual fingerprint. E.g. 'rigorous empiricism wearing a storytelling mask'." },
           },
           required: ["axes", "signature"],
-          additionalProperties: false,
+          // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
         },
         recommendation: {
           type: "object",
@@ -237,12 +244,12 @@ const nonfictionAnalysisTool = {
             divergent_axes: { type: "array", items: { type: "string" } },
           },
           required: ["title", "author", "similarity", "why", "shared_axes", "divergent_axes"],
-          additionalProperties: false,
+          // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
         },
         explanation: { type: "string" },
       },
       required: ["title", "author", "confidence", "summary", "thesis", "argument_pillars", "idea_cards", "concepts", "conceptRelationships", "chapters", "dna", "recommendation", "explanation"],
-      additionalProperties: false,
+      // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
     },
   },
 };
@@ -272,7 +279,7 @@ const analysisTool = {
               description: { type: "string" },
             },
             required: ["id", "name", "description"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         characters: {
@@ -292,7 +299,7 @@ const analysisTool = {
               confidence: { type: "string", enum: ["high", "medium", "low"] },
             },
             required: ["id", "name", "role", "laneId", "description", "introducedAt", "confidence"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         relationships: {
@@ -310,7 +317,7 @@ const analysisTool = {
               strength: { type: "number" },
             },
             required: ["fromId", "toId", "type", "description", "strength"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         events: {
@@ -328,7 +335,7 @@ const analysisTool = {
               confidence: { type: "string", enum: ["high", "medium", "low"] },
             },
             required: ["id", "laneId", "position", "title", "description", "characterIds", "chapterRef", "confidence"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
         dna: {
@@ -361,7 +368,7 @@ const analysisTool = {
                   evidence: { type: "string", description: "One short sentence justifying the score." },
                 },
                 required: ["id", "score", "evidence"],
-                additionalProperties: false,
+                // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
               },
             },
             signature: {
@@ -370,7 +377,7 @@ const analysisTool = {
             },
           },
           required: ["axes", "signature"],
-          additionalProperties: false,
+          // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
         },
         recommendation: {
           type: "object",
@@ -392,12 +399,12 @@ const analysisTool = {
             },
           },
           required: ["title", "author", "similarity", "why", "shared_axes", "divergent_axes"],
-          additionalProperties: false,
+          // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
         },
         explanation: { type: "string" },
       },
       required: ["title", "author", "confidence", "summary", "lanes", "characters", "relationships", "events", "dna", "recommendation", "explanation"],
-      additionalProperties: false,
+      // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
     },
   },
 };
@@ -1101,6 +1108,16 @@ const inFlight = new Map<string, Promise<void>>();
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Safety net: everything below (until the SSE stream is handed back) must
+  // return a Response that carries corsHeaders. If any of it throws instead —
+  // a DB hiccup in the cache-lookup queries, a crypto error in hashIp, etc. —
+  // Deno's default error response has NO Access-Control-Allow-Origin header.
+  // The browser then reports that to client code as a bare
+  // "TypeError: Failed to fetch", indistinguishable from a real network
+  // outage and impossible to retry intelligently (there's no status code to
+  // inspect). Wrapping the whole handler guarantees a real, retryable JSON
+  // response with CORS headers even when something upstream misbehaves.
+  try {
   let body: any;
   try {
     body = await req.json();
@@ -1225,6 +1242,13 @@ Deno.serve(async (req) => {
   }
 
   // ---------- Rate-limit gate (only reached on cache misses / refinements) ----------
+  // Internal seeder calls arrive with the service role key as their bearer token.
+  // Skip rate limiting for these — the seeder is already protected by SEED_SECRET and
+  // hitting it concurrently from a cron is exactly what we want during warm-up.
+  const authHeader = req.headers.get("authorization") ?? "";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const isInternalSeed = serviceRoleKey.length > 0 && authHeader === `Bearer ${serviceRoleKey}`;
+
   const ip = getClientIp(req);
   // Use a dedicated salt so rotating the Gemini key doesn't invalidate all
   // rate-limit history, and BYOK users don't get fresh independent buckets.
@@ -1236,54 +1260,56 @@ Deno.serve(async (req) => {
   const ipHash = await hashIp(ip, rateLimitSalt);
   const route = "analyze-novel";
 
-  try {
-    if (isPrefetch) {
-      const { data: count } = await supabase.rpc("count_recent_events", {
-        p_ip_hash: ipHash, p_route: route, p_window_seconds: 3600, p_prefetch_only: true,
-      });
-      if ((count ?? 0) >= LIMITS.prefetchPerHour) {
-        return new Response(
-          JSON.stringify({ error: "Prefetch rate limit reached." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } },
-        );
+  if (!isInternalSeed) {
+    try {
+      if (isPrefetch) {
+        const { data: count } = await supabase.rpc("count_recent_events", {
+          p_ip_hash: ipHash, p_route: route, p_window_seconds: 3600, p_prefetch_only: true,
+        });
+        if ((count ?? 0) >= LIMITS.prefetchPerHour) {
+          return new Response(
+            JSON.stringify({ error: "Prefetch rate limit reached." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } },
+          );
+        }
+      } else {
+        const [{ data: hourCount }, { data: dayCount }] = await Promise.all([
+          supabase.rpc("count_recent_events", {
+            p_ip_hash: ipHash, p_route: route, p_window_seconds: 3600, p_prefetch_only: false,
+          }),
+          supabase.rpc("count_recent_events", {
+            p_ip_hash: ipHash, p_route: route, p_window_seconds: 86400, p_prefetch_only: false,
+          }),
+        ]);
+        if ((hourCount ?? 0) >= LIMITS.realPerHour) {
+          return new Response(
+            JSON.stringify({ error: "You're reading fast! Please wait a minute before requesting another analysis." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "120" } },
+          );
+        }
+        if ((dayCount ?? 0) >= LIMITS.realPerDay) {
+          return new Response(
+            JSON.stringify({ error: "Daily analysis limit reached. Please try again tomorrow." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" } },
+          );
+        }
       }
-    } else {
-      const [{ data: hourCount }, { data: dayCount }] = await Promise.all([
-        supabase.rpc("count_recent_events", {
-          p_ip_hash: ipHash, p_route: route, p_window_seconds: 3600, p_prefetch_only: false,
-        }),
-        supabase.rpc("count_recent_events", {
-          p_ip_hash: ipHash, p_route: route, p_window_seconds: 86400, p_prefetch_only: false,
-        }),
-      ]);
-      if ((hourCount ?? 0) >= LIMITS.realPerHour) {
-        return new Response(
-          JSON.stringify({ error: "You're reading fast! Please wait a minute before requesting another analysis." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "120" } },
-        );
-      }
-      if ((dayCount ?? 0) >= LIMITS.realPerDay) {
-        return new Response(
-          JSON.stringify({ error: "Daily analysis limit reached. Please try again tomorrow." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" } },
-        );
-      }
-    }
 
-    // Log this request (fire-and-forget — never block on the log write).
-    supabase
-      .from("rate_limit_events")
-      .insert({ ip_hash: ipHash, route, is_prefetch: isPrefetch })
-      .then(() => {}, (e: any) => console.error("rl insert error:", e));
+      // Log this request (fire-and-forget — never block on the log write).
+      supabase
+        .from("rate_limit_events")
+        .insert({ ip_hash: ipHash, route, is_prefetch: isPrefetch })
+        .then(() => {}, (e: any) => console.error("rl insert error:", e));
 
-    // Opportunistic cleanup ~1% of requests — keeps the table small forever, no cron needed.
-    if (Math.random() < 0.01) {
-      supabase.rpc("purge_old_rate_limit_events")
-        .then(() => {}, (e: any) => console.error("rl purge error:", e));
+      // Opportunistic cleanup ~1% of requests — keeps the table small forever, no cron needed.
+      if (Math.random() < 0.01) {
+        supabase.rpc("purge_old_rate_limit_events")
+          .then(() => {}, (e: any) => console.error("rl purge error:", e));
+      }
+    } catch (e) {
+      // If rate-limit infra fails, fail OPEN (don't block real users on infra hiccups).
+      console.error("rate-limit gate error (failing open):", e);
     }
-  } catch (e) {
-    // If rate-limit infra fails, fail OPEN (don't block real users on infra hiccups).
-    console.error("rate-limit gate error (failing open):", e);
   }
 
   const t0 = performance.now();
@@ -1527,4 +1553,15 @@ Deno.serve(async (req) => {
       Connection: "keep-alive",
     },
   });
+  } catch (err) {
+    console.error(JSON.stringify({
+      fn: "analyze-novel",
+      stage: "pre-stream",
+      error: err instanceof Error ? err.message : String(err),
+    }));
+    return new Response(
+      JSON.stringify({ error: "Temporary server error. Please try again." }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 });

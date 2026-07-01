@@ -678,52 +678,44 @@ const Index = () => {
     // Retry transient backend failures (cold starts, 5xx, network blips).
     // Bounded retries with exponential backoff; never retried for client errors
     // like 4xx (except 408 timeout) so user-actionable issues surface immediately.
+    // NOTE: 500 is included deliberately — analyze-novel's own error paths
+    // (Gemini exhausted, DB hiccup before the SSE stream opens, etc.) return
+    // plain 500s and are just as transient as a 502/503 in practice. Excluding
+    // it meant almost every real backend blip surfaced to the user on the
+    // first try instead of quietly retrying.
     const MAX_ATTEMPTS = 3;
-    const isTransientStatus = (s: number) => s === 408 || s === 425 || s === 502 || s === 503 || s === 504;
+    const isTransientStatus = (s: number) =>
+      s === 408 || s === 425 || s === 500 || s === 502 || s === 503 || s === 504;
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-    try {
-      let attempt = 0;
-      let resp: Response | null = null;
-      let lastErr: unknown = null;
+    // A transient failure can surface two ways:
+    //  1. The initial fetch() never gets a 2xx (or throws outright) — handled
+    //     the same as before.
+    //  2. The fetch DOES get a 200 (the SSE stream opens fine) but Gemini
+    //     fails partway through, e.g. all fallback models return 429/503.
+    //     analyze-novel reports that as an in-stream "error" event with a
+    //     status field, NOT an HTTP-level error — headers are already sent
+    //     by the time it knows the AI call failed. Previously this always
+    //     surfaced to the user on the first try even though it's exactly as
+    //     transient as a pre-stream 503. TransientStreamError marks that case
+    //     so the outer loop retries it too instead of giving up immediately.
+    class TransientStreamError extends Error {}
 
-      while (attempt < MAX_ATTEMPTS) {
-        attempt++;
-        try {
-          resp = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({
-              title: bookTitle,
-              refinement: isRefine ? refinement : undefined,
-              previousAnalysis: isRefine ? analysis : undefined,
-              reanalyze: isReanalyze || undefined,
-              ...(geminiKey ? { gemini_key: geminiKey } : {}),
-            }),
-          });
-          if (resp.ok && resp.body) break;
-          // Non-OK: decide retry vs surface
-          if (!isTransientStatus(resp.status) || attempt >= MAX_ATTEMPTS) break;
-        } catch (netErr) {
-          // Network failure (offline, DNS, aborted). Retry while we can.
-          lastErr = netErr;
-          if (attempt >= MAX_ATTEMPTS) break;
-        }
-        const backoff = 400 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 200);
-        setStatusText(`Reconnecting… (attempt ${attempt + 1}/${MAX_ATTEMPTS})`);
-        await sleep(backoff);
-      }
-
-      if (!resp) {
-        throw new Error(
-          lastErr instanceof Error
-            ? `Network error: ${lastErr.message}`
-            : "Unable to reach the server. Check your connection.",
-        );
-      }
+    async function attemptOnce(): Promise<NovelAnalysis> {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          title: bookTitle,
+          refinement: isRefine ? refinement : undefined,
+          previousAnalysis: isRefine ? analysis : undefined,
+          reanalyze: isReanalyze || undefined,
+          ...(geminiKey ? { gemini_key: geminiKey } : {}),
+        }),
+      });
 
       if (!resp.ok || !resp.body) {
         let msg = "Something went wrong";
@@ -735,8 +727,9 @@ const Index = () => {
         if (resp.status === 402) msg = user
           ? "This book isn't cached yet and no server API key is configured. Add your Gemini key via the key button above."
           : "This book isn't in our library yet. Sign in and add a Gemini API key to analyze it, or try one of the suggested titles.";
-        if (isTransientStatus(resp.status))
-          msg = "The backend is warming up. Please retry in a few seconds.";
+        if (isTransientStatus(resp.status)) {
+          throw new TransientStreamError("The backend is warming up. Please retry in a few seconds.");
+        }
         throw new Error(msg);
       }
 
@@ -745,6 +738,7 @@ const Index = () => {
       let buf = "";
       let result: NovelAnalysis | null = null;
       let errorMsg: string | null = null;
+      let errorStatus: number | undefined;
       let preambleAccum = "";
 
       const handleEvent = (event: string, data: any) => {
@@ -767,6 +761,7 @@ const Index = () => {
           setAnalysisPreview(null); // full analysis supersedes preview
         } else if (event === "error") {
           errorMsg = data?.error ?? "Something went wrong";
+          errorStatus = typeof data?.status === "number" ? data.status : undefined;
         }
       };
 
@@ -795,8 +790,45 @@ const Index = () => {
         }
       }
 
-      if (errorMsg) throw new Error(errorMsg);
+      if (errorMsg) {
+        // No partial result landed before the error, and the failure looks
+        // like AI-service overload rather than a hard rejection — worth a
+        // fresh attempt (new request = fresh shot at the fallback chain).
+        if (!result && errorStatus !== undefined && isTransientStatus(errorStatus)) {
+          throw new TransientStreamError(errorMsg);
+        }
+        throw new Error(errorMsg);
+      }
       if (!result) throw new Error("No analysis returned");
+      return result;
+    }
+
+    try {
+      let attempt = 0;
+      let result: NovelAnalysis | null = null;
+      let lastErr: unknown = null;
+
+      while (attempt < MAX_ATTEMPTS) {
+        attempt++;
+        try {
+          result = await attemptOnce();
+          break;
+        } catch (err) {
+          lastErr = err;
+          const isTransient = err instanceof TransientStreamError ||
+            (err instanceof TypeError); // fetch()-level network failure (offline, DNS, aborted)
+          if (!isTransient || attempt >= MAX_ATTEMPTS) throw err;
+        }
+        const backoff = 400 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 200);
+        setStatusText(`Reconnecting… (attempt ${attempt + 1}/${MAX_ATTEMPTS})`);
+        await sleep(backoff);
+      }
+
+      if (!result) {
+        throw lastErr instanceof Error
+          ? lastErr
+          : new Error("Unable to reach the server. Check your connection.");
+      }
 
       if (result.confidence === "unknown_work") {
         toast.error(
