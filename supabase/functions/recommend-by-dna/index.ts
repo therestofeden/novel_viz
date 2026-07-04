@@ -4,6 +4,7 @@
 // Called by BookDNA.tsx whenever the user saves a perturbed DNA.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
 
 // ---------- Rate limiting ----------
 const ROUTE = "recommend-by-dna";
@@ -58,72 +59,6 @@ function buildCacheKeyFallback(title: string, author?: string): string {
   const t = title.trim().toLowerCase().replace(/\s+/g, " ");
   const a = (author ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   return `v3|${t}||${a}`;
-}
-
-const MODEL = "gemini-3.5-flash";
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
-
-// ---------- Circuit breaker ----------
-const CIRCUIT_OPEN_MS = 30_000;
-// Max wait for Gemini to return the first byte of its HTTP response.
-const GEMINI_TIMEOUT_MS = 30_000;
-// Was 1: a single 429/503 blip took a model fully offline for 30s. Under any
-// moderate concurrency this cascaded across all 3 fallback models. Raised to 2
-// (consistent with analyze-novel fix, 2026-07-01).
-const CIRCUIT_TRIP_AFTER = 2;
-type CircuitState = { fails: number; openUntil: number };
-const modelCircuit = new Map<string, CircuitState>();
-
-function circuitIsOpen(model: string): boolean {
-  const s = modelCircuit.get(model);
-  if (!s) return false;
-  if (Date.now() < s.openUntil) return true;
-  modelCircuit.delete(model);
-  return false;
-}
-function circuitRecordFail(model: string): void {
-  const s = modelCircuit.get(model) ?? { fails: 0, openUntil: 0 };
-  s.fails += 1;
-  if (s.fails >= CIRCUIT_TRIP_AFTER) {
-    s.openUntil = Date.now() + CIRCUIT_OPEN_MS;
-  }
-  modelCircuit.set(model, s);
-}
-function circuitRecordSuccess(model: string): void {
-  modelCircuit.delete(model);
-}
-
-async function geminiFetchWithFallback(
-  apiKey: string,
-  payload: Record<string, unknown>,
-): Promise<Response> {
-  let last: Response | null = null;
-  for (const model of MODEL_FALLBACKS) {
-    if (circuitIsOpen(model)) continue;
-    let r: Response;
-    try {
-      r = await fetch(GEMINI_BASE, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, model }),
-        signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-      });
-    } catch (e) {
-      // Network stall or timeout — treat as transient, trip circuit, try next model.
-      const name = e instanceof Error ? e.name : String(e);
-      console.warn(JSON.stringify({ circuit: "timeout", model, error: name }));
-      circuitRecordFail(model);
-      last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
-      continue;
-    }
-    if (r.ok) { circuitRecordSuccess(model); return r; }
-    if (r.status !== 429 && r.status !== 503) return r;
-    await r.body?.cancel().catch(() => {});
-    last = r;
-    circuitRecordFail(model);
-  }
-  return last!;
 }
 
 // ---------- Tool ----------
@@ -285,7 +220,7 @@ ${axesStr}
 
 Recommend the single best DNA neighbour from the canon.`;
 
-  const res = await geminiFetchWithFallback(GEMINI_API_KEY, {
+  const res = await geminiFetchWithFallback(admin, GEMINI_API_KEY, {
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },

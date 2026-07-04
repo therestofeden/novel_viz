@@ -5,6 +5,7 @@
 // until the user explicitly regenerates.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,88 +13,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// gemini-2.0-* models were shut down by Google on 2026-06-01;
-// gemini-2.5-flash was constantly 503 (overloaded) as of 2026-06-10.
-const MODEL = "gemini-3.5-flash";
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const ROUTE = "recommend-anti-shelf";
-
-// Google is load-shedding aggressively since the 2.0 shutdown (intermittent
-// 503 UNAVAILABLE / 429). Retry each model briefly, then fall back down the chain.
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
-
-// ---------- Circuit breaker ----------
-const CIRCUIT_OPEN_MS = 30_000;
-// Max wait for Gemini to return the first byte of its HTTP response.
-const GEMINI_TIMEOUT_MS = 30_000;
-// Was 1: a single 429/503 blip took a model fully offline for 30s. Under any
-// moderate concurrency this cascaded across all 3 fallback models. Raised to 2
-// (consistent with analyze-novel fix, 2026-07-01).
-const CIRCUIT_TRIP_AFTER = 2;
-type CircuitState = { fails: number; openUntil: number };
-const modelCircuit = new Map<string, CircuitState>();
-
-function circuitIsOpen(model: string): boolean {
-  const s = modelCircuit.get(model);
-  if (!s) return false;
-  if (Date.now() < s.openUntil) return true;
-  modelCircuit.delete(model);
-  return false;
-}
-function circuitRecordFail(model: string): void {
-  const s = modelCircuit.get(model) ?? { fails: 0, openUntil: 0 };
-  s.fails += 1;
-  if (s.fails >= CIRCUIT_TRIP_AFTER) {
-    s.openUntil = Date.now() + CIRCUIT_OPEN_MS;
-    console.warn(JSON.stringify({ circuit: "open", model, until: new Date(s.openUntil).toISOString() }));
-  }
-  modelCircuit.set(model, s);
-}
-function circuitRecordSuccess(model: string): void {
-  modelCircuit.delete(model);
-}
-
-async function geminiFetchWithFallback(
-  apiKey: string,
-  payload: Record<string, unknown>,
-): Promise<Response> {
-  let last: Response | null = null;
-  for (const model of MODEL_FALLBACKS) {
-    if (circuitIsOpen(model)) {
-      console.log(JSON.stringify({ circuit: "skipped", model }));
-      continue;
-    }
-    {
-      let r: Response;
-      try {
-        r = await fetch(GEMINI_BASE, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, model }),
-          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-        });
-      } catch (e) {
-        // Network stall or timeout — treat as transient, trip circuit, try next model.
-        const name = e instanceof Error ? e.name : String(e);
-        console.warn(JSON.stringify({ circuit: "timeout", model, error: name }));
-        circuitRecordFail(model);
-        last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
-        continue;
-      }
-      if (r.ok) {
-        circuitRecordSuccess(model);
-        return r;
-      }
-      if (r.status !== 429 && r.status !== 503) return r; // hard error — no retry
-      console.warn(`gemini ${model} -> ${r.status}, tripping circuit`);
-      await r.body?.cancel().catch(() => {});
-      last = r;
-      circuitRecordFail(model);
-      // Circuit trips after 2 consecutive 503/429s, jump to next model immediately.
-    }
-  }
-  return last!;
-}
 
 type Mode = "similar" | "stretch";
 
@@ -476,7 +396,7 @@ Use the DNA profiles above as the primary signal for matching. Books marked ★ 
 Return 6–10 recommendations via the render_recommendations tool. For each pick, fill 'echoes' with the 1–3 shelf titles it most directly relates to (similar mode) or contrasts against (stretch mode).`;
 
     // Call Gemini
-    const aiRes = await geminiFetchWithFallback(lovableKey, {
+    const aiRes = await geminiFetchWithFallback(admin, lovableKey, {
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

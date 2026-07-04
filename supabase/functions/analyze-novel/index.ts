@@ -1,4 +1,5 @@
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { geminiFetchWithFallback, MODEL, GEMINI_BASE } from "../_shared/gemini.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,121 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// gemini-2.0-* shut down 2026-06-01; gemini-2.5-flash was 503-prone.
-// Primary model is gemini-3.5-flash (latest Flash tier as of 2026-06).
-// Since every analysis is DB-cached after the first call, the speed cost of
-// a heavier model is borne exactly once per book — all subsequent users get
-// an instant cache hit regardless of which model produced the result.
-// Use the best model so the cached copy is as good as possible.
-const MODEL = "gemini-3.5-flash";
+// Used only by the raw preamble fetch and callPreview (both bypass the shared
+// geminiFetchWithFallback — they're best-effort, short-timeout, no-retry paths).
 const PREAMBLE_MODEL = "gemini-3.5-flash";
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-
-// Fallback chain: newest → older versions (last resort for 503/429 surges).
-// gemini-1.5-flash and gemini-2.0-flash are both shut down (June 2026).
-// gemini-2.5-flash and gemini-2.5-flash-lite are deprecated but active until Oct 2026.
-const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
-
-// ---------- Circuit breaker ----------
-// Tracks per-model transient failure counts within this isolate.
-// After CIRCUIT_TRIP_AFTER consecutive 429/503 responses the circuit opens and
-// the model is skipped entirely for CIRCUIT_OPEN_MS — turning a 15s timeout
-// cascade into a <1ms reroute.
-const CIRCUIT_OPEN_MS = 30_000;
-// Max wait for Gemini to return the first byte of its HTTP response.
-// Protects against TCP-stall hangs where the socket is accepted but no
-// response bytes arrive — the circuit breaker alone can't handle this since
-// it only fires on HTTP-level errors, not network-level timeouts.
-const GEMINI_TIMEOUT_MS = 30_000;
-// Was 1: a single 429/503 blip took a model fully offline for 30s. Under any
-// moderate concurrency (e.g. the seed-cache cron running alongside live
-// traffic) this cascaded — model A trips on one fail, model B catches the
-// next request's fail and trips too, model C absorbs everything until it
-// also trips, and every in-flight request in that window gets a hard error
-// instead of a transparent reroute. Require 2 consecutive fails before
-// giving up on a model.
-const CIRCUIT_TRIP_AFTER = 2;
-type CircuitState = { fails: number; openUntil: number };
-const modelCircuit = new Map<string, CircuitState>();
-
-function circuitIsOpen(model: string): boolean {
-  const s = modelCircuit.get(model);
-  if (!s) return false;
-  if (Date.now() < s.openUntil) return true;
-  modelCircuit.delete(model); // window expired — reset
-  return false;
-}
-function circuitRecordFail(model: string): void {
-  const s = modelCircuit.get(model) ?? { fails: 0, openUntil: 0 };
-  s.fails += 1;
-  if (s.fails >= CIRCUIT_TRIP_AFTER) {
-    s.openUntil = Date.now() + CIRCUIT_OPEN_MS;
-    console.warn(JSON.stringify({ circuit: "open", model, until: new Date(s.openUntil).toISOString() }));
-  }
-  modelCircuit.set(model, s);
-}
-function circuitRecordSuccess(model: string): void {
-  modelCircuit.delete(model);
-}
-
-async function geminiFetchWithFallback(
-  apiKey: string,
-  payload: Record<string, unknown>,
-): Promise<Response> {
-  let last: Response | null = null;
-  for (const model of MODEL_FALLBACKS) {
-    if (circuitIsOpen(model)) {
-      console.log(JSON.stringify({ circuit: "skipped", model }));
-      continue;
-    }
-    let r: Response;
-    try {
-      r = await fetch(GEMINI_BASE, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, model }),
-        signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-      });
-    } catch (e) {
-      // Network stall or timeout — treat like a transient 503, trip circuit, try next model.
-      const name = e instanceof Error ? e.name : String(e);
-      console.warn(JSON.stringify({ fn: "geminiFetch", model, error: name }));
-      circuitRecordFail(model);
-      last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
-      continue;
-    }
-    if (r.ok) {
-      circuitRecordSuccess(model);
-      return r;
-    }
-    // Log ALL errors — critical for diagnosing what Gemini is actually returning.
-    const errBody = await r.clone().text().catch(() => "");
-    console.error(JSON.stringify({ fn: "geminiFetch", model, status: r.status, body: errBody.slice(0, 400) }));
-    // Cancel the original body stream now that we've cloned it for logging.
-    // IMPORTANT: store a FRESH synthesized response so callers can safely call
-    // .text() and .ok without hitting a "body already used" TypeError.
-    await r.body?.cancel().catch(() => {});
-    last = new Response(errBody || JSON.stringify({ error: `${model} returned ${r.status}` }), {
-      status: r.status,
-      headers: { "Content-Type": "application/json" },
-    });
-    // Trip circuit only for 429/5xx (transient). For 4xx client errors, don't trip —
-    // but DO continue to the next model: a 400 from model A may not affect model B
-    // (e.g. if model A is unknown/unavailable, model B may work fine).
-    if (r.status === 429 || r.status >= 500) {
-      circuitRecordFail(model);
-    }
-  }
-  // All models exhausted. If last is still null, every circuit was already open.
-  if (last === null) {
-    console.error(JSON.stringify({ fn: "geminiFetch", error: "all_circuits_open" }));
-    return new Response(
-      JSON.stringify({ error: "All model circuits are open — try again shortly." }),
-      { status: 503 },
-    );
-  }
-  return last;
-}
 
 // ---------- Non-fiction tool ----------
 
@@ -1042,14 +931,14 @@ function buildMetadataBlock(meta: BookMetadata): string {
 
 // ---------- AI call ----------
 
-async function callStructuredAnalysis(apiKey: string, userPrompt: string, corrective?: string): Promise<Analysis | null> {
+async function callStructuredAnalysis(admin: SupabaseClient, apiKey: string, userPrompt: string, corrective?: string): Promise<Analysis | null> {
   const messages: any[] = [
     { role: "system", content: SYSTEM_PROMPT },
     { role: "user", content: userPrompt },
   ];
   if (corrective) messages.push({ role: "user", content: corrective });
 
-  const response = await geminiFetchWithFallback(apiKey, {
+  const response = await geminiFetchWithFallback(admin, apiKey, {
     messages,
     tools: [analysisTool, nonfictionAnalysisTool],
     // "required" was returning HTTP 400 from Gemini's OpenAI-compat endpoint.
@@ -1467,12 +1356,21 @@ Deno.serve(async (req) => {
           ? `The user previously asked for a visualization of "${title}". Here is the previous analysis JSON:\n\n${JSON.stringify(previousAnalysis)}\n\nThe user now wants to refine the analysis with this prompt: "${refinement}"\n\nReturn an updated full analysis (same schema). Keep ids stable where possible.`
           : `Produce a structured analysis of the book: "${title}"`;
 
-        // Fetch real metadata before calling Gemini (non-blocking — if it fails, proceed without)
+        // Fetch real metadata before calling Gemini (non-blocking — if it fails, proceed without).
+        // fetchBookMetadata races GB+OL in parallel but each has its own 4s upstream
+        // timeout, so the slow tail could add up to ~4s of pure dead time before the
+        // (expensive) Gemini structured-analysis call even starts. Bound the wait to a
+        // much shorter deadline — the common case resolves in a few hundred ms, and a
+        // slow/hanging metadata source shouldn't gate the whole analysis. If metadata
+        // loses the race it's simply omitted; the prompt works fine without it.
         let metadataBlock = "";
         if (!isRefine) {
           try {
-            const meta = await fetchBookMetadata(cleanTitle, cleanAuthor);
-            metadataBlock = buildMetadataBlock(meta);
+            const meta = await Promise.race([
+              fetchBookMetadata(cleanTitle, cleanAuthor),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+            ]);
+            if (meta) metadataBlock = buildMetadataBlock(meta);
           } catch (e) {
             console.warn("metadata fetch failed (non-fatal):", e);
           }
@@ -1484,7 +1382,7 @@ Deno.serve(async (req) => {
 
         let analysis: Analysis | null;
         try {
-          analysis = await callStructuredAnalysis(GEMINI_API_KEY, enrichedPrompt);
+          analysis = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt);
         } catch (e: any) {
           const s: number | undefined = e?.status;
           console.error(JSON.stringify({ fn: "analyze-novel", stage: "callStructuredAnalysis", errStatus: s, errMsg: e?.message }));
@@ -1517,7 +1415,7 @@ Deno.serve(async (req) => {
             ? "Your previous response was incomplete after server-side validation. Please return at least 3 concepts, 2 chapters, and — most importantly — the argument_pillars (3-5) and idea_cards (8-10) fields with full claim sentences. Do not omit them."
             : "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).";
           try {
-            const retry = await callStructuredAnalysis(GEMINI_API_KEY, enrichedPrompt, corrective);
+            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective);
             // Accept any non-null retry — even a thin result is better than a hard failure.
             if (retry) analysis = retry;
           } catch (e) {
