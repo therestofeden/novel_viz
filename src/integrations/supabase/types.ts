@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      book_dna_consensus: {
+        Row: {
+          cache_key: string
+          consensus: Json
+          recommendation: Json | null
+          recommendation_signature: string | null
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          consensus?: Json
+          recommendation?: Json | null
+          recommendation_signature?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          consensus?: Json
+          recommendation?: Json | null
+          recommendation_signature?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_dna_consensus_cache_key_fkey"
+            columns: ["cache_key"]
+            isOneToOne: true
+            referencedRelation: "novel_analyses"
+            referencedColumns: ["cache_key"]
+          },
+        ]
+      }
       book_overrides: {
         Row: {
           alt_climax_event_id: string | null
@@ -104,6 +136,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dna_recommendation_cache: {
+        Row: {
+          axes_signature: string
+          cache_key: string
+          created_at: string
+          hit_count: number
+          id: string
+          last_accessed_at: string
+          model: string | null
+          recommendation: Json
+        }
+        Insert: {
+          axes_signature: string
+          cache_key: string
+          created_at?: string
+          hit_count?: number
+          id?: string
+          last_accessed_at?: string
+          model?: string | null
+          recommendation: Json
+        }
+        Update: {
+          axes_signature?: string
+          cache_key?: string
+          created_at?: string
+          hit_count?: number
+          id?: string
+          last_accessed_at?: string
+          model?: string | null
+          recommendation?: Json
+        }
+        Relationships: []
+      }
       novel_analyses: {
         Row: {
           analysis: Json
@@ -115,6 +180,7 @@ export type Database = {
           is_validated: boolean
           last_accessed_at: string
           model: string
+          slug: string | null
           title: string
         }
         Insert: {
@@ -127,6 +193,7 @@ export type Database = {
           is_validated?: boolean
           last_accessed_at?: string
           model: string
+          slug?: string | null
           title: string
         }
         Update: {
@@ -139,6 +206,7 @@ export type Database = {
           is_validated?: boolean
           last_accessed_at?: string
           model?: string
+          slug?: string | null
           title?: string
         }
         Relationships: []
@@ -146,6 +214,7 @@ export type Database = {
       pca_basis: {
         Row: {
           axis_order: Json
+          book_type: string
           components: Json
           created_at: string
           id: string
@@ -157,6 +226,7 @@ export type Database = {
         }
         Insert: {
           axis_order: Json
+          book_type?: string
           components: Json
           created_at?: string
           id?: string
@@ -168,6 +238,7 @@ export type Database = {
         }
         Update: {
           axis_order?: Json
+          book_type?: string
           components?: Json
           created_at?: string
           id?: string
@@ -541,6 +612,45 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      takeaway_questions_cache: {
+        Row: {
+          author: string
+          book_type: string
+          cache_key: string
+          created_at: string
+          hit_count: number
+          id: string
+          last_accessed_at: string
+          model: string | null
+          questions: Json
+          title: string
+        }
+        Insert: {
+          author?: string
+          book_type?: string
+          cache_key: string
+          created_at?: string
+          hit_count?: number
+          id?: string
+          last_accessed_at?: string
+          model?: string | null
+          questions: Json
+          title: string
+        }
+        Update: {
+          author?: string
+          book_type?: string
+          cache_key?: string
+          created_at?: string
+          hit_count?: number
+          id?: string
+          last_accessed_at?: string
+          model?: string | null
+          questions?: Json
+          title?: string
         }
         Relationships: []
       }

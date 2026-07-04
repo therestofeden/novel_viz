@@ -24,7 +24,12 @@ const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 // ---------- Circuit breaker ----------
 const CIRCUIT_OPEN_MS = 30_000;
-const CIRCUIT_TRIP_AFTER = 1;
+// Max wait for Gemini to return the first byte of its HTTP response.
+const GEMINI_TIMEOUT_MS = 30_000;
+// Was 1: a single 429/503 blip took a model fully offline for 30s. Under any
+// moderate concurrency this cascaded across all 3 fallback models. Raised to 2
+// (consistent with analyze-novel fix, 2026-07-01).
+const CIRCUIT_TRIP_AFTER = 2;
 type CircuitState = { fails: number; openUntil: number };
 const modelCircuit = new Map<string, CircuitState>();
 
@@ -59,11 +64,22 @@ async function geminiFetchWithFallback(
       continue;
     }
     {
-      const r = await fetch(GEMINI_BASE, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, model }),
-      });
+      let r: Response;
+      try {
+        r = await fetch(GEMINI_BASE, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, model }),
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+        });
+      } catch (e) {
+        // Network stall or timeout — treat as transient, trip circuit, try next model.
+        const name = e instanceof Error ? e.name : String(e);
+        console.warn(JSON.stringify({ circuit: "timeout", model, error: name }));
+        circuitRecordFail(model);
+        last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
+        continue;
+      }
       if (r.ok) {
         circuitRecordSuccess(model);
         return r;
@@ -73,7 +89,7 @@ async function geminiFetchWithFallback(
       await r.body?.cancel().catch(() => {});
       last = r;
       circuitRecordFail(model);
-      // Circuit trips after first 503/429 (CIRCUIT_TRIP_AFTER=1), jump to next model immediately.
+      // Circuit trips after 2 consecutive 503/429s, jump to next model immediately.
     }
   }
   return last!;
@@ -122,12 +138,12 @@ const recommendationsTool = {
               },
             },
             required: ["title", "author", "one_liner", "tags", "echoes"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
       },
       required: ["mode", "rationale", "recommendations"],
-      additionalProperties: false,
+      // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
     },
   },
 };
@@ -196,10 +212,18 @@ Deno.serve(async (req) => {
 
     const mode: Mode = body?.mode === "stretch" ? "stretch" : "similar";
     const force: boolean = !!body?.force;
-    const liked: string[] = Array.isArray(body?.liked) ? body.liked.slice(0, 100) : [];
-    const disliked: string[] = Array.isArray(body?.disliked) ? body.disliked.slice(0, 100) : [];
-    const blockedAuthors: string[] = Array.isArray(body?.blocked_authors) ? body.blocked_authors.slice(0, 100) : [];
-    const blockedTags: string[] = Array.isArray(body?.blocked_tags) ? body.blocked_tags.slice(0, 100) : [];
+    // Cap both array length AND per-item length: these strings (book titles,
+    // author names, tags) get embedded directly into the Gemini prompt, so
+    // an array of 100 megabyte-sized strings would still be a single-request
+    // cost/DoS vector even with the count cap alone.
+    const capStrings = (arr: unknown, maxItems: number, maxLen: number): string[] =>
+      Array.isArray(arr)
+        ? arr.slice(0, maxItems).map((s) => String(s).slice(0, maxLen))
+        : [];
+    const liked: string[] = capStrings(body?.liked, 100, 300);
+    const disliked: string[] = capStrings(body?.disliked, 100, 300);
+    const blockedAuthors: string[] = capStrings(body?.blocked_authors, 100, 200);
+    const blockedTags: string[] = capStrings(body?.blocked_tags, 100, 100);
 
     // BYOK: prefer the user's own Gemini key; fall back to the shared server key.
     const lovableKey = (typeof body?.gemini_key === "string" && body.gemini_key.trim())
@@ -313,17 +337,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Rate limit: 20 generations / hour / IP
+    // Rate limit: 20 generations / hour / IP, AND 20/hour per authenticated
+    // user ID. IP-only limiting lets a signed-in user bypass the cap by
+    // cycling IPs/VPNs while staying logged into the same account. hashIp()
+    // is a generic salted-SHA256 helper (name predates this use) — reused
+    // here to hash the user's UUID into its own counter bucket under a
+    // distinct route key.
     const ip = await getClientIp(req);
     const ipHash = await hashIp(ip);
+    const userIdHash = await hashIp(userId);
     try {
-      const { data: count } = await admin.rpc("count_recent_events", {
-        p_ip_hash: ipHash,
-        p_route: ROUTE,
-        p_window_seconds: 3600,
-        p_prefetch_only: false,
-      });
-      if (typeof count === "number" && count >= 20) {
+      const [{ data: count }, { data: userCount }] = await Promise.all([
+        admin.rpc("count_recent_events", {
+          p_ip_hash: ipHash,
+          p_route: ROUTE,
+          p_window_seconds: 3600,
+          p_prefetch_only: false,
+        }),
+        admin.rpc("count_recent_events", {
+          p_ip_hash: userIdHash,
+          p_route: `${ROUTE}:user`,
+          p_window_seconds: 3600,
+          p_prefetch_only: false,
+        }),
+      ]);
+      if (
+        (typeof count === "number" && count >= 20) ||
+        (typeof userCount === "number" && userCount >= 20)
+      ) {
         return new Response(
           JSON.stringify({ error: "Too many regenerations. Try again in an hour." }),
           {
@@ -519,10 +560,14 @@ Return 6–10 recommendations via the render_recommendations tool. For each pick
       );
     if (upsertErr) console.error("Cache upsert failed", upsertErr);
 
-    // Log rate event
+    // Log rate events (both IP and per-user buckets) fire-and-forget.
     admin
       .from("rate_limit_events")
       .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
+      .then(() => {});
+    admin
+      .from("rate_limit_events")
+      .insert({ ip_hash: userIdHash, route: `${ROUTE}:user`, is_prefetch: false })
       .then(() => {});
 
     return new Response(

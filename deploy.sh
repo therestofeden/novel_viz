@@ -46,6 +46,9 @@ echo ""
 echo "▸ Deploying analyze-novel..."
 supabase functions deploy analyze-novel --no-verify-jwt
 
+echo "▸ Deploying seed-cache..."
+supabase functions deploy seed-cache --no-verify-jwt
+
 echo "▸ Deploying takeaways..."
 supabase functions deploy takeaways --no-verify-jwt
 

@@ -27,6 +27,11 @@ const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 // the model is skipped entirely for CIRCUIT_OPEN_MS — turning a 15s timeout
 // cascade into a <1ms reroute.
 const CIRCUIT_OPEN_MS = 30_000;
+// Max wait for Gemini to return the first byte of its HTTP response.
+// Protects against TCP-stall hangs where the socket is accepted but no
+// response bytes arrive — the circuit breaker alone can't handle this since
+// it only fires on HTTP-level errors, not network-level timeouts.
+const GEMINI_TIMEOUT_MS = 30_000;
 // Was 1: a single 429/503 blip took a model fully offline for 30s. Under any
 // moderate concurrency (e.g. the seed-cache cron running alongside live
 // traffic) this cascaded — model A trips on one fail, model B catches the
@@ -68,11 +73,22 @@ async function geminiFetchWithFallback(
       console.log(JSON.stringify({ circuit: "skipped", model }));
       continue;
     }
-    const r = await fetch(GEMINI_BASE, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, model }),
-    });
+    let r: Response;
+    try {
+      r = await fetch(GEMINI_BASE, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, model }),
+        signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+      });
+    } catch (e) {
+      // Network stall or timeout — treat like a transient 503, trip circuit, try next model.
+      const name = e instanceof Error ? e.name : String(e);
+      console.warn(JSON.stringify({ fn: "geminiFetch", model, error: name }));
+      circuitRecordFail(model);
+      last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
+      continue;
+    }
     if (r.ok) {
       circuitRecordSuccess(model);
       return r;
@@ -856,7 +872,17 @@ function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
 function isAdequate(a: Analysis): boolean {
   if (a.confidence === "unknown_work") return true;
   if (a.bookType === "nonfiction") {
-    return a.concepts.length >= 3 && a.chapters.length >= 2;
+    // ideaCards/argumentPillars shipped after CACHE_VERSION was last bumped (v3),
+    // so plenty of nonfiction rows cached before that feature landed have
+    // concepts/chapters but zero idea cards or pillars. Without this check they
+    // pass isAdequate forever and the Ideas tab shows "analyzed before the Ideas
+    // feature launched" on every hit, never self-healing. Mirrors the frontend's
+    // hasIdeas gate (IdeasTab.tsx) exactly: cards OR pillars, not both required.
+    return (
+      a.concepts.length >= 3 &&
+      a.chapters.length >= 2 &&
+      (a.ideaCards.length > 0 || a.argumentPillars.length > 0)
+    );
   }
   return a.events.length >= 3 && a.characters.length >= 2 && a.lanes.length >= 1;
 }
@@ -934,6 +960,7 @@ async function callPreview(apiKey: string, title: string): Promise<Record<string
         tools: [previewTool],
         tool_choice: { type: "function", function: { name: "book_preview" } },
       }),
+      signal: AbortSignal.timeout(8_000), // preview is best-effort — fail fast
     });
     if (!r.ok) return null;
     const data = await r.json();
@@ -1133,6 +1160,32 @@ Deno.serve(async (req) => {
   const { title, refinement, previousAnalysis, prefetch, gemini_key: userGeminiKey, reanalyze } = body ?? {};
   if (!title || typeof title !== "string" || title.trim().length === 0) {
     return new Response(JSON.stringify({ error: "Title is required" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // ---------- Input size caps ----------
+  // Unbounded free-text fields here get embedded directly into the Gemini
+  // prompt (title/refinement) or re-serialized into it (previousAnalysis).
+  // Without a cap, a single request could smuggle megabytes of text into a
+  // prompt against the shared server API key — a single-request cost/DoS
+  // vector that IP rate-limiting (which only caps request *count*) doesn't
+  // catch. Limits are generous relative to any real book title or note.
+  const MAX_TITLE_LEN = 300;
+  const MAX_REFINEMENT_LEN = 2000;
+  const MAX_PREV_ANALYSIS_LEN = 200_000; // ~200KB safety cap on the echoed-back analysis JSON
+  if (title.length > MAX_TITLE_LEN) {
+    return new Response(JSON.stringify({ error: `Title too long (max ${MAX_TITLE_LEN} characters)` }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (typeof refinement === "string" && refinement.length > MAX_REFINEMENT_LEN) {
+    return new Response(JSON.stringify({ error: `Refinement note too long (max ${MAX_REFINEMENT_LEN} characters)` }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (previousAnalysis && JSON.stringify(previousAnalysis).length > MAX_PREV_ANALYSIS_LEN) {
+    return new Response(JSON.stringify({ error: "Previous analysis payload too large" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -1374,6 +1427,7 @@ Deno.serve(async (req) => {
                     { role: "user", content: `Tease the structure of: ${title}` },
                   ],
                 }),
+                signal: AbortSignal.timeout(12_000), // preamble is decorative — fail fast
               });
               if (!r.ok || !r.body) return;
               const reader = r.body.getReader();
@@ -1459,6 +1513,8 @@ Deno.serve(async (req) => {
           console.log("retry:", retryReason);
           const corrective = !analysis
             ? "You MUST call either render_novel_analysis (for fiction) or render_nonfiction_analysis (for non-fiction). Do NOT reply in plain text — always call one of the provided tools with a complete, structured response."
+            : analysis.bookType === "nonfiction"
+            ? "Your previous response was incomplete after server-side validation. Please return at least 3 concepts, 2 chapters, and — most importantly — the argument_pillars (3-5) and idea_cards (8-10) fields with full claim sentences. Do not omit them."
             : "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).";
           try {
             const retry = await callStructuredAnalysis(GEMINI_API_KEY, enrichedPrompt, corrective);

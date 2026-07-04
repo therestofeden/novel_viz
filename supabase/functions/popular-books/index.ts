@@ -20,6 +20,8 @@ interface PopularBook {
   title: string;
   author: string;
   popularity: number; // 0..1000
+  normTitle: string;
+  normAuthor: string;
 }
 
 // Module-scope memo so warm invocations skip the DB entirely.
@@ -28,7 +30,12 @@ let cachedAt = 0;
 const MEMO_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function normalize(s: string): string {
-  return (s ?? "").toLowerCase().trim().replace(/\s+/g, " ");
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 Deno.serve(async (req) => {
@@ -59,12 +66,12 @@ Deno.serve(async (req) => {
         .from("novel_analyses")
         .select("title, author, hit_count")
         .order("hit_count", { ascending: false })
-        .limit(600),
+        .limit(6000),
       supabase
         .from("search_cache")
         .select("results, hit_count")
         .order("hit_count", { ascending: false })
-        .limit(300),
+        .limit(3000),
     ]);
 
     const dedupe = new Map<string, PopularBook>();
@@ -78,7 +85,7 @@ Deno.serve(async (req) => {
       const pop = 600 + Math.min(400, ((row as any).hit_count ?? 0) * 20);
       const existing = dedupe.get(key);
       if (!existing || existing.popularity < pop) {
-        dedupe.set(key, { title, author, popularity: pop });
+        dedupe.set(key, { title, author, popularity: pop, normTitle: normalize(title), normAuthor: normalize(author) });
       }
     }
 
@@ -87,16 +94,16 @@ Deno.serve(async (req) => {
       const items = ((row as any).results ?? []) as Array<{
         title?: string;
         author?: string;
-        popularity?: number;
+        score?: number;
       }>;
       for (const it of items) {
         const title = it.title?.trim();
         const author = it.author?.trim() ?? "";
         if (!title) continue;
         const key = `${normalize(title)}|${normalize(author)}`;
-        const pop = Math.min(550, Math.round((it.popularity ?? 0) / 2));
+        const pop = Math.min(550, Math.round((it.score ?? 0) / 2));
         const existing = dedupe.get(key);
-        if (!existing) dedupe.set(key, { title, author, popularity: pop });
+        if (!existing) dedupe.set(key, { title, author, popularity: pop, normTitle: normalize(title), normAuthor: normalize(author) });
         else if (existing.popularity < pop) existing.popularity = pop;
       }
     }
@@ -104,7 +111,7 @@ Deno.serve(async (req) => {
     const results = Array.from(dedupe.values())
       .filter((b) => b.title.length > 1)
       .sort((a, b) => b.popularity - a.popularity)
-      .slice(0, 1000);
+      .slice(0, 10000);
 
     const etag = `W/"pop-${results.length}-${now}"`;
     cachedPayload = { results, etag };

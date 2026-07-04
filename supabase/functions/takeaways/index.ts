@@ -17,7 +17,12 @@ const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 // ---------- Circuit breaker ----------
 const CIRCUIT_OPEN_MS = 30_000;
-const CIRCUIT_TRIP_AFTER = 1;
+// Max wait for Gemini to return the first byte of its HTTP response.
+const GEMINI_TIMEOUT_MS = 30_000;
+// Was 1: a single 429/503 blip took a model fully offline for 30s. Under any
+// moderate concurrency this cascaded across all 3 fallback models. Raised to 2
+// (consistent with analyze-novel fix, 2026-07-01).
+const CIRCUIT_TRIP_AFTER = 2;
 type CircuitState = { fails: number; openUntil: number };
 const modelCircuit = new Map<string, CircuitState>();
 
@@ -52,11 +57,22 @@ async function geminiFetchWithFallback(
       continue;
     }
     {
-      const r = await fetch(GEMINI_BASE, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, model }),
-      });
+      let r: Response;
+      try {
+        r = await fetch(GEMINI_BASE, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, model }),
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+        });
+      } catch (e) {
+        // Network stall or timeout — treat as transient, trip circuit, try next model.
+        const name = e instanceof Error ? e.name : String(e);
+        console.warn(JSON.stringify({ circuit: "timeout", model, error: name }));
+        circuitRecordFail(model);
+        last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
+        continue;
+      }
       if (r.ok) {
         circuitRecordSuccess(model);
         return r;
@@ -66,7 +82,7 @@ async function geminiFetchWithFallback(
       await r.body?.cancel().catch(() => {});
       last = r;
       circuitRecordFail(model);
-      // Circuit trips after first 503/429 (CIRCUIT_TRIP_AFTER=1), jump to next model immediately.
+      // Circuit trips after 2 consecutive 503/429s, jump to next model immediately.
     }
   }
   return last!;
@@ -100,12 +116,12 @@ const questionsTool = {
               question: { type: "string" },
             },
             required: ["id", "question"],
-            additionalProperties: false,
+            // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
           },
         },
       },
       required: ["questions"],
-      additionalProperties: false,
+      // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
     },
   },
 };
@@ -269,6 +285,37 @@ async function streamSynthesis(
   return fullText;
 }
 
+// ─── Rate limiting helpers ────────────────────────────────────────────────────
+// Mirror of the pattern used in recommend-anti-shelf / recommend-by-dna.
+// IPs are one-way hashed with a server salt before storage (GDPR-friendly).
+
+const ROUTE = "takeaways";
+const RATE_LIMIT = 20; // server-key calls per hour per IP
+
+async function sha256Hex(input: string): Promise<string> {
+  const encoded = new TextEncoder().encode(input);
+  const hashBuf = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(hashBuf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function getClientIp(req: Request): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
+async function hashIp(ip: string): Promise<string> {
+  const salt =
+    Deno.env.get("RATE_LIMIT_SALT") ??
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+    "fallback-salt";
+  return sha256Hex(salt + ip);
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -290,6 +337,32 @@ Deno.serve(async (req) => {
 
   if (!phase || !title) {
     return new Response(JSON.stringify({ error: "phase and title are required" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // ---------- Input size caps ----------
+  // These free-text fields (summary/thesis/freeNotes/answers) get embedded
+  // directly into the Gemini prompt for the "synthesize" phase. Without a
+  // cap, one request could smuggle a huge payload into a single prompt
+  // against the shared server key — IP rate-limiting only caps request
+  // *count*, not per-request size. Limits are generous for real usage.
+  const tooLong = (v: unknown, max: number) => typeof v === "string" && v.length > max;
+  if (
+    tooLong(title, 300) || tooLong(author, 200) || tooLong(bookType, 100) ||
+    tooLong(summary, 8000) || tooLong(thesis, 4000) || tooLong(freeNotes, 8000)
+  ) {
+    return new Response(JSON.stringify({ error: "One or more fields exceed the maximum allowed length" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (Array.isArray(questions) && (questions.length > 20 || questions.some((qq: unknown) => tooLong(qq, 2000)))) {
+    return new Response(JSON.stringify({ error: "Questions payload too large" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (Array.isArray(answers) && (answers.length > 20 || answers.some((aa: unknown) => tooLong(aa, 4000)))) {
+    return new Response(JSON.stringify({ error: "Answers payload too large" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -319,6 +392,57 @@ Deno.serve(async (req) => {
     });
   }
 
+  // ── Rate limit: 20 server-key calls / hour / IP ────────────────────────────
+  // Skipped when the user supplies their own Gemini key (BYOK) — they pay for
+  // their own quota. Uses the same rate_limit_events table + count_recent_events
+  // RPC as recommend-anti-shelf and recommend-by-dna for consistency.
+  const usingServerKey = !(typeof userGeminiKey === "string" && userGeminiKey.trim());
+  if (usingServerKey) {
+    const ip = getClientIp(req);
+    const ipHash = await hashIp(ip);
+    // Also rate-limit per authenticated user ID, not just IP. IP-only limiting
+    // lets a signed-in user bypass the cap by cycling IPs/VPNs while staying
+    // logged into the same account. hashIp() is a generic salted-SHA256
+    // helper (name predates this use) — reused here to hash the user's UUID
+    // into its own counter bucket under a distinct route key.
+    const userIdHash = await hashIp(user.id);
+    try {
+      const [{ data: ipCount }, { data: userCount }] = await Promise.all([
+        supabase.rpc("count_recent_events", {
+          p_ip_hash: ipHash,
+          p_route: ROUTE,
+          p_window_seconds: 3600,
+          p_prefetch_only: false,
+        }),
+        supabase.rpc("count_recent_events", {
+          p_ip_hash: userIdHash,
+          p_route: `${ROUTE}:user`,
+          p_window_seconds: 3600,
+          p_prefetch_only: false,
+        }),
+      ]);
+      if (
+        (typeof ipCount === "number" && ipCount >= RATE_LIMIT) ||
+        (typeof userCount === "number" && userCount >= RATE_LIMIT)
+      ) {
+        return new Response(
+          JSON.stringify({ error: "Too many requests. Try again in an hour, or add your own Gemini key via the API Key button." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" } },
+        );
+      }
+    } catch { /* fail open — don't block legitimate users if the rate DB is unavailable */ }
+
+    // Log both events fire-and-forget; counters are eventually consistent.
+    supabase
+      .from("rate_limit_events")
+      .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
+      .then(() => {}).catch(() => {});
+    supabase
+      .from("rate_limit_events")
+      .insert({ ip_hash: userIdHash, route: `${ROUTE}:user`, is_prefetch: false })
+      .then(() => {}).catch(() => {});
+  }
+
   // ── Phase: questions ───────────────────────────────────────────────────────
   if (phase === "questions") {
     // Check if user has an existing session for this book
@@ -344,28 +468,80 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Global per-book question cache. Reflection questions are derived purely
+    // from title/author/bookType/summary/thesis — nothing user-specific — so
+    // once ANY reader has generated questions for a book, every subsequent
+    // reader of that book (a different user_id, so the per-user check above
+    // always misses) can reuse them instead of burning another Gemini call.
+    // Critical during a launch spike where traffic concentrates on a handful
+    // of popular titles. Mirrors the novel_analyses cache-hit pattern.
     let generatedQuestions: Array<{ id: string; question: string }> | null = null;
-    try {
-      generatedQuestions = await generateQuestions(
-        GEMINI_API_KEY,
-        title,
-        author ?? "",
-        bookType ?? "fiction",
-        summary ?? "",
-        thesis,
-      );
-    } catch (e: any) {
-      const status = e.status ?? 500;
-      return new Response(JSON.stringify({ error: e.message }), {
-        status, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let questionsFromGlobalCache = false;
+    if (cacheKey) {
+      const { data: cachedQuestions } = await supabase
+        .from("takeaway_questions_cache")
+        .select("id, questions, hit_count")
+        .eq("cache_key", cacheKey)
+        .maybeSingle();
+
+      if (cachedQuestions?.questions && Array.isArray(cachedQuestions.questions) && cachedQuestions.questions.length > 0) {
+        generatedQuestions = cachedQuestions.questions;
+        questionsFromGlobalCache = true;
+        // Bump stats async — never block the response on it.
+        supabase
+          .from("takeaway_questions_cache")
+          .update({ hit_count: (cachedQuestions.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
+          .eq("id", cachedQuestions.id)
+          .then(() => {}, (e: any) => console.error("takeaway question cache hit-bump error:", e));
+      }
     }
 
-    if (!generatedQuestions || generatedQuestions.length === 0) {
-      return new Response(JSON.stringify({ error: "Could not generate questions" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!generatedQuestions) {
+      try {
+        generatedQuestions = await generateQuestions(
+          GEMINI_API_KEY,
+          title,
+          author ?? "",
+          bookType ?? "fiction",
+          summary ?? "",
+          thesis,
+        );
+      } catch (e: any) {
+        const status = e.status ?? 500;
+        return new Response(JSON.stringify({ error: e.message }), {
+          status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!generatedQuestions || generatedQuestions.length === 0) {
+        return new Response(JSON.stringify({ error: "Could not generate questions" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Write-through to the global cache so the NEXT reader of this book
+      // skips Gemini entirely. ignoreDuplicates: true — a race between two
+      // first-readers of the same book silently no-ops on the loser, which
+      // is fine since both already have their own generatedQuestions in hand.
+      if (cacheKey) {
+        supabase
+          .from("takeaway_questions_cache")
+          .upsert(
+            {
+              cache_key: cacheKey,
+              title,
+              author: author ?? "",
+              book_type: bookType ?? "fiction",
+              questions: generatedQuestions,
+              model: MODEL,
+            },
+            { onConflict: "cache_key", ignoreDuplicates: true },
+          )
+          .then(() => {}, (e: any) => console.error("takeaway question cache write error:", e));
+      }
     }
+
+    console.log(JSON.stringify({ fn: "takeaways", phase: "questions", outcome: questionsFromGlobalCache ? "global_cache_hit" : "fresh", cache_key: cacheKey }));
 
     // Persist the session stub
     if (cacheKey) {

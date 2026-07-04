@@ -39,13 +39,39 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ---------- DNA point cache ----------
+// Every drag of a slider produces a slightly different axes vector, so exact-
+// match caching would almost never hit. Round each axis to the nearest 5 and
+// build a stable signature from it — coarse enough that repeat visits to
+// "roughly the same point" (including the crowd-consensus point computed by
+// dna-consensus) reuse a cached recommendation instead of re-calling Gemini,
+// fine enough that a real slider move still produces a different match.
+function buildAxesSignature(axes: Array<{ id: string; score: number }>): string {
+  return axes
+    .map((a) => ({ id: a.id, score: Math.round(a.score / 5) * 5 }))
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((a) => `${a.id}:${a.score}`)
+    .join("|");
+}
+
+function buildCacheKeyFallback(title: string, author?: string): string {
+  const t = title.trim().toLowerCase().replace(/\s+/g, " ");
+  const a = (author ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  return `v3|${t}||${a}`;
+}
+
 const MODEL = "gemini-3.5-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 // ---------- Circuit breaker ----------
 const CIRCUIT_OPEN_MS = 30_000;
-const CIRCUIT_TRIP_AFTER = 1;
+// Max wait for Gemini to return the first byte of its HTTP response.
+const GEMINI_TIMEOUT_MS = 30_000;
+// Was 1: a single 429/503 blip took a model fully offline for 30s. Under any
+// moderate concurrency this cascaded across all 3 fallback models. Raised to 2
+// (consistent with analyze-novel fix, 2026-07-01).
+const CIRCUIT_TRIP_AFTER = 2;
 type CircuitState = { fails: number; openUntil: number };
 const modelCircuit = new Map<string, CircuitState>();
 
@@ -75,11 +101,22 @@ async function geminiFetchWithFallback(
   let last: Response | null = null;
   for (const model of MODEL_FALLBACKS) {
     if (circuitIsOpen(model)) continue;
-    const r = await fetch(GEMINI_BASE, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, model }),
-    });
+    let r: Response;
+    try {
+      r = await fetch(GEMINI_BASE, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, model }),
+        signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+      });
+    } catch (e) {
+      // Network stall or timeout — treat as transient, trip circuit, try next model.
+      const name = e instanceof Error ? e.name : String(e);
+      console.warn(JSON.stringify({ circuit: "timeout", model, error: name }));
+      circuitRecordFail(model);
+      last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
+      continue;
+    }
     if (r.ok) { circuitRecordSuccess(model); return r; }
     if (r.status !== 429 && r.status !== 503) return r;
     await r.body?.cancel().catch(() => {});
@@ -121,7 +158,7 @@ const recommendationTool = {
         },
       },
       required: ["title", "author", "similarity", "why", "shared_axes", "divergent_axes"],
-      additionalProperties: false,
+      // additionalProperties: false — omitted: Gemini OpenAI-compat endpoint rejects this field with 400
     },
   },
 };
@@ -143,14 +180,71 @@ Deno.serve(async (req) => {
 
   if (body?.is_warmup) return new Response("ok", { status: 200, headers: corsHeaders });
 
-  // IP rate-limit check (30 req/hr per IP, only for non-BYOK calls)
-  const ip = getClientIp(req);
-  const ipHash = await hashIp(ip);
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
+  const { title, author, bookType, axes, cacheKey: rawCacheKey, gemini_key: userKey } = body ?? {};
+
+  if (!title || !Array.isArray(axes) || axes.length === 0) {
+    return new Response(JSON.stringify({ error: "title and axes are required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // ---------- Input size caps ----------
+  // title/author/bookType and axis labels get embedded into the Gemini
+  // prompt. Without a cap, one request could smuggle an oversized payload
+  // into a single prompt against the shared server key. Limits are generous
+  // for any real book title or DNA axis set (the app never sends >~10 axes).
+  const tooLong = (v: unknown, max: number) => typeof v === "string" && v.length > max;
+  if (tooLong(title, 300) || tooLong(author, 200) || tooLong(bookType, 100)) {
+    return new Response(JSON.stringify({ error: "One or more fields exceed the maximum allowed length" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (axes.length > 30 || axes.some((ax: any) => tooLong(ax?.id, 100))) {
+    return new Response(JSON.stringify({ error: "Axes payload too large" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const cacheKey = typeof rawCacheKey === "string" && rawCacheKey.trim()
+    ? rawCacheKey.trim()
+    : buildCacheKeyFallback(title, author);
+  const axesSignature = buildAxesSignature(axes as Array<{ id: string; score: number }>);
+
+  // ---------- Cache-first: skip the rate-limit RPC AND Gemini entirely on a hit ----------
+  // Slider drags are quantized (nearest 5), so this is the single highest-
+  // frequency request in the app — most drags land on an already-seen point.
+  // Checking the cache before the rate-limit round trip (which analyze-novel
+  // already does, but this function didn't) means a cache hit costs exactly
+  // one DB read instead of two, and never counts against a user's budget.
+  const { data: cachedRec } = await admin
+    .from("dna_recommendation_cache")
+    .select("id, recommendation, hit_count")
+    .eq("cache_key", cacheKey)
+    .eq("axes_signature", axesSignature)
+    .maybeSingle();
+
+  if (cachedRec?.recommendation) {
+    admin
+      .from("dna_recommendation_cache")
+      .update({ hit_count: (cachedRec.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
+      .eq("id", cachedRec.id)
+      .then(() => {}, (e: any) => console.error("dna_recommendation_cache hit-bump error:", e));
+
+    return new Response(JSON.stringify({ recommendation: cachedRec.recommendation, cached: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // ---------- Rate-limit gate (only reached on a genuine cache miss) ----------
+  const ip = getClientIp(req);
+  const ipHash = await hashIp(ip);
   const { data: rlCount } = await admin.rpc("count_recent_events", {
     p_ip_hash: ipHash,
     p_route: ROUTE,
@@ -162,15 +256,6 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: "Rate limit exceeded. Please wait before requesting more DNA recommendations." }),
       { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  }
-
-  const { title, author, bookType, axes, gemini_key: userKey } = body ?? {};
-
-  if (!title || !Array.isArray(axes) || axes.length === 0) {
-    return new Response(JSON.stringify({ error: "title and axes are required" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   }
 
   const GEMINI_API_KEY =
@@ -243,7 +328,19 @@ Recommend the single best DNA neighbour from the canon.`;
     .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
     .then(() => {});
 
-  return new Response(JSON.stringify({ recommendation }), {
+  // Write-through: the NEXT visitor (or the consensus recompute) who lands on
+  // this exact quantized DNA point for this book skips Gemini entirely.
+  // ignoreDuplicates — a race between two callers hitting the same new point
+  // silently no-ops on the loser; both already have their own result in hand.
+  admin
+    .from("dna_recommendation_cache")
+    .upsert(
+      { cache_key: cacheKey, axes_signature: axesSignature, recommendation, model: MODEL },
+      { onConflict: "cache_key,axes_signature", ignoreDuplicates: true },
+    )
+    .then(() => {}, (e: any) => console.error("dna_recommendation_cache write error:", e));
+
+  return new Response(JSON.stringify({ recommendation, cached: false }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });

@@ -75,4 +75,48 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // The whole app used to ship as one ~850KB chunk that blocked first
+        // paint for every visitor, cached or not. Splitting the heavy,
+        // rarely-changing/lazily-needed vendor libs out means the browser
+        // can fetch them in parallel (HTTP/2) instead of one giant serial
+        // blob, and they cache independently of app code that changes daily.
+        // Deliberately NOT splitting react/react-dom/@radix-ui out — they're
+        // imported from nearly everywhere (including the other vendor
+        // chunks below), and doing so produced circular chunk warnings from
+        // Rollup plus duplicated code. Splitting these three instead is
+        // safe because they're each a self-contained leaf dependency tree
+        // that's genuinely optional on first paint (charts/markdown aren't
+        // needed until a user opens the DNA or Takeaways tab; motion is
+        // used widely but is still a clean, non-circular leaf).
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("framer-motion")) return "vendor-motion";
+          if (id.includes("recharts") || id.includes("/d3-")) return "vendor-charts";
+          if (
+            id.includes("react-markdown") ||
+            id.includes("remark") ||
+            id.includes("micromark") ||
+            id.includes("unified") ||
+            id.includes("mdast") ||
+            id.includes("hast") ||
+            id.includes("unist") ||
+            id.includes("vfile") ||
+            id.includes("property-information") ||
+            id.includes("space-separated-tokens") ||
+            id.includes("comma-separated-tokens")
+          ) {
+            // Only needed on the Takeaways tab, not the initial app shell.
+            return "vendor-markdown";
+          }
+          // Everything else (react, react-dom, @radix-ui, react-router, supabase-js)
+          // goes in one shared vendor chunk — it changes far less often than
+          // app code, so it's still a net caching win even unsplit further.
+          return "vendor";
+        },
+      },
+    },
+  },
 }));

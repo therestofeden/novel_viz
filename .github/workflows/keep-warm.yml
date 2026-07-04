@@ -1,6 +1,6 @@
 name: Keep Edge Functions Warm
 
-# Pings all three edge functions every 5 minutes with is_warmup: true.
+# Pings all Gemini edge functions every 5 minutes with is_warmup: true.
 # Each function returns 200 immediately — no DB or Gemini calls are made.
 # This prevents Supabase cold starts (~1-2s penalty) on the first real request.
 #
@@ -48,4 +48,14 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -d '{"is_warmup":true}' \
             https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/recommend-anti-shelf
+        continue-on-error: true
+
+      - name: Ping recommend-by-dna
+        run: |
+          curl -sf -o /dev/null \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -d '{"is_warmup":true}' \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/recommend-by-dna
         continue-on-error: true

@@ -118,7 +118,18 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   // user adjusts DNA sliders. Null means "use the original inline rec".
   const [dynamicRec, setDynamicRec] = useState<Recommendation | null>(null);
   const [recLoading, setRecLoading] = useState(false);
+  const [recSource, setRecSource] = useState<"personal" | "consensus" | null>(null);
   const recTimer = useRef<number | null>(null);
+
+  // Wisdom-of-the-crowds: the book's crowd-consensus DNA (Bayesian blend of
+  // Gemini's original + up to the last 100 readers' saved overrides), plus a
+  // cached recommendation for that consensus point. Public read — works for
+  // every visitor, logged in or not. A reader's OWN saved override (if any)
+  // always takes precedence over this for that reader; see effectiveScore.
+  const [consensusData, setConsensusData] = useState<{
+    axes: Record<string, { score: number; voteCount: number }>;
+    recommendation: Recommendation | null;
+  } | null>(null);
 
   // Define derived maps/sets before the callback that closes over them,
   // so they are already initialised when useCallback evaluates its deps array.
@@ -131,11 +142,69 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const sharedSet = useMemo(() => new Set(rec?.shared_axes ?? []), [rec]);
   const divergentSet = useMemo(() => new Set(rec?.divergent_axes ?? []), [rec]);
 
+  // Consensus expressed as deltas-from-Gemini-original, same shape as
+  // `perturbations`, so it can slot into effectiveScore as a fallback layer
+  // beneath the reader's own (higher-priority) personal perturbations.
+  const consensusPerturbations = useMemo(() => {
+    const out: Partial<Record<DnaAxisId, number>> = {};
+    if (!consensusData) return out;
+    for (const id of AXIS_IDS) {
+      const c = consensusData.axes[id];
+      const base = axesById.get(id)?.score;
+      if (c && typeof base === "number" && Math.abs(c.score - base) > 0.001) {
+        out[id] = c.score - base;
+      }
+    }
+    return out;
+  }, [consensusData, axesById, AXIS_IDS]);
+
+  const maxVoteCount = useMemo(() => {
+    if (!consensusData) return 0;
+    return Object.values(consensusData.axes).reduce((m, v) => Math.max(m, v.voteCount), 0);
+  }, [consensusData]);
+
+  // Fetch the book's crowd consensus once per book. Public read (works
+  // logged-out too) — the row may not exist yet for books nobody has
+  // adjusted, which is fine (falls back to the raw Gemini score everywhere).
+  useEffect(() => {
+    let cancelled = false;
+    setConsensusData(null);
+    if (!cacheKey) return;
+    (async () => {
+      const { data } = await supabase
+        .from("book_dna_consensus")
+        .select("consensus, recommendation")
+        .eq("cache_key", cacheKey)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      setConsensusData({
+        axes: (data.consensus as Record<string, { score: number; voteCount: number }>) ?? {},
+        recommendation: (data.recommendation as unknown as Recommendation | null) ?? null,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [cacheKey]);
+
+  // Once hydration of the reader's own overrides is done, if they haven't
+  // personally touched anything, show the crowd-consensus recommendation
+  // (already cached server-side — no Gemini call needed) instead of the
+  // single-shot original Gemini recommendation.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (Object.keys(perturbations).length > 0) return; // personal touch wins — handled below
+    if (consensusData?.recommendation) {
+      setDynamicRec(consensusData.recommendation);
+      setRecSource("consensus");
+    }
+  }, [hydrated, consensusData, perturbations]);
+
   const fetchDynamicRec = useCallback(async () => {
-    // Build axes with current perturbations applied
+    // Build axes with current perturbations applied — personal perturbation
+    // wins per-axis if present, else fall back to the crowd-consensus point.
     const effectiveAxes = AXIS_IDS.map((id) => {
       const base = (axesById.get(id)?.score ?? 50);
-      const delta = perturbations[id] ?? 0;
+      const hasPersonal = Object.prototype.hasOwnProperty.call(perturbations, id);
+      const delta = hasPersonal ? (perturbations[id] ?? 0) : (consensusPerturbations[id] ?? 0);
       return { id, score: Math.max(0, Math.min(100, base + delta)) };
     });
     setRecLoading(true);
@@ -151,18 +220,20 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           author: analysis.author,
           bookType: analysis.bookType,
           axes: effectiveAxes,
+          cacheKey,
           ...(geminiKey ? { gemini_key: geminiKey } : {}),
         },
       });
       if (!res.error && res.data?.recommendation) {
         setDynamicRec(res.data.recommendation as Recommendation);
+        setRecSource("personal");
       }
     } catch (e) {
       console.error("recommend-by-dna error", e);
     } finally {
       setRecLoading(false);
     }
-  }, [analysis, perturbations, AXIS_IDS, axesById]);
+  }, [analysis, perturbations, consensusPerturbations, AXIS_IDS, axesById, cacheKey]);
 
   // Debounced recommendation refresh whenever DNA sliders change.
   // Works for all users (logged-in or not) as long as the server has a Gemini key.
@@ -181,7 +252,10 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
 
   const effectiveScore = (id: DnaAxisId): number => {
     const base = axesById.get(id)?.score ?? 50;
-    const delta = perturbations[id] ?? 0;
+    // Personal perturbation (this reader's own saved/in-progress take) always
+    // wins; otherwise fall back to the crowd-consensus point for this axis.
+    const hasPersonal = Object.prototype.hasOwnProperty.call(perturbations, id);
+    const delta = hasPersonal ? (perturbations[id] ?? 0) : (consensusPerturbations[id] ?? 0);
     return Math.max(0, Math.min(100, base + delta));
   };
 
@@ -249,6 +323,21 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
       if (!error) {
         setSaveState("saved");
         window.setTimeout(() => setSaveState("idle"), 1500);
+
+        // Fire-and-forget: fold this reader's take into the crowd consensus
+        // server-side (Bayesian blend over the last 100 readers) and cache
+        // the resulting recommendation for everyone. Never blocks the UI —
+        // this reader's own view is already up to date via their perturbations.
+        supabase.functions
+          .invoke("dna-consensus", { body: { cacheKey } })
+          .then(({ data, error: consensusError }) => {
+            if (consensusError || !data?.consensus) return;
+            setConsensusData({
+              axes: data.consensus as Record<string, { score: number; voteCount: number }>,
+              recommendation: (data.recommendation as unknown as Recommendation | null) ?? null,
+            });
+          })
+          .catch((e) => console.error("dna-consensus recompute error:", e));
       } else {
         setSaveState("idle");
       }
@@ -290,6 +379,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             <div className="meta mt-3 text-muted-foreground">
               Tap or hover an axis to read the evidence · drag any marker to register your take
               {user && cacheKey ? " — saved to your reading fingerprint" : ""}
+              {maxVoteCount > 0 ? ` · shaped by ${maxVoteCount} reader${maxVoteCount === 1 ? "" : "s"}` : ""}
             </div>
           </div>
         </div>
@@ -484,7 +574,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             </div>
             {totalDrift > 0 && (
               <button
-                onClick={() => { setPerturbations({}); setDynamicRec(null); }}
+                onClick={() => { setPerturbations({}); setDynamicRec(null); setRecSource(null); }}
                 className="meta border border-foreground bg-card px-3 py-1.5 hover:bg-foreground hover:text-background"
               >
                 ↺ Reset
@@ -541,9 +631,11 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                       : <Sparkles className="h-3 w-3" />}
                     {recLoading
                       ? "Finding your DNA match…"
-                      : isDynamic
-                        ? "Your DNA, your match"
-                        : "Canon match · drag sliders to personalise"}
+                      : recSource === "consensus"
+                        ? `Reader consensus · ${maxVoteCount} adjustment${maxVoteCount === 1 ? "" : "s"}`
+                        : isDynamic
+                          ? "Your DNA, your match"
+                          : "Canon match · drag sliders to personalise"}
                   </div>
                   <div className="flex items-center gap-3">
                     {isDynamic && !recLoading && (

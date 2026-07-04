@@ -7,6 +7,12 @@
 // - Author-prefix mode: single-word queries also fan out to author= search in parallel.
 // - Structured timing logs so we can spot regressions (ol_fetch / cache / total).
 // - Cache-Control switched to `private` (browser sends Authorization → public was a no-op).
+// - Miss-path rate limiting (2026-07-03): this endpoint was the last of the
+//   high-traffic functions with zero abuse protection — every cache miss hit
+//   Open Library + Google Books directly with no ceiling, so a scripted client
+//   could exhaust free-tier upstream quota or use it as a cost-free enumeration
+//   oracle. Gated to 60 misses/hour/IP via the shared rate_limit_events table;
+//   cache hits (the vast majority of real traffic) are unaffected.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -236,6 +242,43 @@ function popularityScore(d: OLDoc): number {
 const OL_FIELDS =
   "key,title,author_name,author_alternative_name,first_publish_year,edition_count,ratings_count,ia_count,language";
 
+// ---------- Rate limiting (miss-path only) ----------
+// search-books is public/unauthenticated and hit on every debounced keystroke,
+// but memory/server cache absorbs the vast majority of that traffic for free.
+// The only real cost — and the only real abuse surface (quota exhaustion on
+// Open Library / Google Books, or using this as a free enumeration oracle) —
+// is the cache-MISS path that reaches out to those upstreams. So unlike the
+// Gemini functions (which rate-limit every call), we only count and gate
+// requests that actually miss the cache, using the same rate_limit_events
+// table + count_recent_events RPC + salted IP hash pattern as takeaways /
+// recommend-anti-shelf / recommend-by-dna, for consistency and easy purging.
+const ROUTE = "search-books-miss";
+const RATE_LIMIT = 60; // cache-miss upstream calls per hour per IP
+
+async function sha256Hex(input: string): Promise<string> {
+  const encoded = new TextEncoder().encode(input);
+  const hashBuf = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(hashBuf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function getClientIp(req: Request): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
+async function hashIp(ip: string): Promise<string> {
+  const salt =
+    Deno.env.get("RATE_LIMIT_SALT") ??
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+    "fallback-salt";
+  return sha256Hex(salt + ip);
+}
+
 async function olFetch(url: string): Promise<OLDoc[]> {
   // Open Library has a long tail of slow/hanging responses (search-books
   // already runs 2-5s typically). Unlike fetchGoogleBooks (3s timeout) this
@@ -264,14 +307,25 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const q = (url.searchParams.get("q") ?? "").trim();
+    const qRaw = (url.searchParams.get("q") ?? "").trim();
     const limit = Math.min(10, Math.max(1, Number(url.searchParams.get("limit") ?? 6)));
 
-    if (q.length < 2) {
+    if (qRaw.length < 2) {
       return new Response(JSON.stringify({ results: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Cap query length: no real book search term needs more than this, and
+    // upstream (Google Books / Open Library) fetches + cache-key hashing
+    // shouldn't run against an arbitrarily large querystring value.
+    const MAX_QUERY_LEN = 200;
+    if (qRaw.length > MAX_QUERY_LEN) {
+      return new Response(JSON.stringify({ error: `Query too long (max ${MAX_QUERY_LEN} characters)` }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const q = qRaw;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -355,6 +409,32 @@ Deno.serve(async (req) => {
         },
       });
     }
+
+    // -------- Cache miss: rate-limit before touching upstream APIs --------
+    const ip = getClientIp(req);
+    const ipHash = await hashIp(ip);
+    try {
+      const { data: count } = await adminClient.rpc("count_recent_events", {
+        p_ip_hash: ipHash,
+        p_route: ROUTE,
+        p_window_seconds: 3600,
+        p_prefetch_only: false,
+      });
+      if (typeof count === "number" && count >= RATE_LIMIT) {
+        timings.total = Math.round(performance.now() - t0);
+        console.log(JSON.stringify({ fn: "search-books", cache: "rate_limited", q: queryKey, timings }));
+        return new Response(JSON.stringify({ results: [], error: "rate_limited" }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
+        });
+      }
+    } catch { /* fail open — don't block legitimate searches if the rate DB is unavailable */ }
+
+    // Log the event fire-and-forget; counter is eventually consistent.
+    adminClient
+      .from("rate_limit_events")
+      .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
+      .then(() => {}).catch(() => {});
 
     // -------- Cache miss: fetch from Open Library (with typo + author-prefix fallbacks) --------
     const olT0 = performance.now();

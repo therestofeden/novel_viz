@@ -24,7 +24,24 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+    <!--
+      Non-blocking font load: a plain <link rel="stylesheet"> here blocks
+      first paint on a second network hop (googleapis.com -> gstatic.com)
+      before ANY pixel renders, for every visitor, cache or no cache.
+      media="print" makes the browser fetch it without blocking render;
+      onload flips it to "all" once it's in. <noscript> covers JS-disabled.
+      &display=swap (already in the URL) then avoids invisible text while
+      the font file itself streams in.
+    -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" />
+    </noscript>
 
     <!-- Open Graph (default / home page) -->
     <meta property="og:type"        content="website" />

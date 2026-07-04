@@ -145,9 +145,18 @@ const BookPage = () => {
   };
 
   // ── Loading state ──────────────────────────────────────────────────────────
+  // Renders the same masthead SHAPE the real content will occupy (grid,
+  // column widths, stat boxes) instead of collapsing to a blank centered
+  // spinner. This is the entry point for every shared/saved-book link, so
+  // it's often a visitor's first-ever impression of the app — a skeleton
+  // that already looks like "a book page" reads as fast even while the one
+  // Supabase round trip is still in flight, instead of reading as broken.
   if (loadState === "loading") {
+    const bar = (w: string, extra = "") => (
+      <div className={cn("h-3 animate-pulse rounded bg-muted-foreground/20", extra)} style={{ width: w }} />
+    );
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="min-h-screen">
         <div className="dateline-strip">
           <span>NovelViz</span>
           <span style={{ opacity: 0.4 }}>·</span>
@@ -169,12 +178,48 @@ const BookPage = () => {
             </Link>
           </div>
         </Reveal>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
+
+        <main className="container mx-auto px-0">
+          <section className="grid grid-cols-12 gap-0 ink-border-b">
+            <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
+              <div className="meta text-muted-foreground">Subject</div>
+              {bar("2.5rem", "mt-3 h-8")}
+              {bar("60%", "mt-2")}
+            </div>
+            <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
+              {bar("30%")}
+              {bar("70%", "mt-3 h-9")}
+              {bar("95%", "mt-4")}
+              {bar("85%", "mt-2")}
+              {bar("40%", "mt-2")}
+              <div className="mt-4 flex flex-wrap gap-3">
+                {bar("5rem", "h-8")}
+                {bar("6rem", "h-8")}
+                {bar("4rem", "h-8")}
+              </div>
+            </div>
+            <div className="col-span-12 grid grid-cols-2 border-foreground md:col-span-3 md:border-l">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "border-foreground p-4",
+                    i < 2 && "md:border-b",
+                    i % 2 === 1 && "border-l",
+                    i >= 2 && "border-t",
+                  )}
+                >
+                  <div className="meta text-muted-foreground">&nbsp;</div>
+                  {bar("2rem", "mt-2 h-7")}
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="ink-border-b flex items-center justify-center px-4 py-3 text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             <span className="meta">Loading…</span>
-          </div>
-        </div>
+          </section>
+        </main>
       </div>
     );
   }
