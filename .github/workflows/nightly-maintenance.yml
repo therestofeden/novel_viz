@@ -1,0 +1,36 @@
+name: Nightly DB Maintenance
+
+# Purges stale rows from search_cache (>24h old) and rate_limit_events (>7d old)
+# by calling the db-maintenance edge function once a night. This replaces the
+# old "1% of requests" opportunistic purge, which could go weeks without
+# running on a heavily-cached table. pg_cron isn't available on this Supabase
+# plan tier, so GitHub Actions cron (already used for keep-warm.yml) does the
+# scheduling instead.
+#
+# Setup required (one-time):
+#   1. Pick any random string, e.g. `openssl rand -hex 32`.
+#   2. Supabase Dashboard → Project Settings → Edge Functions → Secrets:
+#        add MAINTENANCE_SECRET = <that string>
+#   3. GitHub → repo Settings → Secrets and variables → Actions:
+#        add MAINTENANCE_SECRET = <same string>
+#        (SUPABASE_ANON_KEY should already exist from keep-warm.yml setup)
+
+on:
+  schedule:
+    # 03:00 UTC nightly — quiet-hours for most of this app's user base.
+    - cron: "0 3 * * *"
+  workflow_dispatch: # allow manual trigger for testing
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Run db-maintenance
+        run: |
+          curl -sf \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-maintenance-secret: ${{ secrets.MAINTENANCE_SECRET }}" \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/db-maintenance
