@@ -170,9 +170,23 @@ const AntiShelf = () => {
         },
       });
       if (error) {
-        // supabase-js wraps non-2xx as error; try to surface server message
-        const msg =
-          (error as any)?.context?.body?.error || error.message || "Request failed";
+        // supabase-js wraps non-2xx responses in a FunctionsHttpError whose
+        // `.context` is the raw fetch Response — `.context.body` is an
+        // unread ReadableStream, not parsed JSON, so `.context.body.error`
+        // is always undefined and this always fell through to the generic
+        // "Edge Function returned a non-2xx status code" message. Read the
+        // body properly via `.context.json()` to get the real server message
+        // (e.g. rate-limit / Gemini-overload text).
+        let msg = error.message || "Request failed";
+        try {
+          const ctx = (error as any)?.context;
+          if (ctx && typeof ctx.json === "function") {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+          }
+        } catch {
+          // body already consumed or not JSON — keep the fallback message
+        }
         throw new Error(msg);
       }
       setByMode((s) => ({
