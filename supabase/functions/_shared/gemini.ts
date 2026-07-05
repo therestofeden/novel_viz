@@ -44,6 +44,18 @@ const GEMINI_TIMEOUT_MS = 30_000;
 const RETRY_BACKOFF_MS = 1_500;
 const RETRY_BUDGET_MS = 45_000;
 
+// Hard ceiling on the ENTIRE geminiFetchWithFallback call (both passes,
+// all models). RETRY_BUDGET_MS above only gates whether a retry pass is
+// allowed to *start* — it does not bound how long that pass itself can run,
+// so without this, two passes x 3 models x GEMINI_TIMEOUT_MS could take up
+// to ~180s for a single call. Callers like analyze-novel invoke this
+// function up to twice per request (initial + inadequate-result retry), so
+// an unbounded call risked exceeding Supabase's ~150s wall-clock function
+// limit — confirmed live: a real request hung 146s and was killed with a
+// 546 status. This Promise.race guarantees a deterministic return within
+// MAX_TOTAL_MS regardless of what's still in flight underneath.
+const MAX_TOTAL_MS = 45_000;
+
 async function circuitIsOpen(admin: SupabaseClient, model: string): Promise<boolean> {
   try {
     const { data, error } = await admin.rpc("gemini_circuit_check", { p_model: model });
@@ -158,29 +170,52 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * retries the whole pass once more after a short delay, bounded by
  * RETRY_BUDGET_MS so this can never meaningfully risk the edge function's
  * wall-clock limit.
+ *
+ * The whole call is additionally wrapped in a hard MAX_TOTAL_MS ceiling via
+ * Promise.race: RETRY_BUDGET_MS only gates whether a second pass is allowed
+ * to *start*, it doesn't bound how long that pass takes once started, so
+ * without this outer ceiling two passes x 3 models x GEMINI_TIMEOUT_MS could
+ * take up to ~180s — well past Supabase's ~150s function limit. If the
+ * ceiling is hit, this returns a clean 503 while the underlying fetch(es)
+ * keep running in the background and still record circuit-breaker outcomes
+ * normally; we're only bounding how long the FUNCTION takes to respond.
  */
 export async function geminiFetchWithFallback(
   admin: SupabaseClient,
   apiKey: string,
   payload: Record<string, unknown>,
 ): Promise<Response> {
-  const start = Date.now();
-  const first = await attemptFallbackPass(admin, apiKey, payload);
+  const work = (async (): Promise<Response> => {
+    const start = Date.now();
+    const first = await attemptFallbackPass(admin, apiKey, payload);
 
-  const exhausted = !first || first.status === 429 || first.status === 503;
-  if (exhausted && Date.now() - start < RETRY_BUDGET_MS) {
-    console.log(JSON.stringify({ circuit: "retry_after_exhaustion", elapsed_ms: Date.now() - start }));
-    await sleep(RETRY_BACKOFF_MS);
-    const second = await attemptFallbackPass(admin, apiKey, payload);
-    if (second) return second;
-  }
+    const exhausted = !first || first.status === 429 || first.status === 503;
+    if (exhausted && Date.now() - start < RETRY_BUDGET_MS) {
+      console.log(JSON.stringify({ circuit: "retry_after_exhaustion", elapsed_ms: Date.now() - start }));
+      await sleep(RETRY_BACKOFF_MS);
+      const second = await attemptFallbackPass(admin, apiKey, payload);
+      if (second) return second;
+    }
 
-  if (first) return first;
+    if (first) return first;
 
-  // Every model's circuit was already open — no fetch was even attempted.
-  console.error(JSON.stringify({ fn: "geminiFetch", error: "all_circuits_open" }));
-  return new Response(
-    JSON.stringify({ error: "All model circuits are open — try again shortly." }),
-    { status: 503, headers: { "Content-Type": "application/json" } },
-  );
+    // Every model's circuit was already open — no fetch was even attempted.
+    console.error(JSON.stringify({ fn: "geminiFetch", error: "all_circuits_open" }));
+    return new Response(
+      JSON.stringify({ error: "All model circuits are open — try again shortly." }),
+      { status: 503, headers: { "Content-Type": "application/json" } },
+    );
+  })();
+
+  const timeout = new Promise<Response>((resolve) => {
+    setTimeout(() => {
+      console.error(JSON.stringify({ fn: "geminiFetch", error: "hard_ceiling_exceeded", max_total_ms: MAX_TOTAL_MS }));
+      resolve(new Response(
+        JSON.stringify({ error: "Gemini fallback chain exceeded its time budget — please try again." }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      ));
+    }, MAX_TOTAL_MS);
+  });
+
+  return Promise.race([work, timeout]);
 }
