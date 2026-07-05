@@ -13,6 +13,15 @@
 //   could exhaust free-tier upstream quota or use it as a cost-free enumeration
 //   oracle. Gated to 60 misses/hour/IP via the shared rate_limit_events table;
 //   cache hits (the vast majority of real traffic) are unaffected.
+// - Coverage pass (2026-07-05): primary OL result cap raised 30→40 and GB
+//   maxResults raised 20→30. Both were flagged as fixed caps limiting
+//   per-query candidate depth in the 2026-07-04 pipeline audit but left
+//   untouched then to avoid stacking two unverified changes in one pass.
+//   Both APIs are free/unmetered per-request (no Gemini cost impact) and
+//   already timeout-bounded (3s GB / 5s OL) + run in parallel, so this only
+//   trades a small amount of upstream payload size for a wider ranking pool
+//   on ambiguous/popular queries — e.g. a query matching 35 editions of the
+//   same work previously lost the tail past 30 before ranking ever saw them.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -173,7 +182,7 @@ type GBItem = { volumeInfo: GBVolumeInfo };
 
 async function fetchGoogleBooks(query: string): Promise<GBItem[]> {
   try {
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&printType=books`;
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=30&printType=books`;
     const r = await fetch(url, { signal: AbortSignal.timeout(3000) });
     if (!r.ok) return [];
     const json = await r.json();
@@ -439,7 +448,7 @@ Deno.serve(async (req) => {
     // -------- Cache miss: fetch from Open Library (with typo + author-prefix fallbacks) --------
     const olT0 = performance.now();
     const baseUrl =
-      `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=30&fields=${OL_FIELDS}`;
+      `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=40&fields=${OL_FIELDS}`;
 
     // Fan out to author= search for 1–2 word queries: catches "garcia marquez", "toni morrison", etc.
     const words = q.split(/\s+/).filter(Boolean);
