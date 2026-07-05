@@ -290,9 +290,20 @@ const AFFILIATE_ENV: Record<string, string> = {
 
 function countryFromAcceptLanguage(al: string | null): string | null {
   if (!al) return null;
-  // e.g. "fr-FR,fr;q=0.9,en-US;q=0.8" → "FR"
-  const m = al.match(/[a-z]{2,3}-([A-Z]{2})/);
-  return m ? m[1] : null;
+  // Accept-Language entries are ordered by preference (q=...) — only trust
+  // the FIRST (highest-priority) entry. The previous implementation used a
+  // non-anchored regex that scanned the *entire* header for the first
+  // region-tagged locale anywhere in the string, so a low-priority fallback
+  // like "en-GB" tacked on after a region-less primary tag (e.g.
+  // "en;q=0.9,en-GB;q=0.8" — a common reduced-Accept-Language shape) would
+  // silently win over the user's actual top preference. Since Accept-Language
+  // is a language signal, not a location one, being wrong here reliably
+  // routed English-UI visitors worldwide to Amazon UK ("always redirects to
+  // Amazon UK" bug) — anchoring to the first entry only doesn't make this a
+  // reliable geo signal, but it stops it from actively lying.
+  const first = (al.split(",")[0] ?? "").trim();
+  const m = first.match(/^([a-zA-Z]{2,3})-([a-zA-Z]{2})/);
+  return m ? m[2].toUpperCase() : null;
 }
 
 function detectCountry(req: Request): { country: string; source: string } {

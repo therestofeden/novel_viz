@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {
   cacheKey: string | null;
@@ -21,6 +22,7 @@ interface Props {
  */
 export function ReaderNotes({ cacheKey, bookTitle }: Props) {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [shelfId, setShelfId] = useState<string | null>(null);   // shelf_books.id
@@ -28,6 +30,13 @@ export function ReaderNotes({ cacheKey, bookTitle }: Props) {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Jump to the notes panel from anywhere on the page (mobile FAB) and open it.
+  const jumpToNotes = useCallback(() => {
+    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setOpen(true);
+  }, []);
 
   // ── Load note when panel opens ──────────────────────────────────────────────
   useEffect(() => {
@@ -118,7 +127,23 @@ export function ReaderNotes({ cacheKey, bookTitle }: Props) {
   };
 
   return (
-    <div className="ink-border-b">
+    <div ref={containerRef} className="ink-border-b scroll-mt-20">
+      {/* ── Mobile FAB: thumb-reachable entry point, visible from anywhere ─── */}
+      {isMobile && !open && (
+        <button
+          onClick={jumpToNotes}
+          aria-label="Open my notes"
+          className="fixed bottom-5 right-4 z-50 flex items-center gap-2 rounded-full border border-foreground bg-foreground px-4 py-3 text-background shadow-lg transition-transform active:scale-95"
+          style={{ bottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+        >
+          <PenLine className="h-4 w-4" />
+          <span className="meta">Notes</span>
+          {note && (
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" title="Note saved" />
+          )}
+        </button>
+      )}
+
       {/* ── Toggle header ─────────────────────────────────────────── */}
       <button
         onClick={() => setOpen((o) => !o)}

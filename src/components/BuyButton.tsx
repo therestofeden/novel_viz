@@ -24,6 +24,63 @@ const inflight = new Map<string, Promise<Resolved>>();
 const cacheKey = (title: string, author: string) =>
   `${(title || "").toLowerCase().trim()}|${(author || "").toLowerCase().trim()}`;
 
+// ── Client-side country guess (bug fix) ───────────────────────────────────
+// resolve-buy-link's server-side geo detection turns out to be unreliable on
+// Supabase's hosted Edge Functions: Cloudflare's cf-ipcountry header is never
+// forwarded to the function runtime (verified live — even a spoofed
+// cf-ipcountry request header is ignored, and Supabase's own docs show a
+// sample Edge Function header dump that omits cf-ipcountry entirely). With
+// that gone, the server falls through to parsing Accept-Language — a
+// LANGUAGE preference, not a location signal — which mis-routes any visitor
+// whose browser reports a bare "en" or "en-GB" (an extremely common default
+// for non-US English UI, e.g. most Chrome installs outside North America) to
+// Amazon UK regardless of where they actually are. This is the "always
+// redirects to Amazon UK" bug.
+//
+// IANA timezone is a much better, still-zero-network-latency proxy for
+// country than UI language — Intl.DateTimeFormat is synchronous and built
+// into every JS engine, so this preserves the endpoint's "<100ms p50, no
+// upstream calls" design goal. We send it as an explicit `country` override,
+// which the server already accepts and prioritizes above any header-based
+// guess (see resolve-buy-link's `countryOverride` handling) — only the
+// client was never actually using it.
+const TIMEZONE_COUNTRY: Record<string, string> = {
+  // Americas
+  "America/New_York": "US", "America/Chicago": "US", "America/Denver": "US",
+  "America/Los_Angeles": "US", "America/Anchorage": "US", "America/Phoenix": "US",
+  "America/Detroit": "US", "America/Boise": "US", "America/Indianapolis": "US",
+  "Pacific/Honolulu": "US", "America/Puerto_Rico": "US",
+  "America/Toronto": "CA", "America/Vancouver": "CA", "America/Edmonton": "CA",
+  "America/Winnipeg": "CA", "America/Halifax": "CA", "America/St_Johns": "CA",
+  "America/Regina": "CA",
+  "America/Mexico_City": "MX", "America/Tijuana": "MX", "America/Cancun": "MX",
+  "America/Monterrey": "MX",
+  "America/Sao_Paulo": "BR", "America/Bahia": "BR", "America/Fortaleza": "BR",
+  "America/Manaus": "BR", "America/Recife": "BR", "America/Belem": "BR",
+  // Europe
+  "Europe/London": "GB", "Europe/Dublin": "IE", "Europe/Berlin": "DE",
+  "Europe/Vienna": "AT", "Europe/Zurich": "CH", "Europe/Paris": "FR",
+  "Europe/Brussels": "BE", "Europe/Luxembourg": "LU", "Europe/Rome": "IT",
+  "Europe/Madrid": "ES", "Atlantic/Canary": "ES", "Europe/Lisbon": "PT",
+  "Atlantic/Madeira": "PT", "Atlantic/Azores": "PT", "Europe/Amsterdam": "NL",
+  "Europe/Stockholm": "SE", "Europe/Oslo": "NO", "Europe/Copenhagen": "DK",
+  "Europe/Helsinki": "FI",
+  // Asia-Pacific
+  "Asia/Tokyo": "JP", "Asia/Seoul": "KR", "Asia/Kolkata": "IN",
+  "Australia/Sydney": "AU", "Australia/Melbourne": "AU", "Australia/Brisbane": "AU",
+  "Australia/Perth": "AU", "Australia/Adelaide": "AU", "Australia/Darwin": "AU",
+  "Australia/Hobart": "AU", "Pacific/Auckland": "NZ", "Pacific/Chatham": "NZ",
+};
+
+function guessCountryFromTimezone(): string | undefined {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return TIMEZONE_COUNTRY[tz];
+  } catch {
+    return undefined;
+  }
+}
+
 async function resolve(title: string, author: string): Promise<Resolved> {
   const k = cacheKey(title, author);
   const hit = memo.get(k);
@@ -32,8 +89,9 @@ async function resolve(title: string, author: string): Promise<Resolved> {
   if (pending) return pending;
 
   const p = (async () => {
+    const country = guessCountryFromTimezone();
     const { data, error } = await supabase.functions.invoke("resolve-buy-link", {
-      body: { title, author },
+      body: { title, author, ...(country ? { country } : {}) },
     });
     if (error || !data?.primary?.url) {
       const fallback: Resolved = {
