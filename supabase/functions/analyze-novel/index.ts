@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { geminiFetchWithFallback, MODEL, GEMINI_BASE, MODEL_FALLBACKS } from "../_shared/gemini.ts";
+import { geminiFetchWithFallback, MODEL, GEMINI_BASE, MODEL_FALLBACKS, recordGeminiSpend } from "../_shared/gemini.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,9 +7,24 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Used only by the raw preamble fetch and callPreview (both bypass the shared
-// geminiFetchWithFallback — they're best-effort, short-timeout, no-retry paths).
-const PREAMBLE_MODEL = "gemini-3.5-flash";
+// The raw preamble fetch and callPreview both bypass the shared
+// geminiFetchWithFallback — they're best-effort, short-timeout, no-retry
+// paths, so the retry/circuit-breaker machinery would be wasted overhead.
+// They previously pointed at a separate hardcoded PREAMBLE_MODEL constant
+// ("gemini-3.5-flash") that had silently drifted from the rest of the app:
+// that exact model was deliberately removed from MODEL_FALLBACKS on
+// 2026-07-05 for being the direct cause of two real cost incidents, but this
+// standalone constant wasn't part of that chain, so it kept firing on every
+// single fresh (non-cached) analysis with zero token/reasoning caps and zero
+// spend tracking — found + fixed same pass as adding those caps below. Now
+// reuses the shared MODEL (currently the cheaper gemini-3-flash-preview) so
+// there's one source of truth for "the model we call by default," plus an
+// explicit low reasoning-effort + token cap and spend recording, since a
+// decorative one-liner teaser or best-effort preview lookup never needs deep
+// thinking and shouldn't be invisible to the daily budget circuit breaker.
+const PREVIEW_REASONING_EFFORT = "low";
+const PREVIEW_MAX_TOKENS = 400;
+const PREAMBLE_MAX_TOKENS = 150;
 
 // ---------- Non-fiction tool ----------
 
@@ -832,13 +847,19 @@ const previewTool = {
   },
 };
 
-async function callPreview(apiKey: string, title: string): Promise<Record<string, unknown> | null> {
+async function callPreview(
+  admin: SupabaseClient,
+  apiKey: string,
+  title: string,
+): Promise<Record<string, unknown> | null> {
   try {
     const r = await fetch(GEMINI_BASE, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
+        reasoning_effort: PREVIEW_REASONING_EFFORT,
+        max_tokens: PREVIEW_MAX_TOKENS,
         messages: [
           {
             role: "system",
@@ -853,6 +874,7 @@ async function callPreview(apiKey: string, title: string): Promise<Record<string
     });
     if (!r.ok) return null;
     const data = await r.json();
+    recordGeminiSpend(admin, MODEL, data?.usage).catch(() => {});
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) return null;
     return JSON.parse(toolCall.function.arguments) as Record<string, unknown>;
@@ -1318,7 +1340,7 @@ Deno.serve(async (req) => {
           send("status", { text: "Looking up the work…" });
 
           // Preview: fire early, send result as soon as it arrives.
-          callPreview(GEMINI_API_KEY, title).then((preview) => {
+          callPreview(supabase, GEMINI_API_KEY, title).then((preview) => {
             if (preview && preview.confidence !== "unknown_work") {
               send("analysis_preview", { preview });
             }
@@ -1334,8 +1356,11 @@ Deno.serve(async (req) => {
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                  model: PREAMBLE_MODEL,
+                  model: MODEL,
+                  reasoning_effort: PREVIEW_REASONING_EFFORT,
+                  max_tokens: PREAMBLE_MAX_TOKENS,
                   stream: true,
+                  stream_options: { include_usage: true },
                   messages: [
                     {
                       role: "system",
@@ -1367,6 +1392,10 @@ Deno.serve(async (req) => {
                     const p = JSON.parse(json);
                     const delta = p.choices?.[0]?.delta?.content;
                     if (delta) send("preamble", { text: delta });
+                    // Usage arrives on the final chunk when stream_options.include_usage
+                    // is set — record it the same way the non-streaming paths do, so
+                    // this decorative call isn't invisible to the daily spend total.
+                    if (p.usage) recordGeminiSpend(supabase, MODEL, p.usage).catch(() => {});
                   } catch { /* partial */ }
                 }
               }

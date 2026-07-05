@@ -48,10 +48,38 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "gemini-2.5-flash-lite": { input: 0.10, output: 0.40 },
 };
 
-function estimateCostUsd(model: string, promptTokens: number, completionTokens: number): number {
+export function estimateCostUsd(model: string, promptTokens: number, completionTokens: number): number {
   const pricing = MODEL_PRICING[model];
   if (!pricing) return 0; // unknown model — don't block on a pricing gap, just log $0
   return (promptTokens / 1_000_000) * pricing.input + (completionTokens / 1_000_000) * pricing.output;
+}
+
+// Shared usage-logging + spend-recording, extracted so callers OUTSIDE
+// geminiFetchWithFallback (analyze-novel's callPreview/preamble bypass calls
+// — see their own file for why they bypass the fallback machinery) can still
+// feed the same gemini_daily_spend total. Those two calls were previously
+// invisible to the daily budget circuit breaker entirely: real spend from
+// them happened but was never recorded, so the "hard $/day ceiling" wasn't
+// actually a ceiling on total spend, just on the structured-analysis portion
+// of it. Fire-and-forget by design (never block the caller's response on this).
+export async function recordGeminiSpend(
+  admin: SupabaseClient,
+  model: string,
+  usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | undefined,
+): Promise<void> {
+  if (!usage) return;
+  console.log(JSON.stringify({
+    fn: "geminiUsage",
+    model,
+    prompt_tokens: usage.prompt_tokens,
+    completion_tokens: usage.completion_tokens,
+    total_tokens: usage.total_tokens,
+  }));
+  const cost = estimateCostUsd(model, usage.prompt_tokens ?? 0, usage.completion_tokens ?? 0);
+  if (cost > 0) {
+    const { error } = await admin.rpc("gemini_record_spend", { p_cost: cost });
+    if (error) console.warn(JSON.stringify({ spend: "record_error", error: error.message }));
+  }
 }
 
 // ---------- Circuit breaker tuning ----------
@@ -182,21 +210,7 @@ async function attemptFallbackPass(
       // is what made a $0.23 single-analysis bill impossible to diagnose.
       try {
         const usage = (await r.clone().json())?.usage;
-        if (usage) {
-          console.log(JSON.stringify({
-            fn: "geminiUsage",
-            model,
-            prompt_tokens: usage.prompt_tokens,
-            completion_tokens: usage.completion_tokens,
-            total_tokens: usage.total_tokens,
-          }));
-          const cost = estimateCostUsd(model, usage.prompt_tokens ?? 0, usage.completion_tokens ?? 0);
-          if (cost > 0) {
-            admin.rpc("gemini_record_spend", { p_cost: cost }).then(
-              ({ error }) => { if (error) console.warn(JSON.stringify({ spend: "record_error", error: error.message })); },
-            );
-          }
-        }
+        recordGeminiSpend(admin, model, usage).catch(() => {});
       } catch {
         // Logging only — never let a parse issue affect the real response.
       }
