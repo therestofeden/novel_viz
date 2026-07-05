@@ -25,12 +25,17 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
-export const MODEL = "gemini-3.5-flash";
+export const MODEL = "gemini-3-flash-preview";
 export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 // Fallback chain: newest → older versions (last resort for 503/429 surges).
 // gemini-1.5-flash and gemini-2.0-flash are both shut down (June 2026).
 // gemini-2.5-flash and gemini-2.5-flash-lite are deprecated but active until Oct 2026.
+// gemini-3.5-flash was deliberately REMOVED from this default chain on
+// 2026-07-05 — it was the direct cause of both the ~$0.30 and ~€1 cost
+// incidents (unbounded reasoning-token billing at $9/M output). It still
+// works and remains in MODEL_PRICING below; it can be reintroduced later as
+// an opt-in premium tier, but is not part of the default fallback chain now.
 export const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 // Per-1M-token pricing (USD), standard tier, as of 2026-07-05 — used to
@@ -72,18 +77,31 @@ const RETRY_BUDGET_MS = 45_000;
 // MAX_TOTAL_MS regardless of what's still in flight underneath.
 const MAX_TOTAL_MS = 45_000;
 
-// Hard per-call output/thinking cap — the actual fix for the $0.30/€1 cost
-// incidents. gemini-3.5-flash is a reasoning model whose thinking tokens
-// bill as output at $9/M with no built-in ceiling; a hard task (e.g. a dense
-// nonfiction book) could previously run the thinking pass arbitrarily long.
-// reasoning_effort:"low" caps the thinking budget (~1K tokens per Google's
-// OpenAI-compat mapping); MAX_OUTPUT_TOKENS caps total response length as a
-// second, independent backstop in case thinking is capped but the visible
-// completion itself runs long (e.g. a book with very many characters/events).
-// Together these bound worst-case output cost on gemini-3.5-flash to roughly
-// 8000/1e6 * $9.00 = $0.072 per call — down from unbounded.
-const MAX_OUTPUT_TOKENS = 8000;
-const REASONING_EFFORT = "low";
+// Hard per-call output/thinking cap — tuned 2026-07-05 as a follow-up to the
+// original $0.30/€1 cost-incident fix. Real production data from that fix's
+// live verification showed a full analysis used only ~3000 output tokens —
+// well under the old 8000 cap — so the previous "low"/8000 combo wasn't
+// actually buying us truncation-avoidance; it was mostly just capping
+// thinking depth tighter than necessary. reasoning_effort:"low" holds the
+// thinking budget to ~1K tokens, which is BELOW Gemini's own default of
+// "medium" (~8K tokens) and well below some models' own default of "high"
+// (e.g. gemini-3-flash-preview) — plausibly making complex/dense book
+// analysis shallower than it should be. Since the daily spend circuit
+// breaker below is now a proven, independent hard backstop (verified live),
+// we can afford to prioritize analysis quality/completeness here instead of
+// maximum per-call stinginess:
+//   - REASONING_EFFORT: "medium" restores Gemini's own default thinking
+//     depth (real reasoning room for complex books), while still being an
+//     EXPLICIT cap rather than relying on whatever a given model's silent
+//     default happens to be (defaults vary by model).
+//   - MAX_OUTPUT_TOKENS: 12000 gives headroom so a "medium" thinking pass
+//     plus a full rich completion doesn't risk truncating the JSON
+//     mid-schema, while still being a small fraction of the model's actual
+//     65k max.
+// New worst-case ceiling: 12000/1e6 * output-price-of-whatever-model-is-active
+// (e.g. $3.00/M for gemini-3-flash-preview => $0.036/call worst case).
+const MAX_OUTPUT_TOKENS = 12000;
+const REASONING_EFFORT = "medium";
 
 // Hard daily $ ceiling, independent of the per-call cap above — a second,
 // separate line of defense in case the per-call cap has a gap we haven't
