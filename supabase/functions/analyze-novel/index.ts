@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { geminiFetchWithFallback, MODEL, GEMINI_BASE } from "../_shared/gemini.ts";
+import { geminiFetchWithFallback, MODEL, GEMINI_BASE, MODEL_FALLBACKS } from "../_shared/gemini.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -931,12 +931,19 @@ function buildMetadataBlock(meta: BookMetadata): string {
 
 // ---------- AI call ----------
 
+// Drop the expensive primary (gemini-3.5-flash) — a second attempt on the
+// SAME priciest model isn't worth double-paying for; fall back to the
+// cheaper models only. Fixed after a real failed request billed ~$0.30 by
+// paying full price twice.
+const RETRY_FALLBACK_CHAIN = MODEL_FALLBACKS.slice(1);
+
 async function callStructuredAnalysis(
   admin: SupabaseClient,
   apiKey: string,
   userPrompt: string,
   corrective?: string,
   knownBookType?: "fiction" | "nonfiction",
+  fallbackChain?: string[],
 ): Promise<Analysis | null> {
   const messages: any[] = [
     { role: "system", content: SYSTEM_PROMPT },
@@ -967,7 +974,7 @@ async function callStructuredAnalysis(
     messages,
     tools,
     tool_choice,
-  });
+  }, fallbackChain);
 
   if (!response.ok) {
     const errText = await response.text();
@@ -1437,7 +1444,7 @@ Deno.serve(async (req) => {
             ? "Your previous response was incomplete after server-side validation. Please return at least 3 concepts, 2 chapters, and — most importantly — the argument_pillars (3-5) and idea_cards (8-10) fields with full claim sentences. Do not omit them."
             : "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).";
           try {
-            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective, analysis?.bookType);
+            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective, analysis?.bookType, RETRY_FALLBACK_CHAIN);
             // Accept any non-null retry — even a thin result is better than a hard failure.
             if (retry) analysis = retry;
           } catch (e) {

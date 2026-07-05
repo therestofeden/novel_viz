@@ -96,9 +96,10 @@ async function attemptFallbackPass(
   admin: SupabaseClient,
   apiKey: string,
   payload: Record<string, unknown>,
+  fallbackChain: string[],
 ): Promise<Response | null> {
   let last: Response | null = null;
-  for (const model of MODEL_FALLBACKS) {
+  for (const model of fallbackChain) {
     if (await circuitIsOpen(admin, model)) {
       console.log(JSON.stringify({ circuit: "skipped", model }));
       continue;
@@ -179,21 +180,26 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * ceiling is hit, this returns a clean 503 while the underlying fetch(es)
  * keep running in the background and still record circuit-breaker outcomes
  * normally; we're only bounding how long the FUNCTION takes to respond.
+ *
+ * Accepts an optional custom fallbackChain (used by analyze-novel's
+ * inadequate-result retry to avoid re-paying for the expensive primary model
+ * on a second attempt).
  */
 export async function geminiFetchWithFallback(
   admin: SupabaseClient,
   apiKey: string,
   payload: Record<string, unknown>,
+  fallbackChain: string[] = MODEL_FALLBACKS,
 ): Promise<Response> {
   const work = (async (): Promise<Response> => {
     const start = Date.now();
-    const first = await attemptFallbackPass(admin, apiKey, payload);
+    const first = await attemptFallbackPass(admin, apiKey, payload, fallbackChain);
 
     const exhausted = !first || first.status === 429 || first.status === 503;
     if (exhausted && Date.now() - start < RETRY_BUDGET_MS) {
       console.log(JSON.stringify({ circuit: "retry_after_exhaustion", elapsed_ms: Date.now() - start }));
       await sleep(RETRY_BACKOFF_MS);
-      const second = await attemptFallbackPass(admin, apiKey, payload);
+      const second = await attemptFallbackPass(admin, apiKey, payload, fallbackChain);
       if (second) return second;
     }
 
