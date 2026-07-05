@@ -1663,6 +1663,35 @@ const POPULAR_BOOKS = [
   "Wandering Stars by Tommy Orange",
   "The Great Believers by Rebecca Makkai",
   "I Have Some Questions for You by Rebecca Makkai",
+
+  // Author-gap-scan pass (2026-07-05, daily agent): grepped the list for ~43
+  // major bestselling/notable names, found ZERO entries for these 5 despite
+  // each being a household name in their genre.
+  "In a Dark, Dark Wood by Ruth Ware",
+  "The Woman in Cabin 10 by Ruth Ware",
+  "The Turn of the Key by Ruth Ware",
+  "One by One by Ruth Ware",
+  "The It Girl by Ruth Ware",
+  "Life After Life by Kate Atkinson",
+  "Case Histories by Kate Atkinson",
+  "A God in Ruins by Kate Atkinson",
+  "Transcription by Kate Atkinson",
+  "Jurassic Park by Michael Crichton",
+  "The Andromeda Strain by Michael Crichton",
+  "Sphere by Michael Crichton",
+  "Congo by Michael Crichton",
+  "Timeline by Michael Crichton",
+  "State of Fear by Michael Crichton",
+  "The Power Broker by Robert Caro",
+  "The Path to Power by Robert Caro",
+  "Means of Ascent by Robert Caro",
+  "Master of the Senate by Robert Caro",
+  "The Passage of Power by Robert Caro",
+  "Stiff by Mary Roach",
+  "Bonk by Mary Roach",
+  "Packing for Mars by Mary Roach",
+  "Gulp by Mary Roach",
+  "Grunt by Mary Roach",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
