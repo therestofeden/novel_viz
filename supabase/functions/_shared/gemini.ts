@@ -33,6 +33,22 @@ export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/ope
 // gemini-2.5-flash and gemini-2.5-flash-lite are deprecated but active until Oct 2026.
 export const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
+// Per-1M-token pricing (USD), standard tier, as of 2026-07-05 — used to
+// estimate real $ cost per call for the daily spend guard below. Update
+// if Google changes pricing.
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  "gemini-3.5-flash": { input: 1.50, output: 9.00 },
+  "gemini-3-flash-preview": { input: 0.50, output: 3.00 },
+  "gemini-2.5-flash": { input: 0.30, output: 2.50 },
+  "gemini-2.5-flash-lite": { input: 0.10, output: 0.40 },
+};
+
+function estimateCostUsd(model: string, promptTokens: number, completionTokens: number): number {
+  const pricing = MODEL_PRICING[model];
+  if (!pricing) return 0; // unknown model — don't block on a pricing gap, just log $0
+  return (promptTokens / 1_000_000) * pricing.input + (completionTokens / 1_000_000) * pricing.output;
+}
+
 // ---------- Circuit breaker tuning ----------
 const CIRCUIT_OPEN_MS = 30_000;
 const CIRCUIT_TRIP_AFTER = 2;
@@ -55,6 +71,25 @@ const RETRY_BUDGET_MS = 45_000;
 // 546 status. This Promise.race guarantees a deterministic return within
 // MAX_TOTAL_MS regardless of what's still in flight underneath.
 const MAX_TOTAL_MS = 45_000;
+
+// Hard per-call output/thinking cap — the actual fix for the $0.30/€1 cost
+// incidents. gemini-3.5-flash is a reasoning model whose thinking tokens
+// bill as output at $9/M with no built-in ceiling; a hard task (e.g. a dense
+// nonfiction book) could previously run the thinking pass arbitrarily long.
+// reasoning_effort:"low" caps the thinking budget (~1K tokens per Google's
+// OpenAI-compat mapping); MAX_OUTPUT_TOKENS caps total response length as a
+// second, independent backstop in case thinking is capped but the visible
+// completion itself runs long (e.g. a book with very many characters/events).
+// Together these bound worst-case output cost on gemini-3.5-flash to roughly
+// 8000/1e6 * $9.00 = $0.072 per call — down from unbounded.
+const MAX_OUTPUT_TOKENS = 8000;
+const REASONING_EFFORT = "low";
+
+// Hard daily $ ceiling, independent of the per-call cap above — a second,
+// separate line of defense in case the per-call cap has a gap we haven't
+// found. Conservative default for this MVP/testing phase; raise via the
+// DAILY_GEMINI_BUDGET_USD env secret once real usage data justifies it.
+const DAILY_BUDGET_USD = Number(Deno.env.get("DAILY_GEMINI_BUDGET_USD") ?? "5.00");
 
 async function circuitIsOpen(admin: SupabaseClient, model: string): Promise<boolean> {
   try {
@@ -109,7 +144,7 @@ async function attemptFallbackPass(
       r = await fetch(GEMINI_BASE, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, model }),
+        body: JSON.stringify({ max_tokens: MAX_OUTPUT_TOKENS, reasoning_effort: REASONING_EFFORT, ...payload, model }),
         signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
       });
     } catch (e) {
@@ -137,6 +172,12 @@ async function attemptFallbackPass(
             completion_tokens: usage.completion_tokens,
             total_tokens: usage.total_tokens,
           }));
+          const cost = estimateCostUsd(model, usage.prompt_tokens ?? 0, usage.completion_tokens ?? 0);
+          if (cost > 0) {
+            admin.rpc("gemini_record_spend", { p_cost: cost }).then(
+              ({ error }) => { if (error) console.warn(JSON.stringify({ spend: "record_error", error: error.message })); },
+            );
+          }
         }
       } catch {
         // Logging only — never let a parse issue affect the real response.
@@ -184,6 +225,16 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Accepts an optional custom fallbackChain (used by analyze-novel's
  * inadequate-result retry to avoid re-paying for the expensive primary model
  * on a second attempt).
+ *
+ * Every request also carries a hard MAX_OUTPUT_TOKENS / REASONING_EFFORT cap
+ * (see constants above) — this bounds worst-case per-call output/thinking
+ * cost, which was previously unbounded and caused two real cost incidents
+ * (~$0.30 and ~€1 in a single call) on gemini-3.5-flash. Before any attempt
+ * is made, a daily budget pre-flight check (gemini_daily_budget_exceeded RPC)
+ * short-circuits with a clean 503 if today's cumulative estimated spend has
+ * already hit DAILY_BUDGET_USD — an independent second line of defense. On
+ * every successful call, estimated cost is recorded via the
+ * gemini_record_spend RPC (fire-and-forget, not on the hot path).
  */
 export async function geminiFetchWithFallback(
   admin: SupabaseClient,
@@ -192,6 +243,27 @@ export async function geminiFetchWithFallback(
   fallbackChain: string[] = MODEL_FALLBACKS,
 ): Promise<Response> {
   const work = (async (): Promise<Response> => {
+    const budgetExceeded = await admin.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD })
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn(JSON.stringify({ spend: "budget_check_error_fail_open", error: error.message }));
+          return false; // fail open — don't block real users on a DB hiccup
+        }
+        return !!data;
+      })
+      .catch((e) => {
+        console.warn(JSON.stringify({ spend: "budget_check_exception_fail_open", error: String(e) }));
+        return false;
+      });
+
+    if (budgetExceeded) {
+      console.error(JSON.stringify({ spend: "daily_budget_exceeded", budget: DAILY_BUDGET_USD }));
+      return new Response(
+        JSON.stringify({ error: "Daily AI budget reached — please try again tomorrow, or add your own Gemini API key in settings." }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     const start = Date.now();
     const first = await attemptFallbackPass(admin, apiKey, payload, fallbackChain);
 
