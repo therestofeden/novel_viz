@@ -109,6 +109,25 @@ async function attemptFallbackPass(
     }
     if (r.ok) {
       await circuitRecordSuccess(admin, model);
+      // Best-effort token/cost visibility — clone so the real caller's body
+      // stream is completely untouched. Gemini's OpenAI-compat endpoint
+      // returns a `usage` block on every successful response; logging it
+      // here covers all 5 functions in one place instead of nowhere, which
+      // is what made a $0.23 single-analysis bill impossible to diagnose.
+      try {
+        const usage = (await r.clone().json())?.usage;
+        if (usage) {
+          console.log(JSON.stringify({
+            fn: "geminiUsage",
+            model,
+            prompt_tokens: usage.prompt_tokens,
+            completion_tokens: usage.completion_tokens,
+            total_tokens: usage.total_tokens,
+          }));
+        }
+      } catch {
+        // Logging only — never let a parse issue affect the real response.
+      }
       return r;
     }
     // Log ALL errors — critical for diagnosing what Gemini is actually returning.

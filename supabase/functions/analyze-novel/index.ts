@@ -931,20 +931,42 @@ function buildMetadataBlock(meta: BookMetadata): string {
 
 // ---------- AI call ----------
 
-async function callStructuredAnalysis(admin: SupabaseClient, apiKey: string, userPrompt: string, corrective?: string): Promise<Analysis | null> {
+async function callStructuredAnalysis(
+  admin: SupabaseClient,
+  apiKey: string,
+  userPrompt: string,
+  corrective?: string,
+  knownBookType?: "fiction" | "nonfiction",
+): Promise<Analysis | null> {
   const messages: any[] = [
     { role: "system", content: SYSTEM_PROMPT },
     { role: "user", content: userPrompt },
   ];
   if (corrective) messages.push({ role: "user", content: corrective });
 
-  const response = await geminiFetchWithFallback(admin, apiKey, {
-    messages,
-    tools: [analysisTool, nonfictionAnalysisTool],
+  // Both tool schemas combined are ~5k tokens of input on every call — fine
+  // for a genuinely fresh title where fiction/nonfiction isn't known yet, but
+  // pure waste on the "inadequate_result" retry path, where the first
+  // response already told us the bookType. Passing only the relevant schema
+  // there roughly halves that call's input cost, and forcing tool_choice
+  // (instead of "auto") also means the retry can't fail a second time by
+  // skipping the tool call — a small reliability win alongside the cost cut.
+  const tools = knownBookType === "fiction"
+    ? [analysisTool]
+    : knownBookType === "nonfiction"
+    ? [nonfictionAnalysisTool]
+    : [analysisTool, nonfictionAnalysisTool];
+  const tool_choice = knownBookType
+    ? { type: "function", function: { name: knownBookType === "fiction" ? "render_novel_analysis" : "render_nonfiction_analysis" } }
     // "required" was returning HTTP 400 from Gemini's OpenAI-compat endpoint.
     // "auto" lets the model choose; the system prompt + retry logic handle the
     // rare case where the model skips a tool call and returns plain text instead.
-    tool_choice: "auto",
+    : "auto";
+
+  const response = await geminiFetchWithFallback(admin, apiKey, {
+    messages,
+    tools,
+    tool_choice,
   });
 
   if (!response.ok) {
@@ -1415,7 +1437,7 @@ Deno.serve(async (req) => {
             ? "Your previous response was incomplete after server-side validation. Please return at least 3 concepts, 2 chapters, and — most importantly — the argument_pillars (3-5) and idea_cards (8-10) fields with full claim sentences. Do not omit them."
             : "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).";
           try {
-            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective);
+            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective, analysis?.bookType);
             // Accept any non-null retry — even a thin result is better than a hard failure.
             if (retry) analysis = retry;
           } catch (e) {
