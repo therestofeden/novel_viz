@@ -598,7 +598,13 @@ export const TimelineView = ({
                   }}
                   onMouseEnter={() => !spoiled && setHovered(e.id)}
                   onMouseLeave={() => setHovered(null)}
-                  onClick={() => handleSelect(e)}
+                  onClick={() => {
+                    if (!spoiled) {
+                      // eslint-disable-next-line no-console
+                      console.log({ ui: "timeline_event", event: "tap_shown_info", eventId: e.id });
+                    }
+                    handleSelect(e);
+                  }}
                 >
                   {/* tether from stacked event back to lane center line */}
                   {lay.row !== 0 && (
@@ -622,8 +628,16 @@ export const TimelineView = ({
                       style={{ filter: "url(#evt-glow)" }}
                     />
                   )}
-                  {/* hit area */}
-                  <circle cx={cx} cy={cy} r={Math.max(14, r + 6)} fill="transparent" />
+                  {/* hit area — sized to a ~40px touch target (r=20) while keeping the
+                      visible dot small; capped relative to stacking/x-gap spacing so
+                      adjacent hit circles don't overlap excessively */}
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={Math.max(20, r + 6)}
+                    fill="transparent"
+                    pointerEvents="all"
+                  />
                   <circle
                     cx={cx}
                     cy={cy}

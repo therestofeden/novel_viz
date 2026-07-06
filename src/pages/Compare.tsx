@@ -273,7 +273,7 @@ const SlotPicker = ({ label, shelf, loaded, busy, loading, onPick, onClear, bord
         )}
       </div>
       {open && !loaded && shelf.length > 0 && (
-        <div className="absolute left-0 right-0 z-20 mx-4 mb-4 max-h-72 overflow-y-auto ink-border bg-background">
+        <div className="absolute left-0 right-0 top-full z-20 mx-4 mt-1 max-h-72 w-auto overflow-y-auto ink-border bg-background shadow-lg">
           {shelf.map((s) => (
             <button
               key={s.id}

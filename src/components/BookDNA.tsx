@@ -479,7 +479,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                     aria-valuenow={Math.round(score)}
                     tabIndex={0}
                     className={cn(
-                      "absolute top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 border touch-none cursor-grab transition-transform active:cursor-grabbing hover:scale-110 md:h-7 md:w-7",
+                      "absolute top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 border touch-none cursor-grab transition-transform active:scale-110 active:cursor-grabbing hover:scale-110 md:h-7 md:w-7",
                       isHover && "scale-110",
                     )}
                     style={{
@@ -495,12 +495,18 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                       const baseScore = axesById.get(id)?.score ?? 50;
                       const startX = e.clientX;
                       const startScore = effectiveScore(id);
-                      const THRESHOLD = 4;
+                      // Mouse input is precise; touch/pen input has natural thumb/finger
+                      // jitter, so use a larger engagement threshold for non-mouse pointers
+                      // to avoid premature/twitchy engagement on touch devices.
+                      const THRESHOLD = e.pointerType === "mouse" ? 4 : 9;
                       let engaged = false;
                       setHoveredAxis(id);
                       try { handle.setPointerCapture(e.pointerId); } catch { /* noop */ }
                       const onMove = (ev: PointerEvent) => {
                         if (!engaged && Math.abs(ev.clientX - startX) < THRESHOLD) return;
+                        if (!engaged) {
+                          console.log({ ui: "book_dna_slider", event: "drag_engaged", pointerType: ev.pointerType });
+                        }
                         engaged = true;
                         const rect = row.getBoundingClientRect();
                         const inner = rect.width - 24;
@@ -624,20 +630,22 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             const isDynamic = !!dynamicRec;
             return (
               <>
-                <div className="flex items-center justify-between border-b border-background/30 px-5 py-3">
-                  <div className="meta text-background/70 flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-background/30 px-5 py-3">
+                  <div className="meta flex min-w-0 items-center gap-2 text-background/70">
                     {recLoading
-                      ? <Loader2 className="h-3 w-3 animate-spin" />
-                      : <Sparkles className="h-3 w-3" />}
-                    {recLoading
-                      ? "Finding your DNA match…"
-                      : recSource === "consensus"
-                        ? `Reader consensus · ${maxVoteCount} adjustment${maxVoteCount === 1 ? "" : "s"}`
-                        : isDynamic
-                          ? "Your DNA, your match"
-                          : "Canon match · drag sliders to personalise"}
+                      ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+                      : <Sparkles className="h-3 w-3 shrink-0" />}
+                    <span className="break-words">
+                      {recLoading
+                        ? "Finding your DNA match…"
+                        : recSource === "consensus"
+                          ? `Reader consensus · ${maxVoteCount} adjustment${maxVoteCount === 1 ? "" : "s"}`
+                          : isDynamic
+                            ? "Your DNA, your match"
+                            : "Canon match · drag sliders to personalise"}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-3">
                     {isDynamic && !recLoading && (
                       <button
                         onClick={fetchDynamicRec}

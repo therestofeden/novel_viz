@@ -623,6 +623,41 @@ const Index = () => {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
+  // Keep the search input + dropdown in view when the on-screen keyboard opens.
+  // The dropdown is `absolute top-full` relative to wrapRef — on mobile, the
+  // keyboard shrinks the visual viewport from the bottom without triggering any
+  // native reflow, so the suggestions can render behind/under the keyboard even
+  // though the input itself stays visible. scrollIntoView({ block: "nearest" })
+  // nudges the browser's native "keep focused element in view" behavior to also
+  // account for the newly-appeared dropdown content below the input. This is a
+  // no-op in practice on desktop (nothing to scroll — the dropdown already fits).
+  const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const hasContent = suggestOpen && (suggestions.length > 0 || title.trim().length >= 2);
+    if (!hasContent) return;
+
+    // Cap dropdown height to whatever's visible above the on-screen keyboard
+    // (VisualViewport API — widely supported in mobile Safari/Chrome; falls
+    // back to no cap where unsupported, since scrollIntoView still applies).
+    const vv = window.visualViewport;
+    if (vv && wrapRef.current) {
+      const wrapBottom = wrapRef.current.getBoundingClientRect().bottom;
+      const visibleBottom = vv.height + vv.offsetTop;
+      const available = visibleBottom - wrapBottom - 16; // 16px breathing room
+      if (available > 0 && available < 360) {
+        setDropdownMaxHeight(Math.max(120, available));
+      } else {
+        setDropdownMaxHeight(null);
+      }
+    }
+
+    const id = window.requestAnimationFrame(() => {
+      wrapRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      console.log(JSON.stringify({ ui: "search_autocomplete", event: "opened_keyboard_aware" }));
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [suggestOpen, suggestions.length, title]);
+
   const pickSuggestion = (s: BookSuggestion) => {
     suppressNextFetchRef.current = true;
     setTitle(s.title);
@@ -1095,7 +1130,10 @@ const Index = () => {
 
                   {/* Loading state — local index empty, waiting for network */}
                   {suggestOpen && suggestions.length === 0 && suggestLoading && title.trim().length >= 2 && (
-                    <ul className="ink-border absolute left-0 right-0 top-full z-20 mt-[-1px] bg-card">
+                    <ul
+                      className="ink-border absolute left-0 right-0 top-full z-20 mt-[-1px] overflow-y-auto bg-card"
+                      style={dropdownMaxHeight ? { maxHeight: dropdownMaxHeight } : undefined}
+                    >
                       <li className="meta flex items-center gap-2 px-4 py-3 text-muted-foreground">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         Searching Open Library…
@@ -1105,7 +1143,10 @@ const Index = () => {
 
                   {/* No-results state — press Enter to analyze directly */}
                   {suggestOpen && suggestions.length === 0 && !suggestLoading && title.trim().length >= 2 && (
-                    <ul className="ink-border absolute left-0 right-0 top-full z-20 mt-[-1px] bg-card">
+                    <ul
+                      className="ink-border absolute left-0 right-0 top-full z-20 mt-[-1px] overflow-y-auto bg-card"
+                      style={dropdownMaxHeight ? { maxHeight: dropdownMaxHeight } : undefined}
+                    >
                       <li className="meta border-b border-foreground/30 bg-background px-4 py-2 text-muted-foreground">
                         Not in search index — analyze directly
                       </li>
@@ -1129,6 +1170,7 @@ const Index = () => {
                     <ul
                       role="listbox"
                       className="ink-border absolute left-0 right-0 top-full z-20 mt-[-1px] max-h-[360px] overflow-y-auto bg-card"
+                      style={dropdownMaxHeight ? { maxHeight: dropdownMaxHeight } : undefined}
                     >
                       <li className="meta flex items-center justify-between border-b border-foreground/30 bg-background px-4 py-2 text-muted-foreground">
                         <span>Matches · Open Library</span>

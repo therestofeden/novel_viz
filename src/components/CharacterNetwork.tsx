@@ -253,8 +253,12 @@ export const CharacterNetwork = ({
   const onPointerDown = (e: React.PointerEvent, nodeId?: string) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     if (nodeId) {
+      // eslint-disable-next-line no-console
+      console.log({ ui: "character_network", event: "node_drag_started", pointerType: e.pointerType, nodeId });
       setDragNode(nodeId);
     } else {
+      // eslint-disable-next-line no-console
+      console.log({ ui: "character_network", event: "canvas_pan_started", pointerType: e.pointerType });
       setPanning({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
   };
@@ -444,7 +448,11 @@ export const CharacterNetwork = ({
             viewBox={`0 0 ${W} ${H}`}
             className="block w-full select-none"
             style={{
-              height: "min(64vh, 620px)",
+              // Floor at 360px so portrait phones (≈700-800px viewport minus header/nav
+              // chrome above this panel) never collapse the network into an unusably
+              // cramped strip; still caps at 620px so it doesn't dominate short desktop
+              // windows either.
+              height: "max(360px, min(64vh, 620px))",
               touchAction: "none",
               cursor: panning ? "grabbing" : "grab",
             }}
@@ -620,6 +628,32 @@ export const CharacterNetwork = ({
                           opacity={0.45}
                         />
                       )}
+                      {/* Invisible enlarged hit target — the visible node body (r as low as
+                          ~20 SVG units, i.e. well under a 40px screen target once scaled into
+                          the mobile canvas) is too small to reliably grab on touch and easily
+                          mistaken for a background pan-start. Capped relative to minSep (r_a +
+                          r_b + 22 in the force layout) so neighboring hit targets don't swallow
+                          each other on dense graphs. */}
+                      <circle
+                        cx={n.x}
+                        cy={n.y}
+                        r={Math.min(n.r + 20, 34)}
+                        fill="transparent"
+                        pointerEvents="all"
+                      />
+                      {/* subtle static ring — a touch-visible cue that this is a grabbable
+                          node (distinct from the empty background, which pans) since :hover
+                          affordances don't fire on touch */}
+                      <circle
+                        cx={n.x}
+                        cy={n.y}
+                        r={n.r + 4}
+                        fill="none"
+                        stroke="hsl(var(--foreground) / 0.25)"
+                        strokeWidth={1}
+                        strokeDasharray="2 3"
+                        pointerEvents="none"
+                      />
                       {/* main body */}
                       <circle
                         cx={n.x}
@@ -628,6 +662,7 @@ export const CharacterNetwork = ({
                         fill={fill}
                         stroke={stroke}
                         strokeWidth={strokeW}
+                        pointerEvents="none"
                       />
                       {/* index number on big nodes */}
                       {n.r >= 22 && (
