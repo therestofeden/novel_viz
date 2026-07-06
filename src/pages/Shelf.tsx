@@ -30,6 +30,12 @@ const Shelf = () => {
   const [busy, setBusy] = useState(true);
   const [displayName, setDisplayName] = useState<string>("");
   const [defaultShelfId, setDefaultShelfId] = useState<string | null>(null);
+  // cache_key -> slug, so clicking a book (list or graph) can jump straight to
+  // its own /book/:slug page instead of routing through the home page's
+  // title-based re-analysis flow (which visually looked like "jumping back
+  // home" and re-ran a fresh lookup instead of opening the already-cached
+  // analysis directly).
+  const [slugByCacheKey, setSlugByCacheKey] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (!loading && !session) navigate("/auth?next=/shelf", { replace: true });
@@ -63,6 +69,44 @@ const Shelf = () => {
       cancelled = true;
     };
   }, [user]);
+
+  // Resolve each shelf book's slug so we can link straight to /book/:slug.
+  // Keyed on the cache_key set (not `books` itself) so a status change or
+  // removal doesn't re-trigger this — only an actual change in which books
+  // are on the shelf does. A book missing a slug (rare — only pre-slug
+  // legacy rows or a non-validated analysis) falls back to the old
+  // title-based route.
+  const cacheKeysSignature = books.map((b) => b.cache_key).sort().join(",");
+  useEffect(() => {
+    if (books.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("novel_analyses")
+        .select("cache_key, slug")
+        .in("cache_key", books.map((b) => b.cache_key))
+        .eq("is_validated", true);
+      if (cancelled || !data) return;
+      const m = new Map<string, string>();
+      for (const row of data) {
+        if (row.slug) m.set(row.cache_key, row.slug);
+      }
+      setSlugByCacheKey(m);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKeysSignature]);
+
+  // Single source of truth for "open this book" from either the graph or the
+  // list — prefers the direct /book/:slug route (opens the cached analysis
+  // immediately) and only falls back to the home page's re-analysis flow
+  // when we don't have a resolved slug for this cache_key.
+  const openBook = (cacheKey: string, title: string) => {
+    const slug = slugByCacheKey.get(cacheKey);
+    navigate(slug ? `/book/${slug}` : `/?book=${encodeURIComponent(title)}`);
+  };
 
   const removeBook = async (id: string) => {
     const prev = books;
@@ -206,9 +250,7 @@ const Shelf = () => {
                     title: b.title,
                     author: b.author,
                   }))}
-                  onSelect={(_ck, title) => {
-                    navigate(`/?book=${encodeURIComponent(title)}`);
-                  }}
+                  onSelect={(cacheKey, title) => openBook(cacheKey, title)}
                 />
               </div>
 
@@ -256,7 +298,11 @@ const Shelf = () => {
                   </div>
                   <div className="col-span-12 flex items-center justify-end gap-2 md:col-span-4">
                     <Link
-                      to={`/?book=${encodeURIComponent(b.title)}`}
+                      to={
+                        slugByCacheKey.get(b.cache_key)
+                          ? `/book/${slugByCacheKey.get(b.cache_key)}`
+                          : `/?book=${encodeURIComponent(b.title)}`
+                      }
                       className="meta border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-primary hover:text-primary-foreground"
                     >
                       → Open
