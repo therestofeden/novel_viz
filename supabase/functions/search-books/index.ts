@@ -22,6 +22,39 @@
 //   trades a small amount of upstream payload size for a wider ranking pool
 //   on ambiguous/popular queries — e.g. a query matching 35 editions of the
 //   same work previously lost the tail past 30 before ranking ever saw them.
+// - Canonical-title fix (2026-07-06): OL groups every translation/edition of
+//   a classic under one "work" record, and that work's single `title` field
+//   is often the ORIGINAL-LANGUAGE title, not the famous English one. Two
+//   distinct sub-cases, both verified live against real Open Library data:
+//   (1) non-Latin-SCRIPT titles (e.g. the 1063-edition "Odyssey" work is
+//   titled "Ὀδύσσεια", Greek) were hard-dropped by isLatin() before scoring
+//   ever ran, so search fell back on a much weaker stand-alone stub; (2)
+//   Latin-script-but-foreign-LANGUAGE titles (e.g. the 188-edition "Magic
+//   Mountain" work is titled "Der Zauberberg" — German, but plain Latin
+//   letters, so isLatin() actually passed it fine) scored ~0 lexical
+//   relevance against an English query and got buried under near-irrelevant
+//   junk instead of being filtered out. Both need the same underlying data:
+//   OL's search API accepts `editions,editions.title,editions.language` in
+//   the SAME request (no extra round-trip), returning OL's own best-matching
+//   edition title per work. pickDisplayTitle() now picks between the work's
+//   own title and that edition title QUERY-AWARE-ly — whichever scores
+//   higher lexically against what the user typed — rather than blindly
+//   preferring one or the other. This matters: always preferring the
+//   edition title regressed already-correct results (e.g. "War and Peace"'s
+//   real record has a clean own-title match, but its OL edition-title
+//   fallback was a messier "War and Peace (War & Peace)" that scored worse
+//   and got displaced by an inferior candidate) — confirmed via live
+//   A/B testing against 7 classics before landing on the query-aware
+//   version. Verified live end-to-end: "the magic mountain" (previously
+//   invisible), "the odyssey" and "crime and punishment" (previously a much
+//   weaker stand-alone stub) now correctly surface the real, most-published
+//   record at #1, with zero regression on War and Peace, One Hundred Years
+//   of Solitude, The Brothers Karamazov, and Anna Karenina (all already
+//   correct, all unaffected). Deliberately did NOT also add an author-aware
+//   gate to the pre-existing title-only second-pass dedup below — tested
+//   that combination and it flooded results with many near-duplicate
+//   translator editions of the same classic; the query-aware title fix
+//   alone is sufficient, see the comment on that dedup step for detail.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -78,6 +111,31 @@ function pickLatinAuthor(primary: string | undefined, alts: string[] | undefined
   }
   if (primary) return transliterate(primary);
   return "Unknown";
+}
+
+// A work's own `title` is often the original-language title for classics
+// with many translations (e.g. "Ὀδύσσεια" for the 1063-edition "Odyssey"
+// work) — non-Latin-script titles like that are hard-dropped by isLatin()
+// below before scoring ever runs. But NOT every foreign-language title is
+// non-Latin-script: German ("Der Zauberberg"), French, Spanish etc. use the
+// Latin alphabet and pass isLatin() fine — they just score ~0 relevance
+// against an English query, so they were previously buried under unrelated
+// junk rather than filtered out. Both cases need the same fix: fall back to
+// OL's own best-matching edition title (requested via editions.title in
+// OL_FIELDS) — but only USE that fallback when it's actually more relevant
+// to what the user typed than the work's own title, so a work whose own
+// title is already a clean English match (e.g. "War and Peace") isn't
+// displaced by a messier edition-specific title text (e.g. "War and Peace
+// (War & Peace)") that happens to also be present.
+function pickDisplayTitle(query: string, d: { title?: string; editions?: { docs?: OLEditionDoc[] } }): string | null {
+  const ownTitle = d.title && isLatin(d.title) ? d.title : null;
+  const editionTitle = d.editions?.docs?.[0]?.title;
+  const altTitle = editionTitle && isLatin(editionTitle) ? editionTitle : null;
+  if (!ownTitle) return altTitle;
+  if (!altTitle || altTitle === ownTitle) return ownTitle;
+  // Compare pure title relevance (author left blank) to decide which text
+  // the user is more likely searching for.
+  return lexicalScore(query, altTitle, "") > lexicalScore(query, ownTitle, "") ? altTitle : ownTitle;
 }
 
 // ---------- Cache key (must mirror analyze-novel's buildCacheKey EXACTLY) ----------
@@ -156,6 +214,11 @@ function findPrefixMemoryCache(queryKey: string): Ranked[] | null {
 
 // ---------- Ranking ----------
 
+interface OLEditionDoc {
+  title?: string;
+  language?: string[];
+}
+
 interface OLDoc {
   key: string;
   title?: string;
@@ -167,6 +230,11 @@ interface OLDoc {
   ia_count?: number;
   has_fulltext?: boolean;
   language?: string[];
+  // OL's own best-matching edition for this work (query/language-aware,
+  // returned in the SAME search request — no extra round-trip). Used as a
+  // fallback display title when the work's own `title` isn't Latin/English.
+  // See "Canonical-title fix" note at the top of this file.
+  editions?: { docs?: OLEditionDoc[] };
 }
 
 type GBVolumeInfo = {
@@ -249,7 +317,7 @@ function popularityScore(d: OLDoc): number {
 }
 
 const OL_FIELDS =
-  "key,title,author_name,author_alternative_name,first_publish_year,edition_count,ratings_count,ia_count,language";
+  "key,title,author_name,author_alternative_name,first_publish_year,edition_count,ratings_count,ia_count,language,editions,editions.title,editions.language";
 
 // ---------- Rate limiting (miss-path only) ----------
 // search-books is public/unauthenticated and hit on every debounced keystroke,
@@ -466,7 +534,7 @@ Deno.serve(async (req) => {
       let result = arrays.flat();
 
       // Typo fallback: if base returned nothing usable, retry with fuzzy operator
-      if (result.filter((d) => d.title && isLatin(d.title)).length === 0) {
+      if (result.filter((d) => pickDisplayTitle(q, d) !== null).length === 0) {
         const fuzzyUrl =
           `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`;
         try {
@@ -513,21 +581,21 @@ Deno.serve(async (req) => {
     const seen = new Set<string>();
     const candidates: Ranked[] = [];
     for (const d of docs) {
-      if (!d.title) continue;
-      if (!isLatin(d.title)) continue;
+      const displayTitle = pickDisplayTitle(q, d);
+      if (!displayTitle) continue;
       const author = pickLatinAuthor(d.author_name?.[0], d.author_alternative_name);
       // Normalize both sides so minor transliteration/spacing differences don't
       // produce duplicate candidates (e.g. "Dostoevsky" vs "Dostoyevsky").
-      const dedupKey = `${normalizeForSearch(d.title)}::${normalizeForSearch(author)}`;
+      const dedupKey = `${normalizeForSearch(displayTitle)}::${normalizeForSearch(author)}`;
       if (seen.has(dedupKey)) continue;
       seen.add(dedupKey);
-      const descKey = `${d.title.toLowerCase().trim()}|${author.toLowerCase().trim()}`;
+      const descKey = `${displayTitle.toLowerCase().trim()}|${author.toLowerCase().trim()}`;
       candidates.push({
         key: d.key,
-        title: d.title,
+        title: displayTitle,
         author,
         year: d.first_publish_year,
-        score: lexicalScore(q, d.title, author) + popularityScore(d),
+        score: lexicalScore(q, displayTitle, author) + popularityScore(d),
         cached: false,
         shelfBoost: false,
         description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
@@ -597,6 +665,19 @@ Deno.serve(async (req) => {
     // OL docs for the same work. OL also indexes "The Brothers Karamazov" and
     // "Brothers Karamazov" as separate works. After sorting by score, keep only
     // the first (best-scored) entry per normalized, article-stripped title.
+    // (Considered also gating this on author similarity so a coincidentally
+    // same-titled but unrelated book — e.g. an academic monograph literally
+    // titled "The Magic Mountain" — can't accidentally beat the real novel
+    // into "duplicate" status. Verified that's unnecessary in practice: the
+    // query-aware pickDisplayTitle() above already ensures the real, popular
+    // work outscores such a coincidental collision outright, so it naturally
+    // wins this first-come-first-kept dedup without an author check. Adding
+    // one anyway risked flooding results with many near-identical translator
+    // editions of the SAME classic — e.g. eight separate "The Odyssey"
+    // entries by different translators instead of one representative pick —
+    // confirmed live against Odyssey/Crime and Punishment/War and
+    // Peace/Anna Karenina/Brothers Karamazov before reverting to this
+    // simpler, already-proven form.)
     function normalizeTitleForDedup(title: string): string {
       return normalizeForSearch(title).replace(/^(the|a|an)\s+/, "");
     }
