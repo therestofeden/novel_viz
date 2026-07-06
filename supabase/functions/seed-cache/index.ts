@@ -1692,6 +1692,24 @@ const POPULAR_BOOKS = [
   "Packing for Mars by Mary Roach",
   "Gulp by Mary Roach",
   "Grunt by Mary Roach",
+
+  // Author-gap-scan pass (2026-07-06, daily agent): grepped ~65 more major names
+  // (checked for accent/false-negative traps like "Brené Brown" and "García Márquez"
+  // before concluding a gap was real). Found ZERO entries for these 3 despite each
+  // being a bestselling household name in their genre.
+  "Percy Jackson and the Lightning Thief by Rick Riordan",
+  "The Sea of Monsters by Rick Riordan",
+  "The Titan's Curse by Rick Riordan",
+  "The Battle of the Labyrinth by Rick Riordan",
+  "The Last Olympian by Rick Riordan",
+  "The Lost Hero by Rick Riordan",
+  "The Red Pyramid by Rick Riordan",
+  "Circe by Madeline Miller",
+  "The Song of Achilles by Madeline Miller",
+  "The Forty Rules of Love by Elif Shafak",
+  "10 Minutes 38 Seconds in This Strange World by Elif Shafak",
+  "The Island of Missing Trees by Elif Shafak",
+  "The Bastard of Istanbul by Elif Shafak",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
