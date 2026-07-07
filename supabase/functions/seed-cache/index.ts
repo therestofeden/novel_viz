@@ -1710,6 +1710,24 @@ const POPULAR_BOOKS = [
   "10 Minutes 38 Seconds in This Strange World by Elif Shafak",
   "The Island of Missing Trees by Elif Shafak",
   "The Bastard of Istanbul by Elif Shafak",
+
+  // Author-gap-scan pass (2026-07-07, daily agent): grepped ~58 more major
+  // bestselling names (commercial fiction, crime, romance, sci-fi/fantasy,
+  // literary, nonfiction) against the list. Result: coverage is now very
+  // deep — only 2 zero-hit gaps found, both real (not accent/spelling
+  // false negatives).
+  "The Cuckoo's Calling by Robert Galbraith",
+  "The Silkworm by Robert Galbraith",
+  "Career of Evil by Robert Galbraith",
+  "Lethal White by Robert Galbraith",
+  "Troubled Blood by Robert Galbraith",
+  "The Ink Black Heart by Robert Galbraith",
+  "The Running Grave by Robert Galbraith",
+  "Eleanor & Park by Rainbow Rowell",
+  "Fangirl by Rainbow Rowell",
+  "Carry On by Rainbow Rowell",
+  "Landline by Rainbow Rowell",
+  "Attachments by Rainbow Rowell",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
