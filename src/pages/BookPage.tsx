@@ -597,7 +597,7 @@ const BookPage = () => {
         </section>
 
         {/* ===================== READING NOTES ===================== */}
-        <ReaderNotes cacheKey={cacheKey} bookTitle={analysis.title} />
+        <ReaderNotes cacheKey={cacheKey} bookTitle={analysis.title} bookAuthor={analysis.author} />
 
         {/* ===================== ESSAY ===================== */}
         <section className="grid grid-cols-12 gap-0">

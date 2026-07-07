@@ -1666,7 +1666,7 @@ const Index = () => {
             )}
 
             {/* ===================== READING NOTES ===================== */}
-            <ReaderNotes cacheKey={cacheKey} bookTitle={analysis.title} />
+            <ReaderNotes cacheKey={cacheKey} bookTitle={analysis.title} bookAuthor={analysis.author} />
 
             {/* ===================== READER'S NOTES ===================== */}
             <section className="grid grid-cols-12 gap-0">

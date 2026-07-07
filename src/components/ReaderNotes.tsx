@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 interface Props {
   cacheKey: string | null;
   bookTitle: string;
+  bookAuthor?: string;
 }
 
 /**
@@ -20,7 +21,7 @@ interface Props {
  *  - Signed in, book not shelved → offer to add to shelf first
  *  - Signed in, book shelved    → editable textarea, auto-saves on blur
  */
-export function ReaderNotes({ cacheKey, bookTitle }: Props) {
+export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
@@ -109,9 +110,10 @@ export function ReaderNotes({ cacheKey, bookTitle }: Props) {
     const { data: inserted, error } = await supabase
       .from("shelf_books")
       .insert({
+        user_id: user.id,
         cache_key: cacheKey,
         title: bookTitle,
-        author: "",
+        author: bookAuthor || "",
         shelf_id: shelfRow?.id ?? null,
       })
       .select("id")
