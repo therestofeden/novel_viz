@@ -74,6 +74,15 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
     setBusy(true);
     try {
       if (saved) {
+        // Fetch what's on the row before deleting it — the shelf_books row is
+        // also where the reader's note (and status/rating) live, so a single
+        // click here would otherwise destroy them silently with no recourse.
+        const { data: existingRow } = await supabase
+          .from("shelf_books")
+          .select("note, status, finished_at, rating")
+          .eq("shelf_id", shelfId)
+          .eq("cache_key", cacheKey)
+          .maybeSingle();
         const { error } = await supabase
           .from("shelf_books")
           .delete()
@@ -81,7 +90,31 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
           .eq("cache_key", cacheKey);
         if (error) throw error;
         setSaved(false);
-        toast.success("Removed from your shelf");
+        toast.success("Removed from your shelf", {
+          description: existingRow?.note ? "Your note was removed too." : undefined,
+          action: {
+            label: "Undo",
+            onClick: async () => {
+              const { error: restoreError } = await supabase.from("shelf_books").insert({
+                user_id: user.id,
+                shelf_id: shelfId,
+                cache_key: cacheKey,
+                title: analysis.title,
+                author: analysis.author || "",
+                note: existingRow?.note ?? null,
+                status: existingRow?.status ?? "want",
+                finished_at: existingRow?.finished_at ?? null,
+                rating: existingRow?.rating ?? null,
+              });
+              if (restoreError) {
+                toast.error("Couldn't restore");
+                return;
+              }
+              setSaved(true);
+              toast.success("Restored to your shelf");
+            },
+          },
+        });
       } else {
         const { error } = await supabase.from("shelf_books").insert({
           user_id: user.id,
