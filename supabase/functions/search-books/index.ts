@@ -55,6 +55,25 @@
 //   that combination and it flooded results with many near-duplicate
 //   translator editions of the same classic; the query-aware title fix
 //   alone is sufficient, see the comment on that dedup step for detail.
+// - Graceful OL-timeout degradation (2026-07-07, daily backend agent): found
+//   live in production logs — 3 real user searches ("White nights",
+//   "Tolstoy", "The death of ivan") in the prior 24h all hit OL's 5s
+//   AbortSignal timeout and came back as a hard 502 with EMPTY results,
+//   even though Google Books (3s timeout, runs in parallel, already fetched
+//   by the time OL gave up) had usable results sitting right there. The old
+//   code treated `olResult.status === "rejected"` as fatal for the whole
+//   request instead of just falling back to GB-only. Confirmed via
+//   search_cache: none of those 3 queries had ever once produced a cached
+//   row, meaning every attempt failed outright. Fixed: OL rejection now
+//   degrades to `docs = []` (GB items still get merged in below) instead of
+//   returning 502; only a genuine "both upstreams failed" case falls
+//   through to a 200 with an empty result set (a normal empty-search state
+//   the frontend already handles, not an error). This does not change
+//   worst-case latency (Promise.allSettled still waits up to OL's 5s
+//   timeout either way) — it only changes a guaranteed-failure into a
+//   likely-success. Also stopped caching empty result sets under a
+//   query_key (would have poisoned that query for up to 24h with a false
+//   "no results" even after OL recovered).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -556,10 +575,8 @@ Deno.serve(async (req) => {
       docs = olResult.value;
     } else {
       console.error(JSON.stringify({ fn: "search-books", error: "ol_fetch_failed", message: String(olResult.reason) }));
-      return new Response(JSON.stringify({ results: [], error: "upstream_failed" }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      docs = [];
+      timings.ol_fetch_failed = 1;
     }
     const gbItems: GBItem[] = gbResult.status === "fulfilled" ? gbResult.value : [];
     timings.ol_fetch = Math.round(performance.now() - olT0);
@@ -696,19 +713,24 @@ Deno.serve(async (req) => {
 
     setMemoryCache(queryKey, baseResults);
 
-    // Persist to server cache (background).
-    const writeCache = adminClient
-      .from("search_cache")
-      .upsert(
-        { query_key: queryKey, results: baseResults, hit_count: 0, last_accessed_at: new Date().toISOString() },
-        { onConflict: "query_key" },
-      );
-    // @ts-ignore — Deno EdgeRuntime
-    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
-      // @ts-ignore
-      EdgeRuntime.waitUntil(writeCache.then(() => {}).catch((e) => console.error("cache write:", e)));
-    } else {
-      writeCache.then(() => {}).catch((e) => console.error("cache write:", e));
+    // Persist to server cache (background). Only write-through when we got a
+    // usable result set — if BOTH upstreams failed/empty, don't cache an
+    // empty array under this query_key, since that would poison future
+    // requests with a false "no results" for up to 24h even after OL recovers.
+    if (baseResults.length > 0) {
+      const writeCache = adminClient
+        .from("search_cache")
+        .upsert(
+          { query_key: queryKey, results: baseResults, hit_count: 0, last_accessed_at: new Date().toISOString() },
+          { onConflict: "query_key" },
+        );
+      // @ts-ignore — Deno EdgeRuntime
+      if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
+        // @ts-ignore
+        EdgeRuntime.waitUntil(writeCache.then(() => {}).catch((e) => console.error("cache write:", e)));
+      } else {
+        writeCache.then(() => {}).catch((e) => console.error("cache write:", e));
+      }
     }
 
     const finalResults = baseResults.slice(0, limit);
