@@ -110,13 +110,47 @@ const Shelf = () => {
 
   const removeBook = async (id: string) => {
     const prev = books;
+    const removed = prev.find((b) => b.id === id);
     setBooks((b) => b.filter((x) => x.id !== id));
     const { error } = await supabase.from("shelf_books").delete().eq("id", id);
     if (error) {
       setBooks(prev);
       toast.error("Couldn't remove book");
     } else {
-      toast.success("Removed from shelf");
+      // Removing a shelf entry also deletes any note attached to it — offer
+      // an undo (re-insert onto the default shelf) rather than a blocking
+      // confirm, so a misclick can't silently destroy a reader's notes.
+      toast.success("Removed from shelf", {
+        description: removed?.note ? "Your note was removed too." : undefined,
+        action: removed && user && defaultShelfId
+          ? {
+              label: "Undo",
+              onClick: async () => {
+                const { data: restored, error: restoreError } = await supabase
+                  .from("shelf_books")
+                  .insert({
+                    user_id: user.id,
+                    shelf_id: defaultShelfId,
+                    cache_key: removed.cache_key,
+                    title: removed.title,
+                    author: removed.author,
+                    note: removed.note,
+                    status: removed.status,
+                    finished_at: removed.finished_at,
+                    rating: removed.rating,
+                  })
+                  .select("id, cache_key, title, author, note, added_at, status, finished_at, rating")
+                  .maybeSingle();
+                if (restoreError || !restored) {
+                  toast.error("Couldn't restore book");
+                  return;
+                }
+                setBooks((b) => [restored as ShelfBook, ...b]);
+                toast.success("Restored");
+              },
+            }
+          : undefined,
+      });
     }
   };
 
