@@ -1728,6 +1728,28 @@ const POPULAR_BOOKS = [
   "Carry On by Rainbow Rowell",
   "Landline by Rainbow Rowell",
   "Attachments by Rainbow Rowell",
+
+  // ── Author-gap-scan round 5 (2026-07-08, daily backend agent) ──────────────
+  // Scanned ~60 names skewed toward international/translated fiction and
+  // backlist literary authors (a category round 4 flagged as under-scanned
+  // vs. "obviously famous" commercial names). 6 genuine zero-hit gaps found
+  // (verified with a broader grep — title/character names, not just author
+  // surname — to rule out false negatives, same technique that caught
+  // "Brene Brown"/"Garcia Marquez" false positives in round 3): Patricia
+  // Highsmith (Ripley novels), Yann Martel, Amy Tan, Anne Carson, Karl Ove
+  // Knausgaard, Olga Tokarczuk. (Arthur Conan Doyle was a false negative —
+  // already covered via Sherlock Holmes title entries.)
+  "The Talented Mr. Ripley by Patricia Highsmith",
+  "Ripley Under Ground by Patricia Highsmith",
+  "Strangers on a Train by Patricia Highsmith",
+  "Life of Pi by Yann Martel",
+  "The Joy Luck Club by Amy Tan",
+  "The Kitchen God's Wife by Amy Tan",
+  "Autobiography of Red by Anne Carson",
+  "My Struggle: Book 1 by Karl Ove Knausgaard",
+  "A Death in the Family by Karl Ove Knausgaard",
+  "Flights by Olga Tokarczuk",
+  "Drive Your Plow Over the Bones of the Dead by Olga Tokarczuk",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
