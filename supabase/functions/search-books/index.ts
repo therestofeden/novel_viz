@@ -74,6 +74,18 @@
 //   likely-success. Also stopped caching empty result sets under a
 //   query_key (would have poisoned that query for up to 24h with a false
 //   "no results" even after OL recovered).
+// - Chained fuzzy-fallback latency cap (2026-07-08, daily backend agent):
+//   found live in edge logs — a real "Harry" search ran 5.38s (right at OL's
+//   5s ceiling), and tracing the code showed the zero-result fuzzy fallback
+//   (added for typo tolerance, see above) is CHAINED after the base+author
+//   OL fetch, not parallel with it, so a query needing the fallback (i.e.
+//   already the worst case — base search found nothing) could burn up to
+//   ~10s of sequential OL time before Google Books even gets merged in.
+//   olFetch() now takes an optional per-call timeoutMs; the fuzzy fallback
+//   uses 2500ms instead of the default 5000ms, capping worst-case OL time to
+//   ~7.5s. Chose to shorten the bonus fallback pass rather than the primary
+//   fetch, since failing fast on a best-effort retry beats making the
+//   already-emptiest searches wait the longest.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -375,7 +387,7 @@ async function hashIp(ip: string): Promise<string> {
   return sha256Hex(salt + ip);
 }
 
-async function olFetch(url: string): Promise<OLDoc[]> {
+async function olFetch(url: string, timeoutMs = 5000): Promise<OLDoc[]> {
   // Open Library has a long tail of slow/hanging responses (search-books
   // already runs 2-5s typically). Unlike fetchGoogleBooks (3s timeout) this
   // call had no bound at all, so a hung OL request could stall the whole
@@ -384,7 +396,7 @@ async function olFetch(url: string): Promise<OLDoc[]> {
   // partial result.
   const res = await fetch(url, {
     headers: { "User-Agent": "novelviz-search/1.1" },
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`upstream ${res.status}`);
   const json = await res.json();
@@ -552,12 +564,20 @@ Deno.serve(async (req) => {
       const arrays = await Promise.all(fetches);
       let result = arrays.flat();
 
-      // Typo fallback: if base returned nothing usable, retry with fuzzy operator
+      // Typo fallback: if base returned nothing usable, retry with fuzzy operator.
+      // This fetch is CHAINED after the base(+author) fetch above, not parallel
+      // with it — so its own timeout adds directly to worst-case latency instead
+      // of overlapping. Found 2026-07-08: at the old 5000ms timeout, a query that
+      // needed this fallback (i.e. the exact case where OL is already returning
+      // nothing useful) could take up to ~10s of OL time alone before Google
+      // Books results even get merged in. Capped to 2500ms — this is a bonus
+      // best-effort pass on top of an already-empty result, so it's worth
+      // failing fast rather than making the worst-searches-of-all wait longest.
       if (result.filter((d) => pickDisplayTitle(q, d) !== null).length === 0) {
         const fuzzyUrl =
           `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`;
         try {
-          const fuzzy = await olFetch(fuzzyUrl);
+          const fuzzy = await olFetch(fuzzyUrl, 2500);
           result = result.concat(fuzzy);
           timings.fuzzy_used = 1;
         } catch (_e) { /* ignore */ }
