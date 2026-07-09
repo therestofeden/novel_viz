@@ -5,6 +5,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 // ---------- Rate limiting ----------
 const ROUTE = "recommend-by-dna";
@@ -33,12 +34,6 @@ async function hashIp(ip: string): Promise<string> {
     "fallback-salt";
   return sha256Hex(salt + ip);
 }
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 // ---------- DNA point cache ----------
 // Every drag of a slider produces a slightly different axes vector, so exact-
@@ -101,6 +96,7 @@ const recommendationTool = {
 // ---------- Handler ----------
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   let body: any;

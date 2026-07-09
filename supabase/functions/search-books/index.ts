@@ -112,12 +112,7 @@
 //   already-emptiest searches wait the longest.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 // ---------- Latinization ----------
 
@@ -435,6 +430,7 @@ async function olFetch(url: string, timeoutMs = 5000): Promise<OLDoc[]> {
 // ---------- Handler ----------
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }

@@ -6,12 +6,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const ROUTE = "recommend-anti-shelf";
 
@@ -109,6 +104,7 @@ async function hashIp(ip: string): Promise<string> {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
