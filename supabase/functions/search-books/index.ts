@@ -74,6 +74,30 @@
 //   likely-success. Also stopped caching empty result sets under a
 //   query_key (would have poisoned that query for up to 24h with a false
 //   "no results" even after OL recovered).
+// - Author-fanout latency cap (2026-07-08, follow-up to the fuzzy-fallback
+//   fix below): timed the live OL upstream directly for common single-word
+//   queries ("Harry", "Love", "Life") and found latency is highly variable
+//   per-request — anywhere from ~0.6s to ~13s on the SAME query, with no
+//   reliable correlation to result-set size ("the", the broadest possible
+//   query, was consistently the fastest). Because Promise.all() waits for
+//   BOTH the base q= fetch and the author= fanout fetch (see "Author-prefix
+//   mode" above) before returning, the effective wait is the SLOWER of two
+//   independently-variable-latency requests — which is statistically worse
+//   than either alone, even though the author fanout is a supplementary
+//   enrichment (catches "garcia marquez"-style author-name queries) and
+//   rarely changes the outcome for a single common word, since the base
+//   query's own popularity + lexical scoring already surfaces the right
+//   answer (e.g. "Harry" → Harry Potter, 398 editions/1009 ratings, miles
+//   ahead of any other "Harry" match) without it. Gave the author fanout its
+//   own shorter timeout (2500ms, same cap already used for the fuzzy
+//   fallback below) instead of inheriting the base fetch's 5000ms — it's a
+//   best-effort bonus pass, so failing it fast beats making a query that
+//   already has a good base-search answer sit and wait on a slow, lower-value
+//   fetch. Worst-case total latency is unchanged (still bounded by the base
+//   fetch's own 5000ms + the 2500ms chained fuzzy retry = 7500ms), but the
+//   common case — base search finishes quickly while the author fanout tail-
+//   lags — now waits at most 2500ms instead of up to 5000ms for that second
+//   fetch to resolve.
 // - Chained fuzzy-fallback latency cap (2026-07-08, daily backend agent):
 //   found live in edge logs — a real "Harry" search ran 5.38s (right at OL's
 //   5s ceiling), and tracing the code showed the zero-result fuzzy fallback
@@ -387,6 +411,11 @@ async function hashIp(ip: string): Promise<string> {
   return sha256Hex(salt + ip);
 }
 
+// Supplementary author= fanout fetch (see "Author-fanout latency cap" note
+// at the top of this file) gets its own shorter timeout, separate from the
+// base fetch's default 5000ms.
+const AUTHOR_FANOUT_TIMEOUT_MS = 2500;
+
 async function olFetch(url: string, timeoutMs = 5000): Promise<OLDoc[]> {
   // Open Library has a long tail of slow/hanging responses (search-books
   // already runs 2-5s typically). Unlike fetchGoogleBooks (3s timeout) this
@@ -560,7 +589,18 @@ Deno.serve(async (req) => {
     // Run OpenLibrary fetch logic + Google Books in parallel
     const olFetchPromise = (async (): Promise<OLDoc[]> => {
       const fetches: Promise<OLDoc[]>[] = [olFetch(baseUrl)];
-      if (authorUrl) fetches.push(olFetch(authorUrl).catch(() => [] as OLDoc[]));
+      // Author fanout is a best-effort enrichment, not the primary result —
+      // cap it below the base fetch's 5000ms so a slow author= response
+      // can't drag out a query the base fetch already answered well. See
+      // "Author-fanout latency cap" note at the top of this file.
+      if (authorUrl) {
+        fetches.push(
+          olFetch(authorUrl, AUTHOR_FANOUT_TIMEOUT_MS).catch(() => {
+            timings.author_fanout_timed_out = 1;
+            return [] as OLDoc[];
+          }),
+        );
+      }
       const arrays = await Promise.all(fetches);
       let result = arrays.flat();
 
