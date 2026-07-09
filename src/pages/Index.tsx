@@ -697,11 +697,33 @@ const Index = () => {
   const { user, geminiKey } = useAuth();
   const [geminiDialogOpen, setGeminiDialogOpen] = useState(false);
 
+  // Persistent (non-toast) record of the most recent failure. Toasts alone
+  // are easy to miss — they auto-dismiss in a few seconds and there's no
+  // scroll-into-view guarantee they were ever on screen. This stays put
+  // until the user retries, types something new, or dismisses it, and
+  // carries a one-click retry so a transient upstream failure (e.g. Gemini
+  // overload) doesn't force the user to retype the title from scratch.
+  const [lastError, setLastError] = useState<string | null>(null);
+  // Anchors the "Reading the Book" loading panel so we can scroll it into
+  // view the moment a search starts — otherwise it renders below the
+  // reading-list grid and a user who doesn't scroll only ever sees the
+  // small spinner glyph inside the Visualize button.
+  const loadingPanelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!loading) return;
+    const id = window.requestAnimationFrame(() => {
+      loadingPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [loading]);
+
   const fetchAnalysis = async (bookTitle: string, refinement?: string, opts?: { reanalyze?: boolean }) => {
     const isReanalyze = !!opts?.reanalyze;
     const isRefine = !!refinement && !isReanalyze;
     if (isRefine || isReanalyze) setRefining(true);
     else setLoading(true);
+    setLastError(null);
     setStatusText("");
     setPreambleText("");
     setAnalysisPreview(null);
@@ -883,7 +905,12 @@ const Index = () => {
       setActiveRefinement(refinement || null);
     } catch (e) {
       console.error(e);
-      toast.error(e instanceof Error ? e.message : "Something went wrong");
+      const msg = e instanceof Error ? e.message : "Something went wrong";
+      toast.error(msg);
+      // Toast is transient and easy to miss (esp. if the user scrolled away
+      // to watch the loading panel below). Keep a persistent, on-page copy
+      // with a retry action until the user acts on it.
+      if (!isRefine && !isReanalyze) setLastError(msg);
     } finally {
       setLoading(false);
       setRefining(false);
@@ -896,6 +923,12 @@ const Index = () => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    setActiveRefinement(null);
+    fetchAnalysis(title.trim());
+  };
+
+  const handleRetryLastSearch = () => {
+    if (!title.trim() || loading) return;
     setActiveRefinement(null);
     fetchAnalysis(title.trim());
   };
@@ -1093,7 +1126,12 @@ const Index = () => {
                     </div>
                     <input
                       value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        // Clear a stale error banner as soon as the user starts
+                        // editing — it referred to the previous title, not this one.
+                        if (lastError) setLastError(null);
+                      }}
                       onFocus={() => suggestions.length > 0 && setSuggestOpen(true)}
                       onKeyDown={(e) => {
                         if (!suggestOpen || suggestions.length === 0) return;
@@ -1302,7 +1340,7 @@ const Index = () => {
               </Reveal>
 
               {loading && (
-                <div className="mt-12 ink-border bg-card">
+                <div ref={loadingPanelRef} className="mt-12 ink-border bg-card">
                   <div className="flex items-center gap-3 border-b border-foreground/30 px-4 py-3">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     <span className="meta">{cachedHit ? "Library Hit" : "Reading the Book"}</span>
@@ -1317,6 +1355,42 @@ const Index = () => {
                       </Suspense>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Persistent error state — the toast alone auto-dismisses in a
+                  few seconds and there's no guarantee the user was looking at
+                  it (e.g. if they scrolled down to watch the loading panel).
+                  This stays until they retry, edit the title, or dismiss it,
+                  and it's rendered right under the search form so it's visible
+                  without scrolling. */}
+              {!loading && lastError && (
+                <div className="mt-12 ink-border border-destructive/50 bg-destructive/5">
+                  <div className="flex items-start justify-between gap-4 px-4 py-3">
+                    <div>
+                      <div className="meta text-destructive">Analysis failed</div>
+                      <p className="mt-1 max-w-xl font-serif text-base leading-snug text-foreground">
+                        {lastError}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRetryLastSearch}
+                        className="meta flex items-center gap-2 border border-foreground px-3 py-1.5 transition-colors hover:bg-foreground hover:text-background"
+                      >
+                        <RefreshCw className="h-3 w-3" /> Try again
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLastError(null)}
+                        aria-label="Dismiss"
+                        className="meta px-2 py-1.5 text-muted-foreground hover:text-foreground"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
