@@ -1750,6 +1750,53 @@ const POPULAR_BOOKS = [
   "A Death in the Family by Karl Ove Knausgaard",
   "Flights by Olga Tokarczuk",
   "Drive Your Plow Over the Bones of the Dead by Olga Tokarczuk",
+
+  // ── Author-gap-scan round 6 (2026-07-09, daily backend agent) ──────────────
+  // Round 5 suggested switching categories once the "obviously famous" pool
+  // saturates — this round deliberately targeted crime/mystery backlist,
+  // thriller backlist, romance backlist, horror backlist, popular-science/
+  // economics nonfiction, and Nordic/translated fiction (categories not
+  // covered by rounds 1-5). Scanned 53 names, found 16 genuine zero-hit
+  // gaps — the biggest round since round 1, confirming round 5's hypothesis
+  // that switching category (not re-scanning "famous author" pool) is the
+  // right move once a pool thins out. Verified each with a broader
+  // title/series-name grep (not just author surname) before adding, same
+  // technique as prior rounds: "Nassim Taleb" looked like a gap on a plain
+  // surname grep but was a false negative (already covered as "Nassim
+  // Nicholas Taleb"); "E.O. Wilson" and "Jane Goodall" were confirmed real
+  // gaps even after checking full-name and subject-matter variants.
+  "Cover Her Face by P.D. James",
+  "Children of Men by P.D. James",
+  "A Is for Alibi by Sue Grafton",
+  "B Is for Burglar by Sue Grafton",
+  "Knots and Crosses by Ian Rankin",
+  "Black and Blue by Ian Rankin",
+  "The Mermaids Singing by Val McDermid",
+  "A Place of Execution by Val McDermid",
+  "The Bourne Identity by Robert Ludlum",
+  "The Bourne Supremacy by Robert Ludlum",
+  "The Hunt for Red October by Tom Clancy",
+  "Patriot Games by Tom Clancy",
+  "Raise the Titanic! by Clive Cussler",
+  "Sahara by Clive Cussler",
+  "Vision in White by Nora Roberts",
+  "Year One by Nora Roberts",
+  "The Gift by Danielle Steel",
+  "A Good Woman by Danielle Steel",
+  "The Duke and I by Julia Quinn",
+  "The Viscount Who Loved Me by Julia Quinn",
+  "The Hellbound Heart by Clive Barker",
+  "Weaveworld by Clive Barker",
+  "Interview with the Vampire by Anne Rice",
+  "The Vampire Lestat by Anne Rice",
+  "The Diversity of Life by E.O. Wilson",
+  "Consilience by E.O. Wilson",
+  "In the Shadow of Man by Jane Goodall",
+  "Reason for Hope by Jane Goodall",
+  "The Snowman by Jo Nesbo",
+  "The Redbreast by Jo Nesbo",
+  "Purge by Sofi Oksanen",
+  "When the Doves Disappeared by Sofi Oksanen",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

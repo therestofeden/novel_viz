@@ -3,34 +3,43 @@
 @tailwind utilities;
 
 /*
-  NovelViz — "Midnight" brand system  (#07101e · #5ba3d9 · #eef4f9)
-  Final brand: The Fan logo, cool blue-white paper, midnight navy, sky-blue accent.
+  NovelViz — "Warm ink" brand system  (#3b312b · #5ba3d9 · #eef4f9)
+  Final brand: The Fan logo, cool blue-white paper, warm ink, sky-blue accent.
 
   Principles:
-  - Cool blue-tinted paper (#eef4f9), midnight ink (#07101e). Crisp contrast.
+  - Cool blue-tinted paper (#eef4f9), warm ink (#3b312b). Crisp contrast.
   - One sky-blue accent (#5ba3d9). Nothing else loud.
   - Hard 1px rules. Zero rounded corners. No soft drop shadows.
   - Oversized numerals as anchor. Tiny uppercase metadata.
   - Latin only: Space Grotesk (sans), Fraunces (serif italic accents), JetBrains Mono (meta).
+
+  2026-07-09: swapped the cold "midnight navy" ink (#07101e, hsl(217 63% 7%))
+  for a warm charcoal (#3b312b, hsl(22 16% 20%)) everywhere it was used as
+  the "ink" color — hover-invert states, borders, body text, the DNA
+  recommendation panel. Stefano felt the app leaned too heavily on a stark
+  near-black; this keeps the same ink-on-paper interaction pattern but
+  softens the temperature and lightens it slightly for a less severe feel.
+  Scoped to light mode only (the .dark block below is unused in the app
+  today — no toggle exists — so it was left on the original navy).
 */
 
 @layer base {
   :root {
     --background: 207 48% 96%;         /* #eef4f9 — cool blue-white paper */
-    --foreground: 217 63% 7%;          /* #07101e — midnight ink */
+    --foreground: 22 16% 20%;          /* #3b312b — warm ink */
 
     --card: 0 0% 100%;                 /* clean white card */
-    --card-foreground: 217 63% 7%;
+    --card-foreground: 22 16% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 217 63% 7%;
+    --popover-foreground: 22 16% 20%;
 
     --primary: 206 63% 60%;            /* #5ba3d9 — sky blue accent */
     --primary-foreground: 0 0% 100%;
     --primary-glow: 206 63% 72%;
 
     --secondary: 207 40% 90%;
-    --secondary-foreground: 217 63% 7%;
+    --secondary-foreground: 22 16% 20%;
 
     --muted: 207 30% 92%;
     --muted-foreground: 214 18% 40%;
@@ -41,9 +50,9 @@
     --destructive: 18 85% 50%;         /* warm amber-orange */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 217 63% 7%;              /* midnight ink borders */
+    --border: 22 16% 20%;              /* warm ink borders */
     --border-soft: 207 30% 82%;
-    --input: 217 63% 7%;
+    --input: 22 16% 20%;
     --ring: 206 63% 60%;
 
     --radius: 0px;                     /* SHARP. zero radius. */
@@ -68,12 +77,12 @@
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 207 48% 96%;
-    --sidebar-foreground: 217 63% 7%;
+    --sidebar-foreground: 22 16% 20%;
     --sidebar-primary: 206 63% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 207 30% 90%;
-    --sidebar-accent-foreground: 217 63% 7%;
-    --sidebar-border: 217 63% 7%;
+    --sidebar-accent-foreground: 22 16% 20%;
+    --sidebar-border: 22 16% 20%;
     --sidebar-ring: 206 63% 60%;
   }
 

@@ -15,14 +15,14 @@ const config: CapacitorConfig = {
   ios: {
     // Minimum iOS version is set in Xcode target → General → Deployment Info (set to 16.0)
     contentInset: "automatic",
-    backgroundColor: "#07101e",
+    backgroundColor: "#3b312b",
   },
   plugins: {
     // SplashScreen shown while Capacitor boots the WebView
     SplashScreen: {
       launchShowDuration: 1200,
       launchAutoHide: true,
-      backgroundColor: "#07101e",
+      backgroundColor: "#3b312b",
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
@@ -34,7 +34,7 @@ const config: CapacitorConfig = {
     // StatusBar: dark background → light text
     StatusBar: {
       style: "DARK",
-      backgroundColor: "#07101e",
+      backgroundColor: "#3b312b",
     },
     // Keyboard: push the WebView up so the input is never hidden
     Keyboard: {
