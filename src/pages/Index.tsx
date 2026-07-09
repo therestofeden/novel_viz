@@ -31,6 +31,7 @@ import { ConceptMap } from "@/components/ConceptMap";
 import { IdeasTab } from "@/components/IdeasTab";
 import { ChapterBreakdown } from "@/components/ChapterBreakdown";
 import { TakeawaysTab } from "@/components/TakeawaysTab";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ReaderNotes } from "@/components/ReaderNotes";
 import { ShelfChip } from "@/components/ShelfChip";
@@ -1678,59 +1679,67 @@ const Index = () => {
                 refining && "opacity-50",
               )}
             >
-              {/* ── Fiction views ── */}
-              {view === "timeline" && isFiction(analysis) && (
-                <TimelineView
-                  analysis={analysis as FictionAnalysis}
-                  progress={effectiveProgress}
-                  selectedEventId={selectedEventId}
-                  onSelectEvent={handleSelectEvent}
-                  selectedCharacterId={selectedCharacterId}
-                  onSelectCharacter={setSelectedCharacterId}
-                />
-              )}
-              {view === "network" && isFiction(analysis) && (
-                <CharacterNetwork
-                  analysis={analysis as FictionAnalysis}
-                  progress={effectiveProgress}
-                  onProgressChange={(next) => {
-                    setShowSpoilers(false);
-                    setProgress(next);
-                  }}
-                  cacheKey={cacheKey}
-                  selectedCharacterId={selectedCharacterId}
-                  onSelectCharacter={(id) => {
-                    setSelectedCharacterId(id);
-                    if (id) setView("network");
-                  }}
-                  highlightedCharacterIds={highlightedCharacterIds}
-                  onSelectEventId={(eventId) => {
-                    setSelectedEventId(eventId);
-                    setView("timeline");
-                  }}
-                />
-              )}
-              {/* ── Non-fiction views ── */}
-              {view === "ideas" && isNonFiction(analysis) && (
-                <IdeasTab
-                  analysis={analysis as NonFictionAnalysis}
-                  cacheKey={cacheKey}
-                  onReanalyze={() => fetchAnalysis(analysis.title, undefined, { reanalyze: true })}
-                />
-              )}
-              {view === "concepts" && isNonFiction(analysis) && (
-                <ConceptMap analysis={analysis as NonFictionAnalysis} />
-              )}
-              {view === "chapters" && isNonFiction(analysis) && (
-                <ChapterBreakdown analysis={analysis as NonFictionAnalysis} />
-              )}
-              {/* ── Shared views ── */}
-              {view === "dna" && (
-                <BookDNA analysis={analysis} cacheKey={cacheKey} />
-              )}
-              {view === "takeaways" && (
-                <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />
-              )}
+              {/* Previously an uncaught render error in ANY tab below silently
+                  blanked the entire analysis view (React's default behavior
+                  with no error boundary anywhere in the app) — found this via
+                  an intermittent crash clicking into Takeaways. Keying on
+                  `view` means switching tabs remounts the boundary, so picking
+                  a different tab also naturally clears a stuck error state. */}
+              <ErrorBoundary key={view}>
+                {/* ── Fiction views ── */}
+                {view === "timeline" && isFiction(analysis) && (
+                  <TimelineView
+                    analysis={analysis as FictionAnalysis}
+                    progress={effectiveProgress}
+                    selectedEventId={selectedEventId}
+                    onSelectEvent={handleSelectEvent}
+                    selectedCharacterId={selectedCharacterId}
+                    onSelectCharacter={setSelectedCharacterId}
+                  />
+                )}
+                {view === "network" && isFiction(analysis) && (
+                  <CharacterNetwork
+                    analysis={analysis as FictionAnalysis}
+                    progress={effectiveProgress}
+                    onProgressChange={(next) => {
+                      setShowSpoilers(false);
+                      setProgress(next);
+                    }}
+                    cacheKey={cacheKey}
+                    selectedCharacterId={selectedCharacterId}
+                    onSelectCharacter={(id) => {
+                      setSelectedCharacterId(id);
+                      if (id) setView("network");
+                    }}
+                    highlightedCharacterIds={highlightedCharacterIds}
+                    onSelectEventId={(eventId) => {
+                      setSelectedEventId(eventId);
+                      setView("timeline");
+                    }}
+                  />
+                )}
+                {/* ── Non-fiction views ── */}
+                {view === "ideas" && isNonFiction(analysis) && (
+                  <IdeasTab
+                    analysis={analysis as NonFictionAnalysis}
+                    cacheKey={cacheKey}
+                    onReanalyze={() => fetchAnalysis(analysis.title, undefined, { reanalyze: true })}
+                  />
+                )}
+                {view === "concepts" && isNonFiction(analysis) && (
+                  <ConceptMap analysis={analysis as NonFictionAnalysis} />
+                )}
+                {view === "chapters" && isNonFiction(analysis) && (
+                  <ChapterBreakdown analysis={analysis as NonFictionAnalysis} />
+                )}
+                {/* ── Shared views ── */}
+                {view === "dna" && (
+                  <BookDNA analysis={analysis} cacheKey={cacheKey} />
+                )}
+                {view === "takeaways" && (
+                  <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />
+                )}
+              </ErrorBoundary>
             </section>
 
             {isFiction(analysis) && view !== "takeaways" && (

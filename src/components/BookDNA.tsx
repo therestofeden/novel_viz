@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { Check, Loader2, Pin, RefreshCw, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 import {
@@ -109,6 +109,16 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     : DNA_AXIS_META;
 
   const [hoveredAxis, setHoveredAxis] = useState<DnaAxisId | null>(null);
+  // Clicking (or tapping) an axis used to just call setHoveredAxis — identical
+  // to plain hover — so the evidence panel reverted the instant the pointer
+  // moved away, making the evidence text unreadable without holding the mouse
+  // perfectly still. pinnedAxis is a separate, click-driven selection that
+  // takes priority over hover and persists until the reader clicks again
+  // (same axis to unpin, a different one to re-pin). Works identically for
+  // mouse clicks and touch taps since it's driven by onClick, not
+  // onMouseEnter/onMouseLeave.
+  const [pinnedAxis, setPinnedAxis] = useState<DnaAxisId | null>(null);
+  const activeAxis = pinnedAxis ?? hoveredAxis;
   const [perturbations, setPerturbations] = useState<Partial<Record<DnaAxisId, number>>>({});
   const [hydrated, setHydrated] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
@@ -245,7 +255,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perturbations]);
 
-  const focusAxis = hoveredAxis ?? rec?.shared_axes?.[0] ?? AXIS_IDS[0];
+  const focusAxis = activeAxis ?? rec?.shared_axes?.[0] ?? AXIS_IDS[0];
   const focusAxisMeta = AXIS_META[focusAxis] ?? DNA_AXIS_META[focusAxis as DnaAxisId];
   const focusAxisData = axesById.get(focusAxis);
   const focusIdx = AXIS_IDS.indexOf(focusAxis);
@@ -377,7 +387,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
               {dna.signature || "—"}
             </div>
             <div className="meta mt-3 text-muted-foreground">
-              Tap or hover an axis to read the evidence · drag any marker to register your take
+              Click or tap an axis to pin its evidence · drag any marker to register your take
               {user && cacheKey ? " — saved to your reading fingerprint" : ""}
               {maxVoteCount > 0 ? ` · shaped by ${maxVoteCount} reader${maxVoteCount === 1 ? "" : "s"}` : ""}
             </div>
@@ -403,7 +413,10 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           {AXIS_IDS.map((id, idx) => {
             const meta = AXIS_META[id] ?? DNA_AXIS_META[id as DnaAxisId];
             const score = effectiveScore(id);
-            const isHover = hoveredAxis === id;
+            const isPinned = pinnedAxis === id;
+            // Drives the row highlight + evidence panel — true for whichever
+            // axis is pinned (click/tap), or hovered if nothing is pinned.
+            const isHover = activeAxis === id;
             const isShared = sharedSet.has(id);
             const isDivergent = divergentSet.has(id);
             const isOdd = idx % 2 === 1;
@@ -416,7 +429,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                 key={id}
                 onMouseEnter={() => setHoveredAxis(id)}
                 onMouseLeave={() => setHoveredAxis((h) => (h === id ? null : h))}
-                onClick={() => setHoveredAxis(id)}
+                onClick={() => setPinnedAxis((p) => (p === id ? null : id))}
                 className={cn(
                   "group relative grid grid-cols-12 border-b border-foreground/30 transition-colors cursor-pointer",
                   isOdd && "bg-background/30",
@@ -431,6 +444,12 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                   <span className="font-sans text-xs font-semibold leading-tight md:text-sm">
                     {meta.name}
                   </span>
+                  {isPinned && (
+                    <Pin
+                      className={cn("h-3 w-3 shrink-0", isHover ? "text-background" : "text-primary")}
+                      aria-label="Pinned"
+                    />
+                  )}
                   {isShared && !isHover && (
                     <span title="Shared with recommendation" className="ml-auto h-1.5 w-1.5 shrink-0 bg-primary" />
                   )}
@@ -594,8 +613,29 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
       <div className="col-span-12 ink-border mt-4 md:col-span-5 md:ml-[-1px] md:mt-0">
         <div className="border-b border-foreground p-5">
           <div className="meta flex items-center justify-between text-muted-foreground">
-            <span>{hoveredAxis ? "Evidence" : "Default focus"}</span>
-            <span>{String(focusIdx + 1).padStart(2, "0")} / 12</span>
+            <span className="flex items-center gap-1.5">
+              {pinnedAxis ? (
+                <>
+                  <Pin className="h-3 w-3 text-primary" /> Pinned
+                </>
+              ) : hoveredAxis ? (
+                "Evidence"
+              ) : (
+                "Default focus"
+              )}
+            </span>
+            <span className="flex items-center gap-3">
+              {pinnedAxis && (
+                <button
+                  type="button"
+                  onClick={() => setPinnedAxis(null)}
+                  className="flex items-center gap-1 text-foreground/60 transition-colors hover:text-foreground"
+                >
+                  <X className="h-3 w-3" /> Unpin
+                </button>
+              )}
+              {String(focusIdx + 1).padStart(2, "0")} / 12
+            </span>
           </div>
           <motion.div
             key={focusAxis}
@@ -689,7 +729,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                               type="button"
                               onMouseEnter={() => setHoveredAxis(id as DnaAxisId)}
                               onMouseLeave={() => setHoveredAxis(null)}
-                              onClick={() => setHoveredAxis(id as DnaAxisId)}
+                              onClick={() => setPinnedAxis((p) => (p === id ? null : (id as DnaAxisId)))}
                               className="meta border border-primary bg-primary px-1.5 py-0.5 text-primary-foreground transition-transform hover:-translate-y-[1px]"
                             >
                               {DNA_AXIS_META[id as DnaAxisId]?.name ?? id}
@@ -706,7 +746,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                               type="button"
                               onMouseEnter={() => setHoveredAxis(id as DnaAxisId)}
                               onMouseLeave={() => setHoveredAxis(null)}
-                              onClick={() => setHoveredAxis(id as DnaAxisId)}
+                              onClick={() => setPinnedAxis((p) => (p === id ? null : (id as DnaAxisId)))}
                               className="meta border border-accent bg-accent px-1.5 py-0.5 text-accent-foreground transition-transform hover:-translate-y-[1px]"
                             >
                               {DNA_AXIS_META[id as DnaAxisId]?.name ?? id}

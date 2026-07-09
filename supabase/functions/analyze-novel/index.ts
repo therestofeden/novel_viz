@@ -774,6 +774,21 @@ function repairNonfictionAnalysis(raw: any): NonFictionAnalysis {
 }
 
 function isAdequate(a: Analysis): boolean {
+  // Defensive guard added 2026-07-08: found live in the DB that 14 hand-seeded
+  // "DNA constellation seed" rows (model='seed', is_validated=true, e.g. "The
+  // Art of War", "Gödel, Escher, Bach", "Homo Deus") only ever contained
+  // `{ dna: {...} }` — no bookType, no concepts/chapters/events/characters at
+  // all. Every request for one of those titles hit the early cache-hit check
+  // (line ~1166 below), called isAdequate() on that bare object, and threw a
+  // TypeError on the unconditional `.length` access below (undefined.bookType
+  // !== "nonfiction" → fell into the fiction branch → a.events.length threw,
+  // since `events` didn't exist either) — a real, deterministic, repeatable
+  // crash on EVERY request for those 14 extremely popular nonfiction books,
+  // not just a one-off. All array/object accesses below are now optional so a
+  // malformed or partially-shaped cached row degrades to "inadequate" (falls
+  // through to a fresh Gemini call) instead of throwing and breaking the
+  // whole request. See novelviz-infra memory for the full incident writeup.
+  if (!a) return false;
   if (a.confidence === "unknown_work") return true;
   if (a.bookType === "nonfiction") {
     // ideaCards/argumentPillars shipped after CACHE_VERSION was last bumped (v3),
@@ -783,12 +798,12 @@ function isAdequate(a: Analysis): boolean {
     // feature launched" on every hit, never self-healing. Mirrors the frontend's
     // hasIdeas gate (IdeasTab.tsx) exactly: cards OR pillars, not both required.
     return (
-      a.concepts.length >= 3 &&
-      a.chapters.length >= 2 &&
-      (a.ideaCards.length > 0 || a.argumentPillars.length > 0)
+      (a.concepts?.length ?? 0) >= 3 &&
+      (a.chapters?.length ?? 0) >= 2 &&
+      ((a.ideaCards?.length ?? 0) > 0 || (a.argumentPillars?.length ?? 0) > 0)
     );
   }
-  return a.events.length >= 3 && a.characters.length >= 2 && a.lanes.length >= 1;
+  return (a.events?.length ?? 0) >= 3 && (a.characters?.length ?? 0) >= 2 && (a.lanes?.length ?? 0) >= 1;
 }
 
 function hasDna(a: Analysis): boolean {
