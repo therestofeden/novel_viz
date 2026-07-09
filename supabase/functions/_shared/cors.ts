@@ -5,13 +5,19 @@
 // security gap: no session could confirm the actual production web origin,
 // because the connected Vercel MCP connector is scoped to an unrelated
 // project ("vita-life-assistant"), not this one ("novel-viz") — see project
-// memory [[novelviz-vercel-deploy-gap]]. Confirmed today via strong
-// first-party repo evidence instead, three independent sources agreeing:
-// APP_STORE_SUBMISSION.md lists https://novelviz.app as the Marketing/
-// Support/Privacy URL (Apple requires these to be accurate for App Store
-// review), src/pages/Privacy.tsx's own contact address is
-// privacy@novelviz.app, and capacitor.config.ts's appId (com.novelviz.app)
-// reverse-DNS-matches the domain.
+// memory [[novelviz-vercel-deploy-gap]]. Initially (mis-)confirmed via
+// first-party repo evidence — APP_STORE_SUBMISSION.md's Marketing/Support/
+// Privacy URLs, Privacy.tsx's contact address, and capacitor.config.ts's
+// appId all pointed at novelviz.app — but Stefano corrected this same day:
+// the actual live production origin is the bare Vercel domain
+// **https://novel-viz.vercel.app**, not (or not yet) novelviz.app. Keeping
+// novelviz.app in the allowlist too (harmless — it's still a real,
+// first-party-documented domain, likely a custom domain intended for the
+// same deployment) but novel-viz.vercel.app is the one that matters. Lesson
+// logged in project memory: repo-evidence domain inference (App Store
+// metadata, privacy policy text) is not a substitute for confirming what's
+// actually deployed — ask/verify before trusting it as ground truth for a
+// change that can silently break prod if wrong.
 //
 // Design is intentionally FAIL-OPEN on the server side, not fail-closed: an
 // unrecognized Origin gets NO Access-Control-Allow-Origin header (the
@@ -35,6 +41,8 @@
 // see the actual Origin that was sent, then add it below.
 
 const ALLOWED_ORIGINS = new Set([
+  // Confirmed by Stefano (2026-07-09) as the actual live production origin.
+  "https://novel-viz.vercel.app",
   "https://novelviz.app",
   "https://www.novelviz.app",
   // Capacitor (iOS/Android) native WebView origins — appId com.novelviz.app.
