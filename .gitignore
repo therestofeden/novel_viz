@@ -33,9 +33,10 @@ dist-ssr
 .vercel
 .env*
 
-# Vite regenerates a temp compiled copy of the config on every run when
-# vite.config.ts uses ESM — these are build noise, never source.
+# Vite/Vitest regenerate a temp compiled copy of the config on every run when
+# the config uses ESM — these are build noise, never source.
 vite.config.ts.timestamp-*.mjs
+vitest.config.ts.timestamp-*.mjs
 
 # Scratch/verification files agents sometimes leave behind when diffing a
 # local file against the live deployed source before pushing.
