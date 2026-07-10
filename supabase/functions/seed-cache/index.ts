@@ -1797,6 +1797,53 @@ const POPULAR_BOOKS = [
   "The Redbreast by Jo Nesbo",
   "Purge by Sofi Oksanen",
   "When the Doves Disappeared by Sofi Oksanen",
+
+  // ── Author-gap-scan round 7 (2026-07-10, daily backend agent) ──────────────
+  // Fresh clean-bill-of-health audit first (advisors clean bar the
+  // long-standing dashboard-only auth_leaked_password_protection WARN, edge
+  // logs healthy, search_cache demand-feedback still too sparse at 9
+  // rows/48h to act on) — no new bug found, so fell back to the established
+  // Phase 1 task. Round 6 saturated crime/thriller/romance/horror backlist;
+  // this round deliberately switched to children's/YA-franchise and
+  // philosophy classics, two categories no prior round had scanned. Scanned
+  // 75 names, found 17 genuine zero-hit gaps after re-checking every
+  // apparent hit for false positives (this round went the OTHER direction
+  // from prior "accented name" false-negative catches: several names looked
+  // covered on a plain substring grep but were coincidental matches inside
+  // unrelated titles/authors — "Foucault's Pendulum by Umberto Eco" is not
+  // Michel Foucault, "Human Compatible by Stuart Russell" is not Bertrand
+  // Russell, "The Charm Offensive by Alicia Thompson" is not Craig Thompson,
+  // and "Smiley's People by John le Carré" is not Raina Telgemeier's
+  // "Smile" — always verify the actual surrounding text, not just whether
+  // the substring appears anywhere in the file). The children's/YA gaps are
+  // some of the most surprising found in any round to date given how
+  // universally famous these authors are (Roald Dahl, Judy Blume, E.B.
+  // White, R.L. Stine, Jeff Kinney, Cassandra Clare had zero entries).
+  "Charlie and the Chocolate Factory by Roald Dahl",
+  "Matilda by Roald Dahl",
+  "James and the Giant Peach by Roald Dahl",
+  "Charlotte's Web by E.B. White",
+  "Are You There God? It's Me, Margaret by Judy Blume",
+  "Tales of a Fourth Grade Nothing by Judy Blume",
+  "Bridge to Terabithia by Katherine Paterson",
+  "Ramona the Pest by Beverly Cleary",
+  "Diary of a Wimpy Kid by Jeff Kinney",
+  "Goosebumps: Welcome to Dead House by R.L. Stine",
+  "City of Bones by Cassandra Clare",
+  "City of Ashes by Cassandra Clare",
+  "Cinder by Marissa Meyer",
+  "Red Queen by Victoria Aveyard",
+  "Legend by Marie Lu",
+  "Miss Peregrine's Home for Peculiar Children by Ransom Riggs",
+  "Smile by Raina Telgemeier",
+  "Discourse on Method by René Descartes",
+  "Meditations on First Philosophy by René Descartes",
+  "The History of Sexuality by Michel Foucault",
+  "Discipline and Punish by Michel Foucault",
+  "The Problems of Philosophy by Bertrand Russell",
+  "A History of Western Philosophy by Bertrand Russell",
+  "Blankets by Craig Thompson",
+  "Habibi by Craig Thompson",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
