@@ -151,12 +151,24 @@ async function circuitIsOpen(admin: SupabaseClient, model: string): Promise<bool
   }
 }
 
-async function circuitRecordFail(admin: SupabaseClient, model: string): Promise<void> {
+// p_status/p_error are optional — added 2026-07-11 so the circuit table
+// itself records WHY a model failed (last HTTP status + truncated error
+// body), not just that it failed. Previously that info only existed in a
+// console.error inside attemptFallbackPass, which get_logs doesn't
+// reliably surface days later — three separate daily-audit sessions
+// (2026-07-08 x2, 2026-07-11) hit the same dead end trying to tell whether
+// an elevated fails count on a rarely-used fallback tier meant a real
+// per-model problem or just a shared Gemini capacity blip. Now a direct
+// read of gemini_model_circuit answers that in one query, no log-diving
+// required.
+async function circuitRecordFail(admin: SupabaseClient, model: string, status?: number, errorBody?: string): Promise<void> {
   try {
     const { error } = await admin.rpc("gemini_circuit_record_fail", {
       p_model: model,
       p_trip_after: CIRCUIT_TRIP_AFTER,
       p_open_ms: CIRCUIT_OPEN_MS,
+      p_status: status ?? null,
+      p_error: errorBody ?? null,
     });
     if (error) console.warn(JSON.stringify({ circuit: "record_fail_error", model, error: error.message }));
   } catch (e) {
@@ -197,7 +209,7 @@ async function attemptFallbackPass(
       // Network stall or timeout — treat like a transient 503, trip circuit, try next model.
       const name = e instanceof Error ? e.name : String(e);
       console.warn(JSON.stringify({ circuit: "timeout", model, error: name }));
-      await circuitRecordFail(admin, model);
+      await circuitRecordFail(admin, model, undefined, `timeout: ${name}`);
       last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
       continue;
     }
@@ -226,7 +238,7 @@ async function attemptFallbackPass(
     });
     if (r.status === 429 || r.status >= 500) {
       // Transient — trip circuit (if threshold reached) and try the next model.
-      await circuitRecordFail(admin, model);
+      await circuitRecordFail(admin, model, r.status, errBody);
     } else {
       // Hard 4xx client error — not transient, don't trip the circuit, don't
       // bother trying other models (a bad request will fail on all of them).
