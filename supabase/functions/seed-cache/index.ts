@@ -1844,6 +1844,81 @@ const POPULAR_BOOKS = [
   "A History of Western Philosophy by Bertrand Russell",
   "Blankets by Craig Thompson",
   "Habibi by Craig Thompson",
+
+  // ── Author-gap-scan round 8 (2026-07-11, daily backend agent) ──────────────
+  // Fresh clean-bill-of-health audit first (security advisors clean bar the
+  // long-standing dashboard-only auth_leaked_password_protection WARN;
+  // performance advisors only the same handful of INFO unused-index notices
+  // on low-traffic feature tables; 24h edge-function logs all 200s, fastest
+  // ones cache-hitting in ~150-300ms, no new errors; gemini_model_circuit
+  // shows gemini-2.5-flash-lite fails climbing 32->38 since 2026-07-10,
+  // primary gemini-3-flash-preview and secondary gemini-2.5-flash both with
+  // circuits currently closed — same "rarely invoked third tier" pattern
+  // read every prior session, not actionable from available data, not
+  // spending further cycles on it; search_cache demand-feedback signal not
+  // re-checked this round, still expected to be sparse per every prior
+  // check). Also read through search-books/index.ts end-to-end looking for a
+  // genuine speed bug given the project's "as fast as possible" mandate —
+  // found the pipeline already has a local-index tier (zero network for
+  // ~80% of keystrokes), debounce+AbortController+sequence-guard on the
+  // network tier, a 10-minute in-process memory cache, a 24h Postgres cache,
+  // and every upstream fetch already timeout-capped and tuned across many
+  // prior sessions (OL 5s primary / 2.5s author-fanout / 2.5s fuzzy-fallback,
+  // GB 3s) — no further low-risk latency win found without either a larger
+  // architectural change (Phase 2's own Postgres book catalog, still not
+  // started, needs explicit go-ahead) or risking a regression on an already
+  // heavily-tuned hot path. No new bug found, so fell back to the
+  // established Phase 1 task again. Round 7 covered children's/YA-franchise
+  // and philosophy classics; this round targeted literary journalism/New
+  // Journalism, narrative nonfiction/history, and nature/memoir writing —
+  // three categories no prior round had touched. Scanned 92 names, found 18
+  // genuine zero-hit gaps (confirmed via broader grep to rule out false
+  // positives/negatives both ways, per the established discipline): this
+  // round's own near-miss was "Richard Feynman" — a plain two-word grep
+  // showed zero hits, but the real entries use "Richard P. Feynman" (already
+  // well covered, 3 titles) — and "Rick Atkinson"/"Max Hastings" both looked
+  // like they might hit on a bare "hastings"/"atkinson" substring grep, but
+  // those matches were "Reed Hastings" (No Rules Rules) and "Kate Atkinson"
+  // (Life After Life etc.) respectively — unrelated authors, so both were
+  // confirmed genuine gaps, not false positives. Confirmed real gaps: Susan
+  // Sontag, Christopher Hitchens, Hunter S. Thompson, Tom Wolfe, Gay Talese,
+  // Rebecca Solnit, David McCullough, Rick Atkinson, Stephen Ambrose,
+  // Nathaniel Philbrick, Candice Millard, John Berendt, Barry Lopez, Annie
+  // Dillard, Wendell Berry, Aldo Leopold, Frank McCourt, Mary Karr. Added
+  // 2-3 titles per author (33 total, biggest round since round 6's 32).
+  "On Photography by Susan Sontag",
+  "Illness as Metaphor by Susan Sontag",
+  "God Is Not Great by Christopher Hitchens",
+  "Hitch-22 by Christopher Hitchens",
+  "Fear and Loathing in Las Vegas by Hunter S. Thompson",
+  "Hell's Angels by Hunter S. Thompson",
+  "The Bonfire of the Vanities by Tom Wolfe",
+  "The Right Stuff by Tom Wolfe",
+  "Thy Neighbor's Wife by Gay Talese",
+  "The Kingdom and the Power by Gay Talese",
+  "Men Explain Things to Me by Rebecca Solnit",
+  "A Field Guide to Getting Lost by Rebecca Solnit",
+  "John Adams by David McCullough",
+  "1776 by David McCullough",
+  "The Wright Brothers by David McCullough",
+  "An Army at Dawn by Rick Atkinson",
+  "The Guns at Last Light by Rick Atkinson",
+  "Band of Brothers by Stephen Ambrose",
+  "Undaunted Courage by Stephen Ambrose",
+  "In the Heart of the Sea by Nathaniel Philbrick",
+  "Mayflower by Nathaniel Philbrick",
+  "The River of Doubt by Candice Millard",
+  "Destiny of the Republic by Candice Millard",
+  "Midnight in the Garden of Good and Evil by John Berendt",
+  "Arctic Dreams by Barry Lopez",
+  "Pilgrim at Tinker Creek by Annie Dillard",
+  "The Writing Life by Annie Dillard",
+  "The Unsettling of America by Wendell Berry",
+  "Jayber Crow by Wendell Berry",
+  "A Sand County Almanac by Aldo Leopold",
+  "Angela's Ashes by Frank McCourt",
+  "'Tis by Frank McCourt",
+  "The Liars' Club by Mary Karr",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
