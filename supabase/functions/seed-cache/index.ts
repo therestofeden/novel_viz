@@ -1919,6 +1919,60 @@ const POPULAR_BOOKS = [
   "Angela's Ashes by Frank McCourt",
   "'Tis by Frank McCourt",
   "The Liars' Club by Mary Karr",
+
+  // ── Author-gap-scan round 9 (2026-07-12, daily agent) ──────────────────────
+  // Fresh health check first: get_advisors clean (only the long-standing
+  // auth_leaked_password_protection WARN + the same handful of INFO
+  // unused-index notices), 24h edge logs all 200s. One real finding: a
+  // dna-consensus call took 44.5s and another 19.4s in the logs — traced to
+  // gemini_model_circuit showing all three fallback models (gemini-3-flash-preview,
+  // gemini-2.5-flash, gemini-2.5-flash-lite) tripped their circuits within the
+  // same ~40s window around 07:31-07:32 UTC — a correlated full-fleet Gemini
+  // capacity blip, already self-healed by the time of this check (no new trips
+  // since), consistent with the known transient-outage pattern documented in
+  // prior sessions. Not a new bug, not actionable beyond existing retry/circuit
+  // design. gemini_daily_spend confirmed trivially low ($0.0001-$0.24/day,
+  // comfortably inside budget). Fell back to Phase 1. This round targeted
+  // poetry, classical antiquity, and business/self-help/food-writing
+  // nonfiction — three categories no prior round had touched. Scanned ~63
+  // names, found 22 genuine zero-hit gaps (biggest round since round 1's 23).
+  // Caught two false negatives before adding (Steven D. Levitt already covers
+  // Freakonomics; Jim Collins/Suzanne Collins already cover "Collins" but
+  // Billy Collins specifically was a real zero) and confirmed Ashlee Vance
+  // as a real gap despite "Vance" substring-matching the unrelated J.D. Vance
+  // entry. Added 1-2 titles per author (32 total).
+  "North of Boston by Robert Frost",
+  "New Hampshire by Robert Frost",
+  "Collected Poems by W.H. Auden",
+  "Another Time by W.H. Auden",
+  "Death of a Naturalist by Seamus Heaney",
+  "Beowulf by Seamus Heaney",
+  "The Wild Iris by Louise Glück",
+  "Averno by Louise Glück",
+  "Sailing Alone Around the Room by Billy Collins",
+  "The Trouble with Poetry by Billy Collins",
+  "The Book of Delights by Ross Gay",
+  "Catalog of Unabashed Gratitude by Ross Gay",
+  "The Carrying by Ada Limón",
+  "Bright Dead Things by Ada Limón",
+  "Metamorphoses by Ovid",
+  "The Aeneid by Virgil",
+  "Oedipus Rex by Sophocles",
+  "Antigone by Sophocles",
+  "Medea by Euripides",
+  "The Oresteia by Aeschylus",
+  "Lysistrata by Aristophanes",
+  "The Histories by Herodotus",
+  "History of the Peloponnesian War by Thucydides",
+  "Plutarch's Lives by Plutarch",
+  "The Analects by Confucius",
+  "Tao Te Ching by Lao Tzu",
+  "The Almanack of Naval Ravikant by Eric Jorgenson",
+  "Elon Musk by Ashlee Vance",
+  "Tender at the Bone by Ruth Reichl",
+  "Garlic and Sapphires by Ruth Reichl",
+  "The Making of a Chef by Michael Ruhlman",
+  "Ratio by Michael Ruhlman",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
