@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { RatingControl } from "@/components/RatingControl";
 import { NovelAnalysis } from "@/lib/novel-types";
-import { cn } from "@/lib/utils";
+import { cn, normalizeForSearch } from "@/lib/utils";
 
 type ReadingStatus = "want" | "reading" | "finished";
 
@@ -19,6 +19,48 @@ type ShelfRow = {
   finished_at: string | null;
   note: string | null;
 };
+
+type ShelfBookLookupRow = ShelfRow & { cache_key: string; title: string; author: string };
+
+const authorSurname = (name: string): string => {
+  const parts = normalizeForSearch(name).split(" ");
+  return parts[parts.length - 1] ?? "";
+};
+
+/**
+ * Finds this book's existing row on the shelf, if any. Matches by
+ * normalized title (+ author surname when both sides have one) instead of
+ * an exact cache_key match — cache_key embeds whatever author string a
+ * given analysis run happened to return, and that can drift for the same
+ * book across separate analyses (e.g. "" vs "John Steinbeck"), which used
+ * to let the same title silently get added to the shelf twice. Falls back
+ * to an exact cache_key match first, since it's the most precise signal
+ * when available.
+ */
+function findShelfRow(
+  rows: ShelfBookLookupRow[],
+  title: string,
+  author: string | null | undefined,
+  cacheKey: string | null,
+): ShelfBookLookupRow | null {
+  if (cacheKey) {
+    const byCacheKey = rows.find((r) => r.cache_key === cacheKey);
+    if (byCacheKey) return byCacheKey;
+  }
+
+  const normTitle = normalizeForSearch(title);
+  const candidates = rows.filter((r) => normalizeForSearch(r.title) === normTitle);
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  // Multiple rows share this normalized title — disambiguate by author
+  // surname when we have one on both sides; otherwise just take the first.
+  if (author && author.trim() && author !== "Unknown") {
+    const authorMatch = candidates.find((r) => normalizeForSearch(r.author).includes(authorSurname(author)));
+    if (authorMatch) return authorMatch;
+  }
+  return candidates[0];
+}
 
 interface Props {
   analysis: NovelAnalysis;
@@ -67,18 +109,18 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         setRow(null);
         return;
       }
-      const { data: existing } = await supabase
+      const { data: existingRows } = await supabase
         .from("shelf_books")
-        .select("id, status, rating, started_at, finished_at, note")
-        .eq("shelf_id", sid)
-        .eq("cache_key", cacheKey)
-        .maybeSingle();
-      if (!cancelled) setRow((existing as ShelfRow | null) ?? null);
+        .select("id, cache_key, title, author, status, rating, started_at, finished_at, note")
+        .eq("shelf_id", sid);
+      if (cancelled) return;
+      const match = findShelfRow((existingRows as ShelfBookLookupRow[] | null) ?? [], analysis.title, analysis.author, cacheKey);
+      setRow(match);
     })();
     return () => {
       cancelled = true;
     };
-  }, [user, cacheKey]);
+  }, [user, cacheKey, analysis.title, analysis.author]);
 
   const addToShelf = async () => {
     if (authLoading) return;

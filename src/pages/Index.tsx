@@ -37,7 +37,6 @@ import { ReaderNotes } from "@/components/ReaderNotes";
 import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
-import { isMustRead } from "@/lib/must-read";
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
 import { GeminiKeyDialog } from "@/components/GeminiKeyDialog";
@@ -1328,11 +1327,10 @@ const Index = () => {
                         </motion.span>
                         <span className="font-serif text-base italic leading-tight">
                           {s}
-                          {isMustRead(s) && (
-                            <span className="meta ml-2 inline-block translate-y-[-2px] border border-foreground bg-foreground px-1 py-0.5 text-background group-hover:border-background group-hover:bg-background group-hover:text-foreground">
-                              ✦ Must read
-                            </span>
-                          )}
+                          <MustReadBadge
+                            title={s}
+                            className="ml-2 inline-block translate-y-[-2px] group-hover:border-background group-hover:bg-background group-hover:text-foreground"
+                          />
                         </span>
                         <motion.span
                           variants={{ rest: { x: -4, opacity: 0 }, hover: { x: 0, opacity: 1 } }}

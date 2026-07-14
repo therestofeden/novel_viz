@@ -48,6 +48,10 @@ export default {
           DEFAULT: "hsl(var(--seal))",
           foreground: "hsl(var(--seal-foreground))",
         },
+        classic: {
+          DEFAULT: "hsl(var(--classic))",
+          foreground: "hsl(var(--classic-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
