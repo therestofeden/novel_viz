@@ -282,7 +282,7 @@ const Shelf = () => {
               </p>
               <Link
                 to="/"
-                className="meta mt-6 inline-flex items-center border border-foreground bg-foreground px-4 py-2 text-background hover:bg-primary"
+                className="meta mt-6 inline-flex items-center border border-foreground bg-foreground px-4 py-2 text-background hover:bg-ink-blue"
               >
                 → Find a book
               </Link>
@@ -318,7 +318,7 @@ const Shelf = () => {
                 <div
                   key={b.id}
                   className={cn(
-                    "group grid grid-cols-12 items-baseline gap-4 px-4 py-4 transition-colors hover:bg-foreground hover:text-background",
+                    "group grid grid-cols-12 items-baseline gap-4 px-4 py-4 transition-colors hover:bg-ink-blue hover:text-background",
                     i > 0 && "border-t border-foreground/30",
                   )}
                 >

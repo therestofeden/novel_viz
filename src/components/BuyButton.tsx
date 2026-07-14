@@ -195,7 +195,7 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
   const sizing = size === "md" ? "px-3 py-1.5" : "px-2 py-1";
   const skin =
     variant === "primary"
-      ? "border border-foreground bg-foreground text-background hover:bg-primary hover:border-primary"
+      ? "border border-foreground bg-foreground text-background hover:bg-ink-blue hover:border-ink-blue"
       : "border border-foreground/40 text-foreground hover:bg-foreground hover:text-background";
 
   const hasMultiple = resolved && resolved.options.length > 1;

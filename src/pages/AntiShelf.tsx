@@ -358,7 +358,7 @@ const AntiShelf = () => {
               </p>
               <Link
                 to="/"
-                className="meta mt-6 inline-flex items-center border border-foreground bg-foreground px-4 py-2 text-background hover:bg-primary"
+                className="meta mt-6 inline-flex items-center border border-foreground bg-foreground px-4 py-2 text-background hover:bg-ink-blue"
               >
                 → Find a book
               </Link>

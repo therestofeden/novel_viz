@@ -267,7 +267,7 @@ const BookPage = () => {
             {titleHint ? (
               <Link
                 to={`/?book=${encodeURIComponent(titleHint)}`}
-                className="meta inline-flex items-center gap-2 border border-foreground bg-primary px-5 py-3 text-primary-foreground transition-colors hover:bg-foreground hover:text-background"
+                className="meta inline-flex items-center gap-2 border border-foreground bg-primary px-5 py-3 text-primary-foreground transition-colors hover:bg-ink-blue hover:text-background"
               >
                 → Analyze "{titleHint}"
               </Link>

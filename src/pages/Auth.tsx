@@ -203,7 +203,7 @@ const Auth = () => {
               <button
                 type="submit"
                 disabled={submitting || oauthLoading}
-                className="meta flex w-full items-center justify-center gap-2 border-t border-foreground bg-foreground px-6 py-4 text-background transition-colors hover:bg-primary disabled:opacity-50"
+                className="meta flex w-full items-center justify-center gap-2 border-t border-foreground bg-foreground px-6 py-4 text-background transition-colors hover:bg-ink-blue disabled:opacity-50"
               >
                 {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : mode === "signup" ? "→ Open Account" : "→ Sign In"}
               </button>

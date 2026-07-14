@@ -907,7 +907,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
                 </button>
                 <button
                   onClick={saveCluster}
-                  className="meta bg-foreground px-3 py-2 text-background hover:bg-primary"
+                  className="meta bg-foreground px-3 py-2 text-background hover:bg-ink-blue"
                 >
                   Save cluster
                 </button>

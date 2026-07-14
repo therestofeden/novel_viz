@@ -21,6 +21,21 @@
   softens the temperature and lightens it slightly for a less severe feel.
   Scoped to light mode only (the .dark block below is unused in the app
   today — no toggle exists — so it was left on the original navy).
+
+  2026-07-15: the warm charcoal ink is 176° away from the sky-blue accent
+  on the hue wheel (near-complementary) — the old navy ink was only 11°
+  away (same family). Every UI element that swaps its fill between "ink"
+  and "primary" on hover (dozens of buttons/chips/rows across the app) got
+  a much harsher hue-reversal than before, which read as "not nice" on
+  hover. Fix: added --ink-blue, a dark navy tightly hue-matched to
+  --primary (6° apart, hsl(212 40% 13%)), used ONLY as the hover/invert
+  partner for --primary. --foreground stays the warm charcoal everywhere
+  else (borders, body text, ink-only hover-invert) — this is scoped
+  narrowly to the ink↔blue swap sites, not a reversal of the July 9 change.
+  Also darkened --primary-foreground from white to a warm near-black
+  (hsl(22 16% 16%)): white-on-primary measured 2.77:1 contrast, failing
+  WCAG AA (4.5:1) for the small mono "meta" labels used on most primary
+  buttons/badges; the new value measures ~5.3:1.
 */
 
 @layer base {
@@ -35,8 +50,10 @@
     --popover-foreground: 22 16% 20%;
 
     --primary: 206 63% 60%;            /* #5ba3d9 — sky blue accent */
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 22 16% 16%;  /* #2f2722 — warm near-black; ~5.3:1 on primary (was white, 2.77:1, failed AA) */
     --primary-glow: 206 63% 72%;
+
+    --ink-blue: 212 40% 13%;           /* #14202e — dark navy, 6° from primary's hue. Hover/invert partner for --primary only; --foreground (warm charcoal) is unchanged everywhere else. */
 
     --secondary: 207 40% 90%;
     --secondary-foreground: 22 16% 20%;

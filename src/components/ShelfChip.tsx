@@ -266,7 +266,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         title="Click to cycle: want → reading → finished"
         className={cn(
           "meta flex items-center gap-2 px-3 py-2 transition-colors disabled:opacity-50",
-          row.status === "finished" && "bg-primary text-primary-foreground hover:bg-foreground hover:text-background",
+          row.status === "finished" && "bg-primary text-primary-foreground hover:bg-ink-blue hover:text-background",
           row.status === "reading" && "bg-accent text-accent-foreground hover:bg-foreground hover:text-background",
           row.status === "want" && "bg-card hover:bg-foreground hover:text-background",
         )}

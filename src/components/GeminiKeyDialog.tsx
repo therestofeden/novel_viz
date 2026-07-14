@@ -130,7 +130,7 @@ export const GeminiKeyDialog = ({ open, onClose }: Props) => {
           <button
             onClick={handleSave}
             disabled={saving || !value.trim()}
-            className="meta flex flex-1 items-center justify-center gap-2 bg-foreground px-4 py-3 text-sm text-background hover:bg-primary disabled:opacity-50"
+            className="meta flex flex-1 items-center justify-center gap-2 bg-foreground px-4 py-3 text-sm text-background hover:bg-ink-blue disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save key"}
           </button>
