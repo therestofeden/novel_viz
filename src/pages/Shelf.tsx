@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import Constellation from "@/components/Constellation";
 import { RatingControl } from "@/components/RatingControl";
 import { MustReadBadge } from "@/components/MustReadBadge";
+import { ClassicBadge } from "@/components/ClassicBadge";
 
 type ReadingStatus = "want" | "reading" | "finished";
 
@@ -328,6 +329,7 @@ const Shelf = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-serif text-lg italic">{b.title}</span>
                       <MustReadBadge title={b.title} author={b.author} className="group-hover:border-background group-hover:bg-background group-hover:text-foreground" />
+                      <ClassicBadge title={b.title} author={b.author} className="group-hover:border-background group-hover:text-background" />
                     </div>
                     <div className="meta mt-1 flex flex-wrap items-center gap-2 text-muted-foreground group-hover:text-background/70">
                       <span>{b.author && b.author !== "Unknown" ? b.author : "—"}</span>

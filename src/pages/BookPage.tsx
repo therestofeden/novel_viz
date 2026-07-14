@@ -26,6 +26,7 @@ import { TakeawaysTab } from "@/components/TakeawaysTab";
 import { ReaderNotes } from "@/components/ReaderNotes";
 import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
+import { ClassicBadge } from "@/components/ClassicBadge";
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
 import { supabase } from "@/integrations/supabase/client";
@@ -356,6 +357,7 @@ const BookPage = () => {
               {analysis.title}
             </h1>
             <MustReadBadge title={analysis.title} author={analysis.author} size="md" className="mt-3" />
+            <ClassicBadge title={analysis.title} author={analysis.author} size="md" className="mt-3" />
             {isNonFiction(analysis) && (analysis as NonFictionAnalysis).thesis && (
               <p className="mt-2 font-sans text-sm font-medium text-primary/80 italic">
                 "{(analysis as NonFictionAnalysis).thesis}"

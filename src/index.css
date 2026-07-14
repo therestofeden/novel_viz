@@ -50,6 +50,9 @@
     --destructive: 18 85% 50%;         /* warm amber-orange */
     --destructive-foreground: 0 0% 100%;
 
+    --seal: 42 88% 47%;                /* antique gold — Must Read editorial seal */
+    --seal-foreground: 22 16% 20%;
+
     --border: 22 16% 20%;              /* warm ink borders */
     --border-soft: 207 30% 82%;
     --input: 22 16% 20%;
@@ -104,6 +107,8 @@
     --accent-foreground: 217 63% 7%;
     --destructive: 24 85% 58%;
     --destructive-foreground: 217 63% 7%;
+    --seal: 42 85% 55%;
+    --seal-foreground: 217 63% 7%;
     --border: 207 48% 96%;
     --border-soft: 216 30% 22%;
     --input: 207 48% 96%;
