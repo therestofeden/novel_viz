@@ -19,7 +19,9 @@ import { normalizeForSearch } from "@/lib/utils";
  * - Ratio: fiction-heavy by design — NovelViz is a novel-first product;
  *   the Librarian's usual 2:1 non-fiction ratio is intentionally inverted.
  * - One entry per author except where two works are independently
- *   unmissable (Tolstoy, Dostoevsky, Kafka, Woolf).
+ *   unmissable (Tolstoy, Dostoevsky, Kafka, Woolf — and Nabokov, by
+ *   editor's overrule 2026-07-14: Pale Fire admitted over the Librarian's
+ *   one-slot objection; Monte Cristo challenged the same day and held out).
  */
 
 export type MustReadEntry = {
@@ -73,6 +75,7 @@ export const MUST_READ: MustReadEntry[] = [
   { title: "Invisible Man", author: "Ralph Ellison", why: "The Black American experience as jazz-structured epic; nothing touches it." },
   { title: "The Leopard", author: "Giuseppe Tomasi di Lampedusa", why: "\"Everything must change so that everything stays the same\" — history's saddest sentence." },
   { title: "Lolita", author: "Vladimir Nabokov", why: "The most beautiful prose in service of the least reliable narrator; style as moral trap." },
+  { title: "Pale Fire", author: "Vladimir Nabokov", why: "A poem, a commentary, a madman — the novel rebuilt as a hall of mirrors." },
   { title: "Pedro Páramo", author: "Juan Rulfo", why: "A town of ghosts in 120 pages; the seed of magical realism." },
   { title: "Ficciones", author: "Jorge Luis Borges", why: "Infinite libraries and forking paths; philosophy compressed into short stories.", aka: ["Fictions"] },
   { title: "Things Fall Apart", author: "Chinua Achebe", why: "Colonialism witnessed from the inside; the African novel's cornerstone." },
