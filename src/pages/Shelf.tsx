@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import Constellation from "@/components/Constellation";
+import { RatingControl } from "@/components/RatingControl";
+import { MustReadBadge } from "@/components/MustReadBadge";
 
 type ReadingStatus = "want" | "reading" | "finished";
 
@@ -19,6 +21,7 @@ type ShelfBook = {
   note: string | null;
   added_at: string;
   status: ReadingStatus;
+  started_at: string | null;
   finished_at: string | null;
   rating: number | null;
 };
@@ -49,7 +52,7 @@ const Shelf = () => {
       const [{ data: shelfBooks }, { data: profile }, { data: shelfRow }] = await Promise.all([
         supabase
           .from("shelf_books")
-          .select("id, cache_key, title, author, note, added_at, status, finished_at, rating")
+          .select("id, cache_key, title, author, note, added_at, status, started_at, finished_at, rating")
           .order("added_at", { ascending: false }),
         supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle(),
         supabase
@@ -136,10 +139,11 @@ const Shelf = () => {
                     author: removed.author,
                     note: removed.note,
                     status: removed.status,
+                    started_at: removed.started_at,
                     finished_at: removed.finished_at,
                     rating: removed.rating,
                   })
-                  .select("id, cache_key, title, author, note, added_at, status, finished_at, rating")
+                  .select("id, cache_key, title, author, note, added_at, status, started_at, finished_at, rating")
                   .maybeSingle();
                 if (restoreError || !restored) {
                   toast.error("Couldn't restore book");
@@ -157,16 +161,30 @@ const Shelf = () => {
   const cycleStatus = async (book: ShelfBook) => {
     const order: ReadingStatus[] = ["want", "reading", "finished"];
     const next = order[(order.indexOf(book.status) + 1) % order.length];
+    const started_at =
+      next === "reading" ? (book.started_at ?? new Date().toISOString())
+      : next === "want" ? null
+      : book.started_at;
     const finished_at = next === "finished" ? new Date().toISOString() : null;
     const prev = books;
-    setBooks((bs) => bs.map((b) => (b.id === book.id ? { ...b, status: next, finished_at } : b)));
+    setBooks((bs) => bs.map((b) => (b.id === book.id ? { ...b, status: next, started_at, finished_at } : b)));
     const { error } = await supabase
       .from("shelf_books")
-      .update({ status: next, finished_at })
+      .update({ status: next, started_at, finished_at })
       .eq("id", book.id);
     if (error) {
       setBooks(prev);
       toast.error("Couldn't update status");
+    }
+  };
+
+  const setRating = async (book: ShelfBook, rating: number | null) => {
+    const prev = books;
+    setBooks((bs) => bs.map((b) => (b.id === book.id ? { ...b, rating } : b)));
+    const { error } = await supabase.from("shelf_books").update({ rating }).eq("id", book.id);
+    if (error) {
+      setBooks(prev);
+      toast.error("Couldn't save rating");
     }
   };
 
@@ -307,7 +325,10 @@ const Shelf = () => {
                     {String(i + 1).padStart(2, "0")}
                   </div>
                   <div className="col-span-10 md:col-span-7">
-                    <div className="font-serif text-lg italic">{b.title}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-serif text-lg italic">{b.title}</span>
+                      <MustReadBadge title={b.title} author={b.author} className="group-hover:border-background group-hover:bg-background group-hover:text-foreground" />
+                    </div>
                     <div className="meta mt-1 flex flex-wrap items-center gap-2 text-muted-foreground group-hover:text-background/70">
                       <span>{b.author && b.author !== "Unknown" ? b.author : "—"}</span>
                       <span className="text-foreground/30 group-hover:text-background/30">·</span>
@@ -328,6 +349,18 @@ const Shelf = () => {
                           {new Date(b.finished_at).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
                         </span>
                       )}
+                      {b.status === "reading" && b.started_at && (
+                        <span className="text-foreground/40 group-hover:text-background/50">
+                          since {new Date(b.started_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </span>
+                      )}
+                      {b.status === "finished" && (
+                        <RatingControl
+                          value={b.rating}
+                          onChange={(r) => setRating(b, r)}
+                          className="group-hover:border-background group-hover:text-background"
+                        />
+                      )}
                     </div>
                   </div>
                   <div className="col-span-12 flex items-center justify-end gap-2 md:col-span-4">
@@ -343,7 +376,7 @@ const Shelf = () => {
                     </Link>
                     <button
                       onClick={() => removeBook(b.id)}
-                      className="meta inline-flex items-center gap-1 border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-accent hover:text-accent-foreground"
+                      className="meta inline-flex items-center gap-1 border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-destructive hover:text-destructive-foreground"
                       aria-label="Remove from shelf"
                     >
                       <Trash2 className="h-3 w-3" /> Remove

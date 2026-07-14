@@ -432,6 +432,7 @@ export type Database = {
           position: number
           rating: number | null
           shelf_id: string
+          started_at: string | null
           status: string
           title: string
           user_id: string
@@ -446,6 +447,7 @@ export type Database = {
           position?: number
           rating?: number | null
           shelf_id: string
+          started_at?: string | null
           status?: string
           title: string
           user_id: string
@@ -460,6 +462,7 @@ export type Database = {
           position?: number
           rating?: number | null
           shelf_id?: string
+          started_at?: string | null
           status?: string
           title?: string
           user_id?: string

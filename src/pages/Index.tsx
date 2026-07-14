@@ -35,6 +35,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ReaderNotes } from "@/components/ReaderNotes";
 import { ShelfChip } from "@/components/ShelfChip";
+import { MustReadBadge } from "@/components/MustReadBadge";
+import { isMustRead } from "@/lib/must-read";
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
 import { GeminiKeyDialog } from "@/components/GeminiKeyDialog";
@@ -1323,7 +1325,14 @@ const Index = () => {
                         >
                           {String(i + 1).padStart(2, "0")}
                         </motion.span>
-                        <span className="font-serif text-base italic leading-tight">{s}</span>
+                        <span className="font-serif text-base italic leading-tight">
+                          {s}
+                          {isMustRead(s) && (
+                            <span className="meta ml-2 inline-block translate-y-[-2px] border border-foreground bg-foreground px-1 py-0.5 text-background group-hover:border-background group-hover:bg-background group-hover:text-foreground">
+                              ✦ Must read
+                            </span>
+                          )}
+                        </span>
                         <motion.span
                           variants={{ rest: { x: -4, opacity: 0 }, hover: { x: 0, opacity: 1 } }}
                           transition={{ duration: 0.35, ease: ease.out }}
@@ -1487,6 +1496,7 @@ const Index = () => {
                 <h1 className="mt-2 font-sans text-3xl font-extrabold leading-[1] tracking-tight md:text-6xl">
                   {analysis.title}
                 </h1>
+                <MustReadBadge title={analysis.title} author={analysis.author} size="md" className="mt-3" />
                 {isNonFiction(analysis) && (analysis as NonFictionAnalysis).thesis && (
                   <p className="mt-2 font-sans text-sm font-medium text-primary/80 italic">
                     "{(analysis as NonFictionAnalysis).thesis}"
