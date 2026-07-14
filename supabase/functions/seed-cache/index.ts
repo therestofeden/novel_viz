@@ -1973,6 +1973,75 @@ const POPULAR_BOOKS = [
   "Garlic and Sapphires by Ruth Reichl",
   "The Making of a Chef by Michael Ruhlman",
   "Ratio by Michael Ruhlman",
+
+  // ── Author-gap-scan round 10 (2026-07-14, daily agent) ──────────────────────
+  // Scanned Golden Age/New Wave sci-fi, epic/high fantasy series, graphic
+  // novels/comics, and theater/travel writing — four categories no prior
+  // round had touched. Scanned ~90 names. Most Golden Age SF majors
+  // (Asimov, Heinlein, Clarke, Dick, Herbert, Butler, Bradbury, Le Guin,
+  // Card, Adams, Jemisin, Weir, Liu Cixin, Lem) and most mainstream fantasy
+  // (Tolkien, Martin, Sanderson, Jordan, Rothfuss, Abercrombie, Robin Hobb,
+  // Susanna Clarke) and comics (Moore, Gaiman/Sandman, Miller, Vaughan,
+  // Ellis, Morrison, Satrapi, Thompson, Telgemeier) were already covered —
+  // confirming the task's warning that round 1's loose "sci-fi/fantasy"
+  // sweep got the big names. Found 33 genuine zero-hit gaps in the
+  // second tier: New Wave/literary SF (Silverberg, Zelazny, Miéville,
+  // Reynolds, Verne, Kim Stanley Robinson, Connie Willis), plus Iain M.
+  // Banks specifically (his SF pen name — "Iain Banks" litfic was already
+  // covered via The Wasp Factory, but the Culture novels were not, a real
+  // same-person/different-shelf gap); major fantasy franchises (Pratchett's
+  // solo Discworld — only the Gaiman co-write Good Omens was present;
+  // Terry Brooks, Feist, Tad Williams, Guy Gavriel Kay, Erikson, Mark
+  // Lawrence, Novik, McCaffrey); literary/alt comics (Chris Ware, Charles
+  // Burns, Kirkman, Clowes, O'Malley, Emil Ferris — "Ferris" false-matched
+  // Tim Ferriss's extra S on a naive grep, confirmed a real gap on close
+  // read); and theater/travel writing (Shakespeare — a full zero, not even
+  // Hamlet or Macbeth were present; Ibsen, O'Neill, Stoppard, August
+  // Wilson — distinct from already-covered Robert Charles Wilson/E.O.
+  // Wilson; Pinter; Pico Iyer, Peter Matthiessen, Colin Thubron, Rory
+  // Stewart). Verified "Robinson" wasn't a false positive against
+  // already-covered Marilynne Robinson/James A. Robinson, and "Brooks"
+  // wasn't already covered via Max Brooks. Added 1-3 titles per author
+  // (39 total).
+  "Dying Inside by Robert Silverberg",
+  "Lord of Light by Roger Zelazny",
+  "Nine Princes in Amber by Roger Zelazny",
+  "Perdido Street Station by China Miéville",
+  "The City & The City by China Miéville",
+  "Consider Phlebas by Iain M. Banks",
+  "The Player of Games by Iain M. Banks",
+  "Revelation Space by Alastair Reynolds",
+  "Twenty Thousand Leagues Under the Sea by Jules Verne",
+  "Journey to the Center of the Earth by Jules Verne",
+  "Red Mars by Kim Stanley Robinson",
+  "Doomsday Book by Connie Willis",
+  "The Colour of Magic by Terry Pratchett",
+  "The Sword of Shannara by Terry Brooks",
+  "Magician by Raymond E. Feist",
+  "The Dragonbone Chair by Tad Williams",
+  "Tigana by Guy Gavriel Kay",
+  "Gardens of the Moon by Steven Erikson",
+  "Prince of Thorns by Mark Lawrence",
+  "Uprooted by Naomi Novik",
+  "Dragonflight by Anne McCaffrey",
+  "Jimmy Corrigan: The Smartest Kid on Earth by Chris Ware",
+  "Black Hole by Charles Burns",
+  "The Walking Dead by Robert Kirkman",
+  "Ghost World by Daniel Clowes",
+  "Scott Pilgrim's Precious Little Life by Bryan Lee O'Malley",
+  "My Favorite Thing Is Monsters by Emil Ferris",
+  "Hamlet by William Shakespeare",
+  "Macbeth by William Shakespeare",
+  "A Midsummer Night's Dream by William Shakespeare",
+  "A Doll's House by Henrik Ibsen",
+  "Long Day's Journey Into Night by Eugene O'Neill",
+  "Rosencrantz and Guildenstern Are Dead by Tom Stoppard",
+  "Fences by August Wilson",
+  "The Birthday Party by Harold Pinter",
+  "The Art of Stillness by Pico Iyer",
+  "The Snow Leopard by Peter Matthiessen",
+  "In Siberia by Colin Thubron",
+  "The Places in Between by Rory Stewart",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
