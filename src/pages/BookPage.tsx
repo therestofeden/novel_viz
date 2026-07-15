@@ -343,7 +343,7 @@ const BookPage = () => {
           <div className="flex items-stretch">
             <Link
               to="/"
-              className="meta hover-invert flex items-center gap-2 border-l border-foreground px-5 py-5"
+              className="meta flex items-center gap-2 border-l border-foreground px-5 py-5 transition-colors hover:bg-foreground/10"
             >
               ← Search another book
             </Link>
@@ -466,7 +466,7 @@ const BookPage = () => {
                   "meta inline-flex items-center gap-2 border border-foreground px-3 py-2 transition-colors",
                   showSpoilers
                     ? "bg-card hover:bg-foreground/10"
-                    : "bg-foreground text-background",
+                    : "bg-primary text-primary-foreground",
                 )}
               >
                 {showSpoilers ? (
@@ -511,7 +511,7 @@ const BookPage = () => {
                   className={cn(
                     "meta flex-1 border border-foreground px-2 py-1.5 transition-colors",
                     !showSpoilers && Math.round(progress) === p
-                      ? "bg-foreground text-background"
+                      ? "bg-primary text-primary-foreground"
                       : "bg-card hover:bg-foreground/10",
                   )}
                 >

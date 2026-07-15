@@ -88,11 +88,17 @@
 
     --radius: 0px;                     /* SHARP. zero radius. */
 
-    /* Narrative lane palette — 12-step blue ramp, deep navy → acqua */
-    --lane-1:  217 63% 12%;
-    --lane-2:  216 65% 22%;
-    --lane-3:  214 66% 32%;
-    --lane-4:  212 67% 40%;
+    /* Narrative lane palette — 12-step blue ramp, deep navy → acqua.
+       2026-07-15: lane-1 was 217 63% 12% — at that lightness it read as
+       near-black rather than "deepest blue," so anywhere it landed by
+       position (e.g. BookDNA's first axis row) looked like an accidental
+       charcoal/error state next to its lighter siblings. Raised the floor
+       on lanes 1-4 so the ramp stays recognizably blue at every step;
+       lanes 5-12 unchanged (already comfortably in the visible range). */
+    --lane-1:  217 60% 24%;
+    --lane-2:  216 62% 30%;
+    --lane-3:  214 64% 36%;
+    --lane-4:  212 66% 42%;
     --lane-5:  210 65% 48%;
     --lane-6:  208 64% 54%;
     --lane-7:  206 63% 60%;
@@ -283,15 +289,6 @@
     font-family: 'Fraunces', serif;
     letter-spacing: 0.4em;
     color: hsl(var(--foreground));
-  }
-
-  /* Hover invert helper for editorial buttons */
-  .hover-invert {
-    transition: background-color 120ms ease, color 120ms ease;
-  }
-  .hover-invert:hover {
-    background-color: hsl(var(--foreground));
-    color: hsl(var(--background));
   }
 
   /* Marquee strip at the very top, like a press dateline */

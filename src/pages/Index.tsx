@@ -1027,14 +1027,14 @@ const Index = () => {
             {user ? (
               <Link
                 to="/shelf"
-                className="meta hover-invert flex items-center gap-2 border-l border-foreground px-5 py-5"
+                className="meta flex items-center gap-2 border-l border-foreground px-5 py-5 transition-colors hover:bg-foreground/10"
               >
                 <Library className="h-3.5 w-3.5" /> My shelf
               </Link>
             ) : (
               <Link
                 to="/auth"
-                className="meta hover-invert flex items-center gap-2 border-l border-foreground px-5 py-5"
+                className="meta flex items-center gap-2 border-l border-foreground px-5 py-5 transition-colors hover:bg-foreground/10"
               >
                 <LogIn className="h-3.5 w-3.5" /> Sign in
               </Link>
@@ -1163,7 +1163,7 @@ const Index = () => {
                       type="submit"
                       strength={10}
                       disabled={loading || !title.trim()}
-                      className="meta flex items-center gap-2 border-l border-foreground bg-primary px-6 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white disabled:opacity-50"
+                      className="meta flex items-center gap-2 border-l border-foreground bg-primary px-6 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white disabled:opacity-80"
                     >
                       {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <>Visualize</>}
                     </MagneticButton>
@@ -1568,7 +1568,7 @@ const Index = () => {
                     "meta inline-flex items-center gap-2 border border-foreground px-3 py-2 transition-colors",
                     showSpoilers
                       ? "bg-card hover:bg-foreground/10"
-                      : "bg-foreground text-background",
+                      : "bg-primary text-primary-foreground",
                   )}
                 >
                   {showSpoilers ? (
@@ -1613,7 +1613,7 @@ const Index = () => {
                     className={cn(
                       "meta flex-1 border border-foreground px-2 py-1.5 transition-colors",
                       !showSpoilers && Math.round(progress) === p
-                        ? "bg-foreground text-background"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-card hover:bg-foreground/10",
                     )}
                   >

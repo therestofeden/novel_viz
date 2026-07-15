@@ -351,7 +351,7 @@ const Shelf = () => {
                 <div
                   key={b.id}
                   className={cn(
-                    "group grid grid-cols-12 items-baseline gap-4 px-4 py-4 transition-colors hover:bg-foreground/10",
+                    "group grid grid-cols-12 items-baseline gap-4 px-4 py-2.5 transition-colors hover:bg-foreground/10",
                     i > 0 && "border-t border-foreground/30",
                   )}
                 >
@@ -370,14 +370,22 @@ const Shelf = () => {
                       <button
                         onClick={(e) => { e.preventDefault(); cycleStatus(b); }}
                         className={cn(
-                          "meta border px-1.5 py-0.5 transition-colors",
-                          b.status === "finished" && "border-primary text-primary",
-                          b.status === "reading" && "border-accent text-accent",
-                          b.status === "want" && "border-foreground/40 text-foreground/60",
+                          "inline-flex items-center gap-1 transition-colors hover:text-foreground",
+                          b.status === "finished" && "text-primary",
+                          b.status === "reading" && "text-accent",
+                          b.status === "want" && "text-foreground/60",
                         )}
                         title="Click to cycle status"
                       >
-                        {b.status === "finished" ? "✓ Finished" : b.status === "reading" ? "● Reading" : "○ Want to read"}
+                        <span
+                          className={cn(
+                            "inline-block h-1.5 w-1.5 rounded-full",
+                            b.status === "finished" && "bg-primary",
+                            b.status === "reading" && "bg-accent",
+                            b.status === "want" && "bg-foreground/40",
+                          )}
+                        />
+                        {b.status === "finished" ? "Finished" : b.status === "reading" ? "Reading" : "Want to read"}
                       </button>
                       {b.status === "finished" && b.finished_at && (
                         <span className="text-foreground/40">
@@ -397,20 +405,20 @@ const Shelf = () => {
                       )}
                     </div>
                   </div>
-                  <div className="col-span-12 flex items-center justify-end gap-2 md:col-span-4">
+                  <div className="col-span-12 flex items-center justify-end gap-4 md:col-span-4">
                     <Link
                       to={
                         slugByCacheKey.get(b.cache_key)
                           ? `/book/${slugByCacheKey.get(b.cache_key)}`
                           : `/?book=${encodeURIComponent(b.title)}`
                       }
-                      className="meta border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-foreground/10"
+                      className="meta text-foreground underline decoration-foreground/30 underline-offset-4 transition-colors hover:decoration-foreground"
                     >
-                      → Open
+                      Open
                     </Link>
                     <button
                       onClick={() => removeBook(b.id)}
-                      className="meta inline-flex items-center gap-1 border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-destructive hover:text-destructive-foreground"
+                      className="meta inline-flex items-center gap-1 text-foreground/50 transition-colors hover:text-destructive"
                       aria-label="Remove from shelf"
                     >
                       <Trash2 className="h-3 w-3" /> Remove

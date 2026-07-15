@@ -433,7 +433,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                 className={cn(
                   "group relative grid grid-cols-12 border-b border-foreground/30 transition-colors cursor-pointer",
                   isOdd && "bg-background/30",
-                  isHover && "bg-foreground text-background",
+                  isHover && "bg-[hsl(var(--ink-blue))] text-background",
                 )}
               >
                 {/* Axis label */}
@@ -567,7 +567,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                 </div>
 
                 {isHover && (
-                  <div className="col-span-12 col-start-1 grid grid-cols-12 border-t border-background/20 bg-foreground text-background">
+                  <div className="col-span-12 col-start-1 grid grid-cols-12 border-t border-background/20 bg-[hsl(var(--ink-blue))] text-background">
                     <div className="col-span-4 md:col-span-3" />
                     <div className="col-span-8 flex items-center justify-between px-3 py-1.5 md:col-span-9">
                       <span className="meta text-background/70">← {meta.low}</span>
@@ -664,7 +664,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           </motion.div>
         </div>
 
-        <Reveal className="bg-foreground text-background">
+        <Reveal className="bg-[hsl(var(--ink-blue))] text-background">
           {(() => {
             const activeRec = dynamicRec ?? rec;
             const isDynamic = !!dynamicRec;
