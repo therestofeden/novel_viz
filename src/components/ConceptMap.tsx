@@ -207,7 +207,7 @@ export function ConceptMap({ analysis }: Props) {
           <button
             key={i}
             onClick={action}
-            className="border border-foreground/30 bg-card p-1.5 text-foreground/60 transition-colors hover:bg-primary hover:text-primary-foreground"
+            className="border border-foreground/30 bg-card p-1.5 text-foreground/60 transition-colors hover:bg-foreground/10"
           >
             {icon}
           </button>

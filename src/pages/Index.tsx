@@ -1014,7 +1014,7 @@ const Index = () => {
                 setPreambleText("");
                 setCachedHit(false);
               }}
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
+              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
             >
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
@@ -1042,7 +1042,7 @@ const Index = () => {
             {user && (
               <button
                 onClick={() => setGeminiDialogOpen(true)}
-                className={`meta flex items-center gap-2 border-l border-foreground px-5 py-5 hover:bg-foreground hover:text-background ${geminiKey ? "text-green-600" : "text-muted-foreground"}`}
+                className={`meta flex items-center gap-2 border-l border-foreground px-5 py-5 hover:bg-foreground/10 ${geminiKey ? "text-green-600" : "text-muted-foreground"}`}
                 title={geminiKey ? "Gemini key configured" : "Add your Gemini API key"}
               >
                 <Key className="h-3.5 w-3.5" />
@@ -1198,10 +1198,10 @@ const Index = () => {
                             setSuggestOpen(false);
                             fetchAnalysis(title.trim());
                           }}
-                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground hover:text-background"
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground/10"
                         >
                           <span className="font-serif italic flex-1 truncate">{title.trim()}</span>
-                          <span className="meta text-muted-foreground shrink-0 group-hover:text-background">→ Analyze directly</span>
+                          <span className="meta text-muted-foreground shrink-0">→ Analyze directly</span>
                         </button>
                       </li>
                     </ul>
@@ -1231,7 +1231,7 @@ const Index = () => {
                               "flex w-full items-baseline gap-3 border-b border-foreground/20 px-4 py-3 text-left transition-colors",
                               i === activeIndex
                                 ? "bg-foreground text-background"
-                                : "hover:bg-foreground hover:text-background",
+                                : "hover:bg-foreground/10",
                             )}
                           >
                             <span
@@ -1310,7 +1310,7 @@ const Index = () => {
                         initial="rest"
                         animate="rest"
                         className={cn(
-                          "group relative flex h-full min-h-[120px] w-full flex-col justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-foreground hover:text-background",
+                          "group relative flex h-full min-h-[120px] w-full flex-col justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-foreground/10",
                           (i % 2 !== 1) && "border-r border-foreground md:border-r-0",
                           ((i + 1) % 3 !== 0) && "md:border-r md:border-foreground",
                           i < seedSuggestions.length - 2 && "border-b border-foreground md:border-b-0",
@@ -1320,7 +1320,7 @@ const Index = () => {
                         <motion.span
                           variants={{ rest: { y: 0 }, hover: { y: -2 } }}
                           transition={{ duration: 0.4, ease: ease.out }}
-                          className="font-serif italic text-3xl text-foreground/25 group-hover:text-background/50"
+                          className="font-serif italic text-3xl text-foreground/25 group-hover:text-foreground/40"
                           style={{ letterSpacing: "-0.04em" }}
                         >
                           {String(i + 1).padStart(2, "0")}
@@ -1329,13 +1329,13 @@ const Index = () => {
                           {s}
                           <MustReadBadge
                             title={s}
-                            className="ml-2 inline-block translate-y-[-2px] group-hover:border-background group-hover:bg-background group-hover:text-foreground"
+                            className="ml-2 inline-block translate-y-[-2px]"
                           />
                         </span>
                         <motion.span
                           variants={{ rest: { x: -4, opacity: 0 }, hover: { x: 0, opacity: 1 } }}
                           transition={{ duration: 0.35, ease: ease.out }}
-                          className="meta absolute right-3 top-3 text-background/70"
+                          className="meta absolute right-3 top-3 text-foreground/60"
                         >
                           → Open
                         </motion.span>
@@ -1386,7 +1386,7 @@ const Index = () => {
                       <button
                         type="button"
                         onClick={handleRetryLastSearch}
-                        className="meta flex items-center gap-2 border border-foreground px-3 py-1.5 transition-colors hover:bg-foreground hover:text-background"
+                        className="meta flex items-center gap-2 border border-foreground px-3 py-1.5 transition-colors hover:bg-foreground/10"
                       >
                         <RefreshCw className="h-3 w-3" /> Try again
                       </button>
@@ -1567,7 +1567,7 @@ const Index = () => {
                   className={cn(
                     "meta inline-flex items-center gap-2 border border-foreground px-3 py-2 transition-colors",
                     showSpoilers
-                      ? "bg-card hover:bg-foreground hover:text-background"
+                      ? "bg-card hover:bg-foreground/10"
                       : "bg-foreground text-background",
                   )}
                 >
@@ -1614,7 +1614,7 @@ const Index = () => {
                       "meta flex-1 border border-foreground px-2 py-1.5 transition-colors",
                       !showSpoilers && Math.round(progress) === p
                         ? "bg-foreground text-background"
-                        : "bg-card hover:bg-foreground hover:text-background",
+                        : "bg-card hover:bg-foreground/10",
                     )}
                   >
                     {p}

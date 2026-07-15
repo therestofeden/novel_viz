@@ -138,7 +138,7 @@ const Compare = () => {
         <div className="container mx-auto flex items-stretch justify-between">
           <Link
             to="/shelf"
-            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground hover:text-background"
+            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground/10"
           >
             <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
@@ -257,7 +257,7 @@ const SlotPicker = ({ label, shelf, loaded, busy, loading, onPick, onClear, bord
             onClick={() => setOpen((o) => !o)}
             disabled={busy || loading || shelf.length === 0}
             className={cn(
-              "meta flex w-full items-center justify-between border border-foreground bg-background px-3 py-2 text-foreground hover:bg-foreground hover:text-background",
+              "meta flex w-full items-center justify-between border border-foreground bg-background px-3 py-2 text-foreground hover:bg-foreground/10",
               "disabled:cursor-not-allowed disabled:opacity-50",
             )}
           >
@@ -281,7 +281,7 @@ const SlotPicker = ({ label, shelf, loaded, busy, loading, onPick, onClear, bord
                 onPick(s.cache_key);
                 setOpen(false);
               }}
-              className="block w-full border-b border-foreground/20 px-3 py-2 text-left last:border-b-0 hover:bg-foreground hover:text-background"
+              className="block w-full border-b border-foreground/20 px-3 py-2 text-left last:border-b-0 hover:bg-foreground/10"
             >
               <div className="font-serif text-base italic">{s.title}</div>
               <div className="meta mt-0.5 text-muted-foreground">

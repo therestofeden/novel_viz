@@ -8,7 +8,7 @@ const Privacy = () => (
       <div className="container mx-auto flex items-center gap-4 px-4 py-4">
         <Link
           to="/"
-          className="group flex items-center gap-3 border border-foreground px-4 py-2 transition-colors hover:bg-foreground hover:text-background"
+          className="group flex items-center gap-3 border border-foreground px-4 py-2 transition-colors hover:bg-foreground/10"
         >
           <NovelVizLogo size={28} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
           <span className="font-sans text-sm font-bold tracking-tight">NovelViz</span>

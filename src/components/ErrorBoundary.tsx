@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             onClick={this.reset}
-            className="meta flex items-center gap-2 border border-foreground px-4 py-2 transition-colors hover:bg-foreground hover:text-background"
+            className="meta flex items-center gap-2 border border-foreground px-4 py-2 transition-colors hover:bg-foreground/10"
           >
             <RefreshCw className="h-3 w-3" /> Try again
           </button>

@@ -115,7 +115,7 @@ export const GeminiKeyDialog = ({ open, onClose }: Props) => {
             <button
               onClick={handleRemove}
               disabled={saving}
-              className="meta flex-1 border-r border-foreground px-4 py-3 text-sm hover:bg-foreground hover:text-background disabled:opacity-50"
+              className="meta flex-1 border-r border-foreground px-4 py-3 text-sm hover:bg-foreground/10 disabled:opacity-50"
             >
               Remove key
             </button>
@@ -123,7 +123,7 @@ export const GeminiKeyDialog = ({ open, onClose }: Props) => {
           <button
             onClick={onClose}
             disabled={saving}
-            className="meta flex-1 border-r border-foreground px-4 py-3 text-sm hover:bg-foreground hover:text-background disabled:opacity-50"
+            className="meta flex-1 border-r border-foreground px-4 py-3 text-sm hover:bg-foreground/10 disabled:opacity-50"
           >
             Cancel
           </button>

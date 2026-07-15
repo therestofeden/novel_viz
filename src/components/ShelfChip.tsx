@@ -239,7 +239,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         <button
           onClick={addToShelf}
           disabled={busy}
-          className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
+          className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <BookmarkPlus className="h-3 w-3" />}
           {!user ? "Save to shelf" : "Add to shelf"}
@@ -247,7 +247,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         {user && (
           <Link
             to="/shelf"
-            className="meta flex items-center gap-1 border-l border-foreground bg-card px-3 py-2 hover:bg-foreground hover:text-background"
+            className="meta flex items-center gap-1 border-l border-foreground bg-card px-3 py-2 hover:bg-foreground/10"
             aria-label="Open shelf"
           >
             <Library className="h-3 w-3" /> Shelf
@@ -266,9 +266,9 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         title="Click to cycle: want → reading → finished"
         className={cn(
           "meta flex items-center gap-2 px-3 py-2 transition-colors disabled:opacity-50",
-          row.status === "finished" && "bg-primary text-primary-foreground hover:bg-ink-blue hover:text-background",
-          row.status === "reading" && "bg-accent text-accent-foreground hover:bg-foreground hover:text-background",
-          row.status === "want" && "bg-card hover:bg-foreground hover:text-background",
+          row.status === "finished" && "bg-primary text-primary-foreground transition-colors hover:brightness-90",
+          row.status === "reading" && "bg-accent text-accent-foreground hover:bg-foreground/10",
+          row.status === "want" && "bg-card hover:bg-foreground/10",
         )}
       >
         {STATUS_LABEL[row.status]}
@@ -280,7 +280,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
       )}
       <Link
         to="/shelf"
-        className="meta flex items-center gap-1 border-l border-foreground bg-card px-3 py-2 hover:bg-foreground hover:text-background"
+        className="meta flex items-center gap-1 border-l border-foreground bg-card px-3 py-2 hover:bg-foreground/10"
         aria-label="Open shelf"
       >
         <Library className="h-3 w-3" /> Shelf

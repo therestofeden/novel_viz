@@ -177,7 +177,7 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
                 <p className="font-sans text-sm text-foreground">Sign in to keep reading notes for this book.</p>
                 <Link
                   to={`/auth?next=${encodeURIComponent(window.location.pathname + window.location.search)}`}
-                  className="meta mt-2 inline-flex items-center gap-1.5 border border-foreground bg-foreground px-3 py-1.5 text-background hover:bg-ink-blue hover:border-ink-blue"
+                  className="meta mt-2 inline-flex items-center gap-1.5 border border-foreground bg-foreground px-3 py-1.5 text-background transition-colors hover:brightness-90"
                 >
                   <LogIn className="h-3 w-3" /> Sign in
                 </Link>
@@ -201,7 +201,7 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
                 <p className="font-sans text-sm text-foreground">Add this book to your shelf to take notes.</p>
                 <button
                   onClick={addToShelf}
-                  className="meta mt-2 inline-flex items-center gap-1.5 border border-foreground bg-foreground px-3 py-1.5 text-background hover:bg-ink-blue hover:border-ink-blue"
+                  className="meta mt-2 inline-flex items-center gap-1.5 border border-foreground bg-foreground px-3 py-1.5 text-background transition-colors hover:brightness-90"
                 >
                   <Save className="h-3 w-3" /> Add to shelf
                 </button>

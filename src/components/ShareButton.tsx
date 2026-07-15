@@ -77,7 +77,7 @@ export function ShareButton({ title, author, signature, slug, className }: Share
         onClick={handleClick}
         aria-label="Share this book"
         aria-expanded={open}
-        className="meta inline-flex min-h-[44px] items-center gap-2 border border-foreground bg-card px-3 py-2 transition-colors hover:bg-foreground hover:text-background"
+        className="meta inline-flex min-h-[44px] items-center gap-2 border border-foreground bg-card px-3 py-2 transition-colors hover:bg-foreground/10"
       >
         <Share2 className="h-3.5 w-3.5" />
         <span>Share</span>
@@ -106,7 +106,7 @@ export function ShareButton({ title, author, signature, slug, className }: Share
               <div className="flex flex-col">
                 <button
                   onClick={copy}
-                  className="meta flex min-h-[44px] items-center justify-between gap-3 border-b border-foreground/30 px-3 py-2 text-left transition-colors hover:bg-foreground hover:text-background"
+                  className="meta flex min-h-[44px] items-center justify-between gap-3 border-b border-foreground/30 px-3 py-2 text-left transition-colors hover:bg-foreground/10"
                 >
                   <span className="inline-flex items-center gap-2">
                     {copied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
@@ -116,7 +116,7 @@ export function ShareButton({ title, author, signature, slug, className }: Share
                 </button>
                 <button
                   onClick={tweet}
-                  className="meta flex min-h-[44px] items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-foreground hover:text-background"
+                  className="meta flex min-h-[44px] items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-foreground/10"
                 >
                   <span className="inline-flex items-center gap-2">
                     <Twitter className="h-3.5 w-3.5" />

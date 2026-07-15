@@ -78,7 +78,7 @@ export const PinDialog = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={onClose}
-                className="meta border border-foreground px-3 py-2 hover:bg-foreground hover:text-background"
+                className="meta border border-foreground px-3 py-2 hover:bg-foreground/10"
               >
                 Cancel
               </button>

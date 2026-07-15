@@ -462,7 +462,7 @@ export function IdeasTab({ analysis, cacheKey, onReanalyze }: Props) {
         {onReanalyze && (
           <button
             onClick={onReanalyze}
-            className="meta border border-foreground px-5 py-2.5 text-sm transition-colors hover:bg-foreground hover:text-background"
+            className="meta border border-foreground px-5 py-2.5 text-sm transition-colors hover:bg-foreground/10"
           >
             Re-analyze book
           </button>

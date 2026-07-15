@@ -195,8 +195,8 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
   const sizing = size === "md" ? "px-3 py-1.5" : "px-2 py-1";
   const skin =
     variant === "primary"
-      ? "border border-foreground bg-foreground text-background hover:bg-ink-blue hover:border-ink-blue"
-      : "border border-foreground/40 text-foreground hover:bg-foreground hover:text-background";
+      ? "border border-foreground bg-foreground text-background transition-colors hover:brightness-90"
+      : "border border-foreground/40 text-foreground hover:bg-foreground/10";
 
   const hasMultiple = resolved && resolved.options.length > 1;
 
@@ -241,7 +241,7 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-foreground hover:text-background transition-colors group"
+              className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-foreground/10 transition-colors group"
             >
               <span className="flex items-center gap-2">
                 <KindIcon kind={opt.kind} />

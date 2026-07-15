@@ -170,7 +170,7 @@ const BookPage = () => {
           <div className="container mx-auto flex items-stretch justify-between">
             <Link
               to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
+              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
             >
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
@@ -244,7 +244,7 @@ const BookPage = () => {
           <div className="container mx-auto flex items-stretch justify-between">
             <Link
               to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
+              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
             >
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
@@ -274,7 +274,7 @@ const BookPage = () => {
             ) : null}
             <Link
               to="/"
-              className="meta inline-flex items-center gap-2 border border-foreground bg-card px-5 py-3 transition-colors hover:bg-foreground hover:text-background"
+              className="meta inline-flex items-center gap-2 border border-foreground bg-card px-5 py-3 transition-colors hover:bg-foreground/10"
             >
               ← Search another book
             </Link>
@@ -301,7 +301,7 @@ const BookPage = () => {
           <div className="flex items-stretch">
             <Link
               to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
+              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
             >
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
@@ -424,7 +424,7 @@ const BookPage = () => {
                 className={cn(
                   "meta inline-flex items-center gap-2 border border-foreground px-3 py-2 transition-colors",
                   showSpoilers
-                    ? "bg-card hover:bg-foreground hover:text-background"
+                    ? "bg-card hover:bg-foreground/10"
                     : "bg-foreground text-background",
                 )}
               >
@@ -471,7 +471,7 @@ const BookPage = () => {
                     "meta flex-1 border border-foreground px-2 py-1.5 transition-colors",
                     !showSpoilers && Math.round(progress) === p
                       ? "bg-foreground text-background"
-                      : "bg-card hover:bg-foreground hover:text-background",
+                      : "bg-card hover:bg-foreground/10",
                   )}
                 >
                   {p}
