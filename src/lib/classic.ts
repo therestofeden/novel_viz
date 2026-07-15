@@ -23,6 +23,19 @@ import { isMustRead } from "@/lib/must-read";
  * Márquez, Ishiguro, Baldwin) — mirrors the precedent Must Read itself set
  * for Tolstoy/Dostoevsky/Kafka/Woolf/Nabokov. Breadth was favored over
  * depth everywhere else: one entry per author by default.
+ *
+ * 2026-07-15 (daily curation pass): added six titles closing a real gap —
+ * the ancient-epic tradition was Greco-Roman-only (Iliad/Metamorphoses/
+ * Aeneid) with no Mesopotamian, Old English, Persian, or Indian epic
+ * represented. Added Epic of Gilgamesh, Oedipus Rex, Beowulf, The
+ * Shahnameh, The Ramayana (fiction) and The Federalist Papers
+ * (non-fiction, closing a gap in the political-philosophy cluster
+ * alongside Two Treatises/Social Contract/On Liberty/Democracy in
+ * America). All six clear the same Lindy bar as the rest of this list;
+ * none were close calls. Oedipus Rex is arguably Must-Read-caliber given
+ * its influence, but the established precedent (even the Iliad sits in
+ * Classic, not Must Read) argues for calibration consistency here —
+ * flagged for Stefano if he wants to consider a Must Read promotion.
  */
 
 export type ClassicEntry = {
@@ -36,13 +49,18 @@ export type ClassicEntry = {
 
 export const CLASSIC: ClassicEntry[] = [
   // ── Fiction ────────────────────────────────────────────────────────────
+  { title: "Epic of Gilgamesh", author: "Anonymous", why: "The oldest story still being read; a king learns mortality four thousand years before anyone else wrote it down.", aka: ["The Epic of Gilgamesh", "Gilgamesh"] },
   { title: "The Iliad", author: "Homer", why: "War's oldest ledger — rage, glory, and mortality rendered in bronze-age hexameter.", aka: ["Iliad"] },
+  { title: "Oedipus Rex", author: "Sophocles", why: "The riddle-solver undone by his own answer; the template for tragedy, and for the unconscious itself.", aka: ["Oedipus the King", "Oedipus Tyrannus"] },
   { title: "Metamorphoses", author: "Ovid", why: "Every myth Western art keeps repainting, collected and fused into one restless poem." },
   { title: "The Aeneid", author: "Virgil", why: "Empire's founding propaganda, written with enough doubt to survive its own purpose.", aka: ["Aeneid"] },
+  { title: "The Ramayana", author: "Valmiki", why: "Duty, exile, and devotion across an epic that still shapes how a fifth of the world thinks about virtue.", aka: ["Ramayana"] },
+  { title: "The Shahnameh", author: "Ferdowsi", why: "Persia's thousand-year epic of kings and heroes, written to outlast an empire's language — and it did.", aka: ["Shahnameh", "The Book of Kings", "Shahnama"] },
   { title: "One Thousand and One Nights", author: "Anonymous", why: "The story that swallows stories; frame narrative invented as a survival tactic.", aka: ["Arabian Nights", "The Arabian Nights", "1001 Nights"] },
   { title: "The Tale of the Heike", author: "Anonymous", why: "Samurai Japan's fall from grace, chanted for centuries before it was written down." },
   { title: "Journey to the West", author: "Wu Cheng'en", why: "A monk, a monkey, and sixteenth-century China's wildest religious road trip." },
   { title: "Dream of the Red Chamber", author: "Cao Xueqin", why: "Eighteenth-century China's Middlemarch — a family's rise and ruin in four hundred characters.", aka: ["The Story of the Stone"] },
+  { title: "Beowulf", author: "Anonymous", why: "Monsters, mead-halls, and the first great poem in English; heroism weighed against its own mortality." },
   { title: "The Canterbury Tales", author: "Geoffrey Chaucer", why: "English literature's big bang; every voice in a pilgrimage party gets to talk." },
   { title: "The Decameron", author: "Giovanni Boccaccio", why: "A plague quarantine's storytelling marathon; the short story invented out of necessity." },
   { title: "Orlando Furioso", author: "Ludovico Ariosto", why: "Chivalric romance pushed to gleeful, self-aware excess; Renaissance Italy's favorite epic." },
@@ -175,6 +193,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Social Contract", author: "Jean-Jacques Rousseau", why: "'Man is born free, and everywhere he is in chains' — the case for popular sovereignty." },
   { title: "A Vindication of the Rights of Woman", author: "Mary Wollstonecraft", why: "Reason claimed as women's birthright, a century before suffrage was even on the table." },
   { title: "The Wealth of Nations", author: "Adam Smith", why: "The invisible hand, self-interest, and the division of labor — economics as a discipline begins here." },
+  { title: "The Federalist Papers", author: "Alexander Hamilton", why: "Constitutional argument as serial journalism; the owner's manual for a government built to check itself.", aka: ["Federalist Papers", "The Federalist"] },
   { title: "Critique of Pure Reason", author: "Immanuel Kant", why: "The limits of what the mind can know, mapped with exhausting, load-bearing precision." },
   { title: "Phenomenology of Spirit", author: "G.W.F. Hegel", why: "Consciousness's long, dialectical education toward absolute knowing; difficult, and never fully superseded." },
   { title: "On the Genealogy of Morals", author: "Friedrich Nietzsche", why: "Morality itself put under a genealogist's microscope — where 'good' and 'evil' actually came from." },
