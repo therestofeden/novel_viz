@@ -2042,6 +2042,86 @@ const POPULAR_BOOKS = [
   "The Snow Leopard by Peter Matthiessen",
   "In Siberia by Colin Thubron",
   "The Places in Between by Rory Stewart",
+
+  // ── Author-gap-scan round 11 (2026-07-15, daily agent) ──────────────────────
+  // Scanned contemporary literary/Booker-adjacent, Southern Gothic/American
+  // regional, spy-noir-hardboiled crime, business/leadership nonfiction, and
+  // African/Caribbean/postcolonial literature — five categories no prior round
+  // had touched. Scanned 70 names. Most Booker-adjacent heavyweights (Zadie
+  // Smith, McEwan, Julian Barnes, Mantel, Marlon James, Evaristo, Douglas
+  // Stuart, Eleanor Catton, Saunders, Egan, Strout, Patchett, Powers, Doerr,
+  // Kingsolver, Franzen, Tartt) and most African/postcolonial majors (Achebe,
+  // Adichie, Dangarembga, Yaa Gyasi — used as the sanity-check, confirmed
+  // covered via "Ngugi wa Thiong'o" without diacritics, itself already
+  // covered too) and most business staples (Sinek, Duhigg, Chip/Dan Heath,
+  // Cialdini, Ben Horowitz, Jim Collins, Eric Ries, Ray Dalio, Christensen,
+  // Phil Knight, Reid Hoffman) were already covered. Found 25 genuine
+  // zero-hit gaps: Booker-adjacent (Shehan Karunatilaka, Damon Galgut);
+  // Southern Gothic (Flannery O'Connor, Carson McCullers, Eudora Welty,
+  // Larry McMurtry, Barry Hannah, Ron Rash, Robert Penn Warren — "Hannah"
+  // false-positive-checked against already-covered Hannah Arendt/Kristin
+  // Hannah/Hannah Grace, Barry Hannah himself was a real zero); spy-noir
+  // (Len Deighton, Mick Herron, James Ellroy, Elmore Leonard, Walter Mosley,
+  // Chester Himes, Don Winslow, Dennis Lehane — note the task's "Denis"
+  // spelling was a typo, correct is "Dennis Lehane"; le Carré, Greene,
+  // Hammett, Chandler already covered); business (Patrick Lencioni only —
+  // caught two false negatives before concluding gaps: "Peter Drucker" and
+  // "Daniel Pink" bare-surname greps missed existing entries because the
+  // array uses their full middle-initial forms "Peter F. Drucker" and
+  // "Daniel H. Pink", both already covered); African/Caribbean/postcolonial
+  // (Wole Soyinka, Buchi Emecheta, NoViolet Bulawayo, Jamaica Kincaid, Derek
+  // Walcott, Edwidge Danticat, Teju Cole). Added 2 titles per author (50
+  // total).
+  "The Seven Moons of Maali Almeida by Shehan Karunatilaka",
+  "Chinaman: The Legend of Pradeep Mathew by Shehan Karunatilaka",
+  "The Promise by Damon Galgut",
+  "In a Strange Room by Damon Galgut",
+  "Wise Blood by Flannery O'Connor",
+  "A Good Man Is Hard to Find by Flannery O'Connor",
+  "The Heart Is a Lonely Hunter by Carson McCullers",
+  "The Member of the Wedding by Carson McCullers",
+  "The Optimist's Daughter by Eudora Welty",
+  "Delta Wedding by Eudora Welty",
+  "Lonesome Dove by Larry McMurtry",
+  "The Last Picture Show by Larry McMurtry",
+  "Geronimo Rex by Barry Hannah",
+  "Airships by Barry Hannah",
+  "Serena by Ron Rash",
+  "The Cove by Ron Rash",
+  "All the King's Men by Robert Penn Warren",
+  "World Enough and Time by Robert Penn Warren",
+  "The Ipcress File by Len Deighton",
+  "Funeral in Berlin by Len Deighton",
+  "Slow Horses by Mick Herron",
+  "Dead Lions by Mick Herron",
+  "L.A. Confidential by James Ellroy",
+  "The Black Dahlia by James Ellroy",
+  "Get Shorty by Elmore Leonard",
+  "Out of Sight by Elmore Leonard",
+  "Devil in a Blue Dress by Walter Mosley",
+  "A Red Death by Walter Mosley",
+  "A Rage in Harlem by Chester Himes",
+  "Cotton Comes to Harlem by Chester Himes",
+  "The Power of the Dog by Don Winslow",
+  "The Cartel by Don Winslow",
+  "Mystic River by Dennis Lehane",
+  "Gone, Baby, Gone by Dennis Lehane",
+  "The Five Dysfunctions of a Team by Patrick Lencioni",
+  "The Advantage by Patrick Lencioni",
+  "Death and the King's Horseman by Wole Soyinka",
+  "The Man Died: Prison Notes by Wole Soyinka",
+  "The Joys of Motherhood by Buchi Emecheta",
+  "Second-Class Citizen by Buchi Emecheta",
+  "We Need New Names by NoViolet Bulawayo",
+  "Glory by NoViolet Bulawayo",
+  "Annie John by Jamaica Kincaid",
+  "A Small Place by Jamaica Kincaid",
+  "Omeros by Derek Walcott",
+  "Collected Poems 1948-1984 by Derek Walcott",
+  "Breath, Eyes, Memory by Edwidge Danticat",
+  "The Farming of Bones by Edwidge Danticat",
+  "Open City by Teju Cole",
+  "Every Day Is for the Thief by Teju Cole",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
