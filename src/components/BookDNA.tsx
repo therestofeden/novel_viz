@@ -600,7 +600,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             {totalDrift > 0 && (
               <button
                 onClick={() => { setPerturbations({}); setDynamicRec(null); setRecSource(null); }}
-                className="meta border border-foreground bg-card px-3 py-1.5 hover:bg-foreground hover:text-background"
+                className="meta border border-foreground bg-card px-3 py-1.5 hover:bg-foreground/10"
               >
                 ↺ Reset
               </button>
@@ -761,7 +761,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                         title={activeRec.title}
                         author={activeRec.author}
                         size="md"
-                        className="border-background bg-background text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                        className="border-background bg-background text-foreground transition-colors hover:bg-foreground/10"
                       />
                     </div>
                   </motion.div>

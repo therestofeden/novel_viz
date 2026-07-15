@@ -209,11 +209,16 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
       : next === "want" ? null
       : row.started_at;
     const finished_at = next === "finished" ? new Date().toISOString() : null;
+    // A rating only makes sense on a finished book — the DB enforces this
+    // (CHECK constraint + trigger, see 20260715120000 migration) but we
+    // clear it optimistically here too so the UI doesn't show a stale
+    // rating for the instant before the round-trip confirms it.
+    const rating = next === "finished" ? row.rating : null;
     const prev = row;
-    setRow({ ...row, status: next, started_at, finished_at });
+    setRow({ ...row, status: next, started_at, finished_at, rating });
     const { error } = await supabase
       .from("shelf_books")
-      .update({ status: next, started_at, finished_at })
+      .update({ status: next, started_at, finished_at, rating })
       .eq("id", row.id);
     if (error) {
       setRow(prev);
@@ -239,7 +244,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         <button
           onClick={addToShelf}
           disabled={busy}
-          className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
+          className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <BookmarkPlus className="h-3 w-3" />}
           {!user ? "Save to shelf" : "Add to shelf"}
@@ -247,7 +252,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         {user && (
           <Link
             to="/shelf"
-            className="meta flex items-center gap-1 border-l border-foreground bg-card px-3 py-2 hover:bg-foreground hover:text-background"
+            className="meta flex items-center gap-1 border-l border-foreground bg-card px-3 py-2 hover:bg-foreground/10"
             aria-label="Open shelf"
           >
             <Library className="h-3 w-3" /> Shelf
@@ -266,9 +271,9 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         title="Click to cycle: want → reading → finished"
         className={cn(
           "meta flex items-center gap-2 px-3 py-2 transition-colors disabled:opacity-50",
-          row.status === "finished" && "bg-primary text-primary-foreground hover:bg-ink-blue hover:text-background",
-          row.status === "reading" && "bg-accent text-accent-foreground hover:bg-foreground hover:text-background",
-          row.status === "want" && "bg-card hover:bg-foreground hover:text-background",
+          row.status === "finished" && "bg-primary text-primary-foreground transition-colors hover:brightness-90",
+          row.status === "reading" && "bg-accent text-accent-foreground hover:bg-foreground/10",
+          row.status === "want" && "bg-card hover:bg-foreground/10",
         )}
       >
         {STATUS_LABEL[row.status]}
@@ -280,7 +285,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
       )}
       <Link
         to="/shelf"
-        className="meta flex items-center gap-1 border-l border-foreground bg-card px-3 py-2 hover:bg-foreground hover:text-background"
+        className="meta flex items-center gap-1 border-l border-foreground bg-card px-3 py-2 hover:bg-foreground/10"
         aria-label="Open shelf"
       >
         <Library className="h-3 w-3" /> Shelf

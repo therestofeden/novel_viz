@@ -81,7 +81,7 @@ const Auth = () => {
         <div className="container mx-auto flex items-stretch">
           <Link
             to="/"
-            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground hover:text-background"
+            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground/10"
           >
             <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
@@ -136,7 +136,7 @@ const Auth = () => {
               <button
                 onClick={handleGoogle}
                 disabled={oauthLoading || submitting}
-                className="meta flex w-full items-center justify-center gap-3 px-6 py-4 transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
+                className="meta flex w-full items-center justify-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/10 disabled:opacity-50"
               >
                 {oauthLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -214,7 +214,7 @@ const Auth = () => {
                 onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
                 className={cn(
                   "meta inline-flex items-center gap-2 border border-foreground bg-card px-3 py-2",
-                  "hover:bg-foreground hover:text-background",
+                  "hover:bg-foreground/10",
                 )}
               >
                 {mode === "signin" ? "→ Open a new account" : "→ I already have an account"}

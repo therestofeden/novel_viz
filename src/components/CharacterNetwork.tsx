@@ -831,7 +831,7 @@ export const CharacterNetwork = ({
                 setPlaying((p) => !p);
               }}
               aria-label={playing ? "Pause story" : "Play story"}
-              className="inline-flex h-10 w-10 items-center justify-center border border-background/40 transition-colors hover:bg-primary hover:border-primary"
+              className="inline-flex h-10 w-10 items-center justify-center border border-background/40 transition-colors hover:bg-background/10"
             >
               {playing ? (
                 <Pause className="h-4 w-4" />
@@ -920,7 +920,7 @@ function ChromeBtn({
     <button
       onClick={onClick}
       aria-label={ariaLabel}
-      className="inline-flex h-8 w-8 items-center justify-center border border-foreground bg-card text-foreground transition-colors hover:bg-primary hover:text-primary-foreground hover:border-primary"
+      className="inline-flex h-8 w-8 items-center justify-center border border-foreground bg-card text-foreground transition-colors hover:bg-foreground/10"
     >
       {children}
     </button>

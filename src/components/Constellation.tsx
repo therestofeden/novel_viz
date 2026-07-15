@@ -560,7 +560,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
                 "meta inline-flex items-center gap-1.5 border px-2.5 py-1 transition-colors",
                 clusterMode
                   ? "border-foreground bg-foreground text-background"
-                  : "border-foreground bg-background hover:bg-foreground hover:text-background",
+                  : "border-foreground bg-background hover:bg-foreground/10",
               )}
             >
               <Lasso className="h-3 w-3" />
@@ -901,7 +901,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
               <div className="ink-border-t flex justify-end gap-0">
                 <button
                   onClick={() => setPendingMembers(null)}
-                  className="meta border-r border-foreground bg-background px-3 py-2 hover:bg-foreground hover:text-background"
+                  className="meta border-r border-foreground bg-background px-3 py-2 hover:bg-foreground/10"
                 >
                   Cancel
                 </button>

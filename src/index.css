@@ -55,6 +55,14 @@
 
     --ink-blue: 212 40% 13%;           /* #14202e — dark navy, 6° from primary's hue. Hover/invert partner for --primary only; --foreground (warm charcoal) is unchanged everywhere else. */
 
+    /* 2026-07-15: buttons that already REST on solid --primary (Visualize,
+       BookPage's Analyze CTA, PinDialog's Save) can't hover to --ink-blue —
+       at only 40% saturation it reads as gray next to the vivid 63%-sat
+       resting blue, losing "blue-ness" instead of just deepening it.
+       --primary-dark keeps the same 206° hue at higher saturation, just
+       lower lightness — same color, richer, not a hue-and-chroma jump. */
+    --primary-dark: 206 72% 35%;       /* #19629a — same hue as --primary, deeper. 6.45:1 vs white. */
+
     --secondary: 207 40% 90%;
     --secondary-foreground: 22 16% 20%;
 

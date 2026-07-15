@@ -256,7 +256,7 @@ const AntiShelf = () => {
         <div className="container mx-auto flex items-stretch justify-between">
           <Link
             to="/shelf"
-            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground hover:text-background"
+            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground/10"
           >
             <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
@@ -267,7 +267,7 @@ const AntiShelf = () => {
           <div className="flex items-stretch">
             <Link
               to="/compare"
-              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
+              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground/10"
             >
               <ArrowLeftRight className="h-3.5 w-3.5" /> Compare
             </Link>
@@ -276,7 +276,7 @@ const AntiShelf = () => {
                 await signOut();
                 navigate("/");
               }}
-              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
+              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground/10"
             >
               <LogOut className="h-3.5 w-3.5" /> Sign out
             </button>
@@ -342,7 +342,7 @@ const AntiShelf = () => {
             <button
               onClick={() => fetchMode(mode, true)}
               disabled={current.loading || shelfCount === 0}
-              className="meta inline-flex items-center gap-2 border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-50"
+              className="meta inline-flex items-center gap-2 border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3 w-3", current.loading && "animate-spin")} />
               Regenerate
@@ -449,7 +449,7 @@ const AntiShelf = () => {
                           <BuyButton title={rec.title} author={rec.author} variant="ghost" />
                           <Link
                             to={`/?book=${encodeURIComponent(rec.title)}`}
-                            className="meta border border-foreground bg-card px-2 py-1 hover:bg-foreground hover:text-background"
+                            className="meta border border-foreground bg-card px-2 py-1 hover:bg-foreground/10"
                           >
                             → Analyse
                           </Link>
@@ -486,7 +486,7 @@ const AntiShelf = () => {
                             "meta inline-flex items-center gap-1 border px-2 py-1 transition-colors",
                             sig === 1
                               ? "border-primary bg-primary text-primary-foreground"
-                              : "border-foreground/40 hover:border-foreground hover:bg-foreground hover:text-background",
+                              : "border-foreground/40 hover:border-foreground hover:bg-foreground/10",
                           )}
                           aria-label="More like this"
                         >
@@ -498,7 +498,7 @@ const AntiShelf = () => {
                             "meta inline-flex items-center gap-1 border px-2 py-1 transition-colors",
                             sig === -1
                               ? "border-accent bg-accent text-accent-foreground"
-                              : "border-foreground/40 hover:border-foreground hover:bg-foreground hover:text-background",
+                              : "border-foreground/40 hover:border-foreground hover:bg-foreground/10",
                           )}
                           aria-label="Less like this"
                         >

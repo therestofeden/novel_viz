@@ -337,7 +337,7 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
         </div>
         <button
           onClick={startSession}
-          className="meta flex items-center gap-2 border border-foreground bg-card px-5 py-3 transition-colors hover:bg-primary hover:text-primary-foreground"
+          className="meta flex items-center gap-2 border border-foreground bg-card px-5 py-3 transition-colors hover:bg-foreground/10"
         >
           <Sparkles className="h-3.5 w-3.5" />
           Start reflection
@@ -429,7 +429,7 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
               <div className="mt-4 flex items-center gap-3">
                 <button
                   onClick={synthesize}
-                  className="meta flex items-center gap-2 border border-foreground bg-card px-5 py-2.5 transition-colors hover:bg-primary hover:text-primary-foreground"
+                  className="meta flex items-center gap-2 border border-foreground bg-card px-5 py-2.5 transition-colors hover:bg-foreground/10"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Generate my takeaways
@@ -472,7 +472,7 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
               <div className="mt-4 flex items-center gap-3">
                 <button
                   onClick={submitAnswer}
-                  className="meta flex items-center gap-2 border border-foreground bg-card px-5 py-2.5 transition-colors hover:bg-primary hover:text-primary-foreground"
+                  className="meta flex items-center gap-2 border border-foreground bg-card px-5 py-2.5 transition-colors hover:bg-foreground/10"
                 >
                   Continue
                   <ArrowRight className="h-3.5 w-3.5" />

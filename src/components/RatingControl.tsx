@@ -27,8 +27,8 @@ export const RatingControl = ({ value, onChange, disabled, className }: Props) =
           className={cn(
             "meta inline-flex items-baseline gap-1 border px-1.5 py-0.5 transition-colors disabled:opacity-50",
             value === null
-              ? "border-foreground/40 text-foreground/60 hover:border-foreground hover:bg-foreground hover:text-background"
-              : "border-foreground bg-card text-foreground hover:bg-foreground hover:text-background",
+              ? "border-foreground/40 text-foreground/60 hover:border-foreground hover:bg-foreground/10"
+              : "border-foreground bg-card text-foreground hover:bg-foreground/10",
             className,
           )}
         >
@@ -57,7 +57,7 @@ export const RatingControl = ({ value, onChange, disabled, className }: Props) =
               }}
               aria-label={`Rate ${n} out of 10`}
               className={cn(
-                "display-num min-w-[2rem] border-r border-foreground/30 px-1.5 py-2 text-sm transition-colors last:border-r-0 hover:bg-foreground hover:text-background",
+                "display-num min-w-[2rem] border-r border-foreground/30 px-1.5 py-2 text-sm transition-colors last:border-r-0 hover:bg-foreground/10",
                 value === n && "bg-primary text-primary-foreground",
               )}
             >

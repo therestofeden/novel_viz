@@ -88,6 +88,36 @@ export type Database = {
         }
         Relationships: []
       }
+      book_rating_stats: {
+        Row: {
+          author: string
+          avg_rating: number | null
+          cache_key: string
+          rating_counts: Json
+          title: string
+          total_ratings: number
+          updated_at: string
+        }
+        Insert: {
+          author?: string
+          avg_rating?: number | null
+          cache_key: string
+          rating_counts?: Json
+          title?: string
+          total_ratings?: number
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          avg_rating?: number | null
+          cache_key?: string
+          rating_counts?: Json
+          title?: string
+          total_ratings?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       book_takeaways: {
         Row: {
           answers: Json
@@ -166,6 +196,51 @@ export type Database = {
           last_accessed_at?: string
           model?: string | null
           recommendation?: Json
+        }
+        Relationships: []
+      }
+      gemini_daily_spend: {
+        Row: {
+          day: string
+          estimated_cost_usd: number
+          updated_at: string
+        }
+        Insert: {
+          day?: string
+          estimated_cost_usd?: number
+          updated_at?: string
+        }
+        Update: {
+          day?: string
+          estimated_cost_usd?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gemini_model_circuit: {
+        Row: {
+          fails: number
+          last_error: string | null
+          last_status: number | null
+          model: string
+          open_until: string | null
+          updated_at: string
+        }
+        Insert: {
+          fails?: number
+          last_error?: string | null
+          last_status?: number | null
+          model: string
+          open_until?: string | null
+          updated_at?: string
+        }
+        Update: {
+          fails?: number
+          last_error?: string | null
+          last_status?: number | null
+          model?: string
+          open_until?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -671,9 +746,38 @@ export type Database = {
         }
         Returns: number
       }
+      gemini_circuit_check: { Args: { p_model: string }; Returns: boolean }
+      gemini_circuit_record_fail:
+        | {
+            Args: { p_model: string; p_open_ms: number; p_trip_after: number }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_error?: string
+              p_model: string
+              p_open_ms: number
+              p_status?: number
+              p_trip_after: number
+            }
+            Returns: undefined
+          }
+      gemini_circuit_record_success: {
+        Args: { p_model: string }
+        Returns: undefined
+      }
+      gemini_daily_budget_exceeded: {
+        Args: { p_budget: number }
+        Returns: boolean
+      }
+      gemini_record_spend: { Args: { p_cost: number }; Returns: undefined }
       purge_cold_novel_analyses: { Args: never; Returns: number }
       purge_old_rate_limit_events: { Args: never; Returns: number }
       purge_old_search_cache: { Args: never; Returns: number }
+      refresh_book_rating_stats: {
+        Args: { p_cache_key: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

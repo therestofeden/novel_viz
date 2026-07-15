@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeftRight, Loader2, LogOut, Sparkles, Trash2 } from "lucide-react";
 import { NovelVizLogo } from "@/components/NovelVizLogo";
@@ -11,6 +11,7 @@ import Constellation from "@/components/Constellation";
 import { RatingControl } from "@/components/RatingControl";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
+import { RatingDistribution } from "@/components/RatingDistribution";
 
 type ReadingStatus = "want" | "reading" | "finished";
 
@@ -112,6 +113,23 @@ const Shelf = () => {
     navigate(slug ? `/book/${slug}` : `/?book=${encodeURIComponent(title)}`);
   };
 
+  // Personal rating distribution — computed client-side from books already
+  // on the page, no extra round-trip needed. Only "finished" books can carry
+  // a rating (DB-enforced, see 20260715120000 migration) so filtering on
+  // rating !== null is sufficient.
+  const ratingStats = useMemo(() => {
+    const counts = new Array<number>(11).fill(0);
+    let sum = 0;
+    let total = 0;
+    for (const b of books) {
+      if (b.rating === null) continue;
+      counts[b.rating] += 1;
+      sum += b.rating;
+      total += 1;
+    }
+    return { counts, total, avg: total > 0 ? sum / total : null };
+  }, [books]);
+
   const removeBook = async (id: string) => {
     const prev = books;
     const removed = prev.find((b) => b.id === id);
@@ -167,11 +185,16 @@ const Shelf = () => {
       : next === "want" ? null
       : book.started_at;
     const finished_at = next === "finished" ? new Date().toISOString() : null;
+    // A rating only makes sense on a finished book — the DB enforces this
+    // (CHECK constraint + trigger, see 20260715120000 migration) but we
+    // clear it optimistically here too so the UI doesn't show a stale
+    // rating for the instant before the round-trip confirms it.
+    const rating = next === "finished" ? book.rating : null;
     const prev = books;
-    setBooks((bs) => bs.map((b) => (b.id === book.id ? { ...b, status: next, started_at, finished_at } : b)));
+    setBooks((bs) => bs.map((b) => (b.id === book.id ? { ...b, status: next, started_at, finished_at, rating } : b)));
     const { error } = await supabase
       .from("shelf_books")
-      .update({ status: next, started_at, finished_at })
+      .update({ status: next, started_at, finished_at, rating })
       .eq("id", book.id);
     if (error) {
       setBooks(prev);
@@ -212,7 +235,7 @@ const Shelf = () => {
         <div className="container mx-auto flex items-stretch justify-between">
           <Link
             to="/"
-            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground hover:text-background"
+            className="group flex items-center gap-3 border-r border-foreground px-4 py-4 transition-colors hover:bg-foreground/10"
           >
             <NovelVizLogo size={48} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
             <div className="leading-none">
@@ -223,13 +246,13 @@ const Shelf = () => {
           <div className="flex items-stretch">
             <Link
               to="/anti-shelf"
-              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-primary hover:text-primary-foreground"
+              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground/10"
             >
               <Sparkles className="h-3.5 w-3.5" /> Anti-Shelf
             </Link>
             <Link
               to="/compare"
-              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
+              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground/10"
             >
               <ArrowLeftRight className="h-3.5 w-3.5" /> Compare
             </Link>
@@ -238,7 +261,7 @@ const Shelf = () => {
                 await signOut();
                 navigate("/");
               }}
-              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground hover:text-background"
+              className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground/10"
             >
               <LogOut className="h-3.5 w-3.5" /> Sign out
             </button>
@@ -307,6 +330,16 @@ const Shelf = () => {
                 />
               </div>
 
+              {ratingStats.total > 0 && (
+                <RatingDistribution
+                  className="mt-8"
+                  counts={ratingStats.counts}
+                  total={ratingStats.total}
+                  avg={ratingStats.avg}
+                  label="Your ratings"
+                />
+              )}
+
               <div className="meta mt-12 mb-4 flex items-center gap-3 text-muted-foreground">
                 <span className="inline-block h-2 w-2 bg-foreground" />
                 The list
@@ -318,41 +351,41 @@ const Shelf = () => {
                 <div
                   key={b.id}
                   className={cn(
-                    "group grid grid-cols-12 items-baseline gap-4 px-4 py-4 transition-colors hover:bg-ink-blue hover:text-background",
+                    "group grid grid-cols-12 items-baseline gap-4 px-4 py-4 transition-colors hover:bg-foreground/10",
                     i > 0 && "border-t border-foreground/30",
                   )}
                 >
-                  <div className="meta col-span-2 md:col-span-1 text-muted-foreground group-hover:text-background/60">
+                  <div className="meta col-span-2 md:col-span-1 text-muted-foreground">
                     {String(i + 1).padStart(2, "0")}
                   </div>
                   <div className="col-span-10 md:col-span-7">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-serif text-lg italic">{b.title}</span>
-                      <MustReadBadge title={b.title} author={b.author} className="group-hover:border-background group-hover:bg-background group-hover:text-foreground" />
-                      <ClassicBadge title={b.title} author={b.author} className="group-hover:border-background group-hover:bg-background group-hover:text-foreground" />
+                      <MustReadBadge title={b.title} author={b.author} />
+                      <ClassicBadge title={b.title} author={b.author} />
                     </div>
-                    <div className="meta mt-1 flex flex-wrap items-center gap-2 text-muted-foreground group-hover:text-background/70">
+                    <div className="meta mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
                       <span>{b.author && b.author !== "Unknown" ? b.author : "—"}</span>
-                      <span className="text-foreground/30 group-hover:text-background/30">·</span>
+                      <span className="text-foreground/30">·</span>
                       <button
                         onClick={(e) => { e.preventDefault(); cycleStatus(b); }}
                         className={cn(
                           "meta border px-1.5 py-0.5 transition-colors",
-                          b.status === "finished" && "border-primary text-primary group-hover:border-background group-hover:text-background",
-                          b.status === "reading" && "border-accent text-accent group-hover:border-background group-hover:text-background",
-                          b.status === "want" && "border-foreground/40 text-foreground/60 group-hover:border-background/60 group-hover:text-background/60",
+                          b.status === "finished" && "border-primary text-primary",
+                          b.status === "reading" && "border-accent text-accent",
+                          b.status === "want" && "border-foreground/40 text-foreground/60",
                         )}
                         title="Click to cycle status"
                       >
                         {b.status === "finished" ? "✓ Finished" : b.status === "reading" ? "● Reading" : "○ Want to read"}
                       </button>
                       {b.status === "finished" && b.finished_at && (
-                        <span className="text-foreground/40 group-hover:text-background/50">
+                        <span className="text-foreground/40">
                           {new Date(b.finished_at).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
                         </span>
                       )}
                       {b.status === "reading" && b.started_at && (
-                        <span className="text-foreground/40 group-hover:text-background/50">
+                        <span className="text-foreground/40">
                           since {new Date(b.started_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </span>
                       )}
@@ -360,7 +393,6 @@ const Shelf = () => {
                         <RatingControl
                           value={b.rating}
                           onChange={(r) => setRating(b, r)}
-                          className="group-hover:border-background group-hover:text-background"
                         />
                       )}
                     </div>
@@ -372,7 +404,7 @@ const Shelf = () => {
                           ? `/book/${slugByCacheKey.get(b.cache_key)}`
                           : `/?book=${encodeURIComponent(b.title)}`
                       }
-                      className="meta border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-primary hover:text-primary-foreground"
+                      className="meta border border-foreground bg-card px-3 py-1.5 text-foreground hover:bg-foreground/10"
                     >
                       → Open
                     </Link>

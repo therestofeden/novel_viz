@@ -27,6 +27,7 @@ import { ReaderNotes } from "@/components/ReaderNotes";
 import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
+import { RatingDistribution, densifyRatingCounts } from "@/components/RatingDistribution";
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +70,7 @@ const BookPage = () => {
   const [analysis, setAnalysis] = useState<NovelAnalysis | null>(null);
   const [cacheKey, setCacheKey] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [ratingStats, setRatingStats] = useState<{ counts: number[]; total: number; avg: number | null } | null>(null);
 
   // View / spoiler state (mirrors Index)
   const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "ideas" | "chapters" | "takeaways">("timeline");
@@ -132,6 +134,34 @@ const BookPage = () => {
       });
   }, [slug]);
 
+  // Cross-reader rating distribution — read-only public aggregate maintained
+  // server-side (shelf_books is per-user RLS'd, see 20260715120000
+  // migration). Only shown once a book has enough signal to be meaningful
+  // (5+ ratings, per product call — an earlier reveal on 1-2 ratings would
+  // just show a single spike and read as noise, not a distribution).
+  const RATING_STATS_MIN = 5;
+  useEffect(() => {
+    setRatingStats(null);
+    if (!cacheKey) return;
+    let cancelled = false;
+    supabase
+      .from("book_rating_stats")
+      .select("rating_counts, total_ratings, avg_rating")
+      .eq("cache_key", cacheKey)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled || error || !data || data.total_ratings < RATING_STATS_MIN) return;
+        setRatingStats({
+          counts: densifyRatingCounts(data.rating_counts as Record<string, number>),
+          total: data.total_ratings,
+          avg: data.avg_rating,
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheKey]);
+
   const effectiveProgress = showSpoilers ? 100 : progress;
 
   const highlightedCharacterIds = useMemo(() => {
@@ -170,7 +200,7 @@ const BookPage = () => {
           <div className="container mx-auto flex items-stretch justify-between">
             <Link
               to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
+              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
             >
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
@@ -244,7 +274,7 @@ const BookPage = () => {
           <div className="container mx-auto flex items-stretch justify-between">
             <Link
               to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
+              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
             >
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
@@ -267,14 +297,14 @@ const BookPage = () => {
             {titleHint ? (
               <Link
                 to={`/?book=${encodeURIComponent(titleHint)}`}
-                className="meta inline-flex items-center gap-2 border border-foreground bg-primary px-5 py-3 text-primary-foreground transition-colors hover:bg-ink-blue hover:text-background"
+                className="meta inline-flex items-center gap-2 border border-foreground bg-primary px-5 py-3 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white"
               >
                 → Analyze "{titleHint}"
               </Link>
             ) : null}
             <Link
               to="/"
-              className="meta inline-flex items-center gap-2 border border-foreground bg-card px-5 py-3 transition-colors hover:bg-foreground hover:text-background"
+              className="meta inline-flex items-center gap-2 border border-foreground bg-card px-5 py-3 transition-colors hover:bg-foreground/10"
             >
               ← Search another book
             </Link>
@@ -301,7 +331,7 @@ const BookPage = () => {
           <div className="flex items-stretch">
             <Link
               to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground hover:text-background"
+              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
             >
               <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
               <div className="leading-none">
@@ -415,6 +445,17 @@ const BookPage = () => {
           </div>
         </section>
 
+        {ratingStats && (
+          <section className="ink-border-b px-4 py-6 md:px-8">
+            <RatingDistribution
+              counts={ratingStats.counts}
+              total={ratingStats.total}
+              avg={ratingStats.avg}
+              label="Reader ratings"
+            />
+          </section>
+        )}
+
         {/* ===================== SPOILER STRIP — fiction only ===================== */}
         {isFiction(analysis) && (
           <section className="ink-border-b grid grid-cols-12 items-stretch">
@@ -424,7 +465,7 @@ const BookPage = () => {
                 className={cn(
                   "meta inline-flex items-center gap-2 border border-foreground px-3 py-2 transition-colors",
                   showSpoilers
-                    ? "bg-card hover:bg-foreground hover:text-background"
+                    ? "bg-card hover:bg-foreground/10"
                     : "bg-foreground text-background",
                 )}
               >
@@ -471,7 +512,7 @@ const BookPage = () => {
                     "meta flex-1 border border-foreground px-2 py-1.5 transition-colors",
                     !showSpoilers && Math.round(progress) === p
                       ? "bg-foreground text-background"
-                      : "bg-card hover:bg-foreground hover:text-background",
+                      : "bg-card hover:bg-foreground/10",
                   )}
                 >
                   {p}

@@ -78,7 +78,7 @@ export const PinDialog = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={onClose}
-                className="meta border border-foreground px-3 py-2 hover:bg-foreground hover:text-background"
+                className="meta border border-foreground px-3 py-2 hover:bg-foreground/10"
               >
                 Cancel
               </button>
@@ -87,7 +87,7 @@ export const PinDialog = ({
                   await onSave(note.trim());
                   onClose();
                 }}
-                className="meta border border-foreground bg-primary px-4 py-2 text-primary-foreground hover:bg-ink-blue"
+                className="meta border border-foreground bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white"
               >
                 {isPinned ? "Save" : "Pin it"}
               </button>

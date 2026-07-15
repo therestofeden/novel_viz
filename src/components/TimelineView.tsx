@@ -240,14 +240,14 @@ export const TimelineView = ({
         <div className="flex items-center">
           <button
             onClick={() => stepEvent(-1)}
-            className="ink-border border-r-0 bg-card px-2.5 py-1.5 text-foreground hover:bg-foreground hover:text-background"
+            className="ink-border border-r-0 bg-card px-2.5 py-1.5 text-foreground hover:bg-foreground/10"
             aria-label="Previous event"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={() => stepEvent(1)}
-            className="ink-border bg-card px-2.5 py-1.5 text-foreground hover:bg-foreground hover:text-background"
+            className="ink-border bg-card px-2.5 py-1.5 text-foreground hover:bg-foreground/10"
             aria-label="Next event"
           >
             <ChevronRight className="h-3.5 w-3.5" />
@@ -276,7 +276,7 @@ export const TimelineView = ({
             "meta px-3 py-1.5 ink-border border-r-0 transition-colors",
             !activeLane
               ? "bg-foreground text-background"
-              : "bg-card text-foreground hover:bg-foreground hover:text-background",
+              : "bg-card text-foreground hover:bg-foreground/10",
           )}
         >
           All Lanes
@@ -294,7 +294,7 @@ export const TimelineView = ({
                 !isLast && "border-r-0",
                 active
                   ? "bg-foreground text-background"
-                  : "bg-card text-foreground hover:bg-foreground hover:text-background",
+                  : "bg-card text-foreground hover:bg-foreground/10",
               )}
             >
               <span className="h-2 w-2" style={{ backgroundColor: color }} />
@@ -815,7 +815,7 @@ export const TimelineView = ({
                       "inline-flex items-center gap-1.5 ink-border px-2 py-0.5 text-xs transition-colors",
                       isSel
                         ? "bg-foreground text-background"
-                        : "bg-card text-foreground hover:bg-foreground hover:text-background",
+                        : "bg-card text-foreground hover:bg-foreground/10",
                     )}
                   >
                     <span className="h-1.5 w-1.5" style={{ backgroundColor: color }} />
