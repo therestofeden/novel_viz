@@ -1,12 +1,19 @@
 // db-maintenance — nightly cleanup job.
 //
-// Runs the two purge RPCs (search_cache and rate_limit_events) that were
-// previously only invoked opportunistically (1% of requests) from inside
+// Runs the purge RPCs (search_cache, rate_limit_events, novel_analyses) that
+// were previously only invoked opportunistically (1% of requests) from inside
 // search-books. That's unreliable — a heavily-cached table could go weeks
 // without a purge. This function gives GitHub Actions (which already runs
 // keep-warm.yml every 5 minutes, see .github/workflows/) something to call
 // on a nightly schedule instead, working around the fact that pg_cron is
 // not available on this project's Supabase plan tier.
+//
+// 2026-07-15: added purge_cold_novel_analyses. It was defined back in the
+// 005_search_cache_pinned_chars_purge_helpers migration but never actually
+// wired into this job — novel_analyses (the largest cache table, hit_count +
+// last_accessed_at columns exist for exactly this purpose) has been growing
+// unbounded ever since. Same 90-day/hit_count<2 cold-row definition as the
+// function itself; safe to run nightly alongside the other two.
 //
 // Trigger manually:
 //   curl -X POST https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/db-maintenance \
@@ -58,6 +65,13 @@ Deno.serve(async (req) => {
     results.rate_limit_events_deleted = error ? `error: ${error.message}` : (data ?? 0);
   } catch (e) {
     results.rate_limit_events_deleted = `error: ${String(e)}`;
+  }
+
+  try {
+    const { data, error } = await supabase.rpc("purge_cold_novel_analyses");
+    results.novel_analyses_deleted = error ? `error: ${error.message}` : (data ?? 0);
+  } catch (e) {
+    results.novel_analyses_deleted = `error: ${String(e)}`;
   }
 
   console.log(JSON.stringify({ fn: "db-maintenance", ...results }));
