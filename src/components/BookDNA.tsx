@@ -91,8 +91,9 @@ function KineticSpine({ activeIdx }: { activeIdx: number }) {
 /**
  * Book DNA — readable strand of 12 axes.
  *
- * Each axis is a horizontal row with: name, always-visible bar (score plotted
- * as fill from a center spine), draggable square marker, numeric score.
+ * Each axis is a horizontal row with: name, always-visible bar (solid
+ * --primary fill, width alone encodes the 0-100 score), draggable square
+ * marker, numeric score.
  * Drag any marker to register your take; absolute scores autosave per book.
  * A decorative kinetic helix runs in the left gutter as a brand motif.
  */
@@ -420,9 +421,15 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             const isShared = sharedSet.has(id);
             const isDivergent = divergentSet.has(id);
             const isOdd = idx % 2 === 1;
-            const leftPct = Math.min(50, score);
-            const widthPct = Math.abs(score - 50);
-            const laneColor = `hsl(var(--lane-${idx + 1}))`;
+            // 2026-07-16 redesign: bars used to diverge from a center tick
+            // (fill grew left or right of 50, colored per-axis from the
+            // 12-step --lane rainbow ramp). Simplified per design critique
+            // 3i — one color (--primary), one track, width alone encodes
+            // the score as a plain 0-100 left-anchored fill. The marker's
+            // absolute position (below) was already 0-100-based and is
+            // unchanged; only the fill segment's math/color changed.
+            const widthPct = score;
+            const fillColor = "hsl(var(--primary))";
 
             return (
               <div
@@ -485,9 +492,9 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                       isDivergent && "outline outline-1 outline-accent",
                     )}
                     style={{
-                      left: `calc(0.75rem + ((100% - 1.5rem) * ${leftPct / 100}))`,
+                      left: "0.75rem",
                       width: `calc((100% - 1.5rem) * ${widthPct / 100})`,
-                      backgroundColor: laneColor,
+                      backgroundColor: fillColor,
                     }}
                   />
                   <div
@@ -503,8 +510,8 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                     )}
                     style={{
                       left: `calc(0.75rem + ((100% - 1.5rem) * ${score / 100}))`,
-                      backgroundColor: laneColor,
-                      borderColor: laneColor,
+                      backgroundColor: fillColor,
+                      borderColor: fillColor,
                     }}
                     onPointerDown={(e) => {
                       e.stopPropagation();

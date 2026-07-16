@@ -1163,7 +1163,7 @@ const Index = () => {
                       type="submit"
                       strength={10}
                       disabled={loading || !title.trim()}
-                      className="meta flex items-center gap-2 border-l border-foreground bg-primary px-6 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white disabled:opacity-80"
+                      className="meta flex items-center gap-2 border-l border-foreground bg-foreground px-6 text-background transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-80"
                     >
                       {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <>Visualize</>}
                     </MagneticButton>
