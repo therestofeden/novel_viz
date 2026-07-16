@@ -664,14 +664,14 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           </motion.div>
         </div>
 
-        <Reveal className="bg-[hsl(var(--ink-blue))] text-background">
+        <Reveal className="border-t border-foreground bg-card text-foreground">
           {(() => {
             const activeRec = dynamicRec ?? rec;
             const isDynamic = !!dynamicRec;
             return (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-background/30 px-5 py-3">
-                  <div className="meta flex min-w-0 items-center gap-2 text-background/70">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-foreground/20 px-5 py-3">
+                  <div className="meta flex min-w-0 items-center gap-2 text-muted-foreground">
                     {recLoading
                       ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
                       : <Sparkles className="h-3 w-3 shrink-0" />}
@@ -690,21 +690,21 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                       <button
                         onClick={fetchDynamicRec}
                         title="Refresh recommendation"
-                        className="meta text-background/50 hover:text-background transition-colors"
+                        className="meta text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <RefreshCw className="h-3 w-3" />
                       </button>
                     )}
                     <div className="display-num text-2xl">
                       {recLoading ? "—" : Math.round(activeRec.similarity)}
-                      <span className="meta ml-1 text-background/60">% MATCH</span>
+                      <span className="meta ml-1 text-muted-foreground">% MATCH</span>
                     </div>
                   </div>
                 </div>
 
                 {recLoading ? (
                   <div className="flex items-center justify-center px-5 py-12">
-                    <Loader2 className="h-5 w-5 animate-spin text-background/40" />
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
                   <motion.div
@@ -714,10 +714,10 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                     transition={{ duration: 0.35, ease: ease.out }}
                     className="px-5 py-5"
                   >
-                    <div className="meta text-background/60">You'll likely also love</div>
+                    <div className="meta text-muted-foreground">You'll likely also love</div>
                     <div className="mt-2 font-serif text-2xl italic leading-tight md:text-3xl">{activeRec.title}</div>
-                    <div className="meta mt-2 text-background/70">By {activeRec.author}</div>
-                    <p className="mt-4 font-serif text-sm leading-relaxed text-background/90">{activeRec.why}</p>
+                    <div className="meta mt-2 text-muted-foreground">By {activeRec.author}</div>
+                    <p className="mt-4 font-serif text-sm leading-relaxed text-foreground">{activeRec.why}</p>
 
                     <div className="mt-5 grid gap-1.5">
                       {activeRec.shared_axes.length > 0 && (
@@ -761,7 +761,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                         title={activeRec.title}
                         author={activeRec.author}
                         size="md"
-                        className="border-background bg-background text-foreground transition-colors hover:bg-foreground/10"
+                        className="border-foreground bg-primary text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white"
                       />
                     </div>
                   </motion.div>

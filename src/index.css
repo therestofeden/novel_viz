@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 /*
-  NovelViz — "Warm ink" brand system  (#3b312b · #5ba3d9 · #eef4f9)
-  Final brand: The Fan logo, cool blue-white paper, warm ink, sky-blue accent.
+  NovelViz — "Navy ink" brand system  (#0F2B4D · #5ba3d9 · #eef4f9)
+  Final brand: The Fan logo, cool blue-white paper, navy ink, sky-blue accent.
 
   Principles:
-  - Cool blue-tinted paper (#eef4f9), warm ink (#3b312b). Crisp contrast.
+  - Cool blue-tinted paper (#eef4f9), navy ink (#0F2B4D). Crisp contrast.
   - One sky-blue accent (#5ba3d9). Nothing else loud.
   - Hard 1px rules. Zero rounded corners. No soft drop shadows.
   - Oversized numerals as anchor. Tiny uppercase metadata.
@@ -36,24 +36,40 @@
   (hsl(22 16% 16%)): white-on-primary measured 2.77:1 contrast, failing
   WCAG AA (4.5:1) for the small mono "meta" labels used on most primary
   buttons/badges; the new value measures ~5.3:1.
+
+  2026-07-16: retired the warm-charcoal ink entirely. Both --foreground
+  (and every duplicate literal that mirrored it — --border, --input,
+  --card-foreground, --popover-foreground, --secondary-foreground,
+  --seal-foreground, --classic-foreground, --sidebar-foreground,
+  --sidebar-accent-foreground, --sidebar-border) and --ink-blue now share
+  one value: hsl(213 67% 18%) / #0F2B4D, a dark navy only 7° from
+  --primary's hue. This supersedes the July 15 fix rather than sitting
+  alongside it — the whole reason --ink-blue had to exist as a separate
+  variable (charcoal's 176° hue-clash with primary on hover) goes away
+  once the universal ink color is itself blue-hued. --ink-blue is kept as
+  a defined variable, now just an alias of --foreground, so none of its
+  existing hover/invert callsites needed touching. --primary-foreground
+  (warm near-black, used only for AA contrast on filled primary buttons)
+  is intentionally untouched — different purpose, separate contrast math.
+  Scoped to light mode only, per the July 9 precedent (.dark is unused).
 */
 
 @layer base {
   :root {
     --background: 207 48% 96%;         /* #eef4f9 — cool blue-white paper */
-    --foreground: 22 16% 20%;          /* #3b312b — warm ink */
+    --foreground: 213 67% 18%;         /* #0F2B4D — dark navy ink, 7° from primary's hue. Replaces warm charcoal (was 22 16% 20% / #3b312b); see 2026-07-16 note above. */
 
     --card: 0 0% 100%;                 /* clean white card */
-    --card-foreground: 22 16% 20%;
+    --card-foreground: 213 67% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 22 16% 20%;
+    --popover-foreground: 213 67% 18%;
 
     --primary: 206 63% 60%;            /* #5ba3d9 — sky blue accent */
-    --primary-foreground: 22 16% 16%;  /* #2f2722 — warm near-black; ~5.3:1 on primary (was white, 2.77:1, failed AA) */
+    --primary-foreground: 22 16% 16%;  /* #2f2722 — warm near-black; ~5.3:1 on primary (was white, 2.77:1, failed AA). Unchanged — different purpose than the ink color, see 2026-07-16 note. */
     --primary-glow: 206 63% 72%;
 
-    --ink-blue: 212 40% 13%;           /* #14202e — dark navy, 6° from primary's hue. Hover/invert partner for --primary only; --foreground (warm charcoal) is unchanged everywhere else. */
+    --ink-blue: 213 67% 18%;           /* #0F2B4D — now identical to --foreground (2026-07-16 unification). Kept as its own variable so existing hover/invert callsites don't need touching. */
 
     /* 2026-07-15: buttons that already REST on solid --primary (Visualize,
        BookPage's Analyze CTA, PinDialog's Save) can't hover to --ink-blue —
@@ -64,7 +80,7 @@
     --primary-dark: 206 72% 35%;       /* #19629a — same hue as --primary, deeper. 6.45:1 vs white. */
 
     --secondary: 207 40% 90%;
-    --secondary-foreground: 22 16% 20%;
+    --secondary-foreground: 213 67% 18%;
 
     --muted: 207 30% 92%;
     --muted-foreground: 214 18% 40%;
@@ -76,14 +92,14 @@
     --destructive-foreground: 0 0% 100%;
 
     --seal: 42 88% 47%;                /* antique gold — Must Read editorial seal */
-    --seal-foreground: 22 16% 20%;
+    --seal-foreground: 213 67% 18%;
 
     --classic: 210 12% 68%;            /* pewter/silver — Classic marker, one rung below the gold seal */
-    --classic-foreground: 22 16% 20%;
+    --classic-foreground: 213 67% 18%;
 
-    --border: 22 16% 20%;              /* warm ink borders */
+    --border: 213 67% 18%;             /* navy ink borders */
     --border-soft: 207 30% 82%;
-    --input: 22 16% 20%;
+    --input: 213 67% 18%;
     --ring: 206 63% 60%;
 
     --radius: 0px;                     /* SHARP. zero radius. */
@@ -114,12 +130,12 @@
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 207 48% 96%;
-    --sidebar-foreground: 22 16% 20%;
+    --sidebar-foreground: 213 67% 18%;
     --sidebar-primary: 206 63% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 207 30% 90%;
-    --sidebar-accent-foreground: 22 16% 20%;
-    --sidebar-border: 22 16% 20%;
+    --sidebar-accent-foreground: 213 67% 18%;
+    --sidebar-border: 213 67% 18%;
     --sidebar-ring: 206 63% 60%;
   }
 
