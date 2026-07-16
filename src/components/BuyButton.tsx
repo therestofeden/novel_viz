@@ -191,14 +191,27 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
     [title, author, resolved],
   );
 
-  const base = "meta inline-flex items-center gap-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50";
-  const sizing = size === "md" ? "px-3 py-1.5" : "px-2 py-1";
+  // 2026-07-16: this is the app's monetization action (affiliate buy
+  // links) — Stefano wants it visually louder than the rest of the ink/
+  // paper editorial furniture, not just another meta chip. "md" (used for
+  // the single-book hero contexts: BookPage/Index result header, BookDNA
+  // recommendation panel) gets a real button treatment: bigger type,
+  // bolder weight, a hover lift. "sm" (AntiShelf's dense recommendation
+  // list — many cards on screen at once) keeps the compact .meta chip
+  // sizing so a long list doesn't turn into a wall of huge blue buttons,
+  // but still gets a livelier color at rest than the old plain-ink ghost.
+  const base = "inline-flex items-center font-mono uppercase transition-all disabled:cursor-not-allowed disabled:opacity-50";
+  const sizing =
+    size === "md"
+      ? "gap-2 px-4 py-2.5 text-[11px] font-bold tracking-[0.14em]"
+      : "meta gap-1.5 px-2 py-1";
   const skin =
     variant === "primary"
-      ? "border border-foreground bg-foreground text-background transition-colors hover:brightness-90"
-      : "border border-foreground/40 text-foreground hover:bg-foreground/10";
+      ? "border-2 border-foreground bg-primary text-primary-foreground hover:bg-primary-dark hover:text-white hover:-translate-y-[1px]"
+      : "border border-primary text-primary hover:bg-primary hover:text-primary-foreground";
 
   const hasMultiple = resolved && resolved.options.length > 1;
+  const iconSize = size === "md" ? "h-3.5 w-3.5" : "h-3 w-3";
 
   return (
     <div ref={dropdownRef} className="relative inline-block">
@@ -217,15 +230,15 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
         aria-expanded={open}
       >
         {loading ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
+          <Loader2 className={cn(iconSize, "animate-spin")} />
         ) : (
-          <ShoppingBag className="h-3 w-3" />
+          <ShoppingBag className={iconSize} />
         )}
         <span>Find at a shop</span>
         {hasMultiple ? (
-          <ChevronDown className={cn("h-3 w-3 opacity-60 transition-transform", open && "rotate-180")} />
+          <ChevronDown className={cn(iconSize, "opacity-60 transition-transform", open && "rotate-180")} />
         ) : (
-          <ExternalLink className="h-3 w-3 opacity-60" />
+          <ExternalLink className={cn(iconSize, "opacity-60")} />
         )}
       </button>
 
