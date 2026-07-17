@@ -1,120 +1,31 @@
-// search-books — popularity-ranked, Latinized book search
+// search-books — popularity-ranked, Latinized book search (see prior revisions'
+// inline comments in project history for the full changelog; this pass adds
+// 2026-07-13 fixes reported directly by Stefano: author-vs-about-author
+// ranking, covering single-word surnames and multi-word full names, plus a
+// guard against author===title data artifacts falsely triggering the match.)
 //
-// Backend EM notes (this revision):
-// - Server-side search_cache table: same query from any user → ~30ms instead of ~400ms.
-// - Cache key for ✓ Cached badge now matches analyze-novel's buildCacheKey exactly.
-// - Typo tolerance: zero-result fallback retries Open Library with fuzzy operator.
-// - Author-prefix mode: single-word queries also fan out to author= search in parallel.
-// - Structured timing logs so we can spot regressions (ol_fetch / cache / total).
-// - Cache-Control switched to `private` (browser sends Authorization → public was a no-op).
-// - Miss-path rate limiting (2026-07-03): this endpoint was the last of the
-//   high-traffic functions with zero abuse protection — every cache miss hit
-//   Open Library + Google Books directly with no ceiling, so a scripted client
-//   could exhaust free-tier upstream quota or use it as a cost-free enumeration
-//   oracle. Gated to 60 misses/hour/IP via the shared rate_limit_events table;
-//   cache hits (the vast majority of real traffic) are unaffected.
-// - Coverage pass (2026-07-05): primary OL result cap raised 30→40 and GB
-//   maxResults raised 20→30. Both were flagged as fixed caps limiting
-//   per-query candidate depth in the 2026-07-04 pipeline audit but left
-//   untouched then to avoid stacking two unverified changes in one pass.
-//   Both APIs are free/unmetered per-request (no Gemini cost impact) and
-//   already timeout-bounded (3s GB / 5s OL) + run in parallel, so this only
-//   trades a small amount of upstream payload size for a wider ranking pool
-//   on ambiguous/popular queries — e.g. a query matching 35 editions of the
-//   same work previously lost the tail past 30 before ranking ever saw them.
-// - Canonical-title fix (2026-07-06): OL groups every translation/edition of
-//   a classic under one "work" record, and that work's single `title` field
-//   is often the ORIGINAL-LANGUAGE title, not the famous English one. Two
-//   distinct sub-cases, both verified live against real Open Library data:
-//   (1) non-Latin-SCRIPT titles (e.g. the 1063-edition "Odyssey" work is
-//   titled "Ὀδύσσεια", Greek) were hard-dropped by isLatin() before scoring
-//   ever ran, so search fell back on a much weaker stand-alone stub; (2)
-//   Latin-script-but-foreign-LANGUAGE titles (e.g. the 188-edition "Magic
-//   Mountain" work is titled "Der Zauberberg" — German, but plain Latin
-//   letters, so isLatin() actually passed it fine) scored ~0 lexical
-//   relevance against an English query and got buried under near-irrelevant
-//   junk instead of being filtered out. Both need the same underlying data:
-//   OL's search API accepts `editions,editions.title,editions.language` in
-//   the SAME request (no extra round-trip), returning OL's own best-matching
-//   edition title per work. pickDisplayTitle() now picks between the work's
-//   own title and that edition title QUERY-AWARE-ly — whichever scores
-//   higher lexically against what the user typed — rather than blindly
-//   preferring one or the other. This matters: always preferring the
-//   edition title regressed already-correct results (e.g. "War and Peace"'s
-//   real record has a clean own-title match, but its OL edition-title
-//   fallback was a messier "War and Peace (War & Peace)" that scored worse
-//   and got displaced by an inferior candidate) — confirmed via live
-//   A/B testing against 7 classics before landing on the query-aware
-//   version. Verified live end-to-end: "the magic mountain" (previously
-//   invisible), "the odyssey" and "crime and punishment" (previously a much
-//   weaker stand-alone stub) now correctly surface the real, most-published
-//   record at #1, with zero regression on War and Peace, One Hundred Years
-//   of Solitude, The Brothers Karamazov, and Anna Karenina (all already
-//   correct, all unaffected). Deliberately did NOT also add an author-aware
-//   gate to the pre-existing title-only second-pass dedup below — tested
-//   that combination and it flooded results with many near-duplicate
-//   translator editions of the same classic; the query-aware title fix
-//   alone is sufficient, see the comment on that dedup step for detail.
-// - Graceful OL-timeout degradation (2026-07-07, daily backend agent): found
-//   live in production logs — 3 real user searches ("White nights",
-//   "Tolstoy", "The death of ivan") in the prior 24h all hit OL's 5s
-//   AbortSignal timeout and came back as a hard 502 with EMPTY results,
-//   even though Google Books (3s timeout, runs in parallel, already fetched
-//   by the time OL gave up) had usable results sitting right there. The old
-//   code treated `olResult.status === "rejected"` as fatal for the whole
-//   request instead of just falling back to GB-only. Confirmed via
-//   search_cache: none of those 3 queries had ever once produced a cached
-//   row, meaning every attempt failed outright. Fixed: OL rejection now
-//   degrades to `docs = []` (GB items still get merged in below) instead of
-//   returning 502; only a genuine "both upstreams failed" case falls
-//   through to a 200 with an empty result set (a normal empty-search state
-//   the frontend already handles, not an error). This does not change
-//   worst-case latency (Promise.allSettled still waits up to OL's 5s
-//   timeout either way) — it only changes a guaranteed-failure into a
-//   likely-success. Also stopped caching empty result sets under a
-//   query_key (would have poisoned that query for up to 24h with a false
-//   "no results" even after OL recovered).
-// - Author-fanout latency cap (2026-07-08, follow-up to the fuzzy-fallback
-//   fix below): timed the live OL upstream directly for common single-word
-//   queries ("Harry", "Love", "Life") and found latency is highly variable
-//   per-request — anywhere from ~0.6s to ~13s on the SAME query, with no
-//   reliable correlation to result-set size ("the", the broadest possible
-//   query, was consistently the fastest). Because Promise.all() waits for
-//   BOTH the base q= fetch and the author= fanout fetch (see "Author-prefix
-//   mode" above) before returning, the effective wait is the SLOWER of two
-//   independently-variable-latency requests — which is statistically worse
-//   than either alone, even though the author fanout is a supplementary
-//   enrichment (catches "garcia marquez"-style author-name queries) and
-//   rarely changes the outcome for a single common word, since the base
-//   query's own popularity + lexical scoring already surfaces the right
-//   answer (e.g. "Harry" → Harry Potter, 398 editions/1009 ratings, miles
-//   ahead of any other "Harry" match) without it. Gave the author fanout its
-//   own shorter timeout (2500ms, same cap already used for the fuzzy
-//   fallback below) instead of inheriting the base fetch's 5000ms — it's a
-//   best-effort bonus pass, so failing it fast beats making a query that
-//   already has a good base-search answer sit and wait on a slow, lower-value
-//   fetch. Worst-case total latency is unchanged (still bounded by the base
-//   fetch's own 5000ms + the 2500ms chained fuzzy retry = 7500ms), but the
-//   common case — base search finishes quickly while the author fanout tail-
-//   lags — now waits at most 2500ms instead of up to 5000ms for that second
-//   fetch to resolve.
-// - Chained fuzzy-fallback latency cap (2026-07-08, daily backend agent):
-//   found live in edge logs — a real "Harry" search ran 5.38s (right at OL's
-//   5s ceiling), and tracing the code showed the zero-result fuzzy fallback
-//   (added for typo tolerance, see above) is CHAINED after the base+author
-//   OL fetch, not parallel with it, so a query needing the fallback (i.e.
-//   already the worst case — base search found nothing) could burn up to
-//   ~10s of sequential OL time before Google Books even gets merged in.
-//   olFetch() now takes an optional per-call timeoutMs; the fuzzy fallback
-//   uses 2500ms instead of the default 5000ms, capping worst-case OL time to
-//   ~7.5s. Chose to shorten the bonus fallback pass rather than the primary
-//   fetch, since failing fast on a best-effort retry beats making the
-//   already-emptiest searches wait the longest.
+// 2026-07-17 (reported by Stefano: "homer" / "the odissey" never surface
+// The Odyssey):
+//   (1) Canonical author aliases — OL returns classical authors under their
+//       native-script primary name (Homer => "Όμηρος") and the old code took
+//       the FIRST Latin alternative, whose ordering varies per work doc. So
+//       The Iliad resolved to "Homer" (ranked fine) while The Odyssey
+//       resolved to "Homère."/"Homerus" (scored ~nothing for query "homer"
+//       and sank below Homer Hickam titles). Now: prefer the Latin alias that
+//       matches the query, else the shortest clean Latin alias (the canonical
+//       English form in practice).
+//   (2) Typo tolerance in scoring — bounded-edit-distance similarity
+//       ("odissey" ≈ "odyssey", "hoer" ≈ "homer") earns proportional score,
+//       only when there's no literal containment hit, so junk that literally
+//       contains a misspelling can't outrank the real work the user meant.
+//   (3) Fuzzy escalation — the pre-existing OL fuzzy retry only fired when
+//       NOTHING displayable came back, but misspellings get buried under
+//       literal junk matches (comics, product names) that DO come back. If no
+//       candidate looks like a confident hit, do one bounded fuzzy OL pass
+//       and merge before ranking.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
-
-// ---------- Latinization ----------
 
 const CYRILLIC_MAP: Record<string, string> = {
   а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo", ж: "zh", з: "z",
@@ -149,48 +60,51 @@ function transliterate(s: string): string {
 
 function isLatin(s: string): boolean {
   if (!s) return false;
-  const non = s.replace(/[\u0000-\u024F\s.,'"()\-–—&]/g, "");
+  const non = s.replace(/[\u0000-ɏ\s.,'"()\-–—&]/g, "");
   return non.length === 0;
 }
 
-function pickLatinAuthor(primary: string | undefined, alts: string[] | undefined): string {
+// 2026-07-17: query-aware, canonical-leaning alias selection (see header).
+// Primary Latin name always wins (don't second-guess real names). Otherwise,
+// among the Latin alternatives: prefer an exact query match, then a
+// whole-token query match, then a query prefix, then the shortest clean
+// alias — which for classical authors is the canonical English form
+// ("Homer" over "Homère."/"Homerus"), and also makes the same author resolve
+// to ONE spelling across all their works, so dedup and the author-set boost
+// see them as the same person.
+function pickLatinAuthor(primary: string | undefined, alts: string[] | undefined, query = ""): string {
   if (primary && isLatin(primary)) return primary;
-  if (alts && alts.length > 0) {
-    const latinAlt = alts.find((a) => a && isLatin(a));
-    if (latinAlt) return latinAlt;
+  const latinAlts = (alts ?? []).filter((a) => a && isLatin(a) && a.trim().length >= 3);
+  if (latinAlts.length > 0) {
+    const qn = normalizeForSearch(query);
+    if (qn.length >= 3) {
+      const exact = latinAlts.find((a) => normalizeForSearch(a) === qn);
+      if (exact) return exact;
+      const token = latinAlts.find((a) =>
+        normalizeForSearch(a).split(" ").filter(Boolean).includes(qn)
+      );
+      if (token) return token;
+      const prefix = latinAlts.find((a) => normalizeForSearch(a).startsWith(qn));
+      if (prefix) return prefix;
+    }
+    return latinAlts.reduce(
+      (best, a) => (a.trim().length < best.trim().length ? a : best),
+      latinAlts[0],
+    );
   }
   if (primary) return transliterate(primary);
   return "Unknown";
 }
 
-// A work's own `title` is often the original-language title for classics
-// with many translations (e.g. "Ὀδύσσεια" for the 1063-edition "Odyssey"
-// work) — non-Latin-script titles like that are hard-dropped by isLatin()
-// below before scoring ever runs. But NOT every foreign-language title is
-// non-Latin-script: German ("Der Zauberberg"), French, Spanish etc. use the
-// Latin alphabet and pass isLatin() fine — they just score ~0 relevance
-// against an English query, so they were previously buried under unrelated
-// junk rather than filtered out. Both cases need the same fix: fall back to
-// OL's own best-matching edition title (requested via editions.title in
-// OL_FIELDS) — but only USE that fallback when it's actually more relevant
-// to what the user typed than the work's own title, so a work whose own
-// title is already a clean English match (e.g. "War and Peace") isn't
-// displaced by a messier edition-specific title text (e.g. "War and Peace
-// (War & Peace)") that happens to also be present.
 function pickDisplayTitle(query: string, d: { title?: string; editions?: { docs?: OLEditionDoc[] } }): string | null {
   const ownTitle = d.title && isLatin(d.title) ? d.title : null;
   const editionTitle = d.editions?.docs?.[0]?.title;
   const altTitle = editionTitle && isLatin(editionTitle) ? editionTitle : null;
   if (!ownTitle) return altTitle;
   if (!altTitle || altTitle === ownTitle) return ownTitle;
-  // Compare pure title relevance (author left blank) to decide which text
-  // the user is more likely searching for.
   return lexicalScore(query, altTitle, "") > lexicalScore(query, ownTitle, "") ? altTitle : ownTitle;
 }
 
-// ---------- Cache key (must mirror analyze-novel's buildCacheKey EXACTLY) ----------
-// analyze-novel builds: `${CACHE_VERSION}|${title}||${author}` with both sides lowercased,
-// trimmed, and whitespace-collapsed. Must match analyze-novel's CACHE_VERSION exactly.
 const CACHE_VERSION = "v3";
 function buildAnalysisCacheKey(title: string, author: string): string {
   const t = title.trim().toLowerCase().replace(/\s+/g, " ");
@@ -198,12 +112,10 @@ function buildAnalysisCacheKey(title: string, author: string): string {
   return `${CACHE_VERSION}|${t}||${a}`;
 }
 
-// Server-side search cache key — normalized query string only.
 function buildSearchCacheKey(q: string): string {
   return q.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-// Accent-strip + lowercase for accent-insensitive matching (e.g. "garcia" matches "García").
 function normalizeForSearch(s: string): string {
   return (s ?? "")
     .normalize("NFD")
@@ -262,8 +174,6 @@ function findPrefixMemoryCache(queryKey: string): Ranked[] | null {
   return null;
 }
 
-// ---------- Ranking ----------
-
 interface OLEditionDoc {
   title?: string;
   language?: string[];
@@ -280,10 +190,6 @@ interface OLDoc {
   ia_count?: number;
   has_fulltext?: boolean;
   language?: string[];
-  // OL's own best-matching edition for this work (query/language-aware,
-  // returned in the SAME search request — no extra round-trip). Used as a
-  // fallback display title when the work's own `title` isn't Latin/English.
-  // See "Canonical-title fix" note at the top of this file.
   editions?: { docs?: OLEditionDoc[] };
 }
 
@@ -321,8 +227,63 @@ interface Ranked {
   description?: string;
 }
 
+// --- Typo tolerance (2026-07-17) -------------------------------------------
+// Bounded Levenshtein similarity. maxDist scales with length so short words
+// only tolerate 1 edit ("dune" vs "june" stays out via the 0.78 threshold),
+// while "odissey" → "odyssey" (1 edit / 7 chars = 0.857) and
+// "the odissey" → "the odyssey" (1 / 11 = 0.909) sail through.
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  const la = a.length, lb = b.length;
+  if (la === 0) return lb;
+  if (lb === 0) return la;
+  let prev: number[] = new Array(lb + 1);
+  let curr: number[] = new Array(lb + 1);
+  for (let j = 0; j <= lb; j++) prev[j] = j;
+  for (let i = 1; i <= la; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= lb; j++) {
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[lb];
+}
+
+function fuzzySim(a: string, b: string): number {
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return 0;
+  const maxDist = maxLen <= 5 ? 1 : maxLen <= 10 ? 2 : 3;
+  if (Math.abs(a.length - b.length) > maxDist) return 0;
+  const dist = levenshtein(a, b);
+  if (dist > maxDist) return 0;
+  return 1 - dist / maxLen;
+}
+
+// Best of whole-string and per-token similarity: a single-word query should
+// match one word of a longer title ("odissey" vs "The Odyssey").
+function bestFuzzySim(q: string, s: string): number {
+  let best = fuzzySim(q, s);
+  if (best === 1) return 1;
+  for (const tok of s.split(" ")) {
+    if (tok.length < 4) continue;
+    const sim = fuzzySim(q, tok);
+    if (sim > best) best = sim;
+    if (best === 1) return 1;
+  }
+  return best;
+}
+
+const FUZZY_MIN_SIM = 0.78;
+const FUZZY_TITLE_WEIGHT = 480;
+const FUZZY_AUTHOR_WEIGHT = 360;
+// ----------------------------------------------------------------------------
+
 function lexicalScore(query: string, title: string, author: string): number {
-  // Use accent-stripped normalization so "garcia" matches "García Márquez"
   const q = normalizeForSearch(query);
   const t = normalizeForSearch(title);
   const a = normalizeForSearch(author);
@@ -330,15 +291,19 @@ function lexicalScore(query: string, title: string, author: string): number {
   let score = 0;
 
   if (t === q) score += 500;
-  if (a === q) score += 220;
+
+  const authorTokens = a.split(" ").filter(Boolean);
+  const isAuthorTokenMatch = q.length >= 3 && (a === q || authorTokens.includes(q));
+
+  if (a === q) score += 420;
+  else if (isAuthorTokenMatch) score += 340;
+  else if (a.startsWith(q)) score += 120;
+  else if (a.includes(` ${q}`)) score += 80;
+  else if (a.includes(q)) score += 35;
 
   if (t.startsWith(q)) score += 260;
   else if (t.includes(` ${q}`)) score += 180;
   else if (t.includes(q)) score += 90;
-
-  if (a.startsWith(q)) score += 120;
-  else if (a.includes(` ${q}`)) score += 80;
-  else if (a.includes(q)) score += 35;
 
   const qTokens = q.split(" ").filter(Boolean);
   if (qTokens.length > 1) {
@@ -347,6 +312,21 @@ function lexicalScore(query: string, title: string, author: string): number {
     const titleMatches = qTokens.filter((token) => titleWords.some((w) => w.startsWith(token))).length;
     const authorMatches = qTokens.filter((token) => authorWords.some((w) => w.startsWith(token))).length;
     score += titleMatches * 55 + authorMatches * 20;
+  }
+
+  // Typo tolerance (2026-07-17): near-miss credit, only when there is no
+  // literal containment hit — junk that literally contains the misspelling
+  // keeps its (modest) literal score, while the real, popular work the user
+  // meant gets close-to-exact credit and popularity carries it to the top.
+  if (q.length >= 4) {
+    if (!t.includes(q)) {
+      const sim = bestFuzzySim(q, t);
+      if (sim >= FUZZY_MIN_SIM) score += Math.round(FUZZY_TITLE_WEIGHT * sim);
+    }
+    if (a && !a.includes(q)) {
+      const sim = bestFuzzySim(q, a);
+      if (sim >= FUZZY_MIN_SIM) score += Math.round(FUZZY_AUTHOR_WEIGHT * sim);
+    }
   }
 
   score -= Math.max(0, t.length - q.length) * 0.12;
@@ -369,18 +349,8 @@ function popularityScore(d: OLDoc): number {
 const OL_FIELDS =
   "key,title,author_name,author_alternative_name,first_publish_year,edition_count,ratings_count,ia_count,language,editions,editions.title,editions.language";
 
-// ---------- Rate limiting (miss-path only) ----------
-// search-books is public/unauthenticated and hit on every debounced keystroke,
-// but memory/server cache absorbs the vast majority of that traffic for free.
-// The only real cost — and the only real abuse surface (quota exhaustion on
-// Open Library / Google Books, or using this as a free enumeration oracle) —
-// is the cache-MISS path that reaches out to those upstreams. So unlike the
-// Gemini functions (which rate-limit every call), we only count and gate
-// requests that actually miss the cache, using the same rate_limit_events
-// table + count_recent_events RPC + salted IP hash pattern as takeaways /
-// recommend-anti-shelf / recommend-by-dna, for consistency and easy purging.
 const ROUTE = "search-books-miss";
-const RATE_LIMIT = 60; // cache-miss upstream calls per hour per IP
+const RATE_LIMIT = 60;
 
 async function sha256Hex(input: string): Promise<string> {
   const encoded = new TextEncoder().encode(input);
@@ -406,18 +376,10 @@ async function hashIp(ip: string): Promise<string> {
   return sha256Hex(salt + ip);
 }
 
-// Supplementary author= fanout fetch (see "Author-fanout latency cap" note
-// at the top of this file) gets its own shorter timeout, separate from the
-// base fetch's default 5000ms.
 const AUTHOR_FANOUT_TIMEOUT_MS = 2500;
+const FUZZY_ESCALATION_TIMEOUT_MS = 2500;
 
 async function olFetch(url: string, timeoutMs = 5000): Promise<OLDoc[]> {
-  // Open Library has a long tail of slow/hanging responses (search-books
-  // already runs 2-5s typically). Unlike fetchGoogleBooks (3s timeout) this
-  // call had no bound at all, so a hung OL request could stall the whole
-  // search past whatever timeout the browser/edge runtime enforces — which
-  // surfaces to the client as an aborted/failed fetch instead of a clean,
-  // partial result.
   const res = await fetch(url, {
     headers: { "User-Agent": "novelviz-search/1.1" },
     signal: AbortSignal.timeout(timeoutMs),
@@ -426,8 +388,6 @@ async function olFetch(url: string, timeoutMs = 5000): Promise<OLDoc[]> {
   const json = await res.json();
   return (json?.docs ?? []) as OLDoc[];
 }
-
-// ---------- Handler ----------
 
 Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req);
@@ -449,9 +409,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Cap query length: no real book search term needs more than this, and
-    // upstream (Google Books / Open Library) fetches + cache-key hashing
-    // shouldn't run against an arbitrarily large querystring value.
     const MAX_QUERY_LEN = 200;
     if (qRaw.length > MAX_QUERY_LEN) {
       return new Response(JSON.stringify({ error: `Query too long (max ${MAX_QUERY_LEN} characters)` }), {
@@ -498,8 +455,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // -------- Server cache lookup (cross-user, 24h TTL enforced by purge job) --------
-    // NOTE: no .gte() filter here — it forces a worse index path. TTL handled by purge.
     const cacheT0 = performance.now();
     const { data: cacheRow } = await adminClient
       .from("search_cache")
@@ -508,7 +463,6 @@ Deno.serve(async (req) => {
       .maybeSingle();
     timings.cache_read = Math.round(performance.now() - cacheT0);
 
-    // Treat as fresh only if updated in the last 24h. Otherwise fall through to refetch.
     const isFresh = cacheRow?.last_accessed_at &&
       Date.now() - new Date(cacheRow.last_accessed_at as string).getTime() < 24 * 60 * 60 * 1000;
 
@@ -543,7 +497,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // -------- Cache miss: rate-limit before touching upstream APIs --------
     const ip = getClientIp(req);
     const ipHash = await hashIp(ip);
     try {
@@ -561,34 +514,26 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
         });
       }
-    } catch { /* fail open — don't block legitimate searches if the rate DB is unavailable */ }
+    } catch { /* fail open */ }
 
-    // Log the event fire-and-forget; counter is eventually consistent.
     adminClient
       .from("rate_limit_events")
       .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
       .then(() => {}).catch(() => {});
 
-    // -------- Cache miss: fetch from Open Library (with typo + author-prefix fallbacks) --------
     const olT0 = performance.now();
     const baseUrl =
       `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=40&fields=${OL_FIELDS}`;
 
-    // Fan out to author= search for 1–2 word queries: catches "garcia marquez", "toni morrison", etc.
     const words = q.split(/\s+/).filter(Boolean);
     const isSingleWord = words.length === 1 && q.length >= 3;
-    const looksLikeAuthor = words.length === 2; // 2-word queries are often author names
+    const looksLikeAuthor = words.length === 2;
     const authorUrl = (isSingleWord || looksLikeAuthor)
       ? `https://openlibrary.org/search.json?author=${encodeURIComponent(q)}&limit=20&fields=${OL_FIELDS}`
       : null;
 
-    // Run OpenLibrary fetch logic + Google Books in parallel
     const olFetchPromise = (async (): Promise<OLDoc[]> => {
       const fetches: Promise<OLDoc[]>[] = [olFetch(baseUrl)];
-      // Author fanout is a best-effort enrichment, not the primary result —
-      // cap it below the base fetch's 5000ms so a slow author= response
-      // can't drag out a query the base fetch already answered well. See
-      // "Author-fanout latency cap" note at the top of this file.
       if (authorUrl) {
         fetches.push(
           olFetch(authorUrl, AUTHOR_FANOUT_TIMEOUT_MS).catch(() => {
@@ -600,15 +545,6 @@ Deno.serve(async (req) => {
       const arrays = await Promise.all(fetches);
       let result = arrays.flat();
 
-      // Typo fallback: if base returned nothing usable, retry with fuzzy operator.
-      // This fetch is CHAINED after the base(+author) fetch above, not parallel
-      // with it — so its own timeout adds directly to worst-case latency instead
-      // of overlapping. Found 2026-07-08: at the old 5000ms timeout, a query that
-      // needed this fallback (i.e. the exact case where OL is already returning
-      // nothing useful) could take up to ~10s of OL time alone before Google
-      // Books results even get merged in. Capped to 2500ms — this is a bonus
-      // best-effort pass on top of an already-empty result, so it's worth
-      // failing fast rather than making the worst-searches-of-all wait longest.
       if (result.filter((d) => pickDisplayTitle(q, d) !== null).length === 0) {
         const fuzzyUrl =
           `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`;
@@ -637,7 +573,6 @@ Deno.serve(async (req) => {
     const gbItems: GBItem[] = gbResult.status === "fulfilled" ? gbResult.value : [];
     timings.ol_fetch = Math.round(performance.now() - olT0);
 
-    // Build description map from Google Books (key = "title_lower|author0_lower")
     const descriptionMap = new Map<string, string>();
     for (const item of gbItems) {
       const vi = item.volumeInfo;
@@ -650,17 +585,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // First pass — Latinize, dedupe, score
     const seen = new Set<string>();
     const candidates: Ranked[] = [];
-    for (const d of docs) {
+
+    const addOlCandidate = (d: OLDoc) => {
       const displayTitle = pickDisplayTitle(q, d);
-      if (!displayTitle) continue;
-      const author = pickLatinAuthor(d.author_name?.[0], d.author_alternative_name);
-      // Normalize both sides so minor transliteration/spacing differences don't
-      // produce duplicate candidates (e.g. "Dostoevsky" vs "Dostoyevsky").
+      if (!displayTitle) return;
+      const author = pickLatinAuthor(d.author_name?.[0], d.author_alternative_name, q);
       const dedupKey = `${normalizeForSearch(displayTitle)}::${normalizeForSearch(author)}`;
-      if (seen.has(dedupKey)) continue;
+      if (seen.has(dedupKey)) return;
       seen.add(dedupKey);
       const descKey = `${displayTitle.toLowerCase().trim()}|${author.toLowerCase().trim()}`;
       candidates.push({
@@ -673,9 +606,10 @@ Deno.serve(async (req) => {
         shelfBoost: false,
         description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
       });
-    }
+    };
 
-    // Merge Google Books items that aren't already in OL results
+    for (const d of docs) addOlCandidate(d);
+
     for (const item of gbItems) {
       const vi = item.volumeInfo;
       if (!vi.title || !isLatin(vi.title)) continue;
@@ -696,7 +630,82 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Analysis-cache lookup only. Avoid per-user shelf work on every keystroke.
+    const qNorm = normalizeForSearch(q);
+    const qTokCount = qNorm.split(" ").filter(Boolean).length;
+
+    // Fuzzy escalation (2026-07-17): the fuzzy retry inside olFetchPromise
+    // only fires when literally NOTHING displayable came back — but a
+    // misspelling like "odissey" gets buried under literal junk matches
+    // (comics, product names) that DO come back, so the canonical work the
+    // user meant never even enters the candidate set. If nothing here looks
+    // like a confident hit for the query, do one bounded fuzzy OL pass and
+    // merge through the same pipeline. Cache-miss-only cost, ≤2.5s, and the
+    // merged result set gets cached like any other.
+    const hasConfidentMatch = candidates.some((c) => {
+      const t = normalizeForSearch(c.title);
+      const a = normalizeForSearch(c.author);
+      if (t === qNorm || a === qNorm) return true;
+      if (a.split(" ").filter(Boolean).includes(qNorm)) return true;
+      if (qTokCount > 1 && (t.startsWith(qNorm) || t.includes(` ${qNorm}`))) return true;
+      return false;
+    });
+    if ((qTokCount > 1 || qNorm.length >= 5) && !hasConfidentMatch) {
+      try {
+        const fuzzyDocs = await olFetch(
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`,
+          FUZZY_ESCALATION_TIMEOUT_MS,
+        );
+        timings.fuzzy_escalated = 1;
+        for (const d of fuzzyDocs) addOlCandidate(d);
+      } catch (_e) { /* best-effort */ }
+    }
+
+    // Author-query result-set fix (2026-07-13): a coincidentally same-titled
+    // or same-named book by an UNRELATED author can carry an unusually high
+    // OL popularity score and still out-total an individual work by the real
+    // author. Decidable only at the RESULT-SET level: if the query genuinely
+    // matches an author with real work present among these candidates, boost
+    // that author's own books and knock down any OTHER candidate whose title
+    // matches the query but whose own author has nothing to do with it (the
+    // signature of a book ABOUT, not BY, that person) — exact title match
+    // gets a harder penalty, title merely CONTAINING the query (e.g. a
+    // biography subtitle) gets a softer one. Handles both single-word
+    // surnames ("pirandello", whole-token match) and multi-word full names
+    // ("garcia marquez", substring-of-author-name match). Scoped so it can't
+    // demote a genuinely titled novel like "Ulysses" or "Emma": no author by
+    // that name exists among real results for those queries, so it's a no-op.
+    //
+    // Guard found live while verifying this fix: "The Odyssey World Atlas"
+    // has a data-quality quirk (from OL/GB source data) where its author
+    // field is literally the same text as its own title — a mis-tagged
+    // publisher/product name, not a person. Without excluding that, its
+    // "author" field CONTAINED the query "the odyssey" as a substring, which
+    // falsely satisfied the multi-word author-match branch below and
+    // demoted the real "The Odyssey" by Homer underneath it. Any candidate
+    // whose author string is identical to its own title is excluded from
+    // ever counting as an author match.
+    const isCandidateByMatchedAuthor = (c: Ranked) => {
+      const authorNorm = normalizeForSearch(c.author);
+      const titleNormForGuard = normalizeForSearch(c.title);
+      if (qNorm.length < 3 || authorNorm === titleNormForGuard) return false;
+      if (authorNorm === qNorm) return true;
+      if (qTokCount === 1) {
+        return authorNorm.split(" ").filter(Boolean).includes(qNorm);
+      }
+      return authorNorm.includes(qNorm);
+    };
+    if (candidates.some(isCandidateByMatchedAuthor)) {
+      for (const c of candidates) {
+        if (isCandidateByMatchedAuthor(c)) {
+          c.score += 150;
+          continue;
+        }
+        const titleNorm = normalizeForSearch(c.title);
+        if (titleNorm === qNorm) c.score -= 300;
+        else if (titleNorm.includes(qNorm)) c.score -= 150;
+      }
+    }
+
     const analysisT0 = performance.now();
     const analysisKeys = candidates.map((c) => buildAnalysisCacheKey(c.title, c.author));
     const { data: cachedAnalysisRows } = analysisKeys.length > 0
@@ -707,7 +716,6 @@ Deno.serve(async (req) => {
     const cachedSet = new Set<string>();
     for (const r of (cachedAnalysisRows ?? [])) cachedSet.add(r.cache_key as string);
 
-    // Keep cache boost modest so popularity + lexical relevance still dominate.
     for (const c of candidates) {
       const ck = buildAnalysisCacheKey(c.title, c.author);
       if (cachedSet.has(ck)) {
@@ -721,9 +729,6 @@ Deno.serve(async (req) => {
       return (b.year ?? 0) - (a.year ?? 0);
     });
 
-    // Post-dedup: drop "Unknown" author entries when a real-author result for
-    // the same title already exists. Prevents duplicates like "Pale Fire / —"
-    // alongside "Pale Fire / Vladimir Nabokov".
     const titlesWithRealAuthor = new Set(
       candidates
         .filter((c) => c.author && c.author !== "Unknown")
@@ -733,24 +738,6 @@ Deno.serve(async (req) => {
       (c) => !(c.author === "Unknown" && titlesWithRealAuthor.has(c.title.toLowerCase())),
     );
 
-    // Title-only dedup: same title with different author-name transliterations
-    // (e.g. "Dostoevsky" vs "Dostoyevsky" vs "F.M. Dostoevsky") produces multiple
-    // OL docs for the same work. OL also indexes "The Brothers Karamazov" and
-    // "Brothers Karamazov" as separate works. After sorting by score, keep only
-    // the first (best-scored) entry per normalized, article-stripped title.
-    // (Considered also gating this on author similarity so a coincidentally
-    // same-titled but unrelated book — e.g. an academic monograph literally
-    // titled "The Magic Mountain" — can't accidentally beat the real novel
-    // into "duplicate" status. Verified that's unnecessary in practice: the
-    // query-aware pickDisplayTitle() above already ensures the real, popular
-    // work outscores such a coincidental collision outright, so it naturally
-    // wins this first-come-first-kept dedup without an author check. Adding
-    // one anyway risked flooding results with many near-identical translator
-    // editions of the SAME classic — e.g. eight separate "The Odyssey"
-    // entries by different translators instead of one representative pick —
-    // confirmed live against Odyssey/Crime and Punishment/War and
-    // Peace/Anna Karenina/Brothers Karamazov before reverting to this
-    // simpler, already-proven form.)
     function normalizeTitleForDedup(title: string): string {
       return normalizeForSearch(title).replace(/^(the|a|an)\s+/, "");
     }
@@ -769,10 +756,6 @@ Deno.serve(async (req) => {
 
     setMemoryCache(queryKey, baseResults);
 
-    // Persist to server cache (background). Only write-through when we got a
-    // usable result set — if BOTH upstreams failed/empty, don't cache an
-    // empty array under this query_key, since that would poison future
-    // requests with a false "no results" for up to 24h even after OL recovers.
     if (baseResults.length > 0) {
       const writeCache = adminClient
         .from("search_cache")
@@ -791,7 +774,6 @@ Deno.serve(async (req) => {
 
     const finalResults = baseResults.slice(0, limit);
 
-    // Opportunistic purge (~1% of misses)
     if (Math.random() < 0.01) {
       adminClient.rpc("purge_old_search_cache").then(() => {}).catch(() => {});
     }
@@ -815,4 +797,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
