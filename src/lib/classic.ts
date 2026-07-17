@@ -36,6 +36,51 @@ import { isMustRead } from "@/lib/must-read";
  * its influence, but the established precedent (even the Iliad sits in
  * Classic, not Must Read) argues for calibration consistency here —
  * flagged for Stefano if he wants to consider a Must Read promotion.
+ *
+ * 2026-07-16 (daily curation pass): added six more titles closing three
+ * separate gaps. Fiction: The Mahabharata (companion to the Ramayana added
+ * yesterday — kept distinct from the Bhagavad Gita in Must Read, which is
+ * technically one chapter of it, because the reading experience and genre
+ * are entirely different: epic narrative vs. philosophical dialogue),
+ * Romance of the Three Kingdoms (completes two of China's "Four Great
+ * Classical Novels" already present — Journey to the West, Dream of the
+ * Red Chamber), Njal's Saga (the Old Norse saga tradition had zero
+ * representation), and Dom Casmurro (Lusophone/Brazilian literature had
+ * zero representation — Machado de Assis is Lindy-proven and a direct
+ * influence on the Latin American writers already on this list). Non-
+ * fiction: On the Nature of Things (Lucretius — ancient philosophy/proto-
+ * science, no Epicurean atomism anywhere on either list) and On War
+ * (Clausewitz — military/strategic theory was a total gap; still the
+ * reference point every strategist argues with, not around). All six
+ * clear the Lindy bar with room to spare; none were close calls.
+ *
+ * 2026-07-17 (daily curation pass): seven titles, resolving both gaps
+ * explicitly flagged on 2026-07-16 plus three newly identified ones.
+ * Fiction: Water Margin (Shi Nai'an) — the fourth and last of China's Four
+ * Great Classical Novels, completing the set alongside Journey to the
+ * West, Dream of the Red Chamber, and Romance of the Three Kingdoms;
+ * The Lusiads (Camões) — Portugal's national epic, closing the Iberian
+ * gap in the epic-poetry cluster (Aeneid/Shahnameh/Orlando Furioso);
+ * A House for Mr Biswas (Naipaul) — anglophone Caribbean literature had
+ * only Wide Sargasso Sea's British-canon-adjacent angle; this is the more
+ * distinctly Trinidadian epic, and the book that won Naipaul his Nobel.
+ * Voss (Patrick White) — zero Australian representation on either list;
+ * White's only Nobel for Australia rests substantially on this book.
+ * Non-fiction: The Annals (Tacitus) — completes the trio of essential
+ * ancient historians alongside Herodotus and Thucydides, already present;
+ * The Art of War (Sun Tzu) — the companion to Clausewitz's On War flagged
+ * yesterday, deliberately held back then to respect that run's own
+ * single-digit scarcity rule; The Muqaddimah (Ibn Khaldun) — closes a
+ * total gap in Islamic-world non-fiction (the only prior entry from that
+ * world was One Thousand and One Nights, fiction) with the work Arnold
+ * Toynbee called the greatest of its kind ever produced — sociology and
+ * economic history reasoned out six centuries early. The Muqaddimah's
+ * influence arguably clears the same bar as Democracy in America and The
+ * Wealth of Nations (the Classic/Must Read split on those two comparably
+ * foundational works is already inconsistent) — flagged here, not
+ * promoted, for Stefano to weigh alongside the still-open Oedipus Rex
+ * question from 2026-07-15. All seven clear the Lindy bar with room to
+ * spare; none were close calls.
  */
 
 export type ClassicEntry = {
@@ -55,15 +100,20 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Metamorphoses", author: "Ovid", why: "Every myth Western art keeps repainting, collected and fused into one restless poem." },
   { title: "The Aeneid", author: "Virgil", why: "Empire's founding propaganda, written with enough doubt to survive its own purpose.", aka: ["Aeneid"] },
   { title: "The Ramayana", author: "Valmiki", why: "Duty, exile, and devotion across an epic that still shapes how a fifth of the world thinks about virtue.", aka: ["Ramayana"] },
+  { title: "The Mahabharata", author: "Vyasa", why: "The world's longest epic — a dynastic war swallowing philosophy, myth, and law whole; the Gita is just one chapter of it, kept separate here as its own text.", aka: ["Mahabharata"] },
   { title: "The Shahnameh", author: "Ferdowsi", why: "Persia's thousand-year epic of kings and heroes, written to outlast an empire's language — and it did.", aka: ["Shahnameh", "The Book of Kings", "Shahnama"] },
   { title: "One Thousand and One Nights", author: "Anonymous", why: "The story that swallows stories; frame narrative invented as a survival tactic.", aka: ["Arabian Nights", "The Arabian Nights", "1001 Nights"] },
   { title: "The Tale of the Heike", author: "Anonymous", why: "Samurai Japan's fall from grace, chanted for centuries before it was written down." },
+  { title: "Romance of the Three Kingdoms", author: "Luo Guanzhong", why: "The historical epic every Chinese reader grows up on; strategy and loyalty across a fractured empire.", aka: ["Three Kingdoms"] },
   { title: "Journey to the West", author: "Wu Cheng'en", why: "A monk, a monkey, and sixteenth-century China's wildest religious road trip." },
   { title: "Dream of the Red Chamber", author: "Cao Xueqin", why: "Eighteenth-century China's Middlemarch — a family's rise and ruin in four hundred characters.", aka: ["The Story of the Stone"] },
+  { title: "Water Margin", author: "Shi Nai'an", why: "A hundred and eight outlaws gather at a marsh to become bandit-heroes; the last of China's Four Great Classical Novels, and the rowdiest.", aka: ["Outlaws of the Marsh", "All Men Are Brothers"] },
   { title: "Beowulf", author: "Anonymous", why: "Monsters, mead-halls, and the first great poem in English; heroism weighed against its own mortality." },
+  { title: "Njal's Saga", author: "Anonymous", why: "Iceland's prose masterpiece — blood feud and law codes rendered with a flatness that makes the violence worse.", aka: ["Njals Saga", "The Story of Burnt Njal"] },
   { title: "The Canterbury Tales", author: "Geoffrey Chaucer", why: "English literature's big bang; every voice in a pilgrimage party gets to talk." },
   { title: "The Decameron", author: "Giovanni Boccaccio", why: "A plague quarantine's storytelling marathon; the short story invented out of necessity." },
   { title: "Orlando Furioso", author: "Ludovico Ariosto", why: "Chivalric romance pushed to gleeful, self-aware excess; Renaissance Italy's favorite epic." },
+  { title: "The Lusiads", author: "Luís de Camões", why: "Vasco da Gama's voyage to India, narrated with the old gods still meddling; Portugal's answer to the Aeneid.", aka: ["Os Lusiadas", "Os Lusíadas"] },
   { title: "The Faerie Queene", author: "Edmund Spenser", why: "Allegory built like a cathedral; English verse flexing its full structural range." },
   { title: "Paradise Lost", author: "John Milton", why: "Satan gets the best lines; the fall of man as the first great antihero epic." },
   { title: "The Pilgrim's Progress", author: "John Bunyan", why: "Allegory so plain it became the second-best-selling book in English after the Bible.", aka: ["Pilgrim's Progress"] },
@@ -94,6 +144,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Red Badge of Courage", author: "Stephen Crane", why: "War's interior weather — fear, not glory — written by a man who'd never fought." },
   { title: "Sister Carrie", author: "Theodore Dreiser", why: "American ambition without the moral punishment novels usually demand of it." },
   { title: "The Awakening", author: "Kate Chopin", why: "A woman's self-possession as scandal; the marriage plot refused outright." },
+  { title: "Dom Casmurro", author: "Machado de Assis", why: "An unreliable narrator poisons his own marriage story with jealousy; Brazil's founding modern novel, a century ahead of its methods." },
   { title: "Germinal", author: "Émile Zola", why: "A mining strike as tragedy; naturalism's argument that poverty is a plot, not a flaw." },
   { title: "The Picture of Dorian Gray", author: "Oscar Wilde", why: "Vanity given a body double; aestheticism's most quotable cautionary tale." },
   { title: "Strange Case of Dr Jekyll and Mr Hyde", author: "Robert Louis Stevenson", why: "The divided self, given a formula and a body count.", aka: ["Dr. Jekyll and Mr. Hyde", "The Strange Case of Dr Jekyll and Mr Hyde"] },
@@ -124,8 +175,10 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Invisible Cities", author: "Italo Calvino", why: "Marco Polo describes cities that may not exist; fiction as pure architecture of ideas." },
   { title: "The Name of the Rose", author: "Umberto Eco", why: "A murder mystery inside a medieval monastery, and a treatise on semiotics in disguise." },
   { title: "Independent People", author: "Halldór Laxness", why: "An Icelandic sheep farmer's stubborn, doomed independence; Nobel-caliber bleak comedy." },
+  { title: "Voss", author: "Patrick White", why: "An explorer vanishes into the Australian interior while a woman in Sydney lives the expedition psychically; the novel behind Australia's only Nobel." },
   { title: "Hunger", author: "Knut Hamsun", why: "A starving writer's mind unraveling on the page; modernist interiority before modernism had a name." },
   { title: "Wide Sargasso Sea", author: "Jean Rhys", why: "Jane Eyre's 'madwoman in the attic' given her own voice and her own colonial history." },
+  { title: "A House for Mr Biswas", author: "V.S. Naipaul", why: "One man's lifelong scrap for a house — and a self — of his own; the Trinidadian novel that won Naipaul his Nobel." },
   { title: "The Unbearable Lightness of Being", author: "Milan Kundera", why: "Love and politics under Soviet occupation, filtered through Nietzsche's eternal return." },
   { title: "Austerlitz", author: "W.G. Sebald", why: "Memory, architecture, and the Holocaust's aftershocks, told in single unbroken paragraphs." },
   { title: "Never Let Me Go", author: "Kazuo Ishiguro", why: "A quiet dystopia about acceptance; horror delivered entirely in understatement." },
@@ -182,8 +235,11 @@ export const CLASSIC: ClassicEntry[] = [
   // ── Non-fiction ────────────────────────────────────────────────────────
   { title: "The Histories", author: "Herodotus", why: "The invention of history as inquiry — the 'father of history' asking why, not just what." },
   { title: "The History of the Peloponnesian War", author: "Thucydides", why: "Power politics analyzed without myth or piety; the realist tradition's founding text." },
+  { title: "The Annals", author: "Tacitus", why: "Rome's emperors dissected by a senator who trusted no one's motives, least of all the ones in power; history written as autopsy.", aka: ["Annals", "The Annals of Imperial Rome"] },
+  { title: "The Muqaddimah", author: "Ibn Khaldun", why: "Dynasties rise on group solidarity and collapse on comfort — sociology and economic history reasoned out six centuries early, tucked inside the introduction to a history book.", aka: ["Muqaddimah", "Prolegomena"] },
   { title: "Nicomachean Ethics", author: "Aristotle", why: "Virtue as a habit, not a rule; still the sturdiest framework for a good life." },
   { title: "Symposium", author: "Plato", why: "A drinking party's speeches on love, ascending from bodies to the eternal Forms." },
+  { title: "On the Nature of Things", author: "Lucretius", why: "Atomism, mortality, and a universe without gods running it, argued in verse two thousand years before physics caught up.", aka: ["De Rerum Natura", "The Nature of Things"] },
   { title: "Confessions", author: "Saint Augustine", why: "The first real autobiography; interiority and guilt examined before either had a name.", aka: ["The Confessions"] },
   { title: "The Consolation of Philosophy", author: "Boethius", why: "Written in a prison cell awaiting execution; philosophy's argument against fortune's cruelty." },
   { title: "Discourse on Method", author: "René Descartes", why: "'I think, therefore I am' — modern philosophy's starting gun, in under a hundred pages." },
@@ -197,6 +253,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Critique of Pure Reason", author: "Immanuel Kant", why: "The limits of what the mind can know, mapped with exhausting, load-bearing precision." },
   { title: "Phenomenology of Spirit", author: "G.W.F. Hegel", why: "Consciousness's long, dialectical education toward absolute knowing; difficult, and never fully superseded." },
   { title: "On the Genealogy of Morals", author: "Friedrich Nietzsche", why: "Morality itself put under a genealogist's microscope — where 'good' and 'evil' actually came from." },
+  { title: "The Art of War", author: "Sun Tzu", why: "Twenty-five hundred years old and still the first book handed to anyone learning to think about conflict — military, corporate, or otherwise.", aka: ["Art of War"] },
+  { title: "On War", author: "Carl von Clausewitz", why: "War as 'the continuation of policy by other means' — every strategist since has had to argue with this book, not around it.", aka: ["Vom Kriege"] },
   { title: "The Communist Manifesto", author: "Karl Marx", why: "'A spectre is haunting Europe' — the pamphlet, with Engels, that launched the twentieth century's central argument." },
   { title: "On Liberty", author: "John Stuart Mill", why: "The harm principle, stated once and never bettered; the case for dissent as a public good." },
   { title: "The Interpretation of Dreams", author: "Sigmund Freud", why: "The unconscious given a grammar; whatever you think of the theory, the questions still stand." },
