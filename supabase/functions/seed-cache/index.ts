@@ -2122,6 +2122,81 @@ const POPULAR_BOOKS = [
   "The Farming of Bones by Edwidge Danticat",
   "Open City by Teju Cole",
   "Every Day Is for the Thief by Teju Cole",
+
+  // ── Author-gap-scan round 12 (2026-07-16, daily agent) ─────────────────────
+  // Scanned ancient epic/philosophy, political theory, 19th-century European
+  // and Russian fiction, and world literature (Latin America, Brazil, Egypt,
+  // India, China) against the array — categories the array's "Philosophy /
+  // Classics" and "Literary Fiction – European/International" sections
+  // nominally cover but had real zero-hit gaps in. Machiavelli, Sun Tzu,
+  // Nietzsche, Flaubert, Zola, Borges, García Márquez, Darwin, Jung, Kant,
+  // Dante, Cervantes, Goethe (author), Odyssey, Confucius, Lao Tzu, Marcus
+  // Aurelius, Plutarch, Seneca, Hobbes, Locke, Rousseau, Adam Smith,
+  // Kierkegaard, Schopenhauer, Dostoevsky, and Tolstoy were all confirmed
+  // already covered (checked before adding anything below). Found 39 genuine
+  // zero-hit gaps: ancient/epic (Epic of Gilgamesh, Homer's Iliad specifically
+  // — Odyssey was covered but Iliad wasn't, Sappho, Mahabharata and Ramayana
+  // via R.K. Narayan's standard retellings, Bhagavad Gita); political/economic
+  // philosophy (Lucretius, Clausewitz, Gibbon, Tocqueville, Montesquieu, Ibn
+  // Khaldun, Al-Ghazali, Omar Khayyam, Boccaccio); German (Goethe's Faust
+  // specifically, Schiller, Hegel); 19th-c. European/Russian fiction (Balzac,
+  // Maupassant, Hugo's Les Misérables specifically, Pushkin, Gogol, Turgenev,
+  // Lermontov); world literature (Machado de Assis, Guimarães Rosa, Clarice
+  // Lispector, Vargas Llosa, Cortázar, Naguib Mahfouz, Tagore, Premchand,
+  // R.K. Narayan's own fiction); science/psychology classics (Freud, Newton,
+  // Euclid). Added 1-2 titles per author across 39 authors (54 titles total).
+  "The Epic of Gilgamesh by N.K. Sandars",
+  "The Iliad by Homer",
+  "If Not, Winter: Fragments of Sappho by Sappho",
+  "The Mahabharata by R.K. Narayan",
+  "The Ramayana by R.K. Narayan",
+  "The Bhagavad Gita by Eknath Easwaran",
+  "Romance of the Three Kingdoms by Luo Guanzhong",
+  "Journey to the West by Wu Cheng'en",
+  "Dream of the Red Chamber by Cao Xueqin",
+  "On the Nature of Things by Lucretius",
+  "On War by Carl von Clausewitz",
+  "The Decline and Fall of the Roman Empire by Edward Gibbon",
+  "Democracy in America by Alexis de Tocqueville",
+  "The Spirit of the Laws by Montesquieu",
+  "The Muqaddimah by Ibn Khaldun",
+  "The Alchemy of Happiness by Al-Ghazali",
+  "The Rubaiyat of Omar Khayyam by Omar Khayyam",
+  "The Decameron by Giovanni Boccaccio",
+  "Faust by Johann Wolfgang von Goethe",
+  "Wilhelm Tell by Friedrich Schiller",
+  "Phenomenology of Spirit by G.W.F. Hegel",
+  "Père Goriot by Honoré de Balzac",
+  "Eugénie Grandet by Honoré de Balzac",
+  "Bel-Ami by Guy de Maupassant",
+  "A Life by Guy de Maupassant",
+  "Les Misérables by Victor Hugo",
+  "Eugene Onegin by Alexander Pushkin",
+  "The Captain's Daughter by Alexander Pushkin",
+  "Dead Souls by Nikolai Gogol",
+  "The Overcoat and Other Stories by Nikolai Gogol",
+  "Fathers and Sons by Ivan Turgenev",
+  "First Love by Ivan Turgenev",
+  "A Hero of Our Time by Mikhail Lermontov",
+  "Dom Casmurro by Machado de Assis",
+  "The Posthumous Memoirs of Brás Cubas by Machado de Assis",
+  "The Devil to Pay in the Backlands by João Guimarães Rosa",
+  "The Hour of the Star by Clarice Lispector",
+  "Near to the Wild Heart by Clarice Lispector",
+  "The Feast of the Goat by Mario Vargas Llosa",
+  "Conversation in the Cathedral by Mario Vargas Llosa",
+  "Hopscotch by Julio Cortázar",
+  "Blow-Up and Other Stories by Julio Cortázar",
+  "Palace Walk by Naguib Mahfouz",
+  "Midaq Alley by Naguib Mahfouz",
+  "Gitanjali by Rabindranath Tagore",
+  "The Home and the World by Rabindranath Tagore",
+  "Godaan by Munshi Premchand",
+  "The Guide by R.K. Narayan",
+  "The Interpretation of Dreams by Sigmund Freud",
+  "Civilization and Its Discontents by Sigmund Freud",
+  "The Principia by Isaac Newton",
+  "The Elements by Euclid",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
