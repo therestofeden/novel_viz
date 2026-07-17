@@ -23,6 +23,12 @@
 //       literal junk matches (comics, product names) that DO come back. If no
 //       candidate looks like a confident hit, do one bounded fuzzy OL pass
 //       and merge before ranking.
+//   (4) Canon injection — external APIs cannot spell-correct to canonical
+//       works (OL fuzzy returns junk for "odissey", Google Books returns
+//       nothing), so the query is fuzzy-matched against our own canon
+//       (canon_books table via search_canon RPC: every analyzed book + a
+//       marquee-classics tier) in parallel with the external fetches, and
+//       the intended work is injected as a first-class candidate.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
@@ -225,6 +231,11 @@ interface Ranked {
   cached: boolean;
   shelfBoost: boolean;
   description?: string;
+  // 2026-07-17: set when the candidate matches a canon_books row — canon
+  // works get CANON_BONUS and are exempt from the author-vs-about-author
+  // exact-title penalty (an obscure author literally named "Dune" must not
+  // demote the novel "Dune" by Frank Herbert).
+  canonWork?: boolean;
 }
 
 // --- Typo tolerance (2026-07-17) -------------------------------------------
@@ -265,12 +276,19 @@ function fuzzySim(a: string, b: string): number {
 }
 
 // Best of whole-string and per-token similarity: a single-word query should
-// match one word of a longer title ("odissey" vs "The Odyssey").
+// match one word of a longer title ("odissey" vs "The Odyssey"). Token
+// minimum is 6, not 4 (2026-07-17, found live): short common words are
+// densely packed in 1-edit-distance space — "home" is exactly one deletion
+// from "homer", so querying "homer" was fuzzy-matching "Home Fire" (an
+// unrelated novel) via its title token "home" and outranking Homer's own
+// works. A real author/title fuzzy match (odissey/odyssey, hoer/homer) is
+// caught by the >=6 token floor or the whole-string check; a coincidental
+// short-word collision is not.
 function bestFuzzySim(q: string, s: string): number {
   let best = fuzzySim(q, s);
   if (best === 1) return 1;
   for (const tok of s.split(" ")) {
-    if (tok.length < 4) continue;
+    if (tok.length < 6) continue;
     const sim = fuzzySim(q, tok);
     if (sim > best) best = sim;
     if (best === 1) return 1;
@@ -281,6 +299,24 @@ function bestFuzzySim(q: string, s: string): number {
 const FUZZY_MIN_SIM = 0.78;
 const FUZZY_TITLE_WEIGHT = 480;
 const FUZZY_AUTHOR_WEIGHT = 360;
+
+// Canon injection (2026-07-17): rows from the search_canon RPC (canon_books
+// table — every analyzed book + a marquee-classics tier). A canon hit is the
+// strongest possible signal of what the user meant, worth roughly what a
+// healthy popularityScore would contribute for a famous work.
+type CanonRow = { title: string; author: string; sim: number };
+const CANON_BONUS = 150;
+// Found live (2026-07-17) verifying "hoer" → Homer: CANON_BONUS alone
+// wasn't enough when the query is ALSO a real, if obscure, literal name
+// match — e.g. actual OL authors surnamed "Hoer" get isAuthorTokenMatch's
+// full 340 lexicalScore bonus (a legitimate literal hit, not noise) plus
+// their own real popularityScore, easily clearing 500+. A fuzzy-only canon
+// match (no literal containment at all — "hoer" never literally appears in
+// "Homer") needs a much larger push to reliably surface the canonical work
+// the user almost certainly meant over an unrelated same-surname author's
+// academic papers. Literal canon hits don't need this: lexicalScore's own
+// literal-match branches already dominate, CANON_BONUS alone is plenty.
+const CANON_FUZZY_ONLY_BONUS = 450;
 // ----------------------------------------------------------------------------
 
 function lexicalScore(query: string, title: string, author: string): number {
@@ -557,10 +593,24 @@ Deno.serve(async (req) => {
       return result;
     })();
 
-    const [olResult, gbResult] = await Promise.allSettled([
+    const canonPromise: Promise<CanonRow[]> = adminClient
+      .rpc("search_canon", { p_q: buildSearchCacheKey(q) })
+      .then(({ data, error }: { data: CanonRow[] | null; error: unknown }) => {
+        if (error) throw error;
+        return data ?? [];
+      });
+
+    const [olResult, gbResult, canonResult] = await Promise.allSettled([
       olFetchPromise,
       fetchGoogleBooks(q),
+      canonPromise,
     ]);
+
+    const canonRows: CanonRow[] = canonResult.status === "fulfilled" ? canonResult.value : [];
+    if (canonResult.status === "rejected") {
+      console.error(JSON.stringify({ fn: "search-books", error: "canon_lookup_failed", message: String(canonResult.reason) }));
+      timings.canon_failed = 1;
+    }
 
     let docs: OLDoc[];
     if (olResult.status === "fulfilled") {
@@ -633,6 +683,53 @@ Deno.serve(async (req) => {
     const qNorm = normalizeForSearch(q);
     const qTokCount = qNorm.split(" ").filter(Boolean).length;
 
+    // Canon injection (2026-07-17): external APIs cannot spell-correct to
+    // canonical works ("odissey" gets junk from OL fuzzy and nothing from
+    // Google Books), so inject what the user most plausibly meant from our
+    // own canon. The gate below re-verifies each RPC row with the same
+    // bounded-edit-distance helpers used in scoring, so trigram recall noise
+    // never reaches results. Dedup favors the richer OL/GB doc when the same
+    // work is already present.
+    let canonInjected = false;
+    for (const row of canonRows) {
+      const tNorm = normalizeForSearch(row.title);
+      const aNorm = normalizeForSearch(row.author);
+      const literalHit = tNorm === qNorm || tNorm.includes(qNorm) ||
+        (aNorm.length > 0 && (aNorm === qNorm || aNorm.split(" ").filter(Boolean).includes(qNorm)));
+      const fuzzyHit = qNorm.length >= 4 &&
+        (bestFuzzySim(qNorm, tNorm) >= FUZZY_MIN_SIM ||
+          (aNorm.length > 0 && bestFuzzySim(qNorm, aNorm) >= FUZZY_MIN_SIM));
+      if (!literalHit && !fuzzyHit) continue;
+      canonInjected = true;
+      const bonus = CANON_BONUS + (literalHit ? 0 : CANON_FUZZY_ONLY_BONUS);
+      const dedupKey = `${tNorm}::${aNorm}`;
+      if (seen.has(dedupKey)) {
+        // The work already came in via OL/GB (richer doc wins the slot) —
+        // still mark it as canon and credit it.
+        const existing = candidates.find(
+          (c) => `${normalizeForSearch(c.title)}::${normalizeForSearch(c.author)}` === dedupKey,
+        );
+        if (existing && !existing.canonWork) {
+          existing.canonWork = true;
+          existing.score += bonus;
+        }
+        continue;
+      }
+      seen.add(dedupKey);
+      const descKey = `${row.title.toLowerCase().trim()}|${row.author.toLowerCase().trim()}`;
+      candidates.push({
+        key: `canon:${row.title}|${row.author}`,
+        title: row.title,
+        author: row.author,
+        year: undefined,
+        score: lexicalScore(q, row.title, row.author) + bonus,
+        cached: false,
+        shelfBoost: false,
+        description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
+        canonWork: true,
+      });
+    }
+
     // Fuzzy escalation (2026-07-17): the fuzzy retry inside olFetchPromise
     // only fires when literally NOTHING displayable came back — but a
     // misspelling like "odissey" gets buried under literal junk matches
@@ -649,7 +746,7 @@ Deno.serve(async (req) => {
       if (qTokCount > 1 && (t.startsWith(qNorm) || t.includes(` ${qNorm}`))) return true;
       return false;
     });
-    if ((qTokCount > 1 || qNorm.length >= 5) && !hasConfidentMatch) {
+    if (!canonInjected && (qTokCount > 1 || qNorm.length >= 5) && !hasConfidentMatch) {
       try {
         const fuzzyDocs = await olFetch(
           `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`,
@@ -700,6 +797,7 @@ Deno.serve(async (req) => {
           c.score += 150;
           continue;
         }
+        if (c.canonWork) continue; // canon works are never "about the author" junk
         const titleNorm = normalizeForSearch(c.title);
         if (titleNorm === qNorm) c.score -= 300;
         else if (titleNorm.includes(qNorm)) c.score -= 150;
