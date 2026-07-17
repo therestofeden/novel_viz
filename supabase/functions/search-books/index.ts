@@ -683,6 +683,22 @@ Deno.serve(async (req) => {
     const qNorm = normalizeForSearch(q);
     const qTokCount = qNorm.split(" ").filter(Boolean).length;
 
+    // Compound "Author - Title" queries (2026-07-17, found live: Stefano's
+    // exact phrase "Homer - The odissey" still returned nothing after the
+    // fixes above). Confirmed Open Library's own full-text search returns
+    // ZERO results for a literal "X - Y" query — it doesn't parse the dash
+    // as a separator, so the combined string never matches anything, and
+    // testing qNorm as one whole blob against a canon row's title/author
+    // (both individually much shorter) never hits either. Split on common
+    // "author / title" separators so each side gets tested independently —
+    // "homer" then exact-matches the author, "the odissey" then fuzzy-
+    // matches the title, either one is enough to inject the work.
+    const qSegments = qNorm
+      .split(/\s*[-:,/&]\s*| by /)
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 3);
+    const qCandidates = qSegments.length > 1 ? [qNorm, ...qSegments] : [qNorm];
+
     // Canon injection (2026-07-17): external APIs cannot spell-correct to
     // canonical works ("odissey" gets junk from OL fuzzy and nothing from
     // Google Books), so inject what the user most plausibly meant from our
@@ -694,11 +710,24 @@ Deno.serve(async (req) => {
     for (const row of canonRows) {
       const tNorm = normalizeForSearch(row.title);
       const aNorm = normalizeForSearch(row.author);
-      const literalHit = tNorm === qNorm || tNorm.includes(qNorm) ||
-        (aNorm.length > 0 && (aNorm === qNorm || aNorm.split(" ").filter(Boolean).includes(qNorm)));
-      const fuzzyHit = qNorm.length >= 4 &&
-        (bestFuzzySim(qNorm, tNorm) >= FUZZY_MIN_SIM ||
-          (aNorm.length > 0 && bestFuzzySim(qNorm, aNorm) >= FUZZY_MIN_SIM));
+      let literalHit = false;
+      let fuzzyHit = false;
+      for (const qc of qCandidates) {
+        if (
+          tNorm === qc || tNorm.includes(qc) ||
+          (aNorm.length > 0 && (aNorm === qc || aNorm.split(" ").filter(Boolean).includes(qc)))
+        ) {
+          literalHit = true;
+          break;
+        }
+        if (
+          qc.length >= 4 &&
+          (bestFuzzySim(qc, tNorm) >= FUZZY_MIN_SIM ||
+            (aNorm.length > 0 && bestFuzzySim(qc, aNorm) >= FUZZY_MIN_SIM))
+        ) {
+          fuzzyHit = true;
+        }
+      }
       if (!literalHit && !fuzzyHit) continue;
       canonInjected = true;
       const bonus = CANON_BONUS + (literalHit ? 0 : CANON_FUZZY_ONLY_BONUS);
