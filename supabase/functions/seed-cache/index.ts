@@ -2278,6 +2278,16 @@ const POPULAR_BOOKS = [
   "The Leopard by Giuseppe Tomasi di Lampedusa",
   "Poetics by Aristotle",
   "A Room of One's Own by Virginia Woolf",
+
+  // ── Round 14 (2026-07-19) — closing residual gaps vs. classic.ts/must-read.ts's
+  // same-day additions (King Lear promoted into Must Read; The Tale of Kiều, The
+  // Nine Cloud Dream, and Lazarillo de Tormes added to Classic) — Euclid's Elements
+  // and Newton's Principia, also added to classic.ts today, were already covered
+  // here from round 12 (2026-07-16), so only these four were genuinely missing ──
+  "King Lear by William Shakespeare",
+  "The Tale of Kiều by Nguyễn Du",
+  "The Nine Cloud Dream by Kim Man-jung",
+  "Lazarillo de Tormes by Anonymous",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
