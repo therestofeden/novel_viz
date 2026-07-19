@@ -32,6 +32,24 @@ const VOTE_WINDOW = 100; // moving window size — most-recently-updated readers
 const ROUTE = "dna-consensus";
 const RATE_LIMIT = 30;
 
+// ---------- In-flight deduplication ----------
+// Maps cacheKey → Promise that resolves when that book's consensus recompute
+// finishes. Every dna-consensus call for a given book is fungible (unlike
+// analyze-novel, there's no per-user "refinement" variant to exclude), so any
+// concurrent call for the same book can always safely piggyback on whichever
+// computation is already running instead of starting its own independent
+// (and potentially Gemini-calling) copy. Mirrors analyze-novel's existing
+// cacheKey-scoped dedup — this function just never got the same fix.
+// In-process/per-isolate only: it won't catch two calls that land on
+// genuinely different concurrent isolates, but Supabase reuses warm isolates
+// under light concurrency, and this is the same limitation analyze-novel's
+// own version already accepts. Added 2026-07-19 (daily backend audit) after
+// production logs showed two back-to-back dna-consensus calls for the same
+// book ~71s apart, both cache-miss, both burning a real ~20-30s Gemini call
+// — almost certainly a reader making 2+ rapid axis adjustments, each firing
+// its own recompute before the first one's cache write had landed.
+const inFlight = new Map<string, Promise<void>>();
+
 async function sha256Hex(input: string): Promise<string> {
   const encoded = new TextEncoder().encode(input);
   const hashBuf = await crypto.subtle.digest("SHA-256", encoded);
@@ -103,6 +121,25 @@ Deno.serve(async (req) => {
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
+    // ---------- Dedup: coalesce concurrent recomputes for the same book ----------
+    if (inFlight.has(cacheKey)) {
+      await inFlight.get(cacheKey);
+      const { data: fresh } = await admin
+        .from("book_dna_consensus")
+        .select("consensus, recommendation")
+        .eq("cache_key", cacheKey)
+        .maybeSingle();
+      if (fresh?.recommendation) {
+        console.log(JSON.stringify({ fn: "dna-consensus", outcome: "dedup_hit", cache_key: cacheKey }));
+        return new Response(JSON.stringify({ consensus: fresh.consensus, recommendation: fresh.recommendation }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // The in-flight call didn't leave a usable recommendation (e.g. Gemini
+      // failed with nothing to fall back on) — fall through and compute
+      // independently, exactly as if no dedup had happened at all.
+    }
+
     const ip = getClientIp(req);
     const ipHash = await hashIp(ip);
     const usingServerKey = !(typeof userKey === "string" && userKey.trim());
@@ -117,6 +154,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Register this request as the in-flight owner for this cache key —
+    // covers steps 1-5 below via try/finally, so every exit path (success,
+    // the 404/422 early returns, or an exception caught by the outer
+    // handler) still releases the slot.
+    let resolveInFlight!: () => void;
+    inFlight.set(cacheKey, new Promise<void>((res) => { resolveInFlight = res; }));
+
+    try {
     // ---------- 1. Original (Gemini) axes — the anchor ----------
     const { data: book, error: bookErr } = await admin
       .from("novel_analyses")
@@ -275,6 +320,10 @@ Recommend the single best DNA neighbour from the canon.`;
     return new Response(JSON.stringify({ consensus, recommendation }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+    } finally {
+      resolveInFlight();
+      inFlight.delete(cacheKey);
+    }
   } catch (err) {
     console.error(JSON.stringify({ fn: "dna-consensus", error: err instanceof Error ? err.message : String(err) }));
     return new Response(JSON.stringify({ error: "Temporary server error." }), {
