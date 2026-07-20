@@ -18,10 +18,52 @@ import { normalizeForSearch } from "@/lib/utils";
  *   works dented by the replication crisis (no Thinking, Fast and Slow).
  * - Ratio: fiction-heavy by design — NovelViz is a novel-first product;
  *   the Librarian's usual 2:1 non-fiction ratio is intentionally inverted.
- * - One entry per author except where two works are independently
- *   unmissable (Tolstoy, Dostoevsky, Kafka, Woolf — and Nabokov, by
- *   editor's overrule 2026-07-14: Pale Fire admitted over the Librarian's
- *   one-slot objection; Monte Cristo challenged the same day and held out).
+ * - Per-book merit decides inclusion, not a fixed slot count per author
+ *   (Stefano's explicit direction, 2026-07-19 — see the dated note below;
+ *   supersedes the original "one entry per author, named exceptions only"
+ *   framing this bullet used to state). Multi-entry authors so far:
+ *   Tolstoy, Dostoevsky, Kafka, Woolf, Nabokov (Pale Fire admitted
+ *   2026-07-14 over the Librarian's one-slot objection; Monte Cristo
+ *   challenged the same day and held out), and Shakespeare (King Lear
+ *   added 2026-07-19 alongside Hamlet).
+ *
+ * 2026-07-19 (first amendment since creation): three titles promoted in
+ * from classic.ts, each independently vetted against the "unmissable" bar
+ * rather than added by default — they'd been flagged, not auto-promoted,
+ * across three separate daily curation passes (Oedipus Rex on 07-15, The
+ * Muqaddimah on 07-17, A Doll's House on 07-18), specifically so Stefano
+ * could make the S-tier call himself rather than have the recurring task
+ * make it for him. He reviewed all three together and promoted all of
+ * them. Oedipus Rex (Sophocles) — the founding template for tragedy, and
+ * the direct source of Freud's "Oedipus complex"; an odd gap to leave open
+ * given Poetics, already on this list, uses this exact play as its worked
+ * example of ideal tragic structure. The Muqaddimah (Ibn Khaldun) —
+ * resolves an inconsistency flagged on 07-17: it's at least as foundational
+ * within its own discipline as Democracy in America is within political
+ * science, arguably more so (Ibn Khaldun originates the field six centuries
+ * before anyone attempts it again; Tocqueville extends one that already
+ * exists). A Doll's House (Ibsen) — the founding text of modern drama, and
+ * more Lindy-proven by pure age than two works already here (The Second
+ * Sex, The Selfish Gene); this list had exactly one play (Hamlet) before
+ * this addition.
+ *
+ * Same session: Stefano explicitly rejected a fixed per-author slot count.
+ * His direction — decide per book, on that book's own merit, regardless of
+ * whether its author already has a slot. Applied immediately: added King
+ * Lear (Shakespeare) alongside Hamlet, not because Shakespeare "deserves
+ * two" as a rule, but because Lear clears the bar on its own (many critics
+ * rank it above Hamlet; distinct territory — power, age, family, nature —
+ * rather than a repeat of Hamlet's interiority). The named-exception list
+ * above is now a historical record of past calls, not a gate on future
+ * ones: every future addition to either list should be judged the same
+ * way, on whether that specific book clears the bar, independent of who
+ * else from the same pen is already present.
+ *
+ * Must Read: 67 → 71 (55 fiction + 16 non-fiction). This is above the
+ * ~65-title target stated above — worth knowing the number moved, not just
+ * the mechanism. Scarcity is still the goal; this was a one-time backlog
+ * clearance across three flagged titles plus one explicitly-requested
+ * addition, not a new steady-state pace for this list.
  */
 
 export type MustReadEntry = {
@@ -36,9 +78,11 @@ export type MustReadEntry = {
 export const MUST_READ: MustReadEntry[] = [
   // ── Fiction ────────────────────────────────────────────────────────────
   { title: "The Odyssey", author: "Homer", why: "The template for every journey narrative since; three millennia of proof.", aka: ["Odyssey"] },
+  { title: "Oedipus Rex", author: "Sophocles", why: "The riddle-solver undone by his own answer — tragedy's founding template, and Freud's, too.", aka: ["Oedipus the King", "Oedipus Tyrannus"] },
   { title: "The Tale of Genji", author: "Murasaki Shikibu", why: "The first great novel, a thousand years old and still psychologically modern." },
   { title: "The Divine Comedy", author: "Dante Alighieri", why: "The complete medieval cosmos in verse; Western literature's load-bearing wall.", aka: ["Divine Comedy"] },
   { title: "Hamlet", author: "William Shakespeare", why: "The invention of modern interiority; every ambivalent hero descends from it." },
+  { title: "King Lear", author: "William Shakespeare", why: "A king trades his kingdom for flattery and is left howling in a storm; the bleakest tragedy, and arguably the greatest." },
   { title: "Don Quixote", author: "Miguel de Cervantes", why: "The novel's founding document — and still its funniest critique." },
   { title: "Gulliver's Travels", author: "Jonathan Swift", why: "Satire's high-water mark; misanthropy sharpened to a scientific instrument." },
   { title: "Candide", author: "Voltaire", why: "The Enlightenment laughing at itself; optimism demolished in under 100 pages." },
@@ -53,6 +97,7 @@ export const MUST_READ: MustReadEntry[] = [
   { title: "War and Peace", author: "Leo Tolstoy", why: "The widest lens ever pointed at human life; history from the inside." },
   { title: "Middlemarch", author: "George Eliot", why: "The wisest novel in English; a whole society and its self-deceptions." },
   { title: "Anna Karenina", author: "Leo Tolstoy", why: "The realist novel at maximum power; family, desire, and consequence." },
+  { title: "A Doll's House", author: "Henrik Ibsen", why: "A door slams and the modern stage begins; a wife's exit still the loudest sound in theater.", aka: ["A Doll House"] },
   { title: "The Brothers Karamazov", author: "Fyodor Dostoevsky", why: "The final word on faith, doubt, and inheritance — in every sense." },
   { title: "Adventures of Huckleberry Finn", author: "Mark Twain", why: "American vernacular becomes literature; the river is the moral test.", aka: ["The Adventures of Huckleberry Finn", "Huckleberry Finn"] },
   { title: "Heart of Darkness", author: "Joseph Conrad", why: "Imperialism's black-box recording; a century of argument and counting." },
@@ -93,6 +138,7 @@ export const MUST_READ: MustReadEntry[] = [
   { title: "The Republic", author: "Plato", why: "Justice, education, the cave; the source code of Western philosophy." },
   { title: "Poetics", author: "Aristotle", why: "The first theory of story — still the skeleton under every screenplay." },
   { title: "Meditations", author: "Marcus Aurelius", why: "An emperor's private notes to himself; Stoicism with no audience in mind." },
+  { title: "The Muqaddimah", author: "Ibn Khaldun", why: "Dynasties rise on solidarity and fall on comfort — the clearest theory ever written for why civilizations end.", aka: ["Muqaddimah", "Prolegomena"] },
   { title: "Essays", author: "Michel de Montaigne", why: "The invention of the honest first person; doubt as a method.", aka: ["The Complete Essays", "The Essays"] },
   { title: "The Prince", author: "Niccolò Machiavelli", why: "Power described without flattery for the first time." },
   { title: "On the Origin of Species", author: "Charles Darwin", why: "The most consequential argument ever printed; patient, humble, irreversible.", aka: ["The Origin of Species"] },

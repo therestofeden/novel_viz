@@ -81,6 +81,116 @@ import { isMustRead } from "@/lib/must-read";
  * promoted, for Stefano to weigh alongside the still-open Oedipus Rex
  * question from 2026-07-15. All seven clear the Lindy bar with room to
  * spare; none were close calls.
+ *
+ * 2026-07-18 (daily curation pass): seven titles closing one clean gap —
+ * theater was almost entirely missing from both lists (only Hamlet in Must
+ * Read and Oedipus Rex here represented the entire dramatic form, one play
+ * each from two eras, nothing before, between, or after). Closed it with a
+ * deliberately global sweep rather than a Western-only fix, following the
+ * same instinct that added the Ramayana/Shahnameh/Mahabharata/Muqaddimah
+ * rather than stopping at the Greco-Roman canon: Aeschylus's The Oresteia
+ * (the only complete trilogy to survive Greek tragedy, and the tradition's
+ * other major voice alongside Sophocles), Euripides's Medea (the third of
+ * the "big three," and the most psychologically modern), Aristophanes's
+ * Lysistrata (comedy is a different enough genre from tragedy that the
+ * tragedians don't cover it — Old Comedy's best-preserved survivor),
+ * Kalidasa's Shakuntala (classical Sanskrit drama's masterpiece, ~1,600
+ * years proven, and the play Goethe openly modeled Faust's stage-prologue
+ * on — already sitting a few lines down on this same list), Molière's
+ * Tartuffe (French neoclassical theater, zero prior representation, banned
+ * for five years by the Church), Ibsen's A Doll's House (the birth of
+ * modern realist drama — a century of "problem plays" all argue with this
+ * one first), and Chekhov's The Cherry Orchard (the naturalistic
+ * culmination of the form, tonally distinct from Ibsen's directness). All
+ * seven clear the Lindy bar with room to spare; none were close calls.
+ *
+ * A Doll's House is arguably Must-Read caliber by the same logic that
+ * flagged Oedipus Rex on 2026-07-15 — modern drama's founding text, and
+ * Must Read currently has exactly one play (Hamlet) representing the
+ * entire form. Flagged here, not promoted, alongside the still-open
+ * Oedipus Rex (2026-07-15) and Muqaddimah (2026-07-17) questions, for
+ * Stefano to weigh together whenever he next reviews this list.
+ *
+ * Deferred, not forgotten: Euclid's Elements (pure mathematics has zero
+ * representation in non-fiction despite biology/physics/psychology all
+ * being covered) was identified this round but held back to keep this
+ * pass single-themed around theater; a natural pick for the next run.
+ *
+ * 2026-07-19 (post-review correction, same day as the theater-gap pass):
+ * Stefano reviewed the three pending Must Read promotion flags accumulated
+ * across 2026-07-15/07-17/07-18 (Oedipus Rex, The Muqaddimah, A Doll's
+ * House) and promoted all three himself. Removed from this list
+ * accordingly — they now live in must-read.ts, whose own header carries
+ * the full reasoning. He also set a governing principle for any future
+ * multi-entry-per-author question on either list: decide per book, on
+ * that book's own merit, not by a fixed author quota. Classic count:
+ * 201 → 198 (142 fiction + 56 non-fiction).
+ *
+ * 2026-07-19 (daily curation pass, second of the day): five titles closing
+ * two clean gaps, vetted against moser-the-librarian's Lindy rubric.
+ * Non-fiction: Elements (Euclid) and The Principia (Newton) resolve the
+ * pure-mathematics/classical-physics gap identified and deliberately
+ * deferred on 2026-07-18 — this list had biology (Darwin, Watson),
+ * cosmology (Hawking), and math-adjacent cognitive science (Hofstadter,
+ * Gleick) but nothing from mathematics or physics itself. Placed as a
+ * matched pair on purpose: Newton modeled the Principia's proofs on
+ * Euclid's own geometric method, so the adjacency isn't coincidental.
+ * Fiction: Lazarillo de Tormes (anonymous, 1554) — the picaresque novel's
+ * founding text, and the direct ancestor of the tradition Tom Jones and
+ * Tristram Shandy already represent here; The Tale of Kiều (Nguyễn Du)
+ * and The Nine Cloud Dream (Kim Man-jung) close a real, plain gap —
+ * Vietnam and Korea had zero representation on either list despite Japan
+ * (Genji, Kokoro, Rashomon, Silence, The Makioka Sisters, The Wind-Up
+ * Bird Chronicle) and China (all Four Great Classical Novels) both being
+ * well represented. Kiều is Vietnam's national epic in verse, still
+ * recited from memory by people who otherwise can't read it; The Nine
+ * Cloud Dream is Korea's best-loved classical novel and the first Korean
+ * literary work ever translated into English (1922). All five clear the
+ * Lindy bar with room to spare, and none rise to Must Read's "unmissable"
+ * bar the way Oedipus Rex or A Doll's House did: Elements and the
+ * Principia are towering in historical weight but not books a general
+ * reader sits down and reads cover to cover, and Kiều/The Nine Cloud
+ * Dream/Lazarillo are civilization-defining within their own traditions
+ * the same way Shahnameh and the Ramayana are — exactly the tier those
+ * two already occupy on this list, not a step above it. Classic count:
+ * 198 → 203 (145 fiction + 58 non-fiction).
+ *
+ * 2026-07-20 (daily curation pass): six titles, vetted against
+ * moser-the-librarian's rubric, closing a single clear gap — five
+ * Nobel-laureate-anchored national traditions sat at zero representation
+ * on either list, despite deep existing coverage of Chinese, Japanese,
+ * Indian, Arabic, Greco-Roman, and Scandinavian literature. Fiction: Wole
+ * Soyinka's Death and the King's Horseman (Nigeria, 1986 Nobel) — a
+ * colonial district officer intervenes in a Yoruba ritual suicide he
+ * doesn't understand, extending the theater cluster added 2026-07-18 to
+ * Africa for the first time; Orhan Pamuk's My Name Is Red (Turkey, 2006
+ * Nobel) and S.Y. Agnon's Only Yesterday (Israel, 1966 Nobel) — Turkish
+ * and Hebrew literature both had zero prior representation despite the
+ * Arabic (One Thousand and One Nights, Palace Walk) and Persian
+ * (Shahnameh) traditions being well covered; Ivo Andrić's The Bridge on
+ * the Drina (Yugoslavia, 1961 Nobel) — the Balkans had zero
+ * representation, and this is the single book most credited with
+ * explaining the region to itself; Imre Kertész's Fatelessness (Hungary,
+ * 2002 Nobel) — Hungary had zero representation, and this is the
+ * fictional, teenager's-eye counterpart to If This Is a Man's direct
+ * testimony (Must Read). Non-fiction: Carl Jung's Memories, Dreams,
+ * Reflections — psychology on this list was Freud-only; Jung's
+ * archetypes-and-collective-unconscious tradition is a real fork, not a
+ * footnote, and this autobiography (deliberately distinct in kind from
+ * Freud's own theoretical Interpretation of Dreams) is the accepted way
+ * in. All six facts independently verified via WebSearch (dates, Nobel
+ * years, plot details) rather than trusting recall alone, given this is a
+ * real shipped canon; all six clear the Lindy/A-tier bar with room to
+ * spare — none were close calls.
+ *
+ * The Bridge on the Drina is flagged, not promoted, as a fourth possible
+ * Must Read candidate — same logic as Oedipus Rex/The Muqaddimah/A Doll's
+ * House before Stefano resolved those on 2026-07-19: its claim is
+ * arguably stronger than a typical Classic entry (near-singular status as
+ * the entry point to an entire region's literature, plus real predictive
+ * weight about the 1990s Yugoslav wars), but promoting into the more
+ * sensitive S-tier list stays Stefano's call, not this task's default.
+ * Classic count: 203 → 209 (150 fiction + 59 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -96,25 +206,32 @@ export const CLASSIC: ClassicEntry[] = [
   // ── Fiction ────────────────────────────────────────────────────────────
   { title: "Epic of Gilgamesh", author: "Anonymous", why: "The oldest story still being read; a king learns mortality four thousand years before anyone else wrote it down.", aka: ["The Epic of Gilgamesh", "Gilgamesh"] },
   { title: "The Iliad", author: "Homer", why: "War's oldest ledger — rage, glory, and mortality rendered in bronze-age hexameter.", aka: ["Iliad"] },
-  { title: "Oedipus Rex", author: "Sophocles", why: "The riddle-solver undone by his own answer; the template for tragedy, and for the unconscious itself.", aka: ["Oedipus the King", "Oedipus Tyrannus"] },
+  { title: "The Oresteia", author: "Aeschylus", why: "The only complete trilogy to survive from Greek tragedy — blood vengeance argued all the way to the first courtroom.", aka: ["Oresteia"] },
+  { title: "Medea", author: "Euripides", why: "A wronged wife's revenge pushed past every limit; Greek tragedy's most unsettlingly modern psychology." },
+  { title: "Lysistrata", author: "Aristophanes", why: "The women of Athens end a war by withholding sex; Old Comedy's rowdiest survivor, and still startlingly current." },
   { title: "Metamorphoses", author: "Ovid", why: "Every myth Western art keeps repainting, collected and fused into one restless poem." },
   { title: "The Aeneid", author: "Virgil", why: "Empire's founding propaganda, written with enough doubt to survive its own purpose.", aka: ["Aeneid"] },
   { title: "The Ramayana", author: "Valmiki", why: "Duty, exile, and devotion across an epic that still shapes how a fifth of the world thinks about virtue.", aka: ["Ramayana"] },
   { title: "The Mahabharata", author: "Vyasa", why: "The world's longest epic — a dynastic war swallowing philosophy, myth, and law whole; the Gita is just one chapter of it, kept separate here as its own text.", aka: ["Mahabharata"] },
+  { title: "Shakuntala", author: "Kalidasa", why: "A king forgets the woman he married under a curse, and a ring must remind him; classical Sanskrit drama's masterpiece, and Goethe's confessed obsession.", aka: ["The Recognition of Shakuntala", "Abhijnanashakuntalam"] },
   { title: "The Shahnameh", author: "Ferdowsi", why: "Persia's thousand-year epic of kings and heroes, written to outlast an empire's language — and it did.", aka: ["Shahnameh", "The Book of Kings", "Shahnama"] },
   { title: "One Thousand and One Nights", author: "Anonymous", why: "The story that swallows stories; frame narrative invented as a survival tactic.", aka: ["Arabian Nights", "The Arabian Nights", "1001 Nights"] },
   { title: "The Tale of the Heike", author: "Anonymous", why: "Samurai Japan's fall from grace, chanted for centuries before it was written down." },
+  { title: "The Tale of Kiều", author: "Nguyễn Du", why: "A woman sold to save her family, told in 3,254 lines of verse that Vietnamese schoolchildren still recite from memory; the nearest thing the country has to a national scripture.", aka: ["The Tale of Kieu", "Truyện Kiều", "Truyen Kieu"] },
   { title: "Romance of the Three Kingdoms", author: "Luo Guanzhong", why: "The historical epic every Chinese reader grows up on; strategy and loyalty across a fractured empire.", aka: ["Three Kingdoms"] },
   { title: "Journey to the West", author: "Wu Cheng'en", why: "A monk, a monkey, and sixteenth-century China's wildest religious road trip." },
   { title: "Dream of the Red Chamber", author: "Cao Xueqin", why: "Eighteenth-century China's Middlemarch — a family's rise and ruin in four hundred characters.", aka: ["The Story of the Stone"] },
   { title: "Water Margin", author: "Shi Nai'an", why: "A hundred and eight outlaws gather at a marsh to become bandit-heroes; the last of China's Four Great Classical Novels, and the rowdiest.", aka: ["Outlaws of the Marsh", "All Men Are Brothers"] },
+  { title: "The Nine Cloud Dream", author: "Kim Man-jung", why: "A monk dreams an entire human lifetime of power, love, and regret before waking to Buddhist clarity; Korea's best-loved classical novel, and the first ever translated into English.", aka: ["The Cloud Dream of the Nine", "Kuunmong", "Nine Cloud Dream"] },
   { title: "Beowulf", author: "Anonymous", why: "Monsters, mead-halls, and the first great poem in English; heroism weighed against its own mortality." },
   { title: "Njal's Saga", author: "Anonymous", why: "Iceland's prose masterpiece — blood feud and law codes rendered with a flatness that makes the violence worse.", aka: ["Njals Saga", "The Story of Burnt Njal"] },
   { title: "The Canterbury Tales", author: "Geoffrey Chaucer", why: "English literature's big bang; every voice in a pilgrimage party gets to talk." },
   { title: "The Decameron", author: "Giovanni Boccaccio", why: "A plague quarantine's storytelling marathon; the short story invented out of necessity." },
   { title: "Orlando Furioso", author: "Ludovico Ariosto", why: "Chivalric romance pushed to gleeful, self-aware excess; Renaissance Italy's favorite epic." },
+  { title: "Lazarillo de Tormes", author: "Anonymous", why: "A blind man's boy cons his way up through masters both crueler and holier than he is; the picaresque novel's anonymous, anticlerical founding text.", aka: ["La Vida de Lazarillo de Tormes", "The Life of Lazarillo de Tormes"] },
   { title: "The Lusiads", author: "Luís de Camões", why: "Vasco da Gama's voyage to India, narrated with the old gods still meddling; Portugal's answer to the Aeneid.", aka: ["Os Lusiadas", "Os Lusíadas"] },
   { title: "The Faerie Queene", author: "Edmund Spenser", why: "Allegory built like a cathedral; English verse flexing its full structural range." },
+  { title: "Tartuffe", author: "Molière", why: "A con man in religious costume fools an entire household; comedy so dangerous the Church got it banned for five years.", aka: ["Tartuffe, ou l'Imposteur", "The Impostor"] },
   { title: "Paradise Lost", author: "John Milton", why: "Satan gets the best lines; the fall of man as the first great antihero epic." },
   { title: "The Pilgrim's Progress", author: "John Bunyan", why: "Allegory so plain it became the second-best-selling book in English after the Bible.", aka: ["Pilgrim's Progress"] },
   { title: "Robinson Crusoe", author: "Daniel Defoe", why: "The English novel's opening argument for itself: one man, an island, and inventory." },
@@ -151,6 +268,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Dracula", author: "Bram Stoker", why: "Epistolary horror that invented the modern vampire's entire rulebook." },
   { title: "The Woman in White", author: "Wilkie Collins", why: "The sensation novel's founding text; identity theft as Victorian nightmare." },
   { title: "Tess of the d'Urbervilles", author: "Thomas Hardy", why: "Fate as a rigged system; Hardy's angriest argument against the moral order." },
+  { title: "The Cherry Orchard", author: "Anton Chekhov", why: "An estate sold out from under a family too busy talking to notice; comedy and tragedy finally admit they're the same thing." },
   { title: "Buddenbrooks", author: "Thomas Mann", why: "A merchant dynasty's slow decline, four generations deep; Mann's debut and still his warmest." },
   { title: "A Portrait of the Artist as a Young Man", author: "James Joyce", why: "The bildungsroman rebuilt from the inside of a developing consciousness." },
   { title: "The Good Soldier", author: "Ford Madox Ford", why: "The unreliable narrator's masterclass; 'the saddest story' told by the last to know." },
@@ -177,12 +295,14 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Independent People", author: "Halldór Laxness", why: "An Icelandic sheep farmer's stubborn, doomed independence; Nobel-caliber bleak comedy." },
   { title: "Voss", author: "Patrick White", why: "An explorer vanishes into the Australian interior while a woman in Sydney lives the expedition psychically; the novel behind Australia's only Nobel." },
   { title: "Hunger", author: "Knut Hamsun", why: "A starving writer's mind unraveling on the page; modernist interiority before modernism had a name." },
+  { title: "The Bridge on the Drina", author: "Ivo Andrić", why: "Four centuries pass across one Bosnian bridge — empires change, neighbors coexist, then slaughter each other; the book most credited with explaining the Balkans to themselves.", aka: ["Na Drini Ćuprija"] },
   { title: "Wide Sargasso Sea", author: "Jean Rhys", why: "Jane Eyre's 'madwoman in the attic' given her own voice and her own colonial history." },
   { title: "A House for Mr Biswas", author: "V.S. Naipaul", why: "One man's lifelong scrap for a house — and a self — of his own; the Trinidadian novel that won Naipaul his Nobel." },
   { title: "The Unbearable Lightness of Being", author: "Milan Kundera", why: "Love and politics under Soviet occupation, filtered through Nietzsche's eternal return." },
   { title: "Austerlitz", author: "W.G. Sebald", why: "Memory, architecture, and the Holocaust's aftershocks, told in single unbroken paragraphs." },
   { title: "Never Let Me Go", author: "Kazuo Ishiguro", why: "A quiet dystopia about acceptance; horror delivered entirely in understatement." },
   { title: "Suite Française", author: "Irène Némirovsky", why: "France's 1940 collapse, written in real time by an author who didn't survive to finish it.", aka: ["Suite Francaise"] },
+  { title: "Fatelessness", author: "Imre Kertész", why: "A Budapest teenager narrates Auschwitz in a flat, uncomprehending voice that refuses every consoling frame; the fictional counterpart no memoir can quite reach.", aka: ["Fateless", "Sorstalanság"] },
   { title: "Life and Fate", author: "Vasily Grossman", why: "Stalingrad's War and Peace; a book the KGB tried to arrest, not just ban." },
   { title: "One Day in the Life of Ivan Denisovich", author: "Aleksandr Solzhenitsyn", why: "The Gulag rendered in a single ordinary day; the sentence that cracked Soviet silence." },
   { title: "We", author: "Yevgeny Zamyatin", why: "The dystopia 1984 and Brave New World both learned from; glass cities, numbered citizens." },
@@ -220,12 +340,15 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Cry, the Beloved Country", author: "Alan Paton", why: "Apartheid-era South Africa's moral case made through one father's search for his son." },
   { title: "July's People", author: "Nadine Gordimer", why: "A white family's roles inverted overnight; apartheid's collapse imagined from inside a farmhouse." },
   { title: "Petals of Blood", author: "Ngũgĩ wa Thiong'o", why: "Independence's broken promises, traced through four lives in a betrayed Kenyan town." },
+  { title: "Death and the King's Horseman", author: "Wole Soyinka", why: "A colonial officer stops a Yoruba horseman's ritual suicide and breaks a cosmology he never understood; the first African Nobel laureate's most performed play." },
   { title: "Kokoro", author: "Natsume Sōseki", why: "Isolation and guilt in Meiji Japan; a friendship's quiet, devastating confession." },
   { title: "The Wind-Up Bird Chronicle", author: "Haruki Murakami", why: "A missing cat unspools into wells, wartime Manchuria, and Japan's buried history." },
   { title: "Silence", author: "Shūsaku Endō", why: "A missionary's faith tested by torture and God's total silence; conviction under real pressure." },
   { title: "The Makioka Sisters", author: "Jun'ichirō Tanizaki", why: "Four sisters, one marriage crisis at a time, as old Japan gives way to the new." },
   { title: "Rashomon and Other Stories", author: "Ryūnosuke Akutagawa", why: "The same crime, four irreconcilable truths; the story that gave 'Rashomon effect' its name.", aka: ["Rashomon"] },
   { title: "Palace Walk", author: "Naguib Mahfouz", why: "A Cairo patriarch's household, opening the trilogy that won the Arab world's first Nobel." },
+  { title: "My Name Is Red", author: "Orhan Pamuk", why: "A murdered miniaturist's case narrated in turn by killer, corpse, and the color red itself; Istanbul's East-West argument staged as a sixteenth-century whodunit.", aka: ["Benim Adım Kırmızı"] },
+  { title: "Only Yesterday", author: "S.Y. Agnon", why: "An idealist immigrates to build Zion and gets shadowed by a dog everyone mistakes for rabid; modern Hebrew fiction's founding epic, Nobel-crowned.", aka: ["Tmol Shilshom"] },
   { title: "The God of Small Things", author: "Arundhati Roy", why: "Forbidden love and caste violence in Kerala, told in prose that bends time and syntax." },
   { title: "A Suitable Boy", author: "Vikram Seth", why: "Post-independence India's marriage plot, stretched to thirteen hundred pages without losing momentum." },
   { title: "Untouchable", author: "Mulk Raj Anand", why: "A single day in a Dalit sweeper's life; caste injustice named early and directly." },
@@ -236,9 +359,10 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Histories", author: "Herodotus", why: "The invention of history as inquiry — the 'father of history' asking why, not just what." },
   { title: "The History of the Peloponnesian War", author: "Thucydides", why: "Power politics analyzed without myth or piety; the realist tradition's founding text." },
   { title: "The Annals", author: "Tacitus", why: "Rome's emperors dissected by a senator who trusted no one's motives, least of all the ones in power; history written as autopsy.", aka: ["Annals", "The Annals of Imperial Rome"] },
-  { title: "The Muqaddimah", author: "Ibn Khaldun", why: "Dynasties rise on group solidarity and collapse on comfort — sociology and economic history reasoned out six centuries early, tucked inside the introduction to a history book.", aka: ["Muqaddimah", "Prolegomena"] },
   { title: "Nicomachean Ethics", author: "Aristotle", why: "Virtue as a habit, not a rule; still the sturdiest framework for a good life." },
   { title: "Symposium", author: "Plato", why: "A drinking party's speeches on love, ascending from bodies to the eternal Forms." },
+  { title: "Elements", author: "Euclid", why: "Five self-evident postulates build an entire geometry from scratch; the axiomatic method's founding demonstration, unrivaled as a textbook for two thousand years.", aka: ["Euclid's Elements", "The Elements", "Stoicheia"] },
+  { title: "The Principia", author: "Isaac Newton", why: "Three laws of motion and one equation for gravity, proved in Euclid's own geometric style; arguably the single most consequential book science has ever produced.", aka: ["Principia Mathematica", "Philosophiae Naturalis Principia Mathematica", "Mathematical Principles of Natural Philosophy", "Newton's Principia"] },
   { title: "On the Nature of Things", author: "Lucretius", why: "Atomism, mortality, and a universe without gods running it, argued in verse two thousand years before physics caught up.", aka: ["De Rerum Natura", "The Nature of Things"] },
   { title: "Confessions", author: "Saint Augustine", why: "The first real autobiography; interiority and guilt examined before either had a name.", aka: ["The Confessions"] },
   { title: "The Consolation of Philosophy", author: "Boethius", why: "Written in a prison cell awaiting execution; philosophy's argument against fortune's cruelty." },
@@ -258,6 +382,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Communist Manifesto", author: "Karl Marx", why: "'A spectre is haunting Europe' — the pamphlet, with Engels, that launched the twentieth century's central argument." },
   { title: "On Liberty", author: "John Stuart Mill", why: "The harm principle, stated once and never bettered; the case for dissent as a public good." },
   { title: "The Interpretation of Dreams", author: "Sigmund Freud", why: "The unconscious given a grammar; whatever you think of the theory, the questions still stand." },
+  { title: "Memories, Dreams, Reflections", author: "Carl Jung", why: "An autobiography written almost entirely from inside dreams and visions rather than outer events; the archetypes-and-collective-unconscious tradition Freud's own case histories never cover." },
   { title: "The Varieties of Religious Experience", author: "William James", why: "Religion studied as lived psychology, not doctrine; the empirical case for taking mysticism seriously." },
   { title: "The Protestant Ethic and the Spirit of Capitalism", author: "Max Weber", why: "Why capitalism took root where it did; ideas as an economic engine, not just an effect." },
   { title: "Suicide", author: "Émile Durkheim", why: "The first great work of empirical sociology; even the most private act, shown to have a social rate." },
