@@ -56,6 +56,24 @@ function buildCacheKeyFallback(title: string, author?: string): string {
   return `v3|${t}||${a}`;
 }
 
+// ---------- In-flight deduplication ----------
+// Maps `${cacheKey}|${axesSignature}` -> Promise that resolves when that
+// exact quantized DNA point's recommendation finishes computing. Unlike
+// dna-consensus (one consensus per book, any concurrent call is fungible),
+// two concurrent recommend-by-dna calls for the SAME book but DIFFERENT axes
+// are genuinely different requests and must not be coalesced -- so the key
+// includes the axes signature, not just the cache key. A concurrent call for
+// the exact same point can always safely piggyback on whichever computation
+// is already running instead of starting its own independent (and
+// Gemini-billing) copy. This function's own comment above already flags it
+// as "the single highest-frequency request in the app" (every slider drag,
+// debounced only 1s client-side), yet it never got the in-flight dedup
+// analyze-novel (2026-07-02) and dna-consensus (2026-07-19) both have --
+// added 2026-07-20 (daily backend audit), same bug class, third instance in
+// this codebase. In-process/per-isolate only -- same accepted limitation as
+// the other two.
+const inFlight = new Map<string, Promise<void>>();
+
 // ---------- Tool ----------
 
 const recommendationTool = {
@@ -98,6 +116,8 @@ const recommendationTool = {
 Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
 
   let body: any;
   try {
@@ -173,6 +193,34 @@ Deno.serve(async (req) => {
     });
   }
 
+  // ---------- Dedup: coalesce concurrent calls for the same exact DNA point ----------
+  // A genuine cache miss above doesn't mean no one else is computing this
+  // exact point right now -- the 1s client debounce only stops one browser
+  // tab from re-firing itself; it does nothing for two different readers (or
+  // two tabs) converging on the same quantized point at once. Piggyback on
+  // whichever call is already in flight instead of starting a second,
+  // independent (and Gemini-billing) copy.
+  const dedupKey = `${cacheKey}|${axesSignature}`;
+  if (inFlight.has(dedupKey)) {
+    await inFlight.get(dedupKey);
+    const { data: fresh } = await admin
+      .from("dna_recommendation_cache")
+      .select("recommendation")
+      .eq("cache_key", cacheKey)
+      .eq("axes_signature", axesSignature)
+      .maybeSingle();
+    if (fresh?.recommendation) {
+      console.log(JSON.stringify({ fn: "recommend-by-dna", outcome: "dedup_hit", cache_key: cacheKey }));
+      return new Response(JSON.stringify({ recommendation: fresh.recommendation, cached: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // The in-flight call didn't leave a usable result (e.g. Gemini failed
+    // with nothing to fall back on) -- fall through and compute
+    // independently, exactly as if no dedup had happened at all.
+  }
+
   // ---------- Rate-limit gate (only reached on a genuine cache miss) ----------
   const ip = getClientIp(req);
   const ipHash = await hashIp(ip);
@@ -188,6 +236,15 @@ Deno.serve(async (req) => {
       { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
+
+  // Register this call as the in-flight owner for this exact DNA point --
+  // covers the Gemini call + cache write below via try/finally, so every
+  // exit path (success, AI-error, malformed-output, or an unexpected throw
+  // caught by the outer handler) still releases the slot.
+  let resolveInFlight!: () => void;
+  inFlight.set(dedupKey, new Promise<void>((res) => { resolveInFlight = res; }));
+
+  try {
 
   const GEMINI_API_KEY =
     typeof userKey === "string" && userKey.trim()
@@ -275,4 +332,17 @@ Recommend the single best DNA neighbour from the canon.`;
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
+  } finally {
+    resolveInFlight();
+    inFlight.delete(dedupKey);
+  }
+
+  } catch (err) {
+    console.error(JSON.stringify({ fn: "recommend-by-dna", error: err instanceof Error ? err.message : String(err) }));
+    return new Response(JSON.stringify({ error: "Temporary server error." }), {
+      status: 503,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 });
