@@ -2288,6 +2288,16 @@ const POPULAR_BOOKS = [
   "The Tale of Kiều by Nguyễn Du",
   "The Nine Cloud Dream by Kim Man-jung",
   "Lazarillo de Tormes by Anonymous",
+
+  // ── Round 15 (2026-07-20) — closing residual gaps vs. classic.ts's same-day
+  // additions (5 Nobel-laureate-anchored national traditions + Jung). Death and
+  // the King's Horseman (Soyinka) and My Name Is Red (Pamuk) were already covered
+  // here from round 11's (2026-07-15) postcolonial/international sweep, so only
+  // these four were genuinely missing ──
+  "The Bridge on the Drina by Ivo Andrić",
+  "Fatelessness by Imre Kertész",
+  "Only Yesterday by S.Y. Agnon",
+  "Memories, Dreams, Reflections by Carl Jung",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
