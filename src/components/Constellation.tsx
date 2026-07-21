@@ -183,11 +183,41 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
         new Set([...b.seed_corpus.map((s) => s.cache_key), ...shelfBooks.map((s) => s.cache_key)]),
       );
 
+      // Grow the reference-dot pool as the user's own shelf grows, on top of
+      // (never replacing) the fixed PCA seed_corpus -- the seed_corpus is
+      // what the projection's means/components were actually fit on and
+      // stays untouched. Source: canon_books titles that already have a
+      // plottable, publicly-cached analysis, via a SECURITY DEFINER RPC
+      // (canon_books itself is deny-all RLS; the RPC returns only
+      // cache_key/title/author for rows that already pass novel_analyses'
+      // own public-read policy, no new exposure). Capped 1:1 with shelf
+      // size so a small library still sees roughly the plain 50-book
+      // reference set and a large one sees proportionally more, up to +100
+      // extra so the graph never gets unreadably dense. Skipped entirely
+      // for an empty shelf (the cap would be 0 anyway).
+      let extraAnchorKeys: string[] = [];
+      if (shelfBooks.length > 0) {
+        const extraCap = Math.min(shelfBooks.length, 100);
+        const { data: candidates } = await supabase.rpc("get_constellation_anchor_candidates", {
+          p_book_type: activeTab,
+        });
+        extraAnchorKeys = ((candidates ?? []) as { cache_key: string; title: string; author: string }[])
+          .filter((c) => !allKeys.includes(c.cache_key))
+          // Stable, deterministic order (not re-shuffled every load) --
+          // simple alphabetical for now; DNA-space-diversity-aware
+          // sampling would be a nicer future pass but needs each
+          // candidate's vector fetched up front to do well.
+          .sort((a, c) => a.title.localeCompare(c.title))
+          .slice(0, extraCap)
+          .map((c) => c.cache_key);
+      }
+      const allKeysWithAnchors = Array.from(new Set([...allKeys, ...extraAnchorKeys]));
+
       const [{ data: analyses }, overridesRes, clustersRes, membersRes] = await Promise.all([
         supabase
           .from("novel_analyses")
           .select("cache_key, title, author, slug, analysis")
-          .in("cache_key", allKeys),
+          .in("cache_key", allKeysWithAnchors),
         user
           ? supabase
               .from("book_overrides")
@@ -509,6 +539,9 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
   }
 
   const shelfCount = scaled.filter((p) => p.isShelf).length;
+  // Actual reference-dot count shown, not just the fixed seed_corpus size --
+  // grows with shelf size once the extra canon-book anchors above kick in.
+  const referenceCount = scaled.filter((p) => !p.isShelf).length;
 
   // Build hulls for visible clusters
   const visibleHulls = clusters
@@ -570,7 +603,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
         <div className="px-4 py-3">
           <div className="meta text-muted-foreground">Fig. 01 — DNA Constellation</div>
           <div className="mt-1 font-serif text-lg italic">
-            Your {activeTab === "nonfiction" ? "non-fiction" : "fiction"} shelf, mapped against {basis.seed_corpus.length} canonical books. Click any dot to analyse.
+            Your {activeTab === "nonfiction" ? "non-fiction" : "fiction"} shelf, mapped against {referenceCount} canonical books. Click any dot to analyse.
           </div>
         </div>
         <div className="hidden items-center gap-4 border-l border-foreground px-4 py-3 md:flex">

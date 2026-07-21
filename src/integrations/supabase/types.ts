@@ -166,6 +166,30 @@ export type Database = {
         }
         Relationships: []
       }
+      canon_books: {
+        Row: {
+          author: string
+          created_at: string
+          id: number
+          source: string
+          title: string
+        }
+        Insert: {
+          author?: string
+          created_at?: string
+          id?: never
+          source?: string
+          title: string
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: never
+          source?: string
+          title?: string
+        }
+        Relationships: []
+      }
       dna_recommendation_cache: {
         Row: {
           axes_signature: string
@@ -771,12 +795,31 @@ export type Database = {
         Returns: boolean
       }
       gemini_record_spend: { Args: { p_cost: number }; Returns: undefined }
+      get_constellation_anchor_candidates: {
+        Args: { p_book_type: string }
+        Returns: {
+          author: string
+          cache_key: string
+          title: string
+        }[]
+      }
+      purge_cold_dna_recommendation_cache: { Args: never; Returns: number }
       purge_cold_novel_analyses: { Args: never; Returns: number }
+      purge_cold_shelf_recommendations: { Args: never; Returns: number }
+      purge_cold_takeaway_questions_cache: { Args: never; Returns: number }
       purge_old_rate_limit_events: { Args: never; Returns: number }
       purge_old_search_cache: { Args: never; Returns: number }
       refresh_book_rating_stats: {
         Args: { p_cache_key: string }
         Returns: undefined
+      }
+      search_canon: {
+        Args: { p_q: string }
+        Returns: {
+          author: string
+          sim: number
+          title: string
+        }[]
       }
     }
     Enums: {
