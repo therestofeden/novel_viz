@@ -2298,6 +2298,14 @@ const POPULAR_BOOKS = [
   "Fatelessness by Imre Kertész",
   "Only Yesterday by S.Y. Agnon",
   "Memories, Dreams, Reflections by Carl Jung",
+
+  // ── Round 16 (2026-07-21) — closing residual gaps vs. classic.ts's same-day
+  // additions (WWI fiction, a second Woolf work, a linguistics/anthropology
+  // non-fiction pair, and the third angle of the Holocaust-testimony triangle).
+  // All Quiet on the Western Front, Mrs Dalloway, and Night were already
+  // covered here from earlier rounds, so only these two were genuinely missing ──
+  "Course in General Linguistics by Ferdinand de Saussure",
+  "Tristes Tropiques by Claude Lévi-Strauss",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
