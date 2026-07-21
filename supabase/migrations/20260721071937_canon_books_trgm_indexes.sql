@@ -1,0 +1,29 @@
+-- Forward-provisioning for search_canon's fuzzy-match hot path.
+-- canon_books had ONLY a pkey (id) and a unique btree on (lower(title), lower(author)) --
+-- no trigram index existed despite search_canon()'s WHERE clause relying entirely on
+-- pg_trgm's similarity()/word_similarity(). Confirmed via EXPLAIN (ANALYZE, BUFFERS) that
+-- every search_canon call does a full Seq Scan (516/516 rows scanned, ~10-24ms) -- currently
+-- cheap in absolute terms (table is 176kB) but this scales linearly and canon_books is on an
+-- explicit, actively-executing growth path (130 -> 268 -> 350 -> 499 -> 516 rows across the
+-- last two weeks of daily canon-curation sessions, see novelviz-book-coverage-strategy memory's
+-- 3-phase depth plan), and search_canon runs on every search-books request.
+--
+-- NOTE (important, do not assume this alone makes queries faster): confirmed via EXPLAIN that
+-- these indexes are NOT yet used by search_canon's current WHERE clause, because it calls
+-- similarity()/word_similarity() as plain functions ("similarity(col, q) > 0.28"), which the
+-- planner does not rewrite into an indexable form. Only the operator forms (%, <%, %>) are
+-- index-aware. Switching search_canon to operator form was deliberately NOT done in this same
+-- migration: it requires setting pg_trgm.similarity_threshold/pg_trgm.word_similarity_threshold
+-- to match the hand-tuned 0.28/0.42 values (search_canon_threshold_tune, 2026-07-17), the `%`
+-- operator is >= not > (a boundary-condition semantic difference from the current `>` clause),
+-- and this session's execute_sql role got "permission denied to set parameter
+-- pg_trgm.similarity_threshold" when function-level SET was attempted, blocking safe
+-- same-session verification. Given search_canon is a delicately-tuned, 3-times-already-patched
+-- live search-quality function, shipping an unverified rewrite in an unattended run was judged
+-- too risky for too little present-day benefit (516 rows is still noise next to search-books'
+-- 2-5s OL/GB fetch budget). This migration is deliberately index-only: purely additive, zero
+-- behavior change, safe to ship blind. Revisit the WHERE-clause rewrite once canon_books scales
+-- meaningfully (thousands of rows) or in a session that can either get elevated SQL privileges
+-- to verify the GUC-based rewrite, or have Stefano live-check search quality after the swap.
+create index if not exists idx_canon_books_title_trgm on public.canon_books using gin (title extensions.gin_trgm_ops);
+create index if not exists idx_canon_books_author_trgm on public.canon_books using gin (author extensions.gin_trgm_ops);
