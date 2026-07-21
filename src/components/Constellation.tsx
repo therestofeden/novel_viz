@@ -186,7 +186,7 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
       const [{ data: analyses }, overridesRes, clustersRes, membersRes] = await Promise.all([
         supabase
           .from("novel_analyses")
-          .select("cache_key, title, author, analysis")
+          .select("cache_key, title, author, slug, analysis")
           .in("cache_key", allKeys),
         user
           ? supabase
@@ -218,26 +218,68 @@ const Constellation = ({ shelfBooks, shelfId, onSelect }: ConstellationProps) =>
         overridesByKey.set(r.cache_key, r.axis_overrides ?? {});
       }
 
+      // Group fetched rows by normalized title+author identity before
+      // plotting. novel_analyses can legitimately hold more than one row
+      // for the same real book: analyze-novel writes an "alias" row (no
+      // slug) under the raw search string alongside the canonical row (see
+      // its cache write comment, "ensures this exact search string is a
+      // cache hit next time") whenever the raw input didn't already match
+      // what the AI identified as the true title/author (e.g. author was
+      // blank at request time) — same identity, two cache_keys. Without
+      // this grouping, a book that's both a fixed seed-corpus reference
+      // AND on the user's shelf under the other twin cache_key rendered as
+      // two dots with the same title (reported live: "Blindness" by José
+      // Saramago showing twice). Prefer, per group: the row actually on the
+      // shelf (so shelfBookIdByCacheKey / lasso-cluster lookups, which key
+      // off the real shelf_books.cache_key, keep resolving), else the
+      // canonical row (has a slug), else whichever row has a usable DNA
+      // vector.
+      const norm = (s: string) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+      type AnalysisRow = { cache_key: string; title: string; author: string; slug: string | null; analysis: any };
+      const groups = new Map<string, AnalysisRow[]>();
+      for (const row of (analyses ?? []) as AnalysisRow[]) {
+        const key = `${norm(row.title)}||${norm(row.author)}`;
+        const arr = groups.get(key);
+        if (arr) arr.push(row);
+        else groups.set(key, [row]);
+      }
+
       const out: Point[] = [];
       const fingerprintVectors: number[][] = [];
-      for (const row of analyses ?? []) {
-        const vec = vectorFromAnalysis(row.analysis, b.axis_order);
-        if (!vec) continue;
+      for (const rows of groups.values()) {
+        const shelfRow = rows.find((r) => shelfKeys.has(r.cache_key));
+        const canonicalRow = rows.find((r) => r.slug);
+        const ordered = [shelfRow, canonicalRow, ...rows].filter((r): r is AnalysisRow => !!r);
+        const seen = new Set<string>();
+        let primary: AnalysisRow | null = null;
+        let vec: number[] | null = null;
+        for (const candidate of ordered) {
+          if (seen.has(candidate.cache_key)) continue;
+          seen.add(candidate.cache_key);
+          const v = vectorFromAnalysis(candidate.analysis, b.axis_order);
+          if (v) {
+            primary = candidate;
+            vec = v;
+            break;
+          }
+        }
+        if (!primary || !vec) continue;
+
         const [x, y] = projectVector(vec, b);
-        const onShelf = shelfKeys.has(row.cache_key);
+        const onShelf = !!shelfRow;
         out.push({
-          cache_key: row.cache_key,
-          title: row.title,
-          author: row.author,
+          cache_key: primary.cache_key,
+          title: primary.title,
+          author: primary.author,
           x,
           y,
           isShelf: onShelf,
         });
         if (onShelf) {
-          const ov = overridesByKey.get(row.cache_key);
+          const ov = overridesByKey.get(primary.cache_key);
           const effective = b.axis_order.map((axisId, i) => {
             const o = ov?.[axisId];
-            return typeof o === "number" ? o : vec[i];
+            return typeof o === "number" ? o : vec![i];
           });
           fingerprintVectors.push(effective);
         }
