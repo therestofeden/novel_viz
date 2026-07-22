@@ -85,10 +85,13 @@ const STATUS_LABEL: Record<ReadingStatus, string> = {
 /**
  * Shelf chip: shown on an analysed book.
  * - Signed-out → "Save to shelf" (routes to /auth?next=/)
- * - Signed-in & not saved → explicit "✓ Read" / "○ Want to read" choice —
- *   always writes status/started_at/finished_at explicitly (see the
- *   2026-07-22 note on addToShelf: never rely on the shelf_books.status
- *   column default).
+ * - Signed-in & not saved → explicit three-way choice — "○ Want to read" /
+ *   "● Reading" / "✓ Read" — always writes status/started_at/finished_at
+ *   explicitly (see the 2026-07-22 note on addToShelf: never rely on the
+ *   shelf_books.status column default). Each button is filled with the
+ *   same color its status pill uses once saved (bg-card / bg-accent /
+ *   bg-primary) — added 2026-07-22 so the choice visually previews the
+ *   state it leads to instead of three identically-styled buttons.
  * - Signed-in & saved → status cycle (want → reading → finished) + 0–10
  *   rating (once finished) + shelf link + remove.
  */
@@ -149,8 +152,15 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
   // (status='finished' AND started_at IS NULL AND finished_at IS NULL).
   // Fixed on both ends: the column default is now 'want' (see the
   // accompanying migration), and this function always passes status
-  // explicitly, taken from an explicit user choice — "✓ Read" or "○ Want to
-  // read" — shown at add time instead of one undifferentiated button.
+  // explicitly, taken from an explicit user choice shown at add time
+  // instead of one undifferentiated button.
+  //
+  // Same-day follow-up: added "reading" as a third add-time choice
+  // (previously only reachable by adding then cycling the pill once). Mirrors
+  // cycleStatus below — "reading" and "finished" both stamp started_at,
+  // only "finished" also stamps finished_at — so a book added straight into
+  // "reading" ends up in exactly the state it would if it had gotten there
+  // by cycling through the pill instead.
   const addToShelf = async (status: ReadingStatus) => {
     if (authLoading) return;
     if (!user) {
@@ -173,14 +183,18 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
           title: analysis.title,
           author: analysis.author || "",
           status,
-          started_at: status === "finished" ? now : null,
+          started_at: status === "finished" || status === "reading" ? now : null,
           finished_at: status === "finished" ? now : null,
         })
         .select("id, status, rating, started_at, finished_at, note")
         .maybeSingle();
       if (error) throw error;
       setRow((inserted as ShelfRow | null) ?? null);
-      toast.success(status === "finished" ? "Added — marked as read" : "Added to your shelf");
+      toast.success(
+        status === "finished" ? "Added — marked as read"
+        : status === "reading" ? "Added — now reading"
+        : "Added to your shelf",
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't update shelf");
     } finally {
@@ -270,31 +284,40 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
     }
   };
 
-  // ── Not saved: explicit read / want-to-read choice + shelf link ──────────
+  // ── Not saved: explicit want / reading / read choice + shelf link ────────
   // Signed-out visitors still get a single "Save to shelf" (routes through
   // /auth first — there's no shelf to write the choice to yet); signed-in
-  // readers get the real choice right away, so the very first click already
-  // records what they meant instead of defaulting to anything.
+  // readers get the real three-way choice right away, ordered to match the
+  // want → reading → finished lifecycle, each filled with the color its
+  // status pill will have the instant it's saved.
   if (!row) {
     return (
       <div className="flex items-stretch border border-foreground">
         {user ? (
           <>
             <button
-              onClick={() => addToShelf("finished")}
-              disabled={busy}
-              title="Add to shelf, marked as already read"
-              className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <span aria-hidden="true">✓</span>} Read
-            </button>
-            <button
               onClick={() => addToShelf("want")}
               disabled={busy}
               title="Add to shelf, want to read later"
-              className="meta flex items-center gap-2 border-l border-foreground bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
+              className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <span aria-hidden="true">○</span>} Want to read
+            </button>
+            <button
+              onClick={() => addToShelf("reading")}
+              disabled={busy}
+              title="Add to shelf, currently reading"
+              className="meta flex items-center gap-2 border-l border-foreground bg-accent text-accent-foreground px-3 py-2 transition-colors hover:brightness-90 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <span aria-hidden="true">●</span>} Reading
+            </button>
+            <button
+              onClick={() => addToShelf("finished")}
+              disabled={busy}
+              title="Add to shelf, marked as already read"
+              className="meta flex items-center gap-2 border-l border-foreground bg-primary text-primary-foreground px-3 py-2 transition-colors hover:brightness-90 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <span aria-hidden="true">✓</span>} Read
             </button>
           </>
         ) : (
