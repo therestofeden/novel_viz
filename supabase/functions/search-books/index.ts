@@ -28,7 +28,37 @@
 //       nothing), so the query is fuzzy-matched against our own canon
 //       (canon_books table via search_canon RPC: every analyzed book + a
 //       marquee-classics tier) in parallel with the external fetches, and
-//       the intended work is injected as a first-class candidate.
+//       the intended work is injected as a first-class candidate. A
+//       fuzzy-only canon hit (no literal containment, e.g. "hoer"->"Homer")
+//       gets a much larger bonus than a literal one, because a short query
+//       can ALSO be a real, if obscure, literal match for an unrelated
+//       author (found live: real OL authors surnamed "Hoer" outscored a
+//       too-timid canon bonus) — the canonical work must still win. The
+//       token-fuzzy-match floor is 6 chars, not 4 (also found live): short
+//       common words collide easily in 1-edit-distance space ("home" is one
+//       deletion from "homer"), so querying "homer" was fuzzy-matching the
+//       unrelated novel "Home Fire" via its title token "home".
+//   (5) Compound "Author - Title" queries — found live: Stefano's exact
+//       phrase "Homer - The odissey" still returned nothing. Confirmed Open
+//       Library's own full-text search returns ZERO results for a literal
+//       "X - Y" query (doesn't parse the dash), and testing the whole
+//       combined string against a canon row's (much shorter) title/author
+//       never matched either. Now splits the query on common separators
+//       (-, :, ,, /, &, " by ") and tests each segment independently against
+//       canon rows, so "homer" and "the odissey" each get their own shot.
+//
+// 2026-07-22 (found via live probing, not a user report): "grate gatsby"
+// (typo, no leading "the") returned zero relevant results despite
+// canon_books already containing "The Great Gatsby" and search_canon's own
+// trigram similarity correctly finding it (sim=0.58). Root cause: a dropped
+// leading article shifts whole-string length enough to trip bestFuzzySim's
+// length-gate, so this file's own canon re-verification (and the general
+// OL/GB fuzzy-credit path) silently discarded a real match. Fixed by also
+// comparing with a leading article stripped from either side — see
+// bestFuzzySim/stripLeadingArticle below. Verified against the full prior
+// regression suite (homer/hoer/odissey/crime and punishment/war and
+// peace/dune/ulysses/emma) plus 3 negative controls, zero regressions,
+// before shipping — see project memory for the verification harness.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
@@ -66,7 +96,7 @@ function transliterate(s: string): string {
 
 function isLatin(s: string): boolean {
   if (!s) return false;
-  const non = s.replace(/[\u0000-ɏ\s.,'"()\-–—&]/g, "");
+  const non = s.replace(/[ -ɏ\s.,'"()\-–—&]/g, "");
   return non.length === 0;
 }
 
@@ -275,18 +305,52 @@ function fuzzySim(a: string, b: string): number {
   return 1 - dist / maxLen;
 }
 
+// A leading article rarely changes what book someone means, but it does
+// change whole-string LENGTH — enough to trip fuzzySim's own length-gate on
+// an otherwise-clean match (see bestFuzzySim's 2026-07-22 note below).
+// Mirrors normalizeTitleForDedup()'s article-stripping further down this
+// file, which already treats "The X" and "X" as the same book for dedup.
+function stripLeadingArticle(s: string): string {
+  return s.replace(/^(the|a|an)\s+/, "");
+}
+
 // Best of whole-string and per-token similarity: a single-word query should
 // match one word of a longer title ("odissey" vs "The Odyssey"). Token
 // minimum is 6, not 4 (2026-07-17, found live): short common words are
 // densely packed in 1-edit-distance space — "home" is exactly one deletion
 // from "homer", so querying "homer" was fuzzy-matching "Home Fire" (an
 // unrelated novel) via its title token "home" and outranking Homer's own
-// works. A real author/title fuzzy match (odissey/odyssey, hoer/homer) is
-// caught by the >=6 token floor or the whole-string check; a coincidental
-// short-word collision is not.
+// works.
+//
+// 2026-07-22 (found live: "grate gatsby" never surfaced The Great Gatsby,
+// despite canon_books' search_canon RPC correctly finding it at sim=0.58):
+// a dropped leading article ("the"/"a"/"an") shifts whole-string length
+// enough to trip fuzzySim's own length-difference short-circuit, even when
+// the rest of the query is a near-perfect (or exact) match — "grate gatsby"
+// (12 chars) vs "the great gatsby" (17 chars) fails the gate outright, while
+// "grate gatsby" vs the article-stripped "great gatsby" (12 chars) passes
+// easily. This silently discarded a real, RPC-confirmed canon_books match
+// (this same helper also gates the canon-injection re-verification step
+// below), and would equally have suppressed the fuzzy-credit path for any
+// OL/GB candidate with the same shape. Fix: also compare with a leading
+// article stripped from either side — strictly additive (only ever raises
+// `best`, only activates when an article is actually present), so it cannot
+// change scoring for any query/title pair that was already comparing
+// correctly. Verified against the full prior regression suite (homer/hoer/
+// odissey/crime and punishment/war and peace/dune/ulysses/emma) plus 3
+// negative controls before shipping — zero regressions.
 function bestFuzzySim(q: string, s: string): number {
   let best = fuzzySim(q, s);
   if (best === 1) return 1;
+
+  const qStripped = stripLeadingArticle(q);
+  const sStripped = stripLeadingArticle(s);
+  if (qStripped !== q || sStripped !== s) {
+    const sim = fuzzySim(qStripped, sStripped);
+    if (sim > best) best = sim;
+    if (best === 1) return 1;
+  }
+
   for (const tok of s.split(" ")) {
     if (tok.length < 6) continue;
     const sim = fuzzySim(q, tok);

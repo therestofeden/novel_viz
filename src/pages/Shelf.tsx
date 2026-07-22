@@ -12,6 +12,7 @@ import { RatingControl } from "@/components/RatingControl";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
 import { RatingDistribution } from "@/components/RatingDistribution";
+import { STATUS_WORD } from "@/components/ShelfChip";
 
 type ReadingStatus = "want" | "reading" | "finished";
 
@@ -385,7 +386,7 @@ const Shelf = () => {
                             b.status === "want" && "bg-foreground/40",
                           )}
                         />
-                        {b.status === "finished" ? "Finished" : b.status === "reading" ? "Reading" : "Want to read"}
+                        {STATUS_WORD[b.status]}
                       </button>
                       {b.status === "finished" && b.finished_at && (
                         <span className="text-foreground/40">

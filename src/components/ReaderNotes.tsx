@@ -107,6 +107,13 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
       .eq("is_default", true)
       .maybeSingle();
 
+    // 2026-07-22: always set status explicitly — this insert used to omit
+    // it and rely on the shelf_books.status column default, which was
+    // 'finished' (now fixed to 'want' — see ShelfChip.tsx's addToShelf for
+    // the full story). Don't depend on the column default here either; this
+    // is a lower-traffic secondary add path (notes-taking on a book you're
+    // presumably reading or about to), so it just needs a sensible fixed
+    // default rather than its own read/want-to-read chooser.
     const { data: inserted, error } = await supabase
       .from("shelf_books")
       .insert({
@@ -115,6 +122,7 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
         title: bookTitle,
         author: bookAuthor || "",
         shelf_id: shelfRow?.id ?? null,
+        status: "want",
       })
       .select("id")
       .maybeSingle();

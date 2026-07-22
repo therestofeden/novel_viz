@@ -191,6 +191,128 @@ import { isMustRead } from "@/lib/must-read";
  * weight about the 1990s Yugoslav wars), but promoting into the more
  * sensitive S-tier list stays Stefano's call, not this task's default.
  * Classic count: 203 → 209 (150 fiction + 59 non-fiction).
+ *
+ * 2026-07-21 (daily curation pass): five titles, vetted against
+ * moser-the-librarian's rubric, closing three gaps across two small
+ * clusters rather than one large theme. Fiction: All Quiet on the
+ * Western Front (Erich Maria Remarque, 1929) — World War I fiction had
+ * zero representation despite The Good Soldier Švejk covering the same
+ * war as satire; this is the ground-level counterweight, the anti-war
+ * novel every later one still argues with, and the first book the
+ * Nazis publicly burned (1933). Mrs Dalloway (Virginia Woolf, 1925) —
+ * a second, independently-justified Woolf work alongside Must Read's To
+ * the Lighthouse (per the 2026-07-19 merit-not-quota rule): a different
+ * formal achievement (one day, real time, two convergent
+ * consciousnesses) than Lighthouse's multi-year elegiac structure, not a
+ * repeat of it. Non-fiction: Course in General Linguistics (Ferdinand de
+ * Saussure, 1916) and Tristes Tropiques (Claude Lévi-Strauss, 1955),
+ * placed as a deliberate adjacent pair — linguistics and anthropology
+ * both sat at zero representation, and Lévi-Strauss's structuralist
+ * anthropology is a direct, acknowledged application of Saussure's
+ * method to a new domain, the same "method, then application" logic
+ * behind the Euclid/Newton placement on 2026-07-19. Night (Elie Wiesel,
+ * 1960) completes a Holocaust-testimony triangle this list had already
+ * set up without finishing: Must Read's If This Is a Man (adult,
+ * retrospective, scientific precision) and this list's own Fatelessness
+ * (fictionalized teenager) were both already present; Night is the
+ * missing third angle — a real teenager's own direct testimony. All
+ * five independently clear the Lindy/A-tier bar; none were close calls.
+ *
+ * Night is flagged, not promoted, as a fifth possible Must Read
+ * candidate, alongside the still-open Bridge on the Drina flag from
+ * 2026-07-20 — its direct thematic peer, If This Is a Man, already sits
+ * in Must Read, and Wiesel's Nobel Peace Prize (1986) was awarded
+ * substantially on this book's strength as witness-testimony. Left for
+ * Stefano to weigh alongside Drina, per the standing default that only
+ * he promotes into the S-tier list.
+ *
+ * Process note: WebSearch was unavailable this session (sustained API
+ * outage, repeated attempts over several minutes all failed) — the
+ * per-candidate fact-verification pass standard since 2026-07-19 could
+ * not be run live. All five entries' load-bearing facts (publication
+ * years, Wiesel's 1986 Nobel Peace Prize, the 1933 Nazi book-burning,
+ * Saussure's posthumous 1916 compilation) are high-confidence,
+ * well-established facts, not fast-moving or contested ones — but this
+ * is flagged as a deliberate, explicit deviation from the norm, not a
+ * silent skip, so a future session can re-verify if there's ever reason
+ * to doubt one. Classic count: 209 → 214 (152 fiction + 62 non-fiction).
+ *
+ * 2026-07-22 (daily curation pass): six titles, vetted against
+ * moser-the-librarian's rubric, closing two clean gaps plus two
+ * independent non-fiction picks. Fiction: Sappho (Sappho: Poems and
+ * Fragments, c. 630-570 BCE) and Walt Whitman's Leaves of Grass (1855)
+ * close the lyric-poetry gap the same way the 2026-07-18 theater sweep
+ * closed drama's — this list had epic verse (Iliad, Shahnameh, Ramayana)
+ * and verse-narrative (Eugene Onegin, Divine Comedy) but nothing in the
+ * personal, non-narrative lyric mode. Sappho sits chronologically right
+ * after Homer, where she belongs — the other branch of ancient Greek
+ * poetry alongside epic; only ~650 lines of her nine scrolls survive, one
+ * poem complete, and the word "lyric" still means what her songs for the
+ * lyre made it mean. Whitman's first, self-typeset 1855 edition (twelve
+ * poems, no name on the cover, just his picture) is the founding text of
+ * American free verse — nothing in English sounded quite like it before.
+ * Non-fiction: The Zhuangzi (c. 4th century BCE) and Rumi's The Masnavi
+ * (1262-1273) each close a real gap in world religious/philosophical
+ * teaching. Zhuangzi is Confucius's great rival within Chinese thought —
+ * parable and paradox instead of maxims — placed beside The Analects for
+ * the same reason Euclid sits beside Newton; the butterfly-dream parable
+ * alone (a man dreams he's a butterfly, wakes, and can no longer be sure
+ * which one is dreaming which) is one of philosophy's most durable
+ * thought experiments. The Masnavi is Sufi Islam's central devotional
+ * text, 64,000 lines dictated over twelve years to a scribe — and, in
+ * Coleman Barks's translation, has been repeatedly reported as the
+ * best-selling poet in America, a strange-but-true data point for a
+ * thirteenth-century Persian mystic. Thomas Malthus's An Essay on the
+ * Principle of Population (1798) closes a different gap — classical
+ * economics had Smith, Keynes, Hayek, and Marx, but not the essay that
+ * gave Darwin the mechanism for natural selection the moment he read it
+ * (population outrunning food supply, exponential against arithmetic);
+ * placed near The Wealth of Nations for era, its real intellectual
+ * neighbor is Origin of Species in Must Read. Art Spiegelman's Maus
+ * (serialized 1980-1991) closes the graphic novel's total absence from
+ * both lists in one stroke, and does it by completing a cluster this
+ * list already built without finishing: Must Read's If This Is a Man
+ * (adult testimony), this list's own Fatelessness (fictionalized
+ * teenager), and Night (real teenager) were already present — Maus adds
+ * a fourth angle, a second generation's inherited trauma, mediated
+ * through cats and mice because direct language couldn't hold it.
+ * Classified as non-fiction, not fiction, despite the allegorical art
+ * style: the events and the father's testimony are real, which is
+ * exactly why the 1992 Pulitzer board couldn't fit it into any existing
+ * category and invented a Special Award instead. All six facts (Sappho's
+ * surviving line count, Whitman's 1855 print run and contents, Zhuangzi's
+ * Warring States dating, the Masnavi's composition years and Barks
+ * bestseller claim, Malthus's 1798 publication and Darwin/Wallace
+ * influence, Spiegelman's Pulitzer detail) independently verified via
+ * WebSearch rather than trusted from recall, per the standing practice
+ * since 2026-07-19 (and closing the 2026-07-21 process note above — this
+ * confirms WebSearch is back and reliable). All six clear the Lindy/
+ * A-tier bar with room to spare; none were close calls.
+ *
+ * Leaves of Grass is flagged, not promoted, as a sixth possible Must Read
+ * candidate — alongside the still-open Bridge on the Drina (2026-07-20)
+ * and Night (2026-07-21) flags, now three awaiting Stefano's own review
+ * together, the same backlog-then-batch-review pattern he used on
+ * 2026-07-19. Reasoning: it does for American poetry what Must Read's
+ * Divine Comedy does for Italian narrative or The Tale of Genji does for
+ * Japanese prose — the founding text an entire national tradition keeps
+ * arguing with, not just an excellent entry within it. Sappho, the
+ * Masnavi, Zhuangzi, Malthus, and Maus were all explicitly considered
+ * against the same bar and confidently placed at Classic/A-tier instead,
+ * the same "checked and rejected" discipline as 2026-07-19's second pass:
+ * Sappho's case is more historical-importance than sit-down-and-read-it
+ * (only one complete poem survives); the Masnavi and Zhuangzi are
+ * civilization-defining within their own traditions the way Shahnameh
+ * and the Ramayana already are here, not a step above; Malthus is a
+ * landmark of influence rather than a book a general reader reaches for
+ * on its own merits the way Meditations or The Second Sex still are; and
+ * Maus, despite being the graphic novel's single strongest claim to the
+ * S-tier, represents a form still young enough relative to the
+ * novel/epic/drama traditions that dominate Must Read that one landmark
+ * work doesn't yet argue for lowering that bar — worth revisiting if the
+ * medium produces a second or third work of comparable stature.
+ *
+ * Classic count: 214 → 220 (154 fiction + 66 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -206,6 +328,7 @@ export const CLASSIC: ClassicEntry[] = [
   // ── Fiction ────────────────────────────────────────────────────────────
   { title: "Epic of Gilgamesh", author: "Anonymous", why: "The oldest story still being read; a king learns mortality four thousand years before anyone else wrote it down.", aka: ["The Epic of Gilgamesh", "Gilgamesh"] },
   { title: "The Iliad", author: "Homer", why: "War's oldest ledger — rage, glory, and mortality rendered in bronze-age hexameter.", aka: ["Iliad"] },
+  { title: "Sappho: Poems and Fragments", author: "Sappho", why: "Nine scrolls of songs written for the lyre, reduced by two thousand years to scraps and one complete poem — still the reason 'lyric' means what it means.", aka: ["The Poems of Sappho", "Sappho"] },
   { title: "The Oresteia", author: "Aeschylus", why: "The only complete trilogy to survive from Greek tragedy — blood vengeance argued all the way to the first courtroom.", aka: ["Oresteia"] },
   { title: "Medea", author: "Euripides", why: "A wronged wife's revenge pushed past every limit; Greek tragedy's most unsettlingly modern psychology." },
   { title: "Lysistrata", author: "Aristophanes", why: "The women of Athens end a war by withholding sex; Old Comedy's rowdiest survivor, and still startlingly current." },
@@ -255,6 +378,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "A Hero of Our Time", author: "Mikhail Lermontov", why: "The Byronic antihero, imported to the Caucasus and given a case file." },
   { title: "Notes from Underground", author: "Fyodor Dostoevsky", why: "The first existentialist novel; spite as philosophy, delivered from a basement." },
   { title: "The Scarlet Letter", author: "Nathaniel Hawthorne", why: "Puritan shame made permanent, stitched to a chest; American guilt's founding text." },
+  { title: "Leaves of Grass", author: "Walt Whitman", why: "Twelve poems, self-typeset and self-published, and English verse was never as free again; 'I contain multitudes' as an entire literary program." },
   { title: "My Ántonia", author: "Willa Cather", why: "The prairie remembered as elegy; frontier life without the myth-making.", aka: ["My Antonia"] },
   { title: "The Portrait of a Lady", author: "Henry James", why: "A free American woman chooses her own trap; consciousness rendered in exhaustive close-up." },
   { title: "The Age of Innocence", author: "Edith Wharton", why: "Old New York's unwritten rules, enforced by people too polite to say them aloud." },
@@ -274,8 +398,10 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Good Soldier", author: "Ford Madox Ford", why: "The unreliable narrator's masterclass; 'the saddest story' told by the last to know." },
   { title: "Sons and Lovers", author: "D.H. Lawrence", why: "Working-class desire and mother-love tangled together with uncomfortable honesty." },
   { title: "A Passage to India", author: "E.M. Forster", why: "Colonialism's failure of understanding, staged as a single unresolved incident in a cave." },
+  { title: "Mrs Dalloway", author: "Virginia Woolf", why: "One June day in London holds a party's small talk and a shell-shocked veteran's unraveling in the same breath; stream of consciousness handling denial and grief at full precision.", aka: ["Mrs. Dalloway"] },
   { title: "Brideshead Revisited", author: "Evelyn Waugh", why: "Faith and nostalgia for a vanishing English aristocracy, told with real ambivalence." },
   { title: "The Good Soldier Švejk", author: "Jaroslav Hašek", why: "War satirized through sheer, weaponized incompetence; anti-militarism's funniest weapon.", aka: ["The Good Soldier Svejk"] },
+  { title: "All Quiet on the Western Front", author: "Erich Maria Remarque", why: "A German teenager's war strips away patriotism, then friendship, then feeling itself; the anti-war novel every later one still argues with, and the first book the Nazis burned.", aka: ["Im Westen nichts Neues"] },
   { title: "The Man Without Qualities", author: "Robert Musil", why: "An empire's collapse examined through a man who refuses to have a personality." },
   { title: "Berlin Alexanderplatz", author: "Alfred Döblin", why: "Weimar Berlin's noise and squalor, montaged into one man's doomed comeback." },
   { title: "Steppenwolf", author: "Hermann Hesse", why: "A man split between bourgeois comfort and wolfish alienation; midlife crisis as metaphysics." },
@@ -373,6 +499,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Social Contract", author: "Jean-Jacques Rousseau", why: "'Man is born free, and everywhere he is in chains' — the case for popular sovereignty." },
   { title: "A Vindication of the Rights of Woman", author: "Mary Wollstonecraft", why: "Reason claimed as women's birthright, a century before suffrage was even on the table." },
   { title: "The Wealth of Nations", author: "Adam Smith", why: "The invisible hand, self-interest, and the division of labor — economics as a discipline begins here." },
+  { title: "An Essay on the Principle of Population", author: "Thomas Malthus", why: "Population grows exponentially, food only arithmetically, catastrophe closes the gap — the pamphlet that handed Darwin his 'struggle for existence' the moment he read it.", aka: ["Essay on the Principle of Population"] },
   { title: "The Federalist Papers", author: "Alexander Hamilton", why: "Constitutional argument as serial journalism; the owner's manual for a government built to check itself.", aka: ["Federalist Papers", "The Federalist"] },
   { title: "Critique of Pure Reason", author: "Immanuel Kant", why: "The limits of what the mind can know, mapped with exhausting, load-bearing precision." },
   { title: "Phenomenology of Spirit", author: "G.W.F. Hegel", why: "Consciousness's long, dialectical education toward absolute knowing; difficult, and never fully superseded." },
@@ -383,6 +510,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "On Liberty", author: "John Stuart Mill", why: "The harm principle, stated once and never bettered; the case for dissent as a public good." },
   { title: "The Interpretation of Dreams", author: "Sigmund Freud", why: "The unconscious given a grammar; whatever you think of the theory, the questions still stand." },
   { title: "Memories, Dreams, Reflections", author: "Carl Jung", why: "An autobiography written almost entirely from inside dreams and visions rather than outer events; the archetypes-and-collective-unconscious tradition Freud's own case histories never cover." },
+  { title: "Course in General Linguistics", author: "Ferdinand de Saussure", why: "Lecture notes stitched together by students after their professor's death, and language hasn't been theorized the same way since; the arbitrary sign and the langue/parole split — structuralism's whole toolkit starts here.", aka: ["Cours de linguistique générale"] },
+  { title: "Tristes Tropiques", author: "Claude Lévi-Strauss", why: "An anthropologist's Amazon fieldwork rewritten as memoir, travelogue, and elegy for vanishing cultures; structural anthropology's founding work, and nearly a Prix Goncourt winner despite not being a novel." },
   { title: "The Varieties of Religious Experience", author: "William James", why: "Religion studied as lived psychology, not doctrine; the empirical case for taking mysticism seriously." },
   { title: "The Protestant Ethic and the Spirit of Capitalism", author: "Max Weber", why: "Why capitalism took root where it did; ideas as an economic engine, not just an effect." },
   { title: "Suicide", author: "Émile Durkheim", why: "The first great work of empirical sociology; even the most private act, shown to have a social rate." },
@@ -396,6 +525,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Autobiography of Benjamin Franklin", author: "Benjamin Franklin", why: "Self-improvement as an American genre, invented by the man who lived it first." },
   { title: "Walden", author: "Henry David Thoreau", why: "Two years in a cabin as an argument against a life of quiet desperation." },
   { title: "Narrative of the Life of Frederick Douglass", author: "Frederick Douglass", why: "A former slave's own testimony, precise and devastating, that literacy itself was the first freedom." },
+  { title: "Night", author: "Elie Wiesel", why: "A teenager's own account of Auschwitz, written spare enough to let the facts do all the damage without him saying so; testimony precise enough to help win its author the Nobel Peace Prize.", aka: ["La Nuit"] },
+  { title: "Maus", author: "Art Spiegelman", why: "A father's Auschwitz survival drawn as mice stalked by cats; the only comic ever handed a Pulitzer, because no existing category knew what else to call it.", aka: ["Maus: A Survivor's Tale", "The Complete Maus"] },
   { title: "Long Walk to Freedom", author: "Nelson Mandela", why: "Twenty-seven years in prison recounted without bitterness overtaking the argument for justice." },
   { title: "The Decline and Fall of the Roman Empire", author: "Edward Gibbon", why: "Still the most quotable case study in how great powers actually end." },
   { title: "Democracy and Education", author: "John Dewey", why: "Education as the practice of democracy itself, not preparation for some later life." },
@@ -415,6 +546,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Road to Serfdom", author: "Friedrich Hayek", why: "The case that central planning's road, however well-intentioned, ends in the loss of freedom." },
   { title: "The Bhagavad Gita", author: "Vyasa", why: "Duty, action, and detachment, argued on a battlefield between a warrior and his charioteer-god.", aka: ["Bhagavad Gita"] },
   { title: "The Analects", author: "Confucius", why: "Fragments of a teacher's conversations that shaped how a quarter of the world thinks about conduct." },
+  { title: "The Zhuangzi", author: "Zhuangzi", why: "Confucius's great philosophical rival: parable and paradox instead of maxims, arguing that clinging to fixed categories is the real trap — a man dreams he is a butterfly, then wakes unsure which one is dreaming which.", aka: ["Zhuangzi", "Chuang Tzu", "The Book of Chuang Tzu"] },
+  { title: "The Masnavi", author: "Rumi", why: "Sixty-four thousand lines of Sufi parable and ecstatic teaching, dictated over twelve years to a single scribe; eight centuries later, still routinely America's best-selling poet in translation.", aka: ["Masnavi-ye Ma'navi", "Mathnawi", "Masnavi"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────

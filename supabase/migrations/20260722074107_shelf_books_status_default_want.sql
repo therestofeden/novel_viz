@@ -1,0 +1,11 @@
+-- 2026-07-22: shelf_books.status defaulted to 'finished', a leftover from
+-- before the want/reading/finished lifecycle existed (002_shelf_foundations
+-- predates the reading-status work by over a week). Every insert that
+-- omitted `status` — ShelfChip.tsx's addToShelf, ReaderNotes.tsx's
+-- quick-add — silently created a row marked already-read. Both call sites
+-- are now fixed to always pass status explicitly, but the column default
+-- itself was also wrong and should reflect actual product intent: a freshly
+-- added book, absent any other signal, is something you want to read, not
+-- something you've already finished. This only changes the DEFAULT applied
+-- when an insert omits the column — it does not touch any existing row.
+ALTER TABLE public.shelf_books ALTER COLUMN status SET DEFAULT 'want';

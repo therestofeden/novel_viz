@@ -67,16 +67,28 @@ interface Props {
   cacheKey: string | null;
 }
 
+// Reading-status word choices — shared with Shelf.tsx's list view (imports
+// STATUS_WORD) so the label can never drift between the two places a status
+// is shown, the way "Finished" vs a separately-hardcoded copy once could.
+export const STATUS_WORD: Record<ReadingStatus, string> = {
+  want: "Want to read",
+  reading: "Reading",
+  finished: "Read",
+};
+
 const STATUS_LABEL: Record<ReadingStatus, string> = {
-  want: "○ Want to read",
-  reading: "● Reading",
-  finished: "✓ Finished",
+  want: `○ ${STATUS_WORD.want}`,
+  reading: `● ${STATUS_WORD.reading}`,
+  finished: `✓ ${STATUS_WORD.finished}`,
 };
 
 /**
  * Shelf chip: shown on an analysed book.
  * - Signed-out → "Save to shelf" (routes to /auth?next=/)
- * - Signed-in & not saved → "+ Add to shelf"
+ * - Signed-in & not saved → explicit "✓ Read" / "○ Want to read" choice —
+ *   always writes status/started_at/finished_at explicitly (see the
+ *   2026-07-22 note on addToShelf: never rely on the shelf_books.status
+ *   column default).
  * - Signed-in & saved → status cycle (want → reading → finished) + 0–10
  *   rating (once finished) + shelf link + remove.
  */
@@ -122,7 +134,24 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
     };
   }, [user, cacheKey, analysis.title, analysis.author]);
 
-  const addToShelf = async () => {
+  // 2026-07-22 (Stefano: "the add to library - read - want to read thing is
+  // confusing"): this insert used to omit `status` entirely and rely on the
+  // shelf_books.status column default — which was 'finished', a leftover
+  // from before the want/reading/finished lifecycle existed (the table's
+  // original migration, 002_shelf_foundations, predates rating_0_10_and_
+  // started_at by over a week). Effect in production: every "Add to shelf"
+  // click silently created a row marked already-read — with no
+  // started_at/finished_at (a combination cycling through the UI can never
+  // actually produce), the rating control exposed immediately, and no way
+  // to say "I just want to read this later" without noticing afterwards and
+  // clicking through the status pill. Confirmed via query: 49 of the 52
+  // shelf_books rows in production carry exactly that fingerprint
+  // (status='finished' AND started_at IS NULL AND finished_at IS NULL).
+  // Fixed on both ends: the column default is now 'want' (see the
+  // accompanying migration), and this function always passes status
+  // explicitly, taken from an explicit user choice — "✓ Read" or "○ Want to
+  // read" — shown at add time instead of one undifferentiated button.
+  const addToShelf = async (status: ReadingStatus) => {
     if (authLoading) return;
     if (!user) {
       navigate("/auth?next=/");
@@ -133,6 +162,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
       return;
     }
     setBusy(true);
+    const now = new Date().toISOString();
     try {
       const { data: inserted, error } = await supabase
         .from("shelf_books")
@@ -142,12 +172,15 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
           cache_key: cacheKey,
           title: analysis.title,
           author: analysis.author || "",
+          status,
+          started_at: status === "finished" ? now : null,
+          finished_at: status === "finished" ? now : null,
         })
         .select("id, status, rating, started_at, finished_at, note")
         .maybeSingle();
       if (error) throw error;
       setRow((inserted as ShelfRow | null) ?? null);
-      toast.success("Added to your shelf");
+      toast.success(status === "finished" ? "Added — marked as read" : "Added to your shelf");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't update shelf");
     } finally {
@@ -237,18 +270,43 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
     }
   };
 
-  // ── Not saved (or signed out): single add button + shelf link ────────────
+  // ── Not saved: explicit read / want-to-read choice + shelf link ──────────
+  // Signed-out visitors still get a single "Save to shelf" (routes through
+  // /auth first — there's no shelf to write the choice to yet); signed-in
+  // readers get the real choice right away, so the very first click already
+  // records what they meant instead of defaulting to anything.
   if (!row) {
     return (
       <div className="flex items-stretch border border-foreground">
-        <button
-          onClick={addToShelf}
-          disabled={busy}
-          className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <BookmarkPlus className="h-3 w-3" />}
-          {!user ? "Save to shelf" : "Add to shelf"}
-        </button>
+        {user ? (
+          <>
+            <button
+              onClick={() => addToShelf("finished")}
+              disabled={busy}
+              title="Add to shelf, marked as already read"
+              className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <span aria-hidden="true">✓</span>} Read
+            </button>
+            <button
+              onClick={() => addToShelf("want")}
+              disabled={busy}
+              title="Add to shelf, want to read later"
+              className="meta flex items-center gap-2 border-l border-foreground bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <span aria-hidden="true">○</span>} Want to read
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => addToShelf("want")}
+            disabled={busy}
+            className="meta flex items-center gap-2 bg-card px-3 py-2 transition-colors hover:bg-foreground/10 disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <BookmarkPlus className="h-3 w-3" />}
+            Save to shelf
+          </button>
+        )}
         {user && (
           <Link
             to="/shelf"
