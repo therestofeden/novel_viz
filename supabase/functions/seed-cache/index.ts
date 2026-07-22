@@ -325,7 +325,8 @@ const POPULAR_BOOKS = [
   "We Should All Be Feminists by Chimamanda Ngozi Adichie",
   "A Long Way Gone by Ishmael Beah",
   "Persepolis by Marjane Satrapi",
-  "Maus by Art Spiegelman",
+  // "Maus by Art Spiegelman" already listed above (History/Politics/Society,
+  // pre-existing dup found 2026-07-22) — removed here, not re-added.
   "Fun Home by Alison Bechdel",
   "The Autobiography of Malcolm X by Malcolm X",
   "Wild by Cheryl Strayed",
@@ -2306,6 +2307,16 @@ const POPULAR_BOOKS = [
   // covered here from earlier rounds, so only these two were genuinely missing ──
   "Course in General Linguistics by Ferdinand de Saussure",
   "Tristes Tropiques by Claude Lévi-Strauss",
+
+  // ── Round 17 (2026-07-22) — closing residual gaps vs. classic.ts's same-day
+  // additions (lyric poetry, Chinese/Sufi philosophy, classical economics, and
+  // the graphic-novel gap). Sappho (already covered here since round 11 under
+  // "If Not, Winter: Fragments of Sappho"), Leaves of Grass, Night, and Maus
+  // were already covered here from earlier rounds, so only these three were
+  // genuinely missing ──
+  "The Zhuangzi by Zhuangzi",
+  "The Masnavi by Rumi",
+  "An Essay on the Principle of Population by Thomas Malthus",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
