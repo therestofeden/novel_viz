@@ -2317,6 +2317,17 @@ const POPULAR_BOOKS = [
   "The Zhuangzi by Zhuangzi",
   "The Masnavi by Rumi",
   "An Essay on the Principle of Population by Thomas Malthus",
+
+  // ── Round 18 (2026-07-23) — closing residual gaps vs. classic.ts's same-day
+  // additions (detective fiction and scientific romance's founding titles,
+  // plus the children's/fable gap). The Time Machine and Twenty Thousand
+  // Leagues Under the Sea were already covered here from earlier rounds
+  // (sci-fi ancestor sweeps), so only these two genre-founding pairs were
+  // genuinely missing ──
+  "The Murders in the Rue Morgue by Edgar Allan Poe",
+  "The Adventures of Sherlock Holmes by Arthur Conan Doyle",
+  "Alice's Adventures in Wonderland by Lewis Carroll",
+  "The Little Prince by Antoine de Saint-Exupéry",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
