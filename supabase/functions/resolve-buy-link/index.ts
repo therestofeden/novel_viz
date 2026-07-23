@@ -16,7 +16,27 @@
 //
 // We deliberately do NOT call an external IP→geo API here: that adds
 // 150–400ms and a dependency we don't need for country-level routing.
-
+//
+// 2026-07-23 (daily backend audit): this is the only public (verify_jwt:
+// false), unauthenticated function in the project with zero abuse-hardening
+// -- every sibling function (search-books, analyze-novel, takeaways,
+// recommend-by-dna, recommend-anti-shelf, dna-consensus, popular-books) has
+// IP-hashed rate limiting via count_recent_events. Deliberately NOT adding
+// that same pattern here: this function's whole design point (see goals
+// above) is zero DB round-trips and <100ms p50, and unlike those siblings it
+// never calls Gemini or an external API, so there's no per-request cost to
+// throttle -- a synchronous rate-limit check would violate the documented
+// design goal for a mostly theoretical benefit (Supabase's own platform-level
+// invocation quotas already bound raw request volume, and responses are
+// edge-cacheable for a day). What it WAS missing, unlike every other public
+// function here (search-books caps query length at 200 chars), is any input
+// size bound at all: title/author are echoed into every vendor URL in the
+// response (up to ~4 per country), so an unbounded input is a free
+// request-to-response amplification vector and a log-flooding risk the
+// moment this function's console.error path is hit with attacker-controlled
+// data. Fixed with a plain sync length check -- adds zero latency, zero DB
+// dependency, keeps the fail-open philosophy intact.
+const MAX_FIELD_LEN = 300;
 
 import { buildCorsHeaders } from "../_shared/cors.ts";
 
@@ -345,6 +365,12 @@ Deno.serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+    if (title.length > MAX_FIELD_LEN || author.length > MAX_FIELD_LEN) {
+      return new Response(
+        JSON.stringify({ error: `title/author too long (max ${MAX_FIELD_LEN} characters)` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     const detected = detectCountry(req);
