@@ -2328,6 +2328,15 @@ const POPULAR_BOOKS = [
   "The Adventures of Sherlock Holmes by Arthur Conan Doyle",
   "Alice's Adventures in Wonderland by Lewis Carroll",
   "The Little Prince by Antoine de Saint-Exupéry",
+
+  // ── Round 19 (2026-07-24) — closing residual gaps vs. classic.ts's same-day
+  // additions (world historiography beyond Greco-Roman, global travel
+  // literature, testimonial autobiography/diary). The Autobiography of
+  // Malcolm X and The Diary of a Young Girl were already covered here from
+  // earlier rounds, so only these three were genuinely missing ──
+  "Records of the Grand Historian by Sima Qian",
+  "The Travels of Marco Polo by Marco Polo",
+  "The Rihla by Ibn Battuta",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
