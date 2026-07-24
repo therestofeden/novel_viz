@@ -612,7 +612,7 @@ const Index = () => {
       } finally {
         if (seq === searchSeqRef.current) setSuggestLoading(false);
       }
-    }, 320);
+    }, 150);
     return () => clearTimeout(handle);
   }, [title]);
 

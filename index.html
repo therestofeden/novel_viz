@@ -25,6 +25,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!--
+      Every data call in the app (popular-books on mount, search-books per
+      keystroke, analyze-novel on submit) hits the Supabase project origin,
+      which is a *different* origin than the app itself. Without a
+      preconnect hint, the FIRST request of each page load pays DNS + TCP +
+      TLS handshake cost (100-300ms) before the request even starts —
+      right on the critical path for both initial load and the first
+      autocomplete keystroke. %VITE_SUPABASE_URL% is replaced at build time
+      by Vite from the env var, so this stays correct if the project ref
+      ever changes.
+    -->
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
+    <link rel="dns-prefetch" href="%VITE_SUPABASE_URL%" />
+    <!--
       Non-blocking font load: a plain <link rel="stylesheet"> here blocks
       first paint on a second network hop (googleapis.com -> gstatic.com)
       before ANY pixel renders, for every visitor, cache or no cache.
