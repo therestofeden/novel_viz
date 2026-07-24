@@ -409,9 +409,6 @@ const Index = () => {
 
   // Per-prefix in-memory cache (lifetime: page session). Avoids re-fetching identical queries.
   const searchCacheRef = useRef<Map<string, BookSuggestion[]>>(new Map());
-  // Cache of "queries known to return zero results" — lets us short-circuit longer prefixes
-  // built on top of an empty stem (e.g. if "xyz" → 0 results, "xyzq" is also 0 — don't fetch).
-  const emptyPrefixesRef = useRef<Set<string>>(new Set());
   // Monotonic sequence to discard stale (out-of-order) responses.
   const searchSeqRef = useRef(0);
   // Cache the auth token so we don't hit getSession() on every keystroke.
@@ -559,12 +556,18 @@ const Index = () => {
     const needsNetwork = local.length < 5;
     if (!needsNetwork) return;
 
-    // 4. Empty-prefix short-circuit.
-    for (let len = cacheKey.length - 1; len >= 2; len--) {
-      if (emptyPrefixesRef.current.has(cacheKey.slice(0, len))) {
-        return; // local results (if any) already shown; nothing else to fetch
-      }
-    }
+    // (Previously short-circuited longer queries whenever a shorter prefix had
+    // already come back empty — e.g. "...marco pol" → 0 results would block
+    // "...marco polo" from ever being fetched. Removed 2026-07-24: found live
+    // that upstream (OpenLibrary/Google Books) result counts are NOT monotonic
+    // in query length — a query ending mid-word, one character before
+    // completing a real word ("marco pol"), can legitimately return zero while
+    // the completed word ("marco polo") returns a confident top hit, because
+    // neither upstream search engine does prefix-completion on the last token
+    // of a multi-word phrase query. The debounce below plus the exact-string
+    // cache above already avoid redundant fetches for a query the user isn't
+    // actively changing; that's sufficient without assuming "empty now" means
+    // "empty forever, and for everything built on top of it too.")
 
     const handle = setTimeout(async () => {
       abortRef.current?.abort();
@@ -595,9 +598,6 @@ const Index = () => {
         }
         const finalResults = merged.slice(0, 8);
         searchCacheRef.current.set(cacheKey, finalResults);
-        if (networkResults.length === 0 && local.length === 0) {
-          emptyPrefixesRef.current.add(cacheKey);
-        }
         if (searchCacheRef.current.size > 120) {
           const firstKey = searchCacheRef.current.keys().next().value;
           if (firstKey) searchCacheRef.current.delete(firstKey);
