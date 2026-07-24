@@ -59,6 +59,49 @@
 // regression suite (homer/hoer/odissey/crime and punishment/war and
 // peace/dune/ulysses/emma) plus 3 negative controls, zero regressions,
 // before shipping — see project memory for the verification harness.
+//
+// 2026-07-24 (Stefano: "search still seems a bit broken" — checked logs,
+// found nothing erroring, so re-ran the full regression sweep and found 3
+// live problems the prior fixes didn't cover):
+//   (6) Single generic-word queries that are only PART of a canonical title
+//       ("odyssey" alone, "iliad" alone — no "the") barely beat OL/GB junk
+//       whose data-quality-mangled author field happens to contain that same
+//       word ("Homer Odyssey", "Iliad Doggrel" — clearly a title/author
+//       tagging artifact upstream, not a real distinct author), because
+//       those junk rows get isAuthorTokenMatch's full lexicalScore credit
+//       (340) while the canon-injected literal hit only scored a mid-string
+//       title-word match (~180) + the old CANON_BONUS (150) — not enough to
+//       reliably win. Canon rows are curated ground truth; once the
+//       injection loop's own re-verification confirms a literal hit, that
+//       candidate should dominate ordinary noise, not just barely compete.
+//       Raised CANON_BONUS 150 -> 450 (previously only fuzzy-only hits got
+//       real separation via CANON_FUZZY_ONLY_BONUS; literal hits need it
+//       too, since "part of a multi-word title" is a legitimately weaker
+//       lexicalScore shape than "whole title" or "whole author").
+//   (7) pickDisplayTitle's altTitle/ownTitle tie-break used raw lexicalScore
+//       against the query, which back fires specifically for author-only
+//       queries: an edition title like "The Odyssey of Homer" or "Homer's
+//       Odyssey" scores BETTER than the clean own-title "The Odyssey" only
+//       because it happens to also contain the author's name — so searching
+//       "homer" picked the wordier cataloging-variant title over the
+//       canonical short one, pushing the canon-injected clean entry further
+//       down and creating near-duplicate entries. Fixed: when one title is
+//       literally the other with extra wrapper text (either is a substring
+//       of the other — the "X" vs "X of AUTHOR"/"AUTHOR's X" cataloging
+//       pattern), always prefer the shorter/cleaner form outright, instead
+//       of running the query-lexical tie-break at all. Only activates when
+//       one title actually contains the other, so it can't change any pair
+//       of genuinely different titles (e.g. a real alternate/translated
+//       title) that was already comparing correctly.
+//   (8) Author display casing — OL frequently stores classical-author names
+//       as literal ALL-CAPS ("HOMER"), which rendered verbatim in the UI.
+//       Added normalizeAuthorCasing(): title-cases a name ONLY when it's
+//       genuinely all-uppercase, leaving normal mixed-case names (including
+//       initials like "J. R. R. Tolkien") untouched.
+// Verified against the full regression suite (homer, hoer, the odissey,
+// odissey, the odyssey, odyssey, iliad, dune, tolstoy, garcia marquez,
+// emma, ulysses, virgil, dante, sophocles, "shakespeare - hamlet",
+// "tolkien: the hobbit", "grate gatsby") before shipping.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
@@ -100,6 +143,22 @@ function isLatin(s: string): boolean {
   return non.length === 0;
 }
 
+// 2026-07-24: OL frequently stores classical/old-catalog author names in
+// literal ALL-CAPS ("HOMER", "SOPHOCLES"). Only touches strings that are
+// genuinely all-uppercase (so normal names, and initials like "J. R. R.
+// Tolkien", pass through untouched) — title-cases each word, leaving short
+// connective words as-is isn't needed here since author names don't carry
+// "of"/"the" the way titles do.
+function normalizeAuthorCasing(name: string): string {
+  if (!name) return name;
+  const letters = name.replace(/[^A-Za-z]/g, "");
+  if (letters.length < 2) return name;
+  if (name !== name.toUpperCase() || name === name.toLowerCase()) return name;
+  return name.replace(/[A-Za-z]+/g, (word) =>
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  );
+}
+
 // 2026-07-17: query-aware, canonical-leaning alias selection (see header).
 // Primary Latin name always wins (don't second-guess real names). Otherwise,
 // among the Latin alternatives: prefer an exact query match, then a
@@ -109,26 +168,26 @@ function isLatin(s: string): boolean {
 // to ONE spelling across all their works, so dedup and the author-set boost
 // see them as the same person.
 function pickLatinAuthor(primary: string | undefined, alts: string[] | undefined, query = ""): string {
-  if (primary && isLatin(primary)) return primary;
+  if (primary && isLatin(primary)) return normalizeAuthorCasing(primary);
   const latinAlts = (alts ?? []).filter((a) => a && isLatin(a) && a.trim().length >= 3);
   if (latinAlts.length > 0) {
     const qn = normalizeForSearch(query);
     if (qn.length >= 3) {
       const exact = latinAlts.find((a) => normalizeForSearch(a) === qn);
-      if (exact) return exact;
+      if (exact) return normalizeAuthorCasing(exact);
       const token = latinAlts.find((a) =>
         normalizeForSearch(a).split(" ").filter(Boolean).includes(qn)
       );
-      if (token) return token;
+      if (token) return normalizeAuthorCasing(token);
       const prefix = latinAlts.find((a) => normalizeForSearch(a).startsWith(qn));
-      if (prefix) return prefix;
+      if (prefix) return normalizeAuthorCasing(prefix);
     }
-    return latinAlts.reduce(
+    return normalizeAuthorCasing(latinAlts.reduce(
       (best, a) => (a.trim().length < best.trim().length ? a : best),
       latinAlts[0],
-    );
+    ));
   }
-  if (primary) return transliterate(primary);
+  if (primary) return normalizeAuthorCasing(transliterate(primary));
   return "Unknown";
 }
 
@@ -138,6 +197,21 @@ function pickDisplayTitle(query: string, d: { title?: string; editions?: { docs?
   const altTitle = editionTitle && isLatin(editionTitle) ? editionTitle : null;
   if (!ownTitle) return altTitle;
   if (!altTitle || altTitle === ownTitle) return ownTitle;
+  // 2026-07-24: old-catalog editions are frequently titled as a wrapped
+  // variant of the real title — "X" vs "X of AUTHOR" / "AUTHOR's X" (e.g.
+  // "The Odyssey" vs "The Odyssey of Homer"). Using raw lexicalScore here
+  // backfired for author-only queries: the wordier variant scores HIGHER
+  // purely because it also contains the author's name, so "homer" preferred
+  // "The Odyssey of Homer" over the clean "The Odyssey". When one title is
+  // literally the other plus extra wrapper text, always prefer the
+  // shorter/cleaner one — this can't affect genuinely different titles
+  // (e.g. a real alternate translation title), since neither contains the
+  // other as a substring in that case, and the lexical tie-break below still
+  // runs for those.
+  const ownNorm = normalizeForSearch(ownTitle);
+  const altNorm = normalizeForSearch(altTitle);
+  if (altNorm.includes(ownNorm) && altNorm.length > ownNorm.length) return ownTitle;
+  if (ownNorm.includes(altNorm) && ownNorm.length > altNorm.length) return altTitle;
   return lexicalScore(query, altTitle, "") > lexicalScore(query, ownTitle, "") ? altTitle : ownTitle;
 }
 
@@ -369,7 +443,7 @@ const FUZZY_AUTHOR_WEIGHT = 360;
 // strongest possible signal of what the user meant, worth roughly what a
 // healthy popularityScore would contribute for a famous work.
 type CanonRow = { title: string; author: string; sim: number };
-const CANON_BONUS = 150;
+const CANON_BONUS = 700;
 // Found live (2026-07-17) verifying "hoer" → Homer: CANON_BONUS alone
 // wasn't enough when the query is ALSO a real, if obscure, literal name
 // match — e.g. actual OL authors surnamed "Hoer" get isAuthorTokenMatch's
@@ -378,8 +452,36 @@ const CANON_BONUS = 150;
 // match (no literal containment at all — "hoer" never literally appears in
 // "Homer") needs a much larger push to reliably surface the canonical work
 // the user almost certainly meant over an unrelated same-surname author's
-// academic papers. Literal canon hits don't need this: lexicalScore's own
-// literal-match branches already dominate, CANON_BONUS alone is plenty.
+// academic papers.
+// 2026-07-24: raised 150 -> 450. Original assumption ("literal canon hits
+// don't need much help, lexicalScore's own branches already dominate") only
+// holds when the query matches the WHOLE title or WHOLE author. It breaks
+// for a single generic word that's only PART of a multi-word canonical
+// title ("odyssey" alone, "iliad" alone) — that only earns a mid-string
+// title-word match (~180), which ordinary OL/GB noise with a data-mangled
+// author field containing the same word (e.g. "Homer Odyssey", "Iliad
+// Doggrel" — clearly upstream title/author tagging artifacts) can beat via
+// its own full isAuthorTokenMatch credit (340) plus popularity. A confirmed
+// canon literal hit is curated ground truth and should dominate ordinary
+// noise outright, not just barely compete with it.
+//
+// 2026-07-24, second pass, same day: 450 STILL wasn't enough for "odyssey"/
+// "iliad" alone once live-verified — found the real culprit is the
+// pre-existing (2026-07-13) author-vs-about-author block further down this
+// file. Its "genuine author match" boost (+150) fires for ANY candidate
+// whose author field token-matches the query, including obvious data noise
+// where "Odyssey"/"Iliad" is itself a mis-tagged author/imprint/pen name
+// ("Adventures in Odyssey", "Odyssey Rose", "Homer Odyssey", "Doggrel,
+// Iliad Sir" — an 18th-century satirical pseudonym). That block already
+// exempts canon works from its DEMOTION half (`if (c.canonWork) continue`),
+// but canon works don't get its BOOST half either (their real author,
+// "Homer", doesn't token-match "odyssey"/"iliad") — so a junk row can stack
+// isAuthorTokenMatch (340) + title-startsWith (260) + this boost (150) =
+// 750 lexicalScore before popularity, while the canon-injected mid-string
+// title match only had 179.5 + the old 450 = 629.5. Raised to 700 so the
+// canon literal-hit total (~880) clears that ~750-810 realistic ceiling
+// with margin, verified live against the same full regression suite plus
+// this specific "odyssey"/"iliad" case.
 const CANON_FUZZY_ONLY_BONUS = 450;
 // ----------------------------------------------------------------------------
 
@@ -727,7 +829,7 @@ Deno.serve(async (req) => {
     for (const item of gbItems) {
       const vi = item.volumeInfo;
       if (!vi.title || !isLatin(vi.title)) continue;
-      const gbAuthor = vi.authors?.[0] ?? "Unknown";
+      const gbAuthor = normalizeAuthorCasing(vi.authors?.[0] ?? "Unknown");
       const dedupKey = `${normalizeForSearch(vi.title)}::${normalizeForSearch(gbAuthor)}`;
       if (seen.has(dedupKey)) continue;
       seen.add(dedupKey);
