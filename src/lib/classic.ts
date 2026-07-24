@@ -313,6 +313,58 @@ import { isMustRead } from "@/lib/must-read";
  * medium produces a second or third work of comparable stature.
  *
  * Classic count: 214 → 220 (154 fiction + 66 non-fiction).
+ *
+ * 2026-07-23 (daily curation pass): six titles, vetted against
+ * moser-the-librarian's rubric, closing two founding-genre gaps together
+ * plus two independent picks. Grepped a fresh candidate pool (plain forms,
+ * checked for coincidental substring collisions the way "Poe" false-
+ * positived against "poem"/"poetry" text already in this file's own prose)
+ * — all six confirmed genuine zero-hits on both lists. Fiction: Edgar Allan
+ * Poe's The Murders in the Rue Morgue (1841) and Arthur Conan Doyle's The
+ * Adventures of Sherlock Holmes (1892) close detective fiction's total
+ * absence — a globally massive, Lindy-proven genre with zero representation
+ * despite this list covering nearly everything else; Poe's Dupin invented
+ * the armchair-deduction template in a single Graham's Magazine story, and
+ * Doyle's twelve Strand stories are what actually built a readership for
+ * it. Jules Verne's Twenty Thousand Leagues Under the Sea (1870) and H.G.
+ * Wells's The Time Machine (1895) close a second, adjacent gap: scientific
+ * romance, the genre that directly produced several books already sitting
+ * on this list (Dune, Neuromancer, Solaris, Do Androids Dream of Electric
+ * Sheep?, The Left Hand of Darkness) — their common ancestors were
+ * themselves absent until now. Two independent picks close children's/
+ * fable literature's total absence from both lists: Lewis Carroll's
+ * Alice's Adventures in Wonderland (1865), a mathematician's dream-logic
+ * played completely straight, whose nonsense-as-method line runs directly
+ * through Joyce and Borges; and Antoine de Saint-Exupéry's The Little
+ * Prince (1943), written by a Free French pilot who disappeared on a
+ * reconnaissance flight the following year, now the most translated book
+ * in the world after the Bible. All six facts (Poe's 1841 Graham's
+ * Magazine publication, Doyle's 14 October 1892 collection date, Verne's
+ * 1870 book publication, Wells's May 1895 publication, Carroll's 4 July
+ * 1865 publication, the Little Prince's Bible-adjacent translation count)
+ * independently verified via WebSearch rather than trusted from recall.
+ * All six clear the Lindy/A-tier bar with room to spare; none were close
+ * calls.
+ *
+ * Alice's Adventures in Wonderland is flagged, not promoted, as a fourth
+ * possible Must Read candidate — alongside the still-open Bridge on the
+ * Drina (2026-07-20), Night (2026-07-21), and Leaves of Grass (2026-07-22)
+ * flags, now four awaiting Stefano's own review together. Reasoning: its
+ * influence runs well past "excellent children's book" — it's a founding
+ * text of literary nonsense whose logic-games directly shaped Joyce's
+ * wordplay and Borges's labyrinths, the kind of formal-influence claim that
+ * argues for a tier above merely earning its place. Poe, Doyle, Verne, and
+ * Wells were explicitly considered against the same bar and confidently
+ * placed at Classic/A-tier instead: each is a genre's foundation rather
+ * than a book most readers finish and call their favorite novel, the same
+ * "importance outweighs sit-down-and-read-it" logic applied to Sappho and
+ * Malthus on 2026-07-22. The Little Prince came closest of the four
+ * rejections — genuinely beloved, not just historically important — but
+ * its brevity and register (a children's fable first, philosophy second)
+ * keep it a notch below Must Read's novel/epic/drama-dominated roster,
+ * closer to a companion for Alice than a second flag alongside it.
+ *
+ * Classic count: 220 → 226 (160 fiction + 66 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -377,6 +429,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Eugene Onegin", author: "Alexander Pushkin", why: "The novel-in-verse that built modern Russian literature out of nothing." },
   { title: "A Hero of Our Time", author: "Mikhail Lermontov", why: "The Byronic antihero, imported to the Caucasus and given a case file." },
   { title: "Notes from Underground", author: "Fyodor Dostoevsky", why: "The first existentialist novel; spite as philosophy, delivered from a basement." },
+  { title: "The Murders in the Rue Morgue", author: "Edgar Allan Poe", why: "A locked room, an armchair genius, and a solution nobody saw coming — deduction as entertainment, invented whole in a single 1841 magazine story." },
   { title: "The Scarlet Letter", author: "Nathaniel Hawthorne", why: "Puritan shame made permanent, stitched to a chest; American guilt's founding text." },
   { title: "Leaves of Grass", author: "Walt Whitman", why: "Twelve poems, self-typeset and self-published, and English verse was never as free again; 'I contain multitudes' as an entire literary program." },
   { title: "My Ántonia", author: "Willa Cather", why: "The prairie remembered as elegy; frontier life without the myth-making.", aka: ["My Antonia"] },
@@ -386,11 +439,15 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Sister Carrie", author: "Theodore Dreiser", why: "American ambition without the moral punishment novels usually demand of it." },
   { title: "The Awakening", author: "Kate Chopin", why: "A woman's self-possession as scandal; the marriage plot refused outright." },
   { title: "Dom Casmurro", author: "Machado de Assis", why: "An unreliable narrator poisons his own marriage story with jealousy; Brazil's founding modern novel, a century ahead of its methods." },
+  { title: "Twenty Thousand Leagues Under the Sea", author: "Jules Verne", why: "Captain Nemo's submarine predicted the real thing by decades; one of the two founding fathers of science fiction, still the more prophetic." },
   { title: "Germinal", author: "Émile Zola", why: "A mining strike as tragedy; naturalism's argument that poverty is a plot, not a flaw." },
   { title: "The Picture of Dorian Gray", author: "Oscar Wilde", why: "Vanity given a body double; aestheticism's most quotable cautionary tale." },
   { title: "Strange Case of Dr Jekyll and Mr Hyde", author: "Robert Louis Stevenson", why: "The divided self, given a formula and a body count.", aka: ["Dr. Jekyll and Mr. Hyde", "The Strange Case of Dr Jekyll and Mr Hyde"] },
   { title: "Dracula", author: "Bram Stoker", why: "Epistolary horror that invented the modern vampire's entire rulebook." },
   { title: "The Woman in White", author: "Wilkie Collins", why: "The sensation novel's founding text; identity theft as Victorian nightmare." },
+  { title: "Alice's Adventures in Wonderland", author: "Lewis Carroll", why: "A mathematician's dream logic, played completely straight; nonsense-as-method that runs straight through to Joyce and Borges.", aka: ["Alice in Wonderland"] },
+  { title: "The Adventures of Sherlock Holmes", author: "Arthur Conan Doyle", why: "The consulting detective who made observation itself the plot; every fictional genius-investigator since is working from his method." },
+  { title: "The Time Machine", author: "H.G. Wells", why: "Coined the phrase and the device in one stroke; Verne imagined the machines we'd build, Wells imagined what they'd cost us." },
   { title: "Tess of the d'Urbervilles", author: "Thomas Hardy", why: "Fate as a rigged system; Hardy's angriest argument against the moral order." },
   { title: "The Cherry Orchard", author: "Anton Chekhov", why: "An estate sold out from under a family too busy talking to notice; comedy and tragedy finally admit they're the same thing." },
   { title: "Buddenbrooks", author: "Thomas Mann", why: "A merchant dynasty's slow decline, four generations deep; Mann's debut and still his warmest." },
@@ -428,6 +485,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Austerlitz", author: "W.G. Sebald", why: "Memory, architecture, and the Holocaust's aftershocks, told in single unbroken paragraphs." },
   { title: "Never Let Me Go", author: "Kazuo Ishiguro", why: "A quiet dystopia about acceptance; horror delivered entirely in understatement." },
   { title: "Suite Française", author: "Irène Némirovsky", why: "France's 1940 collapse, written in real time by an author who didn't survive to finish it.", aka: ["Suite Francaise"] },
+  { title: "The Little Prince", author: "Antoine de Saint-Exupéry", why: "A downed pilot's fable about a boy, a rose, and a planet the size of a house; the world's most translated book after the Bible, written by a man who vanished flying reconnaissance the following year.", aka: ["Le Petit Prince"] },
   { title: "Fatelessness", author: "Imre Kertész", why: "A Budapest teenager narrates Auschwitz in a flat, uncomprehending voice that refuses every consoling frame; the fictional counterpart no memoir can quite reach.", aka: ["Fateless", "Sorstalanság"] },
   { title: "Life and Fate", author: "Vasily Grossman", why: "Stalingrad's War and Peace; a book the KGB tried to arrest, not just ban." },
   { title: "One Day in the Life of Ivan Denisovich", author: "Aleksandr Solzhenitsyn", why: "The Gulag rendered in a single ordinary day; the sentence that cracked Soviet silence." },
