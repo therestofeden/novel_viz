@@ -27,7 +27,13 @@ import { ReaderNotes } from "@/components/ReaderNotes";
 import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
-import { RatingDistribution, densifyRatingCounts } from "@/components/RatingDistribution";
+import { densifyRatingCounts } from "@/lib/rating-counts";
+import { RatingDistributionSkeleton } from "@/components/RatingDistributionSkeleton";
+// recharts + d3 is ~333 kB raw / 84 kB gzip and the chart sits below the
+// fold. Statically importing it blocked BookPage from rendering at all
+// until that chunk had downloaded and parsed; lazy() moves it off the
+// critical path so the page paints first and the chart fills in.
+const RatingDistribution = lazy(() => import("@/components/RatingDistribution"));
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
 import { supabase } from "@/integrations/supabase/client";
@@ -447,12 +453,14 @@ const BookPage = () => {
 
         {ratingStats && (
           <section className="ink-border-b px-4 py-6 md:px-8">
-            <RatingDistribution
-              counts={ratingStats.counts}
-              total={ratingStats.total}
-              avg={ratingStats.avg}
-              label="Reader ratings"
-            />
+            <Suspense fallback={<RatingDistributionSkeleton />}>
+              <RatingDistribution
+                counts={ratingStats.counts}
+                total={ratingStats.total}
+                avg={ratingStats.avg}
+                label="Reader ratings"
+              />
+            </Suspense>
           </section>
         )}
 

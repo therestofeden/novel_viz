@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeftRight, Loader2, LogOut, Sparkles, Trash2 } from "lucide-react";
 import { NovelVizLogo } from "@/components/NovelVizLogo";
@@ -11,7 +11,11 @@ import Constellation from "@/components/Constellation";
 import { RatingControl } from "@/components/RatingControl";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
-import { RatingDistribution } from "@/components/RatingDistribution";
+import { RatingDistributionSkeleton } from "@/components/RatingDistributionSkeleton";
+// Same reasoning as BookPage: the recharts/d3 chunk is the second-largest
+// asset in the build and this chart renders below the constellation, so
+// it must not gate the shelf list from painting.
+const RatingDistribution = lazy(() => import("@/components/RatingDistribution"));
 import { STATUS_WORD } from "@/components/ShelfChip";
 
 type ReadingStatus = "want" | "reading" | "finished";
@@ -332,13 +336,15 @@ const Shelf = () => {
               </div>
 
               {ratingStats.total > 0 && (
-                <RatingDistribution
-                  className="mt-8"
-                  counts={ratingStats.counts}
-                  total={ratingStats.total}
-                  avg={ratingStats.avg}
-                  label="Your ratings"
-                />
+                <Suspense fallback={<RatingDistributionSkeleton className="mt-8" />}>
+                  <RatingDistribution
+                    className="mt-8"
+                    counts={ratingStats.counts}
+                    total={ratingStats.total}
+                    avg={ratingStats.avg}
+                    label="Your ratings"
+                  />
+                </Suspense>
               )}
 
               <div className="meta mt-12 mb-4 flex items-center gap-3 text-muted-foreground">

@@ -12,20 +12,9 @@ export interface RatingDistributionProps {
   className?: string;
 }
 
-/**
- * Fills a sparse {rating: count} map (as stored in book_rating_stats'
- * jsonb, which only keys ratings that actually occurred) into a dense
- * 0..10 array for charting.
- */
-export function densifyRatingCounts(counts: Record<string, number> | null | undefined): number[] {
-  const out = new Array<number>(11).fill(0);
-  if (!counts) return out;
-  for (const [k, v] of Object.entries(counts)) {
-    const n = Number(k);
-    if (Number.isInteger(n) && n >= 0 && n <= 10) out[n] = v;
-  }
-  return out;
-}
+// NOTE: densifyRatingCounts used to live here, but callers need it at
+// data-fetch time while this module drags in recharts. It now lives in
+// @/lib/rating-counts so importing it costs nothing.
 
 // Triangular-kernel smoothing over the 11 discrete rating bins, rescaled to
 // the same peak height as the raw counts — reads as a density envelope
@@ -128,3 +117,6 @@ export const RatingDistribution = ({ counts, total, avg, label, className }: Rat
     </div>
   );
 };
+
+// Default export exists so route files can lazy() this module directly.
+export default RatingDistribution;
