@@ -5,7 +5,7 @@
 // until the user explicitly regenerates.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
+import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const ROUTE = "recommend-anti-shelf";
@@ -402,10 +402,16 @@ Return 6–10 recommendations via the render_recommendations tool. For each pick
     });
 
     if (aiRes.status === 429 || aiRes.status === 503) {
-      return new Response(JSON.stringify({ error: "AI is rate-limited. Try again shortly." }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Reason first — a depleted-billing 429 and a genuine capacity 429 both
+      // land here, but only one of them is fixed by "try again shortly".
+      // See _shared/gemini.ts's classifyGeminiFailure/describeGeminiFailure.
+      const reason = aiRes.headers.get(GEMINI_FAILURE_REASON_HEADER) ?? undefined;
+      const text = await aiRes.text().catch(() => "");
+      console.error("AI gateway error", aiRes.status, reason, text);
+      return new Response(
+        JSON.stringify({ error: describeGeminiFailure(reason) ?? "AI is rate-limited. Try again shortly.", reason }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
     if (aiRes.status === 402) {
       return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
@@ -415,8 +421,9 @@ Return 6–10 recommendations via the render_recommendations tool. For each pick
     }
     if (!aiRes.ok) {
       const text = await aiRes.text();
-      console.error("AI gateway error", aiRes.status, text);
-      return new Response(JSON.stringify({ error: "AI request failed" }), {
+      const reason = aiRes.headers.get(GEMINI_FAILURE_REASON_HEADER) ?? undefined;
+      console.error("AI gateway error", aiRes.status, reason, text);
+      return new Response(JSON.stringify({ error: describeGeminiFailure(reason) ?? "AI request failed", reason }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

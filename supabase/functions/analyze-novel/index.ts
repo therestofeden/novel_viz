@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { geminiFetchWithFallback, MODEL, GEMINI_BASE, MODEL_FALLBACKS, recordGeminiSpend } from "../_shared/gemini.ts";
+import { geminiFetchWithFallback, MODEL, GEMINI_BASE, MODEL_FALLBACKS, recordGeminiSpend, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 
 // The raw preamble fetch and callPreview both bypass the shared
@@ -1010,9 +1010,11 @@ async function callStructuredAnalysis(
 
   if (!response.ok) {
     const errText = await response.text();
-    console.error("Gemini API error:", response.status, errText);
+    const reason = response.headers.get(GEMINI_FAILURE_REASON_HEADER) ?? undefined;
+    console.error("Gemini API error:", response.status, reason, errText);
     const err: any = new Error(`Gemini API error ${response.status}`);
     err.status = response.status;
+    err.reason = reason;
     throw err;
   }
 
@@ -1454,9 +1456,18 @@ Deno.serve(async (req) => {
           analysis = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt);
         } catch (e: any) {
           const s: number | undefined = e?.status;
-          console.error(JSON.stringify({ fn: "analyze-novel", stage: "callStructuredAnalysis", errStatus: s, errMsg: e?.message }));
+          const reason: string | undefined = e?.reason;
+          console.error(JSON.stringify({ fn: "analyze-novel", stage: "callStructuredAnalysis", errStatus: s, errReason: reason, errMsg: e?.message }));
+          // Reason-based messages come first — they distinguish failures that
+          // render to the SAME status code (usually 429/503) but need
+          // different, honest user guidance. See _shared/gemini.ts for why
+          // this exists: a depleted-billing 429 used to show the same
+          // "overloaded" text as a genuine capacity 429 for ~2.5 days straight.
+          const reasonMsg = describeGeminiFailure(reason);
           let errMsg: string;
-          if (s === 429 || s === 503) {
+          if (reasonMsg) {
+            errMsg = reasonMsg;
+          } else if (s === 429 || s === 503) {
             errMsg = "The AI service is overloaded right now. Please try again in a minute.";
           } else if (s === 401 || s === 403) {
             errMsg = "There's an issue with the AI service credentials. Please try again later or add your own Gemini API key.";
@@ -1467,7 +1478,7 @@ Deno.serve(async (req) => {
             // Generic / unknown — only this branch should say "too obscure".
             errMsg = "Couldn't analyze this book — it may be too obscure for the AI. Try adding 'by [Author Name]' to the title, or try again in a moment.";
           }
-          send("error", { error: errMsg, status: s ?? 500 });
+          send("error", { error: errMsg, status: s ?? 500, reason });
           controller.close();
           return;
         }

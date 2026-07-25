@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
+import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 
 // ─── SSE helpers ──────────────────────────────────────────────────────────────
@@ -74,8 +74,10 @@ async function generateQuestions(
   });
 
   if (!response.ok) {
-    const err: any = new Error(`AI gateway error ${response.status}`);
+    const reason = response.headers.get(GEMINI_FAILURE_REASON_HEADER) ?? undefined;
+    const err: any = new Error(describeGeminiFailure(reason) ?? `AI gateway error ${response.status}`);
     err.status = response.status;
+    err.reason = reason;
     throw err;
   }
 
@@ -163,8 +165,10 @@ async function streamSynthesis(
   });
 
   if (!response.ok) {
-    const err: any = new Error(`AI gateway error ${response.status}`);
+    const reason = response.headers.get(GEMINI_FAILURE_REASON_HEADER) ?? undefined;
+    const err: any = new Error(describeGeminiFailure(reason) ?? `AI gateway error ${response.status}`);
     err.status = response.status;
+    err.reason = reason;
     throw err;
   }
 

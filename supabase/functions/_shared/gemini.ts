@@ -54,6 +54,70 @@ export function estimateCostUsd(model: string, promptTokens: number, completionT
   return (promptTokens / 1_000_000) * pricing.input + (completionTokens / 1_000_000) * pricing.output;
 }
 
+// ---------- Failure classification ----------
+//
+// Added 2026-07-25. Every caller of geminiFetchWithFallback used to build
+// its user-facing error message from response.status alone, which collapses
+// several structurally distinct failures — a depleted-billing 429, a
+// genuine Gemini capacity 429, "every circuit is already open", the 45s
+// hard time ceiling, a per-model TCP stall — into one guess. Concretely
+// this meant a Google Cloud billing outage (real incident, 2026-07-25:
+// "Your prepayment credits are depleted") showed users "The AI service is
+// overloaded right now" for ~2.5 days straight, which is both wrong and
+// non-actionable (nothing about "wait a minute" helps when the fix is
+// "someone needs to top up the API key").
+//
+// Rather than reshape the Response body — several callers pass the raw
+// Gemini error body straight through to the client, or don't parse it at
+// all, so mutating it risks breaking that passthrough — the reason is
+// carried as a response header. Every Response this module returns or
+// synthesizes sets it, so callers can build an honest message with
+// `response.headers.get(GEMINI_FAILURE_REASON_HEADER)` instead of
+// re-guessing from the status code.
+export const GEMINI_FAILURE_REASON_HEADER = "X-Gemini-Failure-Reason";
+
+export type GeminiFailureReason =
+  | "quota_exhausted"   // billing/prepay credits or API quota genuinely out — NOT transient
+  | "daily_budget"      // our own DAILY_BUDGET_USD guard tripped
+  | "all_circuits_open" // every fallback model's circuit was already open
+  | "hard_ceiling"      // MAX_TOTAL_MS exceeded
+  | "timeout"           // a model TCP-stalled past GEMINI_TIMEOUT_MS
+  | "capacity"          // genuine transient Gemini 429/503
+  | "client_error";     // hard 4xx unrelated to quota (bad request, auth, etc.)
+
+// Matches Google's own wording for a depleted prepaid/billing balance
+// ("Your prepayment credits are depleted...RESOURCE_EXHAUSTED") as well as
+// the more general "quota exceeded" phrasing Gemini uses for hard quota
+// limits — both are permanent-until-someone-acts, unlike a capacity 429.
+const QUOTA_EXHAUSTION_PATTERN = /RESOURCE_EXHAUSTED|prepayment credits|quota.*exceed/i;
+
+export function classifyGeminiFailure(status: number, body: string): GeminiFailureReason {
+  if (status === 429 && QUOTA_EXHAUSTION_PATTERN.test(body)) return "quota_exhausted";
+  if (status === 429 || status >= 500) return "capacity";
+  return "client_error";
+}
+
+// Shared, honest user-facing copy for the reasons that are ambiguous-by-
+// status (multiple distinct causes render as the same 429/503). Returns
+// null for "capacity"/"client_error"/undefined so each of the 5 AI edge
+// functions keeps its own existing status-based fallback wording for those
+// — this only centralizes the cases that were previously being actively
+// mislabeled, to avoid the 4 call sites drifting out of sync with each
+// other (see the top-of-file note on why this file is consolidated at all).
+export function describeGeminiFailure(reason: string | undefined): string | null {
+  switch (reason as GeminiFailureReason | undefined) {
+    case "quota_exhausted":
+      return "The AI service's API quota has run out. We've been notified — please try again later, or add your own Gemini API key in settings.";
+    case "daily_budget":
+      return "Daily AI budget reached — please try again tomorrow, or add your own Gemini API key in settings.";
+    case "all_circuits_open":
+    case "hard_ceiling":
+      return "The AI service is temporarily unavailable after repeated errors. Please try again in a minute.";
+    default:
+      return null;
+  }
+}
+
 // Shared usage-logging + spend-recording, extracted so callers OUTSIDE
 // geminiFetchWithFallback (analyze-novel's callPreview/preamble bypass calls
 // — see their own file for why they bypass the fallback machinery) can still
@@ -210,7 +274,11 @@ async function attemptFallbackPass(
       const name = e instanceof Error ? e.name : String(e);
       console.warn(JSON.stringify({ circuit: "timeout", model, error: name }));
       await circuitRecordFail(admin, model, undefined, `timeout: ${name}`);
-      last = new Response(JSON.stringify({ error: `${model} timed out` }), { status: 503 });
+      const timeoutReason: GeminiFailureReason = "timeout";
+      last = new Response(JSON.stringify({ error: `${model} timed out` }), {
+        status: 503,
+        headers: { "Content-Type": "application/json", [GEMINI_FAILURE_REASON_HEADER]: timeoutReason },
+      });
       continue;
     }
     if (r.ok) {
@@ -230,12 +298,23 @@ async function attemptFallbackPass(
     }
     // Log ALL errors — critical for diagnosing what Gemini is actually returning.
     const errBody = await r.clone().text().catch(() => "");
-    console.error(JSON.stringify({ fn: "geminiFetch", model, status: r.status, body: errBody.slice(0, 400) }));
+    const reason = classifyGeminiFailure(r.status, errBody);
+    console.error(JSON.stringify({ fn: "geminiFetch", model, status: r.status, reason, body: errBody.slice(0, 400) }));
     await r.body?.cancel().catch(() => {});
     last = new Response(errBody || JSON.stringify({ error: `${model} returned ${r.status}` }), {
       status: r.status,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", [GEMINI_FAILURE_REASON_HEADER]: reason },
     });
+    if (reason === "quota_exhausted") {
+      // Billing/quota is a property of the API key's project, not of any one
+      // model — all models in the chain share it, so they'd fail identically.
+      // Record the failure (so the circuit table shows why) but stop here
+      // instead of burning the rest of the fallback chain on guaranteed
+      // failures. This is the single biggest win from this classification:
+      // a billing outage used to cost 3 doomed calls per pass here alone.
+      await circuitRecordFail(admin, model, r.status, errBody);
+      return last;
+    }
     if (r.status === 429 || r.status >= 500) {
       // Transient — trip circuit (if threshold reached) and try the next model.
       await circuitRecordFail(admin, model, r.status, errBody);
@@ -302,16 +381,21 @@ export async function geminiFetchWithFallback(
 
     if (budgetExceeded) {
       console.error(JSON.stringify({ spend: "daily_budget_exceeded", budget: DAILY_BUDGET_USD }));
+      const dailyBudgetReason: GeminiFailureReason = "daily_budget";
       return new Response(
         JSON.stringify({ error: "Daily AI budget reached — please try again tomorrow, or add your own Gemini API key in settings." }),
-        { status: 503, headers: { "Content-Type": "application/json" } },
+        { status: 503, headers: { "Content-Type": "application/json", [GEMINI_FAILURE_REASON_HEADER]: dailyBudgetReason } },
       );
     }
 
     const start = Date.now();
     const first = await attemptFallbackPass(admin, apiKey, payload, fallbackChain);
+    const firstReason = first?.headers.get(GEMINI_FAILURE_REASON_HEADER);
 
-    const exhausted = !first || first.status === 429 || first.status === 503;
+    // Don't retry a quota-exhaustion failure — the whole point of that
+    // classification is that it's not transient, so a second pass after a
+    // 1.5s backoff would just be another guaranteed-failing round trip.
+    const exhausted = !first || ((first.status === 429 || first.status === 503) && firstReason !== "quota_exhausted");
     if (exhausted && Date.now() - start < RETRY_BUDGET_MS) {
       console.log(JSON.stringify({ circuit: "retry_after_exhaustion", elapsed_ms: Date.now() - start }));
       await sleep(RETRY_BACKOFF_MS);
@@ -323,18 +407,20 @@ export async function geminiFetchWithFallback(
 
     // Every model's circuit was already open — no fetch was even attempted.
     console.error(JSON.stringify({ fn: "geminiFetch", error: "all_circuits_open" }));
+    const allOpenReason: GeminiFailureReason = "all_circuits_open";
     return new Response(
       JSON.stringify({ error: "All model circuits are open — try again shortly." }),
-      { status: 503, headers: { "Content-Type": "application/json" } },
+      { status: 503, headers: { "Content-Type": "application/json", [GEMINI_FAILURE_REASON_HEADER]: allOpenReason } },
     );
   })();
 
   const timeout = new Promise<Response>((resolve) => {
     setTimeout(() => {
       console.error(JSON.stringify({ fn: "geminiFetch", error: "hard_ceiling_exceeded", max_total_ms: MAX_TOTAL_MS }));
+      const hardCeilingReason: GeminiFailureReason = "hard_ceiling";
       resolve(new Response(
         JSON.stringify({ error: "Gemini fallback chain exceeded its time budget — please try again." }),
-        { status: 503, headers: { "Content-Type": "application/json" } },
+        { status: 503, headers: { "Content-Type": "application/json", [GEMINI_FAILURE_REASON_HEADER]: hardCeilingReason } },
       ));
     }, MAX_TOTAL_MS);
   });

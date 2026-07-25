@@ -4,7 +4,7 @@
 // Called by BookDNA.tsx whenever the user saves a perturbed DNA.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
+import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 
 // ---------- Rate limiting ----------
@@ -284,8 +284,9 @@ Recommend the single best DNA neighbour from the canon.`;
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error("Gemini error", res.status, text);
-    return new Response(JSON.stringify({ error: `AI error ${res.status}` }), {
+    const reason = res.headers.get(GEMINI_FAILURE_REASON_HEADER) ?? undefined;
+    console.error("Gemini error", res.status, reason, text);
+    return new Response(JSON.stringify({ error: describeGeminiFailure(reason) ?? `AI error ${res.status}`, reason }), {
       status: res.status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
