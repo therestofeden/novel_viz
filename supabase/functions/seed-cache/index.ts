@@ -2337,6 +2337,16 @@ const POPULAR_BOOKS = [
   "Records of the Grand Historian by Sima Qian",
   "The Travels of Marco Polo by Marco Polo",
   "The Rihla by Ibn Battuta",
+
+  // ── Round 20 (2026-07-25) — closing residual gaps vs. classic.ts's same-day
+  // additions (Philippine/SE Asian, Native American, Yiddish literary
+  // traditions, and a 1000-year medieval-scholasticism hole). All four were
+  // genuinely missing from this list (House Made of Dawn was already in
+  // canon_books from an earlier sweep, but never added here) ──
+  "Noli Me Tángere by José Rizal",
+  "House Made of Dawn by N. Scott Momaday",
+  "Gimpel the Fool and Other Stories by Isaac Bashevis Singer",
+  "Summa Theologica by Thomas Aquinas",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

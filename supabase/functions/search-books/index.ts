@@ -314,10 +314,18 @@ type GBVolumeInfo = {
 
 type GBItem = { volumeInfo: GBVolumeInfo };
 
+// GB only supplies optional description enrichment (candidates degrade
+// gracefully to an empty description string if this fails/times out — see
+// descriptionMap usage below), but it's awaited via Promise.allSettled
+// alongside the OL/canon lookups, so its timeout sets a floor on worst-case
+// response time for every cache-miss search. Kept short (1.2s vs. the old
+// 3s) so a slow Google Books API doesn't tax every uncached query's latency
+// for a nice-to-have field. 2026-07-25 daily perf pass — observed a 3.4s
+// cache-miss search-books call in prod logs that traced to this timeout.
 async function fetchGoogleBooks(query: string): Promise<GBItem[]> {
   try {
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=30&printType=books`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    const r = await fetch(url, { signal: AbortSignal.timeout(1200) });
     if (!r.ok) return [];
     const json = await r.json();
     return (json?.items ?? []) as GBItem[];
