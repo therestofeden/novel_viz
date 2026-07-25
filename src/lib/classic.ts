@@ -365,6 +365,78 @@ import { isMustRead } from "@/lib/must-read";
  * closer to a companion for Alice than a second flag alongside it.
  *
  * Classic count: 220 → 226 (160 fiction + 66 non-fiction).
+ *
+ * 2026-07-24 (daily curation pass): five titles, vetted against
+ * moser-the-librarian's rubric, all non-fiction, closing two related gaps.
+ * Grepped a fresh candidate pool for world historiography beyond the
+ * Greco-Roman "big three" already present (Herodotus/Thucydides/Tacitus),
+ * global travel literature (a total gap on both lists), and twentieth-
+ * century American testimonial autobiography — catching one expected
+ * false-positive first (a bare "Marco Polo" grep hits only the existing
+ * Invisible Cities entry's own "why" line, where Calvino's Marco Polo is a
+ * fictional narrator, not this list's own Travels — confirmed the real
+ * primary source was genuinely absent). Sima Qian's Records of the Grand
+ * Historian (Shiji, c. 94 BCE) closes the historiography gap: Herodotus
+ * and Thucydides invented Western history-writing and Sima Qian
+ * independently invented the Chinese tradition around the same general
+ * era, choosing castration over death in 99 BCE specifically so he could
+ * finish it — the annals-and-biographies format he built was still the
+ * template every official Chinese dynastic history used two thousand
+ * years later. Ibn Battuta's The Rihla (dictated 1354-1355, covering
+ * travels from 1325-1354) and Marco Polo's The Travels of Marco Polo
+ * (dictated to a fellow prisoner in a Genoese jail, c. 1298-1300) close
+ * travel literature's total absence from both lists together — the
+ * medieval world's two towering eyewitness accounts, one crossing the
+ * Islamic world from Morocco to China, the other opening Europe's eyes to
+ * the Mongol court. The Autobiography of Malcolm X (as told to Alex
+ * Haley, published October 1965, nine months after his assassination)
+ * extends the American testimonial-autobiography cluster already anchored
+ * by Frederick Douglass's Narrative — a different century's account of
+ * Black self-reinvention under different constraints, and one Time named
+ * among the ten most influential nonfiction books of the twentieth
+ * century. The Diary of a Young Girl (Anne Frank, written 1942-1944,
+ * published by her father Otto Frank in 1947 after her death at
+ * Bergen-Belsen) closes a real gap this list's own Holocaust-testimony
+ * cluster had left open: If This Is a Man (Must Read) and
+ * Fatelessness/Night (both Classic) are all retrospective accounts,
+ * written after the fact by survivors; Anne Frank's diary is the only
+ * contemporaneous document in the group, written in real time by someone
+ * who did not survive to revise it into memoir. All five facts (Sima
+ * Qian's 99 BCE sentencing and c. 94 BCE completion, Ibn Battuta's
+ * 1325-1354 travels and 1355 dictation, Marco Polo's 1298-1300 Genoa
+ * imprisonment and dictation, Malcolm X's 29 October 1965 publication
+ * date and Time's ranking, Anne Frank's 1942-1944 writing window and 25
+ * June 1947 publication) independently verified via WebSearch rather than
+ * trusted from recall. All five clear the Lindy/A-tier bar with room to
+ * spare, except the one flagged below.
+ *
+ * The Diary of a Young Girl is flagged, not promoted, as a fifth possible
+ * Must Read candidate — alongside the still-open Bridge on the Drina
+ * (2026-07-20), Night (2026-07-21), Leaves of Grass (2026-07-22), and
+ * Alice's Adventures in Wonderland (2026-07-23) flags, now five awaiting
+ * Stefano's own review together. Reasoning: among the small handful of
+ * books that plausibly claim to be the single most-read primary document
+ * of the Holocaust in the world, translated into dozens of languages and
+ * near-universally assigned to schoolchildren as their first encounter
+ * with it; its status as the only unmediated, real-time account in a
+ * cluster this list has otherwise built entirely from retrospective
+ * testimony is a structural distinction, not just a matter of degree.
+ * Sima Qian, Ibn Battuta, Marco Polo, and Malcolm X's Autobiography were
+ * all explicitly checked against the same bar and confidently held at
+ * Classic/A-tier instead: Sima Qian's Records is towering but multi-
+ * volume and reference-like rather than something a general reader sits
+ * down and reads cover to cover, the same "importance outweighs
+ * sit-down-and-read-it" logic applied to Elements and the Principia on
+ * 2026-07-19; Ibn Battuta and Marco Polo are each civilization-defining
+ * within travel literature specifically, the same tier the Shahnameh and
+ * the Ramayana already occupy on this list within their own traditions,
+ * not a step above; and Malcolm X's Autobiography, despite Time's
+ * ranking, extends an already-well-represented genre (this list's own
+ * Frederick Douglass, Must Read's Franklin) rather than founding a new
+ * one the way A Doll's House or the Muqaddimah did before their own
+ * promotions.
+ *
+ * Classic count: 226 → 231 (160 fiction + 71 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -543,6 +615,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Histories", author: "Herodotus", why: "The invention of history as inquiry — the 'father of history' asking why, not just what." },
   { title: "The History of the Peloponnesian War", author: "Thucydides", why: "Power politics analyzed without myth or piety; the realist tradition's founding text." },
   { title: "The Annals", author: "Tacitus", why: "Rome's emperors dissected by a senator who trusted no one's motives, least of all the ones in power; history written as autopsy.", aka: ["Annals", "The Annals of Imperial Rome"] },
+  { title: "Records of the Grand Historian", author: "Sima Qian", why: "Chose castration over death specifically to live long enough to finish it; built the annals-and-biographies template every official Chinese history would follow for the next two thousand years.", aka: ["Shiji", "The Grand Scribe's Records"] },
   { title: "Nicomachean Ethics", author: "Aristotle", why: "Virtue as a habit, not a rule; still the sturdiest framework for a good life." },
   { title: "Symposium", author: "Plato", why: "A drinking party's speeches on love, ascending from bodies to the eternal Forms." },
   { title: "Elements", author: "Euclid", why: "Five self-evident postulates build an entire geometry from scratch; the axiomatic method's founding demonstration, unrivaled as a textbook for two thousand years.", aka: ["Euclid's Elements", "The Elements", "Stoicheia"] },
@@ -550,6 +623,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "On the Nature of Things", author: "Lucretius", why: "Atomism, mortality, and a universe without gods running it, argued in verse two thousand years before physics caught up.", aka: ["De Rerum Natura", "The Nature of Things"] },
   { title: "Confessions", author: "Saint Augustine", why: "The first real autobiography; interiority and guilt examined before either had a name.", aka: ["The Confessions"] },
   { title: "The Consolation of Philosophy", author: "Boethius", why: "Written in a prison cell awaiting execution; philosophy's argument against fortune's cruelty." },
+  { title: "The Travels of Marco Polo", author: "Marco Polo", why: "Dictated to a fellow prisoner in a Genoese jail cell; a Venetian merchant's account of Kublai Khan's court became Europe's window onto Asia, and stayed the reference point for two centuries of explorers after him.", aka: ["The Book of the Marvels of the World", "Il Milione", "The Travels of Marco Polo, Complete"] },
+  { title: "The Rihla", author: "Ibn Battuta", why: "Twenty-nine years crossing the length of the Islamic world, Morocco to China, dictated from memory to a scribe on his return; the richest eyewitness account of the fourteenth-century world that survives.", aka: ["Rihla", "The Travels of Ibn Battuta", "A Gift to Those Who Contemplate the Wonders of Cities and the Marvels of Traveling"] },
   { title: "Discourse on Method", author: "René Descartes", why: "'I think, therefore I am' — modern philosophy's starting gun, in under a hundred pages." },
   { title: "Leviathan", author: "Thomas Hobbes", why: "Life without government as 'nasty, brutish, and short' — the case for the state, unsentimental." },
   { title: "An Enquiry Concerning Human Understanding", author: "David Hume", why: "Causation itself put on trial; empiricism's sharpest, most unsettling argument." },
@@ -583,6 +658,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Autobiography of Benjamin Franklin", author: "Benjamin Franklin", why: "Self-improvement as an American genre, invented by the man who lived it first." },
   { title: "Walden", author: "Henry David Thoreau", why: "Two years in a cabin as an argument against a life of quiet desperation." },
   { title: "Narrative of the Life of Frederick Douglass", author: "Frederick Douglass", why: "A former slave's own testimony, precise and devastating, that literacy itself was the first freedom." },
+  { title: "The Autobiography of Malcolm X", author: "Malcolm X", why: "Hustler to convict to minister to independent thinker, dictated across two years of interviews and published nine months after his assassination; Time later named it one of the ten most influential nonfiction books of the century.", aka: ["Autobiography of Malcolm X"] },
+  { title: "The Diary of a Young Girl", author: "Anne Frank", why: "A thirteen-year-old's actual diary from two years in hiding, unfinished by her death at Bergen-Belsen and published unrevised by the father who survived; not a retrospective account like this list's other testimony, but the record as it was being lived.", aka: ["Anne Frank: The Diary of a Young Girl", "The Diary of Anne Frank", "Het Achterhuis"] },
   { title: "Night", author: "Elie Wiesel", why: "A teenager's own account of Auschwitz, written spare enough to let the facts do all the damage without him saying so; testimony precise enough to help win its author the Nobel Peace Prize.", aka: ["La Nuit"] },
   { title: "Maus", author: "Art Spiegelman", why: "A father's Auschwitz survival drawn as mice stalked by cats; the only comic ever handed a Pulitzer, because no existing category knew what else to call it.", aka: ["Maus: A Survivor's Tale", "The Complete Maus"] },
   { title: "Long Walk to Freedom", author: "Nelson Mandela", why: "Twenty-seven years in prison recounted without bitterness overtaking the argument for justice." },
