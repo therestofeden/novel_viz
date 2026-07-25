@@ -437,6 +437,64 @@ import { isMustRead } from "@/lib/must-read";
  * promotions.
  *
  * Classic count: 226 → 231 (160 fiction + 71 non-fiction).
+ *
+ * 2026-07-25 (daily curation pass): four titles, vetted against
+ * moser-the-librarian's rubric, closing four independent gaps rather than
+ * one shared theme — grepped for "Rizal", "Aquinas", "Summa", "Momaday",
+ * "Singer", "Gimpel", "Philippine", "Yiddish", "Native American", and
+ * "scholastic" across both lists first; all ten came back genuine zero-hits,
+ * no false-positive substring collisions this round. Fiction: José Rizal's
+ * Noli Me Tángere (Berlin, March 1887) closes Philippine and Southeast
+ * Asian literature's total absence from both lists — a satirical portrait
+ * of colonial-era friars and abuse that Spanish military prosecutors cited
+ * as evidence at the sham trial that sentenced Rizal to a firing squad on
+ * 30 December 1896, less than ten years after he wrote it; Filipino
+ * historians still credit it as the spark for the revolution that followed.
+ * N. Scott Momaday's House Made of Dawn (1968) closes a second total
+ * absence — no Native American voice anywhere on either list — with the
+ * book that broke the barrier itself: the first Pulitzer Prize for Fiction
+ * ever awarded to a Native American writer (1969), and the acknowledged
+ * opening of the Native American Renaissance that produced Silko, Erdrich,
+ * and Welch after it. Isaac Bashevis Singer's Gimpel the Fool and Other
+ * Stories (1957) closes a third gap distinct from the Hebrew literature
+ * already represented by Agnon's Only Yesterday (2026-07-20): Yiddish is a
+ * separate literary tradition entirely, and this is its Nobel laureate's
+ * (1978) breakout collection, brought into English by Saul Bellow's own
+ * translation of the title story. Non-fiction: Thomas Aquinas's Summa
+ * Theologica (composed 1265-1273, left unfinished at his death) closes a
+ * chronological hole this list had left sitting in plain sight — a
+ * thousand-year jump straight from Boethius's Consolation of Philosophy
+ * (c. 524 CE) to Marco Polo's Travels (c. 1298) with no medieval scholastic
+ * philosophy at all, despite Aquinas's Aristotle-and-Christian-doctrine
+ * synthesis becoming, by papal decree, the Catholic Church's own standard
+ * framework for the next seven centuries. All four facts (Rizal's March
+ * 1887 Berlin printing and 30 December 1896 execution date, Momaday's
+ * 1968/1969 publication-and-Pulitzer dates, Singer's 1957 Bellow-translated
+ * collection and 1978 Nobel, Aquinas's 1265-1273 composition window)
+ * independently verified via WebSearch rather than trusted from recall.
+ * All four clear the Lindy/A-tier bar with room to spare.
+ *
+ * Noli Me Tángere is flagged, not promoted, as a sixth possible Must Read
+ * candidate — alongside the still-open Bridge on the Drina (2026-07-20),
+ * Night (2026-07-21), Leaves of Grass (2026-07-22), Alice's Adventures in
+ * Wonderland (2026-07-23), and The Diary of a Young Girl (2026-07-24)
+ * flags, now six awaiting Stefano's own review together. Reasoning: no
+ * other book on either list carries the same direct, documented causal
+ * weight — a novel entered as trial evidence in the proceeding that
+ * executed its own author, and credited by name with catalyzing an actual
+ * revolution nine years later. Summa Theologica, House Made of Dawn, and
+ * Gimpel the Fool were all explicitly checked against the same bar and
+ * confidently held at Classic/A-tier instead: the Summa's case is towering
+ * but reference-like and six-hundred-questions long, the same "importance
+ * outweighs sit-down-and-read-it" logic applied to Sima Qian's Records on
+ * 2026-07-24; House Made of Dawn is a tradition's founding breakthrough the
+ * same way Voss and Dom Casmurro already are on this list, not a step
+ * above them; and Gimpel the Fool, despite Singer's Nobel, is a story
+ * collection extending a form (short fiction representing a national
+ * tradition) this list already holds at Classic via Rashomon and Other
+ * Stories, not a reason to promote past it.
+ *
+ * Classic count: 231 → 235 (163 fiction + 72 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -513,6 +571,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Dom Casmurro", author: "Machado de Assis", why: "An unreliable narrator poisons his own marriage story with jealousy; Brazil's founding modern novel, a century ahead of its methods." },
   { title: "Twenty Thousand Leagues Under the Sea", author: "Jules Verne", why: "Captain Nemo's submarine predicted the real thing by decades; one of the two founding fathers of science fiction, still the more prophetic." },
   { title: "Germinal", author: "Émile Zola", why: "A mining strike as tragedy; naturalism's argument that poverty is a plot, not a flaw." },
+  { title: "Noli Me Tángere", author: "José Rizal", why: "A doctor's satire of corrupt friars and colonial abuse, printed in Berlin in 1887 and cited nine years later as trial evidence against the author himself; the novel Filipino history credits with sparking its revolution.", aka: ["Noli Me Tangere", "Touch Me Not"] },
   { title: "The Picture of Dorian Gray", author: "Oscar Wilde", why: "Vanity given a body double; aestheticism's most quotable cautionary tale." },
   { title: "Strange Case of Dr Jekyll and Mr Hyde", author: "Robert Louis Stevenson", why: "The divided self, given a formula and a body count.", aka: ["Dr. Jekyll and Mr. Hyde", "The Strange Case of Dr Jekyll and Mr Hyde"] },
   { title: "Dracula", author: "Bram Stoker", why: "Epistolary horror that invented the modern vampire's entire rulebook." },
@@ -605,9 +664,11 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Palace Walk", author: "Naguib Mahfouz", why: "A Cairo patriarch's household, opening the trilogy that won the Arab world's first Nobel." },
   { title: "My Name Is Red", author: "Orhan Pamuk", why: "A murdered miniaturist's case narrated in turn by killer, corpse, and the color red itself; Istanbul's East-West argument staged as a sixteenth-century whodunit.", aka: ["Benim Adım Kırmızı"] },
   { title: "Only Yesterday", author: "S.Y. Agnon", why: "An idealist immigrates to build Zion and gets shadowed by a dog everyone mistakes for rabid; modern Hebrew fiction's founding epic, Nobel-crowned.", aka: ["Tmol Shilshom"] },
+  { title: "Gimpel the Fool and Other Stories", author: "Isaac Bashevis Singer", why: "A village baker mocked and cuckolded by everyone chooses faith over revenge anyway; Saul Bellow's own translation of the title story introduced English readers to Yiddish fiction's future Nobel laureate.", aka: ["Gimpel the Fool"] },
   { title: "The God of Small Things", author: "Arundhati Roy", why: "Forbidden love and caste violence in Kerala, told in prose that bends time and syntax." },
   { title: "A Suitable Boy", author: "Vikram Seth", why: "Post-independence India's marriage plot, stretched to thirteen hundred pages without losing momentum." },
   { title: "Untouchable", author: "Mulk Raj Anand", why: "A single day in a Dalit sweeper's life; caste injustice named early and directly." },
+  { title: "House Made of Dawn", author: "N. Scott Momaday", why: "A Kiowa war veteran comes home unable to stand fully in either world he's now caught between; the first Pulitzer Prize for Fiction ever awarded to a Native American writer, and the book that opened the door for the Native American Renaissance." },
   { title: "Lucky Jim", author: "Kingsley Amis", why: "The campus novel's founding comedy; academic phoniness skewered from the inside." },
   { title: "Lord of the Flies", author: "William Golding", why: "Schoolboys revert to savagery without adults watching; civilization's thinness, tested and found wanting." },
 
@@ -623,6 +684,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "On the Nature of Things", author: "Lucretius", why: "Atomism, mortality, and a universe without gods running it, argued in verse two thousand years before physics caught up.", aka: ["De Rerum Natura", "The Nature of Things"] },
   { title: "Confessions", author: "Saint Augustine", why: "The first real autobiography; interiority and guilt examined before either had a name.", aka: ["The Confessions"] },
   { title: "The Consolation of Philosophy", author: "Boethius", why: "Written in a prison cell awaiting execution; philosophy's argument against fortune's cruelty." },
+  { title: "Summa Theologica", author: "Thomas Aquinas", why: "Six hundred-plus questions, each argued through the losing side's best case first; Aristotle fused with Christian doctrine into a system so complete the Church made it its own standard for the next seven hundred years.", aka: ["Summa Theologiae"] },
   { title: "The Travels of Marco Polo", author: "Marco Polo", why: "Dictated to a fellow prisoner in a Genoese jail cell; a Venetian merchant's account of Kublai Khan's court became Europe's window onto Asia, and stayed the reference point for two centuries of explorers after him.", aka: ["The Book of the Marvels of the World", "Il Milione", "The Travels of Marco Polo, Complete"] },
   { title: "The Rihla", author: "Ibn Battuta", why: "Twenty-nine years crossing the length of the Islamic world, Morocco to China, dictated from memory to a scribe on his return; the richest eyewitness account of the fourteenth-century world that survives.", aka: ["Rihla", "The Travels of Ibn Battuta", "A Gift to Those Who Contemplate the Wonders of Cities and the Marvels of Traveling"] },
   { title: "Discourse on Method", author: "René Descartes", why: "'I think, therefore I am' — modern philosophy's starting gun, in under a hundred pages." },
