@@ -2347,6 +2347,14 @@ const POPULAR_BOOKS = [
   "House Made of Dawn by N. Scott Momaday",
   "Gimpel the Fool and Other Stories by Isaac Bashevis Singer",
   "Summa Theologica by Thomas Aquinas",
+
+  // ── Round 21 (2026-07-26) — closing residual gaps vs. classic.ts's same-day
+  // additions (modern Chinese fiction, haibun/Japanese travel poetry, classical
+  // economics). Persepolis was already covered here from an earlier round, so
+  // only these three were genuinely missing ──
+  "Diary of a Madman and Other Stories by Lu Xun",
+  "The Narrow Road to the Deep North by Matsuo Bashō",
+  "On the Principles of Political Economy and Taxation by David Ricardo",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
