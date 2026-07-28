@@ -102,9 +102,49 @@
 // odissey, the odyssey, odyssey, iliad, dune, tolstoy, garcia marquez,
 // emma, ulysses, virgil, dante, sophocles, "shakespeare - hamlet",
 // "tolkien: the hobbit", "grate gatsby") before shipping.
-
+//
+// 2026-07-28: buildCorsHeaders is INLINED below (was `import { buildCorsHeaders }
+// from "../_shared/cors.ts"`) — a same-day redeploy via the Supabase MCP
+// deploy_edge_function tool couldn't resolve the relative _shared import
+// (module-not-found at bundle time; the multi-file `files` payload's directory
+// layout didn't match what the bundler expected, and burning more turns on the
+// exact naming convention wasn't worth the prod-risk given this function was
+// mid-fix). Keep this copy in sync with _shared/cors.ts by hand if that file
+// changes — a future session that figures out the correct multi-file
+// deploy_edge_function layout should restore the real import and delete this
+// inlined copy.
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { buildCorsHeaders } from "../_shared/cors.ts";
+
+const ALLOWED_ORIGINS = new Set([
+  // Confirmed by Stefano (2026-07-09) as the actual live production origin.
+  "https://novel-viz.vercel.app",
+  "https://novelviz.app",
+  "https://www.novelviz.app",
+  // Capacitor (iOS/Android) native WebView origins — appId com.novelviz.app.
+  "capacitor://localhost",
+  "ionic://localhost",
+  "http://localhost", // some Capacitor Android configurations report this exact origin
+  // Local dev (Vite default + common alternates).
+  "http://localhost:5173",
+  "http://localhost:8080",
+  "http://localhost:3000",
+]);
+const VERCEL_PREVIEW_RE = /^https:\/\/novel-viz-[a-z0-9-]+\.vercel\.app$/;
+const BASE_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Vary": "Origin",
+};
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin");
+  if (origin && (ALLOWED_ORIGINS.has(origin) || VERCEL_PREVIEW_RE.test(origin))) {
+    return { ...BASE_HEADERS, "Access-Control-Allow-Origin": origin };
+  }
+  if (origin) {
+    console.warn(JSON.stringify({ cors: "origin_not_allowlisted", origin }));
+  }
+  return { ...BASE_HEADERS };
+}
 
 const CYRILLIC_MAP: Record<string, string> = {
   а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo", ж: "zh", з: "z",
@@ -628,7 +668,6 @@ Deno.serve(async (req) => {
     const q = qRaw;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false },
@@ -860,13 +899,12 @@ Deno.serve(async (req) => {
     // Compound "Author - Title" queries (2026-07-17, found live: Stefano's
     // exact phrase "Homer - The odissey" still returned nothing after the
     // fixes above). Confirmed Open Library's own full-text search returns
-    // ZERO results for a literal "X - Y" query — it doesn't parse the dash
-    // as a separator, so the combined string never matches anything, and
-    // testing qNorm as one whole blob against a canon row's title/author
-    // (both individually much shorter) never hits either. Split on common
-    // "author / title" separators so each side gets tested independently —
-    // "homer" then exact-matches the author, "the odissey" then fuzzy-
-    // matches the title, either one is enough to inject the work.
+    // ZERO results for a literal "X - Y" query (doesn't parse the dash
+    // as a separator), and testing qNorm as one whole blob against a canon
+    // row's (both individually much shorter) never hits either. Split on
+    // common "author / title" separators so each side gets tested
+    // independently — "homer" then exact-matches the author, "the odissey"
+    // then fuzzy-matches the title, either one is enough to inject the work.
     const qSegments = qNorm
       .split(/\s*[-:,/&]\s*| by /)
       .map((s) => s.trim())
@@ -884,12 +922,39 @@ Deno.serve(async (req) => {
     for (const row of canonRows) {
       const tNorm = normalizeForSearch(row.title);
       const aNorm = normalizeForSearch(row.author);
+      const authorTokens = aNorm.split(" ").filter(Boolean);
+      // 2026-07-28: plain "title + author" queries typed with just a space
+      // and no punctuation ("cosmos sagan", "the waves woolf") fell through
+      // both gates below — qNorm as a whole is neither the bare title nor
+      // the bare author, and bestFuzzySim penalizes the length mismatch too
+      // much to clear FUZZY_MIN_SIM. Deliberately NOT using generic substring
+      // containment (qNorm.includes(tNorm)) to fix this: several canon
+      // titles are common English words ("Night", "Quiet", "Hunger",
+      // "Chaos") that appear as substrings of unrelated popular queries
+      // (e.g. "the hunger games" contains "hunger"), so containment alone
+      // would wrongly canon-boost Knut Hamsun's "Hunger" for that search.
+      // Requiring the FULL title plus a FULL author token to concatenate
+      // exactly avoids that — "hunger games" never equals "hunger hamsun".
+      // Verified live: "cosmos sagan"/"the waves woolf"/"das kapital marx"/
+      // "bleak house dickens" now canon-boost correctly (score jumps
+      // ~130-190 -> ~835-895), while "hunger games" still correctly does
+      // NOT canon-boost toward Knut Hamsun's "Hunger" (score unchanged, no
+      // canonWork flag).
+      const titleAuthorCombos = aNorm.length > 0
+        ? [
+          `${tNorm} ${aNorm}`,
+          `${aNorm} ${tNorm}`,
+          ...authorTokens.map((tok) => `${tNorm} ${tok}`),
+          ...authorTokens.map((tok) => `${tok} ${tNorm}`),
+        ]
+        : [];
       let literalHit = false;
       let fuzzyHit = false;
       for (const qc of qCandidates) {
         if (
           tNorm === qc || tNorm.includes(qc) ||
-          (aNorm.length > 0 && (aNorm === qc || aNorm.split(" ").filter(Boolean).includes(qc)))
+          (aNorm.length > 0 && (aNorm === qc || authorTokens.includes(qc))) ||
+          titleAuthorCombos.includes(qc)
         ) {
           literalHit = true;
           break;
