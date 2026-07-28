@@ -2361,6 +2361,24 @@ const POPULAR_BOOKS = [
   // Death of a Salesman, Streetcar — were already covered here from an
   // earlier round, so only Spinoza's Ethics was genuinely missing) ──
   "Ethics by Baruch Spinoza",
+
+  // ── Round 23 (2026-07-28) — targeted gap sweep against Bloom/Britannica-tier
+  // staples across fiction + non-fiction, independent of any same-day classic.ts
+  // curation pass. All 14 confirmed absent from canon_books before backfill ──
+  "Cosmos by Carl Sagan",
+  "Common Sense by Thomas Paine",
+  "Bleak House by Charles Dickens",
+  "Civil Disobedience by Henry David Thoreau",
+  "The Gulag Archipelago by Aleksandr Solzhenitsyn",
+  "Demons by Fyodor Dostoevsky",
+  "A People's History of the United States by Howard Zinn",
+  "The Waves by Virginia Woolf",
+  "Das Kapital by Karl Marx",
+  "Labyrinths by Jorge Luis Borges",
+  "The Structure of Scientific Revolutions by Thomas Kuhn",
+  "Civilization and Its Discontents by Sigmund Freud",
+  "The Origin of Species by Charles Darwin",
+  "The Bluest Eye by Toni Morrison",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
