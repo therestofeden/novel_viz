@@ -2355,6 +2355,12 @@ const POPULAR_BOOKS = [
   "Diary of a Madman and Other Stories by Lu Xun",
   "The Narrow Road to the Deep North by Matsuo Bashō",
   "On the Principles of Political Economy and Taxation by David Ricardo",
+
+  // ── Round 22 (2026-07-27) — closing the rationalist-philosophy gap vs.
+  // classic.ts's same-day additions (20th-century drama titles — Godot,
+  // Death of a Salesman, Streetcar — were already covered here from an
+  // earlier round, so only Spinoza's Ethics was genuinely missing) ──
+  "Ethics by Baruch Spinoza",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

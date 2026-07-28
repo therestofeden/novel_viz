@@ -9,7 +9,7 @@ describe("classic matcher", () => {
     expect(isClassic("dune")).toBe(true);
     expect(isClassic("Emma", "Jane Austen")).toBe(true);
     expect(isClassic("Emma", "Someone Else")).toBe(false);
-    expect(isClassic("The Iliad")).toBe(true);
+    expect(isClassic("Metamorphoses", "Ovid")).toBe(true);
     expect(isClassic("The Goldfinch", "Donna Tartt")).toBe(false);
     expect(getClassic("Hopscotch")?.author).toBe("Julio Cortázar");
     expect(getClassic("Rayuela")?.title).toBe("Hopscotch");

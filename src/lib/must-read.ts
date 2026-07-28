@@ -64,6 +64,97 @@ import { normalizeForSearch } from "@/lib/utils";
  * the mechanism. Scarcity is still the goal; this was a one-time backlog
  * clearance across three flagged titles plus one explicitly-requested
  * addition, not a new steady-state pace for this list.
+ *
+ * 2026-07-26 (Stefano's direct instruction, live turn, non-negotiable):
+ * demoted two titles to classic.ts — The Remains of the Day (Ishiguro) and
+ * The Selfish Gene (Dawkins). No reasoning requested or recorded beyond
+ * the instruction itself, though the Selfish Gene demotion holds up under
+ * the Librarian's own rubric: it popularizes one contested side of a live
+ * evolutionary-biology fight (gene-centric vs. multi-level/group selection
+ * — Gould, David Sloan Wilson, and others have argued this for decades),
+ * closer kin to "dilutes a live debate into a settled-sounding paradigm"
+ * than to a simple age problem. Must Read: 71 → 69 (54 fiction + 15
+ * non-fiction).
+ *
+ * 2026-07-26 (same day, second live turn — Stefano flagged Must Read's
+ * philosophy coverage as thin, specifically zero German-tradition
+ * representation despite Kant/Hegel/Nietzsche/Marx/Heidegger/Wittgenstein
+ * all sitting in classic.ts). Promoted three, per Stefano's explicit sign-
+ * off, each independently argued first: Critique of Pure Reason (Kant) —
+ * the hinge point of modern philosophy, everything after is a response to
+ * it, effectively undebatable as "unmissable." The Communist Manifesto
+ * (Marx) — judged on a different axis than the rest of this list (world-
+ * historical impact rather than argumentative rigor: it shaped roughly half
+ * of twentieth-century politics), a legitimate but distinct kind of
+ * unmissable, flagged as such rather than pretending it's a clean fit.
+ * On the Genealogy of Morals (Nietzsche) — kept over the more culturally
+ * iconic Thus Spoke Zarathustra since Genealogy is the tighter, more
+ * defensible argument; Zarathustra remains a candidate if Stefano later
+ * wants the more literary entry point instead. Hegel's Phenomenology of
+ * Spirit and Heidegger's Being and Time were explicitly NOT promoted this
+ * round and Stefano did not ask for them — held at Classic on the same
+ * "still debated" standard just applied to Selfish Gene: Hegel's clarity/
+ * rigor has been seriously disputed within philosophy itself (Schopenhauer
+ * called him a charlatan; analytic philosophy dismissed him for the better
+ * part of a century), and Heidegger carries live, unresolved controversy
+ * over his NSDAP membership and the Black Notebooks, not just intellectual
+ * debate. Wittgenstein's Philosophical Investigations was also recommended
+ * but Stefano's list of confirmations didn't include it — left at Classic
+ * pending his explicit call, not silently assumed.
+ *
+ * Also added, per Stefano's explicit request: Gödel, Escher, Bach
+ * (Hofstadter) — promoted from classic.ts; The Black Swan (Taleb) — new
+ * addition, not previously on either list, added directly to Must Read
+ * rather than routed through Classic first since Stefano named it
+ * specifically as a Must Read call, not a "consider for Classic" one;
+ * Antifragile (Taleb) was discussed and NOT added — held back on the
+ * Librarian's recommendation (14 years old, thinner Lindy case, real
+ * methodological critique from economists/statisticians about rigor vs.
+ * aphorism) in favor of the stronger-attested Black Swan, and Stefano's
+ * confirmation named Black Swan specifically, not Antifragile.
+ *
+ * Must Read: 69 → 74 (54 fiction + 20 non-fiction).
+ *
+ * 2026-07-26 (same day, third live turn — Stefano confirmed the full
+ * audit in one pass: "ok the classics; ok the new candidates for must
+ * read and even ok the debatable"). Cleared the entire six-title fiction
+ * backlog that daily curation runs had flagged-but-never-resolved since
+ * 2026-07-20 (see [[novelviz-daily-canon-curation]] for each one's original
+ * reasoning): The Bridge on the Drina (Andrić), Night (Wiesel), Leaves of
+ * Grass (Whitman), Alice's Adventures in Wonderland (Carroll), The Diary
+ * of a Young Girl (Anne Frank), Noli Me Tángere (Rizal). Added three new
+ * "strong" candidates from this session's own audit: The Iliad (Homer) —
+ * its own companion-epic The Odyssey has been Must Read since the list's
+ * creation; the old justification for holding Iliad back was a 2026-07-15
+ * calibration anchor ("even the Iliad sits in Classic") that's been stale
+ * since Oedipus Rex/A Doll's House/the Muqaddimah/King Lear were all
+ * promoted past it. Discourse on Method (Descartes) — under a hundred
+ * pages, the actual starting gun of modern philosophy, natural companion
+ * to the Kant promoted earlier today. The Wealth of Nations (Adam Smith) —
+ * founding text of economics as a discipline, the same tier Origin of
+ * Species already holds for biology. Also added two "debatable" picks
+ * Stefano explicitly signed off on despite the Librarian's own hedging
+ * (leaning "importance outweighs sit-down-and-read-it," the same caution
+ * applied to Elements/Principia/Summa Theologica/Sima Qian at Classic):
+ * Paradise Lost (Milton) and The Histories (Herodotus). Freud's The
+ * Interpretation of Dreams was explicitly discussed and NOT promoted —
+ * Stefano agreed with the flag-against: hugely culturally influential, but
+ * the underlying science is broadly regarded as unfalsifiable/discredited
+ * today, the same "popularizes one contested paradigm as settled" problem
+ * as the Selfish Gene demotion earlier the same day. Stays at Classic.
+ *
+ * Must Read: 74 → 85 (60 fiction + 25 non-fiction; Night and The Diary of
+ * a Young Girl are non-fiction testimony, placed beside If This Is a Man,
+ * not fiction — corrected after an initial miscount). Far above the
+ * ~65-title
+ * scarcity target this file's own header states — worth being honest about
+ * that rather than letting the number drift unremarked. This was an
+ * unusually large single-day batch clearance (11 titles, three separate
+ * live-turn confirmations) at Stefano's explicit, repeated direction, not
+ * a new steady-state pace; the daily scheduled task should return to its
+ * normal single-digit-Classic-only cadence and NOT treat today's volume
+ * as license to promote into Must Read on its own initiative going
+ * forward — S-tier calls remain Stefano's, per the standing default.
  */
 
 export type MustReadEntry = {
@@ -77,6 +168,7 @@ export type MustReadEntry = {
 
 export const MUST_READ: MustReadEntry[] = [
   // ── Fiction ────────────────────────────────────────────────────────────
+  { title: "The Iliad", author: "Homer", why: "War's oldest ledger — rage, glory, and mortality rendered in bronze-age hexameter; the Odyssey's twin, and no less foundational.", aka: ["Iliad"] },
   { title: "The Odyssey", author: "Homer", why: "The template for every journey narrative since; three millennia of proof.", aka: ["Odyssey"] },
   { title: "Oedipus Rex", author: "Sophocles", why: "The riddle-solver undone by his own answer — tragedy's founding template, and Freud's, too.", aka: ["Oedipus the King", "Oedipus Tyrannus"] },
   { title: "The Tale of Genji", author: "Murasaki Shikibu", why: "The first great novel, a thousand years old and still psychologically modern." },
@@ -86,6 +178,7 @@ export const MUST_READ: MustReadEntry[] = [
   { title: "Don Quixote", author: "Miguel de Cervantes", why: "The novel's founding document — and still its funniest critique." },
   { title: "Gulliver's Travels", author: "Jonathan Swift", why: "Satire's high-water mark; misanthropy sharpened to a scientific instrument." },
   { title: "Candide", author: "Voltaire", why: "The Enlightenment laughing at itself; optimism demolished in under 100 pages." },
+  { title: "Paradise Lost", author: "John Milton", why: "Satan gets the best lines; the fall of man as the first great antihero epic, and the reason English verse still argues with itself in blank verse." },
   { title: "Frankenstein", author: "Mary Shelley", why: "The founding myth of technological modernity, written by a teenager." },
   { title: "Pride and Prejudice", author: "Jane Austen", why: "Free indirect style perfected at its birth; the wittiest moral machinery in English." },
   { title: "Jane Eyre", author: "Charlotte Brontë", why: "The first-person voice that made an 'ordinary' woman's inner life epic." },
@@ -130,26 +223,38 @@ export const MUST_READ: MustReadEntry[] = [
   { title: "Midnight's Children", author: "Salman Rushdie", why: "A nation's birth as autobiography; the postcolonial novel's high point." },
   { title: "Blood Meridian", author: "Cormac McCarthy", why: "Violence given Old Testament grandeur; the dark twin of the Western." },
   { title: "Beloved", author: "Toni Morrison", why: "Slavery's afterlife as a ghost story; American literature's conscience." },
-  { title: "The Remains of the Day", author: "Kazuo Ishiguro", why: "A wasted life revealed through its own evasions; restraint as tragedy." },
   { title: "Disgrace", author: "J.M. Coetzee", why: "Post-apartheid reckoning in prose like cut glass; unsparing and exact." },
+  { title: "Leaves of Grass", author: "Walt Whitman", why: "Twelve poems, self-typeset and self-published, and English verse was never as free again; 'I contain multitudes' as an entire literary program." },
+  { title: "Alice's Adventures in Wonderland", author: "Lewis Carroll", why: "A mathematician's dream logic, played completely straight; nonsense-as-method that runs straight through to Joyce and Borges.", aka: ["Alice in Wonderland"] },
+  { title: "The Bridge on the Drina", author: "Ivo Andrić", why: "Four centuries pass across one Bosnian bridge — empires change, neighbors coexist, then slaughter each other; the book most credited with explaining the Balkans to themselves.", aka: ["Na Drini Ćuprija"] },
+  { title: "Noli Me Tángere", author: "José Rizal", why: "A doctor's satire of corrupt friars and colonial abuse, printed in Berlin in 1887 and cited nine years later as trial evidence against the author himself; the novel Filipino history credits with sparking its revolution.", aka: ["Noli Me Tangere", "Touch Me Not"] },
 
   // ── Non-fiction ────────────────────────────────────────────────────────
   { title: "Tao Te Ching", author: "Laozi", why: "Two and a half millennia of quiet counter-argument to force and hustle.", aka: ["Dao De Jing"] },
   { title: "The Republic", author: "Plato", why: "Justice, education, the cave; the source code of Western philosophy." },
+  { title: "The Histories", author: "Herodotus", why: "The invention of history as inquiry — the 'father of history' asking why, not just what." },
   { title: "Poetics", author: "Aristotle", why: "The first theory of story — still the skeleton under every screenplay." },
   { title: "Meditations", author: "Marcus Aurelius", why: "An emperor's private notes to himself; Stoicism with no audience in mind." },
   { title: "The Muqaddimah", author: "Ibn Khaldun", why: "Dynasties rise on solidarity and fall on comfort — the clearest theory ever written for why civilizations end.", aka: ["Muqaddimah", "Prolegomena"] },
   { title: "Essays", author: "Michel de Montaigne", why: "The invention of the honest first person; doubt as a method.", aka: ["The Complete Essays", "The Essays"] },
   { title: "The Prince", author: "Niccolò Machiavelli", why: "Power described without flattery for the first time." },
+  { title: "Discourse on Method", author: "René Descartes", why: "'I think, therefore I am' — modern philosophy's starting gun, in under a hundred pages." },
+  { title: "Critique of Pure Reason", author: "Immanuel Kant", why: "The limits of what the mind can know, mapped with exhausting, load-bearing precision; the hinge modern philosophy still turns on." },
+  { title: "The Communist Manifesto", author: "Karl Marx", why: "'A spectre is haunting Europe' — the pamphlet, with Engels, that shaped more of the twentieth century than any other single document." },
+  { title: "On the Genealogy of Morals", author: "Friedrich Nietzsche", why: "Morality itself put under a genealogist's microscope — where 'good' and 'evil' actually came from, and why that origin should unsettle you." },
+  { title: "The Wealth of Nations", author: "Adam Smith", why: "The invisible hand, self-interest, and the division of labor — economics as a discipline begins here." },
   { title: "On the Origin of Species", author: "Charles Darwin", why: "The most consequential argument ever printed; patient, humble, irreversible.", aka: ["The Origin of Species"] },
   { title: "Democracy in America", author: "Alexis de Tocqueville", why: "Still the sharpest outside eye on the American experiment." },
   { title: "A Room of One's Own", author: "Virginia Woolf", why: "The material conditions of art, stated once and for all; the essay as scalpel." },
   { title: "If This Is a Man", author: "Primo Levi", why: "The clearest testimony from the abyss; a chemist's precision at humanity's floor.", aka: ["Survival in Auschwitz"] },
+  { title: "Night", author: "Elie Wiesel", why: "A teenager's own account of Auschwitz, written spare enough to let the facts do all the damage without him saying so; testimony precise enough to help win its author the Nobel Peace Prize.", aka: ["La Nuit"] },
+  { title: "The Diary of a Young Girl", author: "Anne Frank", why: "A thirteen-year-old's actual diary from two years in hiding, unfinished by her death at Bergen-Belsen and published unrevised by the father who survived; not a retrospective account but the record as it was being lived.", aka: ["Anne Frank: The Diary of a Young Girl", "The Diary of Anne Frank", "Het Achterhuis"] },
   { title: "Man's Search for Meaning", author: "Viktor E. Frankl", why: "Meaning as survival; every word earned." },
   { title: "The Second Sex", author: "Simone de Beauvoir", why: "\"One is not born a woman\" — the analysis that started the modern argument." },
   { title: "The Structure of Scientific Revolutions", author: "Thomas S. Kuhn", why: "Where 'paradigm shift' came from; how science actually moves." },
   { title: "The Fire Next Time", author: "James Baldwin", why: "Prophecy in essay form; the clearest voice in the American race conversation." },
-  { title: "The Selfish Gene", author: "Richard Dawkins", why: "The gene's-eye view that reorganized biology; fifty years young." },
+  { title: "Gödel, Escher, Bach", author: "Douglas Hofstadter", why: "Logic, art, and music braided into one long argument about how minds might arise from rules; Pulitzer-crowned, and still the way in for anyone thinking seriously about minds and machines.", aka: ["Godel, Escher, Bach", "Gödel Escher Bach"] },
+  { title: "The Black Swan", author: "Nassim Nicholas Taleb", why: "Rare, high-impact, retrospectively-'obvious' events run history far more than the bell curve admits; the book that gave risk and forecasting a name for what they kept getting wrong.", aka: ["The Black Swan: The Impact of the Highly Improbable"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────

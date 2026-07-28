@@ -226,6 +226,11 @@ import { isMustRead } from "@/lib/must-read";
  * Stefano to weigh alongside Drina, per the standing default that only
  * he promotes into the S-tier list.
  *
+ * (Historical note: the "Night"/"Bridge on the Drina" flags above, and
+ * every other promotion flag raised in this file through 2026-07-25,
+ * were resolved on 2026-07-26 — see the dated entry near the end of this
+ * comment block and must-read.ts's own header for the full account.)
+ *
  * Process note: WebSearch was unavailable this session (sustained API
  * outage, repeated attempts over several minutes all failed) — the
  * per-candidate fact-verification pass standard since 2026-07-19 could
@@ -495,6 +500,248 @@ import { isMustRead } from "@/lib/must-read";
  * Stories, not a reason to promote past it.
  *
  * Classic count: 231 → 235 (163 fiction + 72 non-fiction).
+ *
+ * 2026-07-26 (daily curation pass): four titles, vetted against
+ * moser-the-librarian's rubric, closing four independent gaps. Grepped a
+ * fresh candidate pool — "Lu Xun", "Mo Yan", "Persepolis", "Satrapi",
+ * "Ricardo", "Veblen", "Basho"/"Bashō", "Li Bai", "Du Fu", "Strindberg",
+ * "Lagerlöf" — across both lists first; all confirmed genuine zero-hits,
+ * no false-positive collisions this round. Fiction: Lu Xun's Diary of a
+ * Madman and Other Stories (May 1918, New Youth magazine) closes modern
+ * Chinese literature's total absence — this list has deep classical Chinese
+ * coverage (all Four Great Classical Novels, The Analects, The Zhuangzi)
+ * but nothing from the twentieth century; "Diary of a Madman" is the
+ * vernacular story credited with breaking Chinese fiction away from three
+ * thousand years of classical written Chinese in one stroke, the same kind
+ * of tradition-opening claim as Death and the King's Horseman (2026-07-20),
+ * placed directly beside it. Non-fiction: Matsuo Bashō's The Narrow Road to
+ * the Deep North (composed on an 1689 walking journey, published
+ * posthumously 1702) closes a Japanese-poetry gap this list left open even
+ * after 2026-07-22's Sappho/Whitman lyric-poetry sweep — haibun is a
+ * distinct hybrid form (haiku braided into travel prose), and this is its
+ * unrivaled masterpiece; placed beside Marco Polo and the Rihla as a third
+ * entry in the travel-literature cluster, since it is, among other things,
+ * a first-person account of an actual 1,500-mile journey. David Ricardo's
+ * On the Principles of Political Economy and Taxation (19 April 1817)
+ * closes a real gap beside The Wealth of Nations and An Essay on the
+ * Principle of Population: comparative advantage is one of the very few
+ * genuinely non-obvious, still-uncontested results in all of economics,
+ * unchanged in two centuries of scrutiny. Marjane Satrapi's Persepolis
+ * (French serialization 2000–2003) is this list's second graphic novel,
+ * answering the question 2026-07-22's Maus entry deliberately left open
+ * ("worth revisiting if the medium produces a second... work of comparable
+ * stature") — an autobiographical account of the Iranian Revolution and the
+ * Iran–Iraq War, classified non-fiction on the same logic as Maus (the
+ * events and the testimony are real; the medium is just black-and-white
+ * line art), placed directly after it. All four facts (Lu Xun's May 1918
+ * New Youth publication and its "first modern Chinese short story" status,
+ * Bashō's 1689 journey/1702 posthumous publication, Ricardo's 19 April 1817
+ * publication date, Satrapi's 2000–2003 French serialization) independently
+ * verified via WebSearch rather than trusted from recall. All four clear
+ * the Lindy/A-tier bar with room to spare.
+ *
+ * All four explicitly checked against the Must Read bar and confidently
+ * held at Classic instead — no new promotion flag this round, alongside the
+ * six still-open flags awaiting Stefano's own batch review (Bridge on the
+ * Drina 2026-07-20, Night 2026-07-21, Leaves of Grass 2026-07-22, Alice's
+ * Adventures in Wonderland 2026-07-23, The Diary of a Young Girl 2026-07-24,
+ * Noli Me Tángere 2026-07-25). Reasoning: Lu Xun and Bashō are each
+ * civilization-defining within their own national tradition, the same tier
+ * Shahnameh and the Ramayana already occupy here, not a step above; Ricardo
+ * is a landmark of influence rather than a book a general reader reaches
+ * for on its own terms, the same "importance outweighs sit-down-and-read-it"
+ * logic applied to Elements and the Principia on 2026-07-19; and Persepolis,
+ * despite real durability (a 2007 Oscar-nominated film adaptation, decades
+ * of continuous classroom use, repeated censorship-challenge controversy —
+ * real signals of lasting weight, not just recency), is 26 years old against
+ * a Must Read roster whose graphic-novel precedent (Maus) itself still sits
+ * at Classic; two landmark works is a real medium-level signal worth
+ * banking, but not yet grounds for jumping the form straight past its own
+ * first promotion.
+ *
+ * Classic count: 235 → 239 (164 fiction + 75 non-fiction).
+ *
+ * 2026-07-26 (same day, live turn — demotion from Must Read, Stefano's
+ * direct instruction, no reasoning requested): The Remains of the Day
+ * (Kazuo Ishiguro) and The Selfish Gene (Richard Dawkins) moved down from
+ * must-read.ts. Placed beside each author's existing Classic-tier company —
+ * Remains of the Day directly beside Ishiguro's own Never Let Me Go; The
+ * Selfish Gene directly beside The Double Helix, this list's other
+ * landmark-but-not-S-tier biology title. Classic count: 239 → 241
+ * (165 fiction + 76 non-fiction).
+ *
+ * 2026-07-26 (same day, third live turn — promotion out to Must Read,
+ * Stefano's explicit sign-off after flagging German philosophy's total
+ * absence from must-read.ts): Critique of Pure Reason (Kant), The
+ * Communist Manifesto (Marx), and On the Genealogy of Morals (Nietzsche)
+ * removed to must-read.ts — see that file's own header for the full
+ * reasoning, including why Hegel's Phenomenology of Spirit and Heidegger's
+ * Being and Time were deliberately NOT promoted alongside them (both stay
+ * here). Gödel, Escher, Bach (Hofstadter) also removed to Must Read, per
+ * Stefano's separate confirmation earlier the same day. Classic count:
+ * 241 → 237 (165 fiction + 72 non-fiction).
+ *
+ * 2026-07-26 (same day, fourth live turn — promotion out to Must Read,
+ * Stefano's full audit sign-off): eleven titles removed to must-read.ts —
+ * see that file's own header for the complete reasoning. Six were the
+ * long-open fiction backlog from daily curation runs (Bridge on the Drina,
+ * Night, Leaves of Grass, Alice's Adventures in Wonderland, The Diary of a
+ * Young Girl, Noli Me Tángere); five were new picks from this session's own
+ * audit of Classic for under-tiered giants (The Iliad, Paradise Lost, and
+ * the "debatable" pair The Histories and Discourse on Method, plus The
+ * Wealth of Nations). The Interpretation of Dreams (Freud) was explicitly
+ * considered and held here, not promoted — see must-read.ts's header for
+ * why. Classic count: 237 → 226 (159 fiction + 67 non-fiction).
+ *
+ * 2026-07-27 (daily curation pass, scheduled-task fire, fully autonomous):
+ * confirmed both canon files matched the 2026-07-26 extended-session
+ * baseline exactly (226/85) before starting. Actually invoked
+ * moser-the-librarian. Grepped a fresh candidate pool — "Beckett",
+ * "Godot", "Arthur Miller", "Salesman", "Tennessee Williams", "Streetcar",
+ * "Kierkegaard", "Spinoza", "Mo Yan", "Sorghum" — all confirmed genuine
+ * zero-hits on both lists except "Mo Yan", which only appears inside this
+ * file's own 2026-07-26 header prose (a candidate considered, not an
+ * actual entry) — deliberately deferred again this round to keep today's
+ * pass single-themed rather than padding the batch.
+ *
+ * Added 5 titles (226 → 231: 162 fiction + 69 non-fiction), closing one
+ * clean genre gap plus two independent philosophy picks. Fiction/drama:
+ * the 2026-07-18 theater sweep covered ancient Greek tragedy/comedy,
+ * Sanskrit drama, and French/Scandinavian/Russian 19th-century realism,
+ * but nothing from 20th-century drama's two dominant traditions —
+ * American theater and the Absurd. Closed with all three plays the Royal
+ * National Theatre's 1998 poll of 800 theater professionals ranked as the
+ * century's most significant English-language plays, in that exact order:
+ * Samuel Beckett's Waiting for Godot (Paris, 5 January 1953) — ranked
+ * first, absurdist theater's founding text; Arthur Miller's Death of a
+ * Salesman (Broadway, 10 February 1949, 1949 Pulitzer) — ranked second;
+ * Tennessee Williams's A Streetcar Named Desire (Broadway, 3 December
+ * 1947, 1948 Pulitzer) — ranked third. Placed together directly after The
+ * Cherry Orchard, this list's most recent prior drama entry. Non-fiction:
+ * two independent philosophy picks closing a real gap in the rationalist/
+ * existentialist lineage. Baruch Spinoza's Ethics (published within months
+ * of his death in 1677, too dangerous to release while he was alive to
+ * answer for it) — the other great 17th-century rationalist system beside
+ * Descartes' Discourse on Method (Must Read), argued in Euclid's own
+ * geometric form; placed beside Leviathan for era. Søren Kierkegaard's
+ * Fear and Trembling (16 October 1843, pseudonymously as Johannes de
+ * Silentio) — existentialism's actual 19th-century founder had zero
+ * representation despite Sartre and Camus both already sitting on these
+ * two lists; placed directly after Hegel's Phenomenology of Spirit on
+ * purpose, since Kierkegaard wrote it explicitly against Hegelian system-
+ * building. All five facts (the 1998 National Theatre poll and its exact
+ * ranking, each play's premiere date and Pulitzer year, Spinoza's 1677
+ * posthumous publication, Kierkegaard's 16 October 1843 date and
+ * pseudonym) independently verified via WebSearch before writing each
+ * "why" line. All five clear the Lindy/A-tier bar with room to spare;
+ * none were close calls.
+ *
+ * Waiting for Godot is flagged, not promoted, as a possible Must Read
+ * candidate — its own 1998 National Theatre ranking (first among all
+ * English-language 20th-century plays) argues for a tier above Death of a
+ * Salesman and Streetcar, the same "one clear standout, two strong
+ * seconds" pattern this list has used before (Bridge on the Drina among
+ * 2026-07-20's Nobel cluster; Leaves of Grass among 2026-07-22's lyric-
+ * poetry pair). Fear and Trembling is flagged as a second possible
+ * candidate — the same logic Stefano applied on 2026-07-26 when he had
+ * Kant, Marx, and Nietzsche promoted specifically to close German
+ * philosophy's total absence from Must Read applies here too: Kierkegaard
+ * is the founder of the existentialist movement Sartre and Camus's own
+ * entries represent, and right now sits nowhere on either list. Miller and
+ * Williams were explicitly checked against the same bar and held at
+ * Classic instead — both towering, but the National Theatre poll itself
+ * ranks them a clear step behind Godot, and neither founds a movement the
+ * way Godot/absurdism or Fear and Trembling/existentialism does. Spinoza's
+ * Ethics was also checked and held at Classic — towering in influence but
+ * geometrically argued and reference-dense rather than a book a general
+ * reader sits down and reads cover to cover, the same "importance
+ * outweighs sit-down-and-read-it" logic applied to Elements/Principia
+ * (2026-07-19) and Summa Theologica (2026-07-25). Per the standing default
+ * reaffirmed 2026-07-26 ("the daily scheduled task's own default... still
+ * applies going forward"), this run flags rather than promotes — S-tier
+ * calls remain Stefano's.
+ *
+ * Classic count: 226 → 231 (162 fiction + 69 non-fiction). Left
+ * uncommitted, per the now-standard default for fully autonomous runs
+ * with no live user turn (git confirmed in sync with origin before
+ * starting, aside from the pre-existing local/origin divergence on
+ * unrelated backend files noted in [[novelviz-daily-canon-curation]]'s
+ * 2026-07-26 entry, which this run did not touch or attempt to reconcile).
+ *
+ * 2026-07-28 (daily curation pass, scheduled-task fire, fully autonomous):
+ * confirmed both canon files matched the 2026-07-27 baseline exactly
+ * (231/85) before starting; local/origin divergence on unrelated backend
+ * files persists (untouched, out of scope). Actually invoked
+ * moser-the-librarian. Grepped a fresh candidate pool — "Epictetus",
+ * "Seneca", "Veblen", "Mo Yan", "Sorghum", "Achebe", "Bulgakov", "Gogol",
+ * "Solzhenitsyn", "Weber", "Durkheim" — all confirmed genuine zero-hits
+ * except the last four, which were already real entries on this list (not
+ * gaps), and Mo Yan, which — as this file's own 2026-07-27 note already
+ * recorded — appears only in prior header prose as a deferred candidate,
+ * never an actual entry.
+ *
+ * Added 4 titles (231 → 235: 163 fiction + 71 non-fiction), closing one
+ * clean philosophical gap plus two independent picks. Stoicism had stood
+ * on exactly one leg for two years: Marcus Aurelius's Meditations (Must
+ * Read) represents the emperor's private notebook, but the movement's
+ * other two canonical voices — a slave and a courtier — were entirely
+ * absent. Closed with Epictetus's The Enchiridion (compiled from memory
+ * by his student Arrian roughly a decade into the 2nd century CE, since
+ * Epictetus himself, like Socrates, left nothing in writing) and Seneca's
+ * Letters from a Stoic (124 letters written in the last two years of a
+ * life spent as Nero's advisor, c. 63-65 CE, before Nero ordered his
+ * suicide) — placed together directly after Lucretius's On the Nature of
+ * Things and before Augustine's Confessions, closing the gap in ancient
+ * philosophy chronologically rather than appending at the end. Fiction:
+ * Mo Yan's Red Sorghum (1986) — deferred twice already (2026-07-26,
+ * 2026-07-27) specifically to avoid padding a single-themed batch; added
+ * this round as its own independently-justified pick, not a leftover —
+ * the breakthrough novel behind the first Nobel Prize in Literature
+ * awarded to a citizen still living in China, in 2012 (Gao Xingjian's 2000
+ * prize is often excluded from that specific claim: he held French
+ * citizenship and lived in Paris by then); placed directly after Lu Xun,
+ * continuing modern Chinese fiction into the following century before the
+ * Japan cluster. Non-fiction: Thorstein Veblen's The Theory of the Leisure
+ * Class (1899) — a real gap beside Weber's Protestant Ethic and Durkheim's
+ * Suicide: "conspicuous consumption" coined here, arguing status display
+ * rather than thrift or religious conviction was the real engine driving
+ * visible economic behavior, a decade before Weber's book and two after
+ * Durkheim's; placed between them for era and cluster. All four facts
+ * (Arrian's early-2nd-century-CE compilation date, Seneca's 63-65 CE
+ * writing window and 124-letter count, Mo Yan's 1986/2012 dates and the
+ * Gao Xingjian citizenship distinction, Veblen's 1899 publication)
+ * independently verified via WebSearch before writing each "why" line.
+ *
+ * No new Must Read flag this round — all four explicitly checked and held
+ * at Classic. Epictetus and Seneca are civilization-defining within their
+ * own tradition, the same tier Marcus Aurelius's companion texts should
+ * occupy rather than exceed (Meditations already sits alone in Must Read
+ * as Stoicism's sole S-tier representative — a second or third Stoic
+ * voice belongs at the same tier as Epictetus/Seneca, not a promotion
+ * case); Mo Yan's Nobel is towering but 40 years
+ * younger than this list's typical Must Read bar and hasn't yet
+ * accumulated the multi-generational critical consensus of, say, Achebe's
+ * Things Fall Apart; Veblen is a landmark of influence and a real
+ * conceptual coinage, but read today mostly for that one idea rather than
+ * cover to cover, the same "importance outweighs sit-down-and-read-it"
+ * logic applied to Elements/Principia (2026-07-19) and Summa Theologica
+ * (2026-07-25). The two open flags from 2026-07-27 (Waiting for Godot,
+ * Fear and Trembling) remain unresolved, awaiting Stefano's own review —
+ * unaffected by this round.
+ *
+ * Verified: `npx tsc --noEmit` clean. Both vitest suites green
+ * (`must-read.test.ts` 85/1 — confirms untouched; `classic.test.ts`
+ * 235/3). Ran a normalized-fingerprint dedupe/collision check (NFD-strip-
+ * accents, grouped by key rather than raw frequency) across title and
+ * every `aka` on both files: 0 internal collisions on either list, 0
+ * cross-list collisions, all 4 new titles confirmed present in Classic and
+ * absent from Must Read. Section-header line counts (163 fiction + 71
+ * non-fiction = 235) independently verified against the header docblock's
+ * own claimed count.
+ *
+ * Classic count: 231 → 235 (163 fiction + 71 non-fiction). Left
+ * uncommitted, per the now-standard default for fully autonomous runs with
+ * no live user turn.
  */
 
 export type ClassicEntry = {
@@ -509,7 +756,6 @@ export type ClassicEntry = {
 export const CLASSIC: ClassicEntry[] = [
   // ── Fiction ────────────────────────────────────────────────────────────
   { title: "Epic of Gilgamesh", author: "Anonymous", why: "The oldest story still being read; a king learns mortality four thousand years before anyone else wrote it down.", aka: ["The Epic of Gilgamesh", "Gilgamesh"] },
-  { title: "The Iliad", author: "Homer", why: "War's oldest ledger — rage, glory, and mortality rendered in bronze-age hexameter.", aka: ["Iliad"] },
   { title: "Sappho: Poems and Fragments", author: "Sappho", why: "Nine scrolls of songs written for the lyre, reduced by two thousand years to scraps and one complete poem — still the reason 'lyric' means what it means.", aka: ["The Poems of Sappho", "Sappho"] },
   { title: "The Oresteia", author: "Aeschylus", why: "The only complete trilogy to survive from Greek tragedy — blood vengeance argued all the way to the first courtroom.", aka: ["Oresteia"] },
   { title: "Medea", author: "Euripides", why: "A wronged wife's revenge pushed past every limit; Greek tragedy's most unsettlingly modern psychology." },
@@ -537,7 +783,6 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Lusiads", author: "Luís de Camões", why: "Vasco da Gama's voyage to India, narrated with the old gods still meddling; Portugal's answer to the Aeneid.", aka: ["Os Lusiadas", "Os Lusíadas"] },
   { title: "The Faerie Queene", author: "Edmund Spenser", why: "Allegory built like a cathedral; English verse flexing its full structural range." },
   { title: "Tartuffe", author: "Molière", why: "A con man in religious costume fools an entire household; comedy so dangerous the Church got it banned for five years.", aka: ["Tartuffe, ou l'Imposteur", "The Impostor"] },
-  { title: "Paradise Lost", author: "John Milton", why: "Satan gets the best lines; the fall of man as the first great antihero epic." },
   { title: "The Pilgrim's Progress", author: "John Bunyan", why: "Allegory so plain it became the second-best-selling book in English after the Bible.", aka: ["Pilgrim's Progress"] },
   { title: "Robinson Crusoe", author: "Daniel Defoe", why: "The English novel's opening argument for itself: one man, an island, and inventory." },
   { title: "Tom Jones", author: "Henry Fielding", why: "The comic novel's blueprint — plot as clockwork, narrator as co-conspirator.", aka: ["The History of Tom Jones, a Foundling"] },
@@ -561,7 +806,6 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Notes from Underground", author: "Fyodor Dostoevsky", why: "The first existentialist novel; spite as philosophy, delivered from a basement." },
   { title: "The Murders in the Rue Morgue", author: "Edgar Allan Poe", why: "A locked room, an armchair genius, and a solution nobody saw coming — deduction as entertainment, invented whole in a single 1841 magazine story." },
   { title: "The Scarlet Letter", author: "Nathaniel Hawthorne", why: "Puritan shame made permanent, stitched to a chest; American guilt's founding text." },
-  { title: "Leaves of Grass", author: "Walt Whitman", why: "Twelve poems, self-typeset and self-published, and English verse was never as free again; 'I contain multitudes' as an entire literary program." },
   { title: "My Ántonia", author: "Willa Cather", why: "The prairie remembered as elegy; frontier life without the myth-making.", aka: ["My Antonia"] },
   { title: "The Portrait of a Lady", author: "Henry James", why: "A free American woman chooses her own trap; consciousness rendered in exhaustive close-up." },
   { title: "The Age of Innocence", author: "Edith Wharton", why: "Old New York's unwritten rules, enforced by people too polite to say them aloud." },
@@ -571,16 +815,17 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Dom Casmurro", author: "Machado de Assis", why: "An unreliable narrator poisons his own marriage story with jealousy; Brazil's founding modern novel, a century ahead of its methods." },
   { title: "Twenty Thousand Leagues Under the Sea", author: "Jules Verne", why: "Captain Nemo's submarine predicted the real thing by decades; one of the two founding fathers of science fiction, still the more prophetic." },
   { title: "Germinal", author: "Émile Zola", why: "A mining strike as tragedy; naturalism's argument that poverty is a plot, not a flaw." },
-  { title: "Noli Me Tángere", author: "José Rizal", why: "A doctor's satire of corrupt friars and colonial abuse, printed in Berlin in 1887 and cited nine years later as trial evidence against the author himself; the novel Filipino history credits with sparking its revolution.", aka: ["Noli Me Tangere", "Touch Me Not"] },
   { title: "The Picture of Dorian Gray", author: "Oscar Wilde", why: "Vanity given a body double; aestheticism's most quotable cautionary tale." },
   { title: "Strange Case of Dr Jekyll and Mr Hyde", author: "Robert Louis Stevenson", why: "The divided self, given a formula and a body count.", aka: ["Dr. Jekyll and Mr. Hyde", "The Strange Case of Dr Jekyll and Mr Hyde"] },
   { title: "Dracula", author: "Bram Stoker", why: "Epistolary horror that invented the modern vampire's entire rulebook." },
   { title: "The Woman in White", author: "Wilkie Collins", why: "The sensation novel's founding text; identity theft as Victorian nightmare." },
-  { title: "Alice's Adventures in Wonderland", author: "Lewis Carroll", why: "A mathematician's dream logic, played completely straight; nonsense-as-method that runs straight through to Joyce and Borges.", aka: ["Alice in Wonderland"] },
   { title: "The Adventures of Sherlock Holmes", author: "Arthur Conan Doyle", why: "The consulting detective who made observation itself the plot; every fictional genius-investigator since is working from his method." },
   { title: "The Time Machine", author: "H.G. Wells", why: "Coined the phrase and the device in one stroke; Verne imagined the machines we'd build, Wells imagined what they'd cost us." },
   { title: "Tess of the d'Urbervilles", author: "Thomas Hardy", why: "Fate as a rigged system; Hardy's angriest argument against the moral order." },
   { title: "The Cherry Orchard", author: "Anton Chekhov", why: "An estate sold out from under a family too busy talking to notice; comedy and tragedy finally admit they're the same thing." },
+  { title: "A Streetcar Named Desire", author: "Tennessee Williams", why: "A faded Southern belle's delusions collide with her sister's brutal husband in one cramped New Orleans flat; American theater's rawest study of desire and cruelty, ranked third in the Royal National Theatre's 1998 poll of the century's most significant English-language plays." },
+  { title: "Death of a Salesman", author: "Arthur Miller", why: "A traveling salesman's whole life collapses under myths about success he never once examined; 'attention must be paid' became the line every American tragedy since has had to answer, and that same 1998 National Theatre poll placed it second only to Godot." },
+  { title: "Waiting for Godot", author: "Samuel Beckett", why: "Two tramps wait by a bare tree for someone who never arrives; absurdist theater's founding text, and the play eight hundred British theater professionals voted the single most significant English-language play of the 20th century.", aka: ["En attendant Godot"] },
   { title: "Buddenbrooks", author: "Thomas Mann", why: "A merchant dynasty's slow decline, four generations deep; Mann's debut and still his warmest." },
   { title: "A Portrait of the Artist as a Young Man", author: "James Joyce", why: "The bildungsroman rebuilt from the inside of a developing consciousness." },
   { title: "The Good Soldier", author: "Ford Madox Ford", why: "The unreliable narrator's masterclass; 'the saddest story' told by the last to know." },
@@ -609,11 +854,11 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Independent People", author: "Halldór Laxness", why: "An Icelandic sheep farmer's stubborn, doomed independence; Nobel-caliber bleak comedy." },
   { title: "Voss", author: "Patrick White", why: "An explorer vanishes into the Australian interior while a woman in Sydney lives the expedition psychically; the novel behind Australia's only Nobel." },
   { title: "Hunger", author: "Knut Hamsun", why: "A starving writer's mind unraveling on the page; modernist interiority before modernism had a name." },
-  { title: "The Bridge on the Drina", author: "Ivo Andrić", why: "Four centuries pass across one Bosnian bridge — empires change, neighbors coexist, then slaughter each other; the book most credited with explaining the Balkans to themselves.", aka: ["Na Drini Ćuprija"] },
   { title: "Wide Sargasso Sea", author: "Jean Rhys", why: "Jane Eyre's 'madwoman in the attic' given her own voice and her own colonial history." },
   { title: "A House for Mr Biswas", author: "V.S. Naipaul", why: "One man's lifelong scrap for a house — and a self — of his own; the Trinidadian novel that won Naipaul his Nobel." },
   { title: "The Unbearable Lightness of Being", author: "Milan Kundera", why: "Love and politics under Soviet occupation, filtered through Nietzsche's eternal return." },
   { title: "Austerlitz", author: "W.G. Sebald", why: "Memory, architecture, and the Holocaust's aftershocks, told in single unbroken paragraphs." },
+  { title: "The Remains of the Day", author: "Kazuo Ishiguro", why: "An English butler's decades of loyal service, recounted in a voice too composed to admit what it cost him; restraint used as the instrument of its own quiet devastation." },
   { title: "Never Let Me Go", author: "Kazuo Ishiguro", why: "A quiet dystopia about acceptance; horror delivered entirely in understatement." },
   { title: "Suite Française", author: "Irène Némirovsky", why: "France's 1940 collapse, written in real time by an author who didn't survive to finish it.", aka: ["Suite Francaise"] },
   { title: "The Little Prince", author: "Antoine de Saint-Exupéry", why: "A downed pilot's fable about a boy, a rose, and a planet the size of a house; the world's most translated book after the Bible, written by a man who vanished flying reconnaissance the following year.", aka: ["Le Petit Prince"] },
@@ -656,6 +901,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "July's People", author: "Nadine Gordimer", why: "A white family's roles inverted overnight; apartheid's collapse imagined from inside a farmhouse." },
   { title: "Petals of Blood", author: "Ngũgĩ wa Thiong'o", why: "Independence's broken promises, traced through four lives in a betrayed Kenyan town." },
   { title: "Death and the King's Horseman", author: "Wole Soyinka", why: "A colonial officer stops a Yoruba horseman's ritual suicide and breaks a cosmology he never understood; the first African Nobel laureate's most performed play." },
+  { title: "Diary of a Madman and Other Stories", author: "Lu Xun", why: "A paranoid narrator becomes convinced everyone around him is secretly a cannibal; published in vernacular Chinese in 1918, the story credited with inventing modern Chinese literature by breaking, for the first time, from three thousand years of classical written Chinese.", aka: ["A Madman's Diary", "Diary of a Madman", "Diary of a Madman and Other Stories by Lu Xun"] },
+  { title: "Red Sorghum", author: "Mo Yan", why: "Three generations of a Shandong family through war and revolution, Mao-era history broken open by ghosts, sorghum wine, and animal transformation; the 1986 breakthrough behind China's first Nobel Prize in Literature awarded to a citizen still living in the country, in 2012.", aka: ["Red Sorghum Clan", "Hong Gaoliang Jiazu"] },
   { title: "Kokoro", author: "Natsume Sōseki", why: "Isolation and guilt in Meiji Japan; a friendship's quiet, devastating confession." },
   { title: "The Wind-Up Bird Chronicle", author: "Haruki Murakami", why: "A missing cat unspools into wells, wartime Manchuria, and Japan's buried history." },
   { title: "Silence", author: "Shūsaku Endō", why: "A missionary's faith tested by torture and God's total silence; conviction under real pressure." },
@@ -673,7 +920,6 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Lord of the Flies", author: "William Golding", why: "Schoolboys revert to savagery without adults watching; civilization's thinness, tested and found wanting." },
 
   // ── Non-fiction ────────────────────────────────────────────────────────
-  { title: "The Histories", author: "Herodotus", why: "The invention of history as inquiry — the 'father of history' asking why, not just what." },
   { title: "The History of the Peloponnesian War", author: "Thucydides", why: "Power politics analyzed without myth or piety; the realist tradition's founding text." },
   { title: "The Annals", author: "Tacitus", why: "Rome's emperors dissected by a senator who trusted no one's motives, least of all the ones in power; history written as autopsy.", aka: ["Annals", "The Annals of Imperial Rome"] },
   { title: "Records of the Grand Historian", author: "Sima Qian", why: "Chose castration over death specifically to live long enough to finish it; built the annals-and-biographies template every official Chinese history would follow for the next two thousand years.", aka: ["Shiji", "The Grand Scribe's Records"] },
@@ -682,26 +928,27 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Elements", author: "Euclid", why: "Five self-evident postulates build an entire geometry from scratch; the axiomatic method's founding demonstration, unrivaled as a textbook for two thousand years.", aka: ["Euclid's Elements", "The Elements", "Stoicheia"] },
   { title: "The Principia", author: "Isaac Newton", why: "Three laws of motion and one equation for gravity, proved in Euclid's own geometric style; arguably the single most consequential book science has ever produced.", aka: ["Principia Mathematica", "Philosophiae Naturalis Principia Mathematica", "Mathematical Principles of Natural Philosophy", "Newton's Principia"] },
   { title: "On the Nature of Things", author: "Lucretius", why: "Atomism, mortality, and a universe without gods running it, argued in verse two thousand years before physics caught up.", aka: ["De Rerum Natura", "The Nature of Things"] },
+  { title: "The Enchiridion", author: "Epictetus", why: "A former slave's teaching, compiled from memory by a student decades after his death: control what's yours — judgment, desire, will — and let go of everything else without complaint. Stoicism's other extreme from Marcus Aurelius's private notebook (Must Read) — this one was taught aloud, to anyone who'd listen.", aka: ["Enchiridion", "The Handbook", "The Manual", "Encheiridion"] },
+  { title: "Letters from a Stoic", author: "Seneca", why: "A hundred and twenty-four letters written in the last two years of a life spent as Nero's tutor and advisor; Stoicism as a practical, elegant instruction manual for dying well while still very much alive.", aka: ["Epistulae Morales ad Lucilium", "Letters to Lucilius", "Moral Letters to Lucilius"] },
   { title: "Confessions", author: "Saint Augustine", why: "The first real autobiography; interiority and guilt examined before either had a name.", aka: ["The Confessions"] },
   { title: "The Consolation of Philosophy", author: "Boethius", why: "Written in a prison cell awaiting execution; philosophy's argument against fortune's cruelty." },
   { title: "Summa Theologica", author: "Thomas Aquinas", why: "Six hundred-plus questions, each argued through the losing side's best case first; Aristotle fused with Christian doctrine into a system so complete the Church made it its own standard for the next seven hundred years.", aka: ["Summa Theologiae"] },
   { title: "The Travels of Marco Polo", author: "Marco Polo", why: "Dictated to a fellow prisoner in a Genoese jail cell; a Venetian merchant's account of Kublai Khan's court became Europe's window onto Asia, and stayed the reference point for two centuries of explorers after him.", aka: ["The Book of the Marvels of the World", "Il Milione", "The Travels of Marco Polo, Complete"] },
   { title: "The Rihla", author: "Ibn Battuta", why: "Twenty-nine years crossing the length of the Islamic world, Morocco to China, dictated from memory to a scribe on his return; the richest eyewitness account of the fourteenth-century world that survives.", aka: ["Rihla", "The Travels of Ibn Battuta", "A Gift to Those Who Contemplate the Wonders of Cities and the Marvels of Traveling"] },
-  { title: "Discourse on Method", author: "René Descartes", why: "'I think, therefore I am' — modern philosophy's starting gun, in under a hundred pages." },
+  { title: "The Narrow Road to the Deep North", author: "Matsuo Bashō", why: "A poet walks a thousand miles through northern Japan on foot, weighing haiku against prose the whole way; the haibun form's masterpiece, and still the reason Bashō is Japan's most translated poet.", aka: ["Oku no Hosomichi", "Narrow Road to the Interior", "The Narrow Road to Oku"] },
   { title: "Leviathan", author: "Thomas Hobbes", why: "Life without government as 'nasty, brutish, and short' — the case for the state, unsentimental." },
+  { title: "Ethics", author: "Baruch Spinoza", why: "God and Nature fused into one single substance, proved proposition by proposition in Euclid's own geometric form; too dangerous to publish while Spinoza was alive to face the consequences, it appeared within months of his 1677 death and reshaped what philosophy could even argue about God.", aka: ["Ethics, Demonstrated in Geometrical Order", "Ethica"] },
   { title: "An Enquiry Concerning Human Understanding", author: "David Hume", why: "Causation itself put on trial; empiricism's sharpest, most unsettling argument." },
   { title: "Two Treatises of Government", author: "John Locke", why: "Consent of the governed, laid out as first principle; the American founders' owner's manual." },
   { title: "The Social Contract", author: "Jean-Jacques Rousseau", why: "'Man is born free, and everywhere he is in chains' — the case for popular sovereignty." },
   { title: "A Vindication of the Rights of Woman", author: "Mary Wollstonecraft", why: "Reason claimed as women's birthright, a century before suffrage was even on the table." },
-  { title: "The Wealth of Nations", author: "Adam Smith", why: "The invisible hand, self-interest, and the division of labor — economics as a discipline begins here." },
   { title: "An Essay on the Principle of Population", author: "Thomas Malthus", why: "Population grows exponentially, food only arithmetically, catastrophe closes the gap — the pamphlet that handed Darwin his 'struggle for existence' the moment he read it.", aka: ["Essay on the Principle of Population"] },
+  { title: "On the Principles of Political Economy and Taxation", author: "David Ricardo", why: "Two countries, two goods, and the 'four numbers' paragraph proving trade still pays off even when one side is better at making everything; comparative advantage, one of economics' oldest results and still one of its truest.", aka: ["Principles of Political Economy and Taxation", "The Principles of Political Economy and Taxation"] },
   { title: "The Federalist Papers", author: "Alexander Hamilton", why: "Constitutional argument as serial journalism; the owner's manual for a government built to check itself.", aka: ["Federalist Papers", "The Federalist"] },
-  { title: "Critique of Pure Reason", author: "Immanuel Kant", why: "The limits of what the mind can know, mapped with exhausting, load-bearing precision." },
   { title: "Phenomenology of Spirit", author: "G.W.F. Hegel", why: "Consciousness's long, dialectical education toward absolute knowing; difficult, and never fully superseded." },
-  { title: "On the Genealogy of Morals", author: "Friedrich Nietzsche", why: "Morality itself put under a genealogist's microscope — where 'good' and 'evil' actually came from." },
+  { title: "Fear and Trembling", author: "Søren Kierkegaard", why: "Abraham raises the knife over Isaac at God's command, and Kierkegaard refuses every comfortable reading of the story; written in direct revolt against the very Hegelian system just above it on this list, and the book that gave existentialism its first real subject — a faith no rational system can absorb.", aka: ["Frygt og Bæven"] },
   { title: "The Art of War", author: "Sun Tzu", why: "Twenty-five hundred years old and still the first book handed to anyone learning to think about conflict — military, corporate, or otherwise.", aka: ["Art of War"] },
   { title: "On War", author: "Carl von Clausewitz", why: "War as 'the continuation of policy by other means' — every strategist since has had to argue with this book, not around it.", aka: ["Vom Kriege"] },
-  { title: "The Communist Manifesto", author: "Karl Marx", why: "'A spectre is haunting Europe' — the pamphlet, with Engels, that launched the twentieth century's central argument." },
   { title: "On Liberty", author: "John Stuart Mill", why: "The harm principle, stated once and never bettered; the case for dissent as a public good." },
   { title: "The Interpretation of Dreams", author: "Sigmund Freud", why: "The unconscious given a grammar; whatever you think of the theory, the questions still stand." },
   { title: "Memories, Dreams, Reflections", author: "Carl Jung", why: "An autobiography written almost entirely from inside dreams and visions rather than outer events; the archetypes-and-collective-unconscious tradition Freud's own case histories never cover." },
@@ -710,6 +957,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Varieties of Religious Experience", author: "William James", why: "Religion studied as lived psychology, not doctrine; the empirical case for taking mysticism seriously." },
   { title: "The Protestant Ethic and the Spirit of Capitalism", author: "Max Weber", why: "Why capitalism took root where it did; ideas as an economic engine, not just an effect." },
   { title: "Suicide", author: "Émile Durkheim", why: "The first great work of empirical sociology; even the most private act, shown to have a social rate." },
+  { title: "The Theory of the Leisure Class", author: "Thorstein Veblen", why: "Coined 'conspicuous consumption' — wealth spent visibly, specifically to be seen wasting it; a decade before Weber's Protestant Ethic, arguing status and display, not thrift, were driving the whole economic engine all along.", aka: ["Theory of the Leisure Class"] },
   { title: "The Souls of Black Folk", author: "W.E.B. Du Bois", why: "'Double consciousness' named for the first time; the founding text of Black American thought." },
   { title: "Being and Time", author: "Martin Heidegger", why: "What it means to exist at all, reopened as a question after millennia of assuming the answer." },
   { title: "Being and Nothingness", author: "Jean-Paul Sartre", why: "Freedom as a burden, not a gift; existentialism's fullest, most demanding statement." },
@@ -721,9 +969,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Walden", author: "Henry David Thoreau", why: "Two years in a cabin as an argument against a life of quiet desperation." },
   { title: "Narrative of the Life of Frederick Douglass", author: "Frederick Douglass", why: "A former slave's own testimony, precise and devastating, that literacy itself was the first freedom." },
   { title: "The Autobiography of Malcolm X", author: "Malcolm X", why: "Hustler to convict to minister to independent thinker, dictated across two years of interviews and published nine months after his assassination; Time later named it one of the ten most influential nonfiction books of the century.", aka: ["Autobiography of Malcolm X"] },
-  { title: "The Diary of a Young Girl", author: "Anne Frank", why: "A thirteen-year-old's actual diary from two years in hiding, unfinished by her death at Bergen-Belsen and published unrevised by the father who survived; not a retrospective account like this list's other testimony, but the record as it was being lived.", aka: ["Anne Frank: The Diary of a Young Girl", "The Diary of Anne Frank", "Het Achterhuis"] },
-  { title: "Night", author: "Elie Wiesel", why: "A teenager's own account of Auschwitz, written spare enough to let the facts do all the damage without him saying so; testimony precise enough to help win its author the Nobel Peace Prize.", aka: ["La Nuit"] },
   { title: "Maus", author: "Art Spiegelman", why: "A father's Auschwitz survival drawn as mice stalked by cats; the only comic ever handed a Pulitzer, because no existing category knew what else to call it.", aka: ["Maus: A Survivor's Tale", "The Complete Maus"] },
+  { title: "Persepolis", author: "Marjane Satrapi", why: "A girl comes of age through the Iranian Revolution and the war with Iraq, drawn in stark black and white; the second graphic novel, after Maus, to prove the form could carry testimony this heavy.", aka: ["Persepolis: The Story of a Childhood"] },
   { title: "Long Walk to Freedom", author: "Nelson Mandela", why: "Twenty-seven years in prison recounted without bitterness overtaking the argument for justice." },
   { title: "The Decline and Fall of the Roman Empire", author: "Edward Gibbon", why: "Still the most quotable case study in how great powers actually end." },
   { title: "Democracy and Education", author: "John Dewey", why: "Education as the practice of democracy itself, not preparation for some later life." },
@@ -733,8 +980,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Silent Spring", author: "Rachel Carson", why: "Pesticides traced through the whole food chain; the book that started the environmental movement." },
   { title: "Discipline and Punish", author: "Michel Foucault", why: "The prison as a model for how modern power actually watches and shapes us." },
   { title: "The Double Helix", author: "James D. Watson", why: "DNA's discovery told as a real, messy, competitive race — science with its elbows still out." },
+  { title: "The Selfish Gene", author: "Richard Dawkins", why: "Reframes evolution from the gene's point of view rather than the organism's — altruism, kinship, and cooperation all snap into focus once the unit of selection changes; fifty years on, still the clearest popular explanation of the idea." },
   { title: "A Brief History of Time", author: "Stephen Hawking", why: "Cosmology made legible to a general reader without losing the actual physics underneath." },
-  { title: "Gödel, Escher, Bach", author: "Douglas Hofstadter", why: "Logic, art, and music braided into one long argument about how minds might arise from rules.", aka: ["Godel, Escher, Bach", "Gödel Escher Bach"] },
   { title: "Chaos: Making a New Science", author: "James Gleick", why: "The butterfly effect and strange attractors, made vivid enough to explain a whole scientific shift.", aka: ["Chaos"] },
   { title: "The Guns of August", author: "Barbara Tuchman", why: "The first month of World War I, reconstructed with novelistic tension from the actual decisions made." },
   { title: "The Rise and Fall of the Third Reich", author: "William L. Shirer", why: "Nazi Germany's history told by a journalist who watched large parts of it happen." },
