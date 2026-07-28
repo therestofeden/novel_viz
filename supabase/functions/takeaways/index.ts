@@ -59,6 +59,7 @@ async function generateQuestions(
   bookType: string,
   summary: string,
   thesis?: string,
+  isServerKey: boolean = true,
 ): Promise<Array<{ id: string; question: string }> | null> {
   const bookDesc = bookType === "nonfiction"
     ? `The non-fiction book "${title}" by ${author}.\n\nSummary: ${summary}\n\nCentral thesis: ${thesis ?? "(not provided)"}`
@@ -71,7 +72,7 @@ async function generateQuestions(
     ],
     tools: [questionsTool],
     tool_choice: { type: "function", function: { name: "render_takeaway_questions" } },
-  });
+  }, undefined, isServerKey);
 
   if (!response.ok) {
     const reason = response.headers.get(GEMINI_FAILURE_REASON_HEADER) ?? undefined;
@@ -132,6 +133,7 @@ async function streamSynthesis(
   answers: Array<{ questionId: string; answer: string }>,
   freeNotes: string,
   controller: ReadableStreamDefaultController,
+  isServerKey: boolean = true,
 ): Promise<string> {
   const send = (event: string, data: unknown) => {
     try { controller.enqueue(sseFrame(event, data)); } catch { /* closed */ }
@@ -162,7 +164,7 @@ async function streamSynthesis(
       { role: "system", content: SYNTHESIS_SYSTEM },
       { role: "user", content: userContent },
     ],
-  });
+  }, undefined, isServerKey);
 
   if (!response.ok) {
     const reason = response.headers.get(GEMINI_FAILURE_REASON_HEADER) ?? undefined;
@@ -427,6 +429,7 @@ Deno.serve(async (req) => {
           bookType ?? "fiction",
           summary ?? "",
           thesis,
+          usingServerKey,
         );
       } catch (e: any) {
         const status = e.status ?? 500;
@@ -518,6 +521,7 @@ Deno.serve(async (req) => {
             answers,
             freeNotes ?? "",
             controller,
+            usingServerKey,
           );
 
           // Persist the final takeaways

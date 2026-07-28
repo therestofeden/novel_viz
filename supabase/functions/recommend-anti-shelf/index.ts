@@ -145,6 +145,10 @@ Deno.serve(async (req) => {
     const lovableKey = (typeof body?.gemini_key === "string" && body.gemini_key.trim())
       ? body.gemini_key.trim()
       : Deno.env.get("GEMINI_API_KEY");
+    // Whether lovableKey above is the shared server key or a BYOK key —
+    // threaded through so the shared circuit breaker/daily budget guard
+    // never block or get tripped by a reader's own personal key.
+    const isServerKey = !(typeof body?.gemini_key === "string" && body.gemini_key.trim());
 
     if (!lovableKey) {
       return new Response(JSON.stringify({ error: "No Gemini API key available. Add your key via the API Key button." }), {
@@ -399,7 +403,7 @@ Return 6–10 recommendations via the render_recommendations tool. For each pick
       ],
       tools: [recommendationsTool],
       tool_choice: { type: "function", function: { name: "render_recommendations" } },
-    });
+    }, undefined, isServerKey);
 
     if (aiRes.status === 429 || aiRes.status === 503) {
       // Reason first — a depleted-billing 429 and a genuine capacity 429 both

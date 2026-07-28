@@ -976,6 +976,7 @@ async function callStructuredAnalysis(
   corrective?: string,
   knownBookType?: "fiction" | "nonfiction",
   fallbackChain?: string[],
+  isServerKey: boolean = true,
 ): Promise<Analysis | null> {
   const messages: any[] = [
     { role: "system", content: SYSTEM_PROMPT },
@@ -1006,7 +1007,7 @@ async function callStructuredAnalysis(
     messages,
     tools,
     tool_choice,
-  }, fallbackChain);
+  }, fallbackChain, isServerKey);
 
   if (!response.ok) {
     const errText = await response.text();
@@ -1148,6 +1149,10 @@ Deno.serve(async (req) => {
   const GEMINI_API_KEY = (typeof userGeminiKey === "string" && userGeminiKey.trim())
     ? userGeminiKey.trim()
     : Deno.env.get("GEMINI_API_KEY");
+  // Whether GEMINI_API_KEY above is the app's shared server key or a BYOK
+  // key the reader supplied — threaded through to callStructuredAnalysis so
+  // the shared circuit breaker/daily budget guard never apply to BYOK calls.
+  const isServerKey = !(typeof userGeminiKey === "string" && userGeminiKey.trim());
 
   if (!GEMINI_API_KEY) {
     return new Response(JSON.stringify({ error: "No Gemini API key available. Add your key via the API Key button." }), {
@@ -1453,7 +1458,7 @@ Deno.serve(async (req) => {
 
         let analysis: Analysis | null;
         try {
-          analysis = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt);
+          analysis = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, undefined, undefined, undefined, isServerKey);
         } catch (e: any) {
           const s: number | undefined = e?.status;
           const reason: string | undefined = e?.reason;
@@ -1495,7 +1500,7 @@ Deno.serve(async (req) => {
             ? "Your previous response was incomplete after server-side validation. Please return at least 3 concepts, 2 chapters, and — most importantly — the argument_pillars (3-5) and idea_cards (8-10) fields with full claim sentences. Do not omit them."
             : "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).";
           try {
-            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective, analysis?.bookType, RETRY_FALLBACK_CHAIN);
+            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective, analysis?.bookType, RETRY_FALLBACK_CHAIN, isServerKey);
             // Accept any non-null retry — even a thin result is better than a hard failure.
             if (retry) analysis = retry;
           } catch (e) {

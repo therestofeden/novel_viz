@@ -254,10 +254,17 @@ async function attemptFallbackPass(
   apiKey: string,
   payload: Record<string, unknown>,
   fallbackChain: string[],
+  isServerKey: boolean,
 ): Promise<Response | null> {
   let last: Response | null = null;
   for (const model of fallbackChain) {
-    if (await circuitIsOpen(admin, model)) {
+    // The shared circuit table tracks the SERVER key's per-model health. A
+    // BYOK caller's key belongs to a completely independent Google Cloud
+    // project/quota — checking it against the server's circuit means a
+    // server-side billing outage (see 2026-07-25/26/27) silently skips BYOK
+    // attempts too, breaking the app's own recommended workaround for that
+    // exact incident. So only consult/mutate the circuit for server-key calls.
+    if (isServerKey && await circuitIsOpen(admin, model)) {
       console.log(JSON.stringify({ circuit: "skipped", model }));
       continue;
     }
@@ -272,8 +279,8 @@ async function attemptFallbackPass(
     } catch (e) {
       // Network stall or timeout — treat like a transient 503, trip circuit, try next model.
       const name = e instanceof Error ? e.name : String(e);
-      console.warn(JSON.stringify({ circuit: "timeout", model, error: name }));
-      await circuitRecordFail(admin, model, undefined, `timeout: ${name}`);
+      console.warn(JSON.stringify({ circuit: "timeout", model, error: name, isServerKey }));
+      if (isServerKey) await circuitRecordFail(admin, model, undefined, `timeout: ${name}`);
       const timeoutReason: GeminiFailureReason = "timeout";
       last = new Response(JSON.stringify({ error: `${model} timed out` }), {
         status: 503,
@@ -282,24 +289,29 @@ async function attemptFallbackPass(
       continue;
     }
     if (r.ok) {
-      await circuitRecordSuccess(admin, model);
-      // Best-effort token/cost visibility — clone so the real caller's body
-      // stream is completely untouched. Gemini's OpenAI-compat endpoint
-      // returns a `usage` block on every successful response; logging it
-      // here covers all 5 functions in one place instead of nowhere, which
-      // is what made a $0.23 single-analysis bill impossible to diagnose.
-      try {
-        const usage = (await r.clone().json())?.usage;
-        recordGeminiSpend(admin, model, usage).catch(() => {});
-      } catch {
-        // Logging only — never let a parse issue affect the real response.
+      if (isServerKey) {
+        await circuitRecordSuccess(admin, model);
+        // Best-effort token/cost visibility — clone so the real caller's body
+        // stream is completely untouched. Gemini's OpenAI-compat endpoint
+        // returns a `usage` block on every successful response; logging it
+        // here covers all 5 functions in one place instead of nowhere, which
+        // is what made a $0.23 single-analysis bill impossible to diagnose.
+        // Only recorded for server-key calls — a BYOK user's usage is billed
+        // to their own Google account, not ours, so it must not count toward
+        // our own gemini_daily_spend/DAILY_BUDGET_USD ceiling.
+        try {
+          const usage = (await r.clone().json())?.usage;
+          recordGeminiSpend(admin, model, usage).catch(() => {});
+        } catch {
+          // Logging only — never let a parse issue affect the real response.
+        }
       }
       return r;
     }
     // Log ALL errors — critical for diagnosing what Gemini is actually returning.
     const errBody = await r.clone().text().catch(() => "");
     const reason = classifyGeminiFailure(r.status, errBody);
-    console.error(JSON.stringify({ fn: "geminiFetch", model, status: r.status, reason, body: errBody.slice(0, 400) }));
+    console.error(JSON.stringify({ fn: "geminiFetch", model, status: r.status, reason, body: errBody.slice(0, 400), isServerKey }));
     await r.body?.cancel().catch(() => {});
     last = new Response(errBody || JSON.stringify({ error: `${model} returned ${r.status}` }), {
       status: r.status,
@@ -312,12 +324,17 @@ async function attemptFallbackPass(
       // instead of burning the rest of the fallback chain on guaranteed
       // failures. This is the single biggest win from this classification:
       // a billing outage used to cost 3 doomed calls per pass here alone.
-      await circuitRecordFail(admin, model, r.status, errBody);
+      // A BYOK key hitting its OWN quota exhaustion still shouldn't trip the
+      // SHARED server circuit (that would incorrectly punish server-key
+      // users for an unrelated user's personal billing problem) — but it's
+      // still correct to stop the chain early for that one BYOK request,
+      // since all 3 models share the same BYOK project quota too.
+      if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
       return last;
     }
     if (r.status === 429 || r.status >= 500) {
       // Transient — trip circuit (if threshold reached) and try the next model.
-      await circuitRecordFail(admin, model, r.status, errBody);
+      if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
     } else {
       // Hard 4xx client error — not transient, don't trip the circuit, don't
       // bother trying other models (a bad request will fail on all of them).
@@ -358,15 +375,30 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * already hit DAILY_BUDGET_USD — an independent second line of defense. On
  * every successful call, estimated cost is recorded via the
  * gemini_record_spend RPC (fire-and-forget, not on the hot path).
+ *
+ * `isServerKey` (default true) tells this function whether `apiKey` is the
+ * app's own shared server key or a user-supplied BYOK key. When false, the
+ * shared DB-backed circuit breaker, the daily $ budget gate, and spend
+ * recording are all bypassed entirely — a BYOK key draws on a totally
+ * independent Google Cloud project/quota, so it must neither be blocked by
+ * the server key's circuit/budget state, nor be allowed to trip either of
+ * those on behalf of unrelated server-key users. Found + fixed 2026-07-28:
+ * during the ongoing server-key quota outage (since 2026-07-22), BYOK
+ * requests — the app's own advertised workaround for exactly this incident —
+ * were being silently skipped by the open server circuit and/or blocked by
+ * the daily-budget guard, even though a working personal key would have
+ * succeeded fine. Every existing call site defaults to true (unchanged
+ * behavior) unless it explicitly resolves a user-supplied key.
  */
 export async function geminiFetchWithFallback(
   admin: SupabaseClient,
   apiKey: string,
   payload: Record<string, unknown>,
   fallbackChain: string[] = MODEL_FALLBACKS,
+  isServerKey: boolean = true,
 ): Promise<Response> {
   const work = (async (): Promise<Response> => {
-    const budgetExceeded = await admin.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD })
+    const budgetExceeded = isServerKey && await admin.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD })
       .then(({ data, error }) => {
         if (error) {
           console.warn(JSON.stringify({ spend: "budget_check_error_fail_open", error: error.message }));
@@ -389,7 +421,7 @@ export async function geminiFetchWithFallback(
     }
 
     const start = Date.now();
-    const first = await attemptFallbackPass(admin, apiKey, payload, fallbackChain);
+    const first = await attemptFallbackPass(admin, apiKey, payload, fallbackChain, isServerKey);
     const firstReason = first?.headers.get(GEMINI_FAILURE_REASON_HEADER);
 
     // Don't retry a quota-exhaustion failure — the whole point of that
@@ -399,7 +431,7 @@ export async function geminiFetchWithFallback(
     if (exhausted && Date.now() - start < RETRY_BUDGET_MS) {
       console.log(JSON.stringify({ circuit: "retry_after_exhaustion", elapsed_ms: Date.now() - start }));
       await sleep(RETRY_BACKOFF_MS);
-      const second = await attemptFallbackPass(admin, apiKey, payload, fallbackChain);
+      const second = await attemptFallbackPass(admin, apiKey, payload, fallbackChain, isServerKey);
       if (second) return second;
     }
 

@@ -250,6 +250,10 @@ Deno.serve(async (req) => {
     typeof userKey === "string" && userKey.trim()
       ? userKey.trim()
       : Deno.env.get("GEMINI_API_KEY");
+  // Whether GEMINI_API_KEY above is the shared server key or a BYOK key —
+  // threaded through so the shared circuit breaker/daily budget guard never
+  // block or get tripped by a reader's own personal key.
+  const isServerKey = !(typeof userKey === "string" && userKey.trim());
 
   if (!GEMINI_API_KEY) {
     return new Response(
@@ -280,7 +284,7 @@ Recommend the single best DNA neighbour from the canon.`;
     ],
     tools: [recommendationTool],
     tool_choice: { type: "function", function: { name: "render_dna_recommendation" } },
-  });
+  }, undefined, isServerKey);
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
