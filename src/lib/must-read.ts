@@ -155,6 +155,28 @@ import { normalizeForSearch } from "@/lib/utils";
  * normal single-digit-Classic-only cadence and NOT treat today's volume
  * as license to promote into Must Read on its own initiative going
  * forward — S-tier calls remain Stefano's, per the standing default.
+ *
+ * 2026-07-29 (live turn — Stefano: "ok promote", four open flags cleared):
+ * two carried over from 2026-07-27 — Waiting for Godot (Beckett), the
+ * outright #1 in the 1998 Royal National Theatre poll of the century's
+ * most significant English-language plays, ranked above its own two
+ * Classic-tier batch-mates (Death of a Salesman, A Streetcar Named
+ * Desire); Fear and Trembling (Kierkegaard), existentialism's actual
+ * founding text, the same "closes a total gap in an already-represented
+ * movement" logic that promoted Kant/Marx/Nietzsche on 2026-07-26. Two
+ * from the same day's own curation pass — A Theory of Justice (Rawls),
+ * argued as belonging beside Kant's Critique of Pure Reason and Democracy
+ * in America rather than one tier below; The Logic of Scientific
+ * Discovery (Popper), promoted specifically as Kuhn's Structure of
+ * Scientific Revolutions' direct dueling counterpart — placed immediately
+ * beside it, the same "one half of an argument already here, other half
+ * arrives" placement as Freud/Jung and Hegel/Kierkegaard elsewhere on
+ * these two lists. Stefano delegated which flags to promote without
+ * naming titles ("ok promote"); all four taken together rather than
+ * cherry-picked, since each had already been independently argued in its
+ * own flag — same read as his 2026-07-19 "you decide" on the first
+ * three-flag backlog. No open Must Read promotion flags remain after
+ * this. Must Read: 85 → 89 (61 fiction + 28 non-fiction).
  */
 
 export type MustReadEntry = {
@@ -191,6 +213,7 @@ export const MUST_READ: MustReadEntry[] = [
   { title: "Middlemarch", author: "George Eliot", why: "The wisest novel in English; a whole society and its self-deceptions." },
   { title: "Anna Karenina", author: "Leo Tolstoy", why: "The realist novel at maximum power; family, desire, and consequence." },
   { title: "A Doll's House", author: "Henrik Ibsen", why: "A door slams and the modern stage begins; a wife's exit still the loudest sound in theater.", aka: ["A Doll House"] },
+  { title: "Waiting for Godot", author: "Samuel Beckett", why: "Two tramps wait by a bare tree for someone who never arrives; absurdist theater's founding text, and the play eight hundred British theater professionals voted the single most significant English-language play of the 20th century — ahead of its own two Must Read batch-mates, Salesman and Streetcar, which stayed at Classic.", aka: ["En attendant Godot"] },
   { title: "The Brothers Karamazov", author: "Fyodor Dostoevsky", why: "The final word on faith, doubt, and inheritance — in every sense." },
   { title: "Adventures of Huckleberry Finn", author: "Mark Twain", why: "American vernacular becomes literature; the river is the moral test.", aka: ["The Adventures of Huckleberry Finn", "Huckleberry Finn"] },
   { title: "Heart of Darkness", author: "Joseph Conrad", why: "Imperialism's black-box recording; a century of argument and counting." },
@@ -242,6 +265,8 @@ export const MUST_READ: MustReadEntry[] = [
   { title: "Critique of Pure Reason", author: "Immanuel Kant", why: "The limits of what the mind can know, mapped with exhausting, load-bearing precision; the hinge modern philosophy still turns on." },
   { title: "The Communist Manifesto", author: "Karl Marx", why: "'A spectre is haunting Europe' — the pamphlet, with Engels, that shaped more of the twentieth century than any other single document." },
   { title: "On the Genealogy of Morals", author: "Friedrich Nietzsche", why: "Morality itself put under a genealogist's microscope — where 'good' and 'evil' actually came from, and why that origin should unsettle you." },
+  { title: "Fear and Trembling", author: "Søren Kierkegaard", why: "Abraham raises the knife over Isaac at God's command, and Kierkegaard refuses every comfortable reading of the story; the book that gave existentialism its first real subject — a faith no rational system can absorb.", aka: ["Frygt og Bæven"] },
+  { title: "A Theory of Justice", author: "John Rawls", why: "The veil of ignorance: design a society's rules before you know which seat in it you'll get. Over two thousand papers written in response and counting — the single work most credited with reviving political philosophy as a live discipline after a mid-century lull, extending Locke and Rousseau's contract tradition into 1971.", aka: ["Theory of Justice"] },
   { title: "The Wealth of Nations", author: "Adam Smith", why: "The invisible hand, self-interest, and the division of labor — economics as a discipline begins here." },
   { title: "On the Origin of Species", author: "Charles Darwin", why: "The most consequential argument ever printed; patient, humble, irreversible.", aka: ["The Origin of Species"] },
   { title: "Democracy in America", author: "Alexis de Tocqueville", why: "Still the sharpest outside eye on the American experiment." },
@@ -252,6 +277,7 @@ export const MUST_READ: MustReadEntry[] = [
   { title: "Man's Search for Meaning", author: "Viktor E. Frankl", why: "Meaning as survival; every word earned." },
   { title: "The Second Sex", author: "Simone de Beauvoir", why: "\"One is not born a woman\" — the analysis that started the modern argument." },
   { title: "The Structure of Scientific Revolutions", author: "Thomas S. Kuhn", why: "Where 'paradigm shift' came from; how science actually moves." },
+  { title: "The Logic of Scientific Discovery", author: "Karl Popper", why: "A theory earns the name 'scientific' not by how much it explains but by what it forbids — falsifiability, not verifiability, as the line between science and everything else. Kuhn's own dueling counterpart, sitting right above it: the two are still argued against each other in every philosophy-of-science syllabus.", aka: ["Logik der Forschung"] },
   { title: "The Fire Next Time", author: "James Baldwin", why: "Prophecy in essay form; the clearest voice in the American race conversation." },
   { title: "Gödel, Escher, Bach", author: "Douglas Hofstadter", why: "Logic, art, and music braided into one long argument about how minds might arise from rules; Pulitzer-crowned, and still the way in for anyone thinking seriously about minds and machines.", aka: ["Godel, Escher, Bach", "Gödel Escher Bach"] },
   { title: "The Black Swan", author: "Nassim Nicholas Taleb", why: "Rare, high-impact, retrospectively-'obvious' events run history far more than the bell curve admits; the book that gave risk and forecasting a name for what they kept getting wrong.", aka: ["The Black Swan: The Impact of the Highly Improbable"] },

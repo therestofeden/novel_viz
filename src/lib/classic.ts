@@ -805,6 +805,18 @@ import { isMustRead } from "@/lib/must-read";
  * Classic count: 235 → 240 (165 fiction + 75 non-fiction). Left
  * uncommitted, per the now-standard default for fully autonomous runs with
  * no live user turn.
+ *
+ * 2026-07-29 (same day, live turn — Stefano said "ok promote"): four
+ * flagged Must Read candidates promoted out, all from open flags rather
+ * than newly proposed — two carried over from 2026-07-27 (Waiting for
+ * Godot, Fear and Trembling), two from this same day's own curation pass
+ * (A Theory of Justice, The Logic of Scientific Discovery). Stefano
+ * delegated which ones without naming titles; promoted all four rather
+ * than cherry-picking, same call made 2026-07-19 when he delegated "you
+ * decide" on the first three-flag backlog — each had already been
+ * independently argued on its own merits in the flag itself, not
+ * manufactured together for this moment. Classic count: 240 → 236 (164
+ * fiction + 72 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -889,7 +901,6 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Cherry Orchard", author: "Anton Chekhov", why: "An estate sold out from under a family too busy talking to notice; comedy and tragedy finally admit they're the same thing." },
   { title: "A Streetcar Named Desire", author: "Tennessee Williams", why: "A faded Southern belle's delusions collide with her sister's brutal husband in one cramped New Orleans flat; American theater's rawest study of desire and cruelty, ranked third in the Royal National Theatre's 1998 poll of the century's most significant English-language plays." },
   { title: "Death of a Salesman", author: "Arthur Miller", why: "A traveling salesman's whole life collapses under myths about success he never once examined; 'attention must be paid' became the line every American tragedy since has had to answer, and that same 1998 National Theatre poll placed it second only to Godot." },
-  { title: "Waiting for Godot", author: "Samuel Beckett", why: "Two tramps wait by a bare tree for someone who never arrives; absurdist theater's founding text, and the play eight hundred British theater professionals voted the single most significant English-language play of the 20th century.", aka: ["En attendant Godot"] },
   { title: "Buddenbrooks", author: "Thomas Mann", why: "A merchant dynasty's slow decline, four generations deep; Mann's debut and still his warmest." },
   { title: "A Portrait of the Artist as a Young Man", author: "James Joyce", why: "The bildungsroman rebuilt from the inside of a developing consciousness." },
   { title: "The Good Soldier", author: "Ford Madox Ford", why: "The unreliable narrator's masterclass; 'the saddest story' told by the last to know." },
@@ -1012,11 +1023,9 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Capital, Volume I", author: "Karl Marx", why: "Ricardo's own labor theory of value, pushed to its logical end until it indicts the whole system it came from; the only volume Marx finished and published himself (1867), and a different book entirely from the Manifesto's ten pages of pamphlet fire — the actual economics, not just the slogan.", aka: ["Das Kapital", "Capital", "Capital: A Critique of Political Economy"] },
   { title: "The Federalist Papers", author: "Alexander Hamilton", why: "Constitutional argument as serial journalism; the owner's manual for a government built to check itself.", aka: ["Federalist Papers", "The Federalist"] },
   { title: "Phenomenology of Spirit", author: "G.W.F. Hegel", why: "Consciousness's long, dialectical education toward absolute knowing; difficult, and never fully superseded." },
-  { title: "Fear and Trembling", author: "Søren Kierkegaard", why: "Abraham raises the knife over Isaac at God's command, and Kierkegaard refuses every comfortable reading of the story; written in direct revolt against the very Hegelian system just above it on this list, and the book that gave existentialism its first real subject — a faith no rational system can absorb.", aka: ["Frygt og Bæven"] },
   { title: "The Art of War", author: "Sun Tzu", why: "Twenty-five hundred years old and still the first book handed to anyone learning to think about conflict — military, corporate, or otherwise.", aka: ["Art of War"] },
   { title: "On War", author: "Carl von Clausewitz", why: "War as 'the continuation of policy by other means' — every strategist since has had to argue with this book, not around it.", aka: ["Vom Kriege"] },
   { title: "On Liberty", author: "John Stuart Mill", why: "The harm principle, stated once and never bettered; the case for dissent as a public good." },
-  { title: "A Theory of Justice", author: "John Rawls", why: "The veil of ignorance: design a society's rules before you know which seat in it you'll get. Over two thousand papers written in response and counting — the single work most credited with reviving political philosophy as a live discipline after a mid-century lull, extending Locke and Rousseau's contract tradition into 1971.", aka: ["Theory of Justice"] },
   { title: "The Interpretation of Dreams", author: "Sigmund Freud", why: "The unconscious given a grammar; whatever you think of the theory, the questions still stand." },
   { title: "Memories, Dreams, Reflections", author: "Carl Jung", why: "An autobiography written almost entirely from inside dreams and visions rather than outer events; the archetypes-and-collective-unconscious tradition Freud's own case histories never cover." },
   { title: "Course in General Linguistics", author: "Ferdinand de Saussure", why: "Lecture notes stitched together by students after their professor's death, and language hasn't been theorized the same way since; the arbitrary sign and the langue/parole split — structuralism's whole toolkit starts here.", aka: ["Cours de linguistique générale"] },
@@ -1030,7 +1039,6 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Being and Nothingness", author: "Jean-Paul Sartre", why: "Freedom as a burden, not a gift; existentialism's fullest, most demanding statement." },
   { title: "The Myth of Sisyphus", author: "Albert Camus", why: "The one serious philosophical question — whether to keep living — answered with the boulder, pushed anyway." },
   { title: "Philosophical Investigations", author: "Ludwig Wittgenstein", why: "Language games replace the picture theory; twentieth-century philosophy's second, self-correcting act." },
-  { title: "The Logic of Scientific Discovery", author: "Karl Popper", why: "A theory earns the name 'scientific' not by how much it explains but by what it forbids — falsifiability, not verifiability, as the line between science and everything else. Vienna's other great answer to the question this list's own Structure of Scientific Revolutions asks decades later, and the two are still argued against each other in every philosophy-of-science syllabus.", aka: ["Logik der Forschung"] },
   { title: "The Origins of Totalitarianism", author: "Hannah Arendt", why: "How societies actually curdle into total domination, traced with unflinching historical rigor." },
   { title: "Notes of a Native Son", author: "James Baldwin", why: "Essays that fuse the personal and the political without either one flattening the other." },
   { title: "The Autobiography of Benjamin Franklin", author: "Benjamin Franklin", why: "Self-improvement as an American genre, invented by the man who lived it first." },
