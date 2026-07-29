@@ -629,7 +629,19 @@ async function hashIp(ip: string): Promise<string> {
 const AUTHOR_FANOUT_TIMEOUT_MS = 2500;
 const FUZZY_ESCALATION_TIMEOUT_MS = 2500;
 
-async function olFetch(url: string, timeoutMs = 5000): Promise<OLDoc[]> {
+// 2026-07-29 daily perf pass: the primary OL lookup (the call at olFetch(baseUrl)
+// below, with no explicit timeout) was still defaulting to 5000ms — a leftover
+// from before GB's timeout was cut to 1.2s in the 2026-07-25 pass. Since this
+// call sits in the same Promise.allSettled as GB/canon, its timeout sets the
+// worst-case floor for every cache-miss search-books response, and prod logs
+// show several cache-miss calls landing right at ~5.0-5.7s, consistent with
+// this default being hit. OL responses are normally 200-400ms (see prod logs),
+// so 3000ms still gives 7-10x headroom over the typical case while cutting the
+// worst case by 40%. Kept above the 2500ms fanout/fuzzy timeouts since this is
+// the primary, not a nice-to-have, lookup.
+const PRIMARY_OL_TIMEOUT_MS = 3000;
+
+async function olFetch(url: string, timeoutMs = PRIMARY_OL_TIMEOUT_MS): Promise<OLDoc[]> {
   const res = await fetch(url, {
     headers: { "User-Agent": "novelviz-search/1.1" },
     signal: AbortSignal.timeout(timeoutMs),
