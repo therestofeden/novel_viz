@@ -952,12 +952,38 @@ Deno.serve(async (req) => {
       // ~130-190 -> ~835-895), while "hunger games" still correctly does
       // NOT canon-boost toward Knut Hamsun's "Hunger" (score unchanged, no
       // canonWork flag).
+      // 2026-07-29: same-day follow-up to the fix above — it required the
+      // FULL title text to concatenate exactly with the author, but never
+      // accounted for users dropping a leading article when they type a
+      // "title author" query without punctuation ("great gatsby fitzgerald",
+      // "logic of scientific discovery popper" — both drop "The"). tNorm
+      // keeps the article (normalizeForSearch doesn't strip it), so neither
+      // combo above nor a straight tNorm/qc comparison ever matched. Found
+      // live: "logic of scientific discovery popper" returned zero canon
+      // boost (ranked #3, no canonWork flag) despite the exact row existing
+      // in canon_books. Adding a second, article-stripped title variant to
+      // the combo set (and to the direct comparisons) fixes this without
+      // reopening the "hunger games" false-positive the prior fix guarded
+      // against — this only strips a fixed leading "the/a/an" from the
+      // canon row's OWN title, it doesn't loosen matching to arbitrary
+      // substrings of the query, so a bare common-word title still can't
+      // match unless the query is (article-stripped-title + full author
+      // token), exactly as strict as before.
+      const tNormNoArticle = tNorm.replace(/^(the|a|an)\s+/, "");
       const titleAuthorCombos = aNorm.length > 0
         ? [
           `${tNorm} ${aNorm}`,
           `${aNorm} ${tNorm}`,
           ...authorTokens.map((tok) => `${tNorm} ${tok}`),
           ...authorTokens.map((tok) => `${tok} ${tNorm}`),
+          ...(tNormNoArticle !== tNorm
+            ? [
+              `${tNormNoArticle} ${aNorm}`,
+              `${aNorm} ${tNormNoArticle}`,
+              ...authorTokens.map((tok) => `${tNormNoArticle} ${tok}`),
+              ...authorTokens.map((tok) => `${tok} ${tNormNoArticle}`),
+            ]
+            : []),
         ]
         : [];
       let literalHit = false;
@@ -965,6 +991,7 @@ Deno.serve(async (req) => {
       for (const qc of qCandidates) {
         if (
           tNorm === qc || tNorm.includes(qc) ||
+          tNormNoArticle === qc ||
           (aNorm.length > 0 && (aNorm === qc || authorTokens.includes(qc))) ||
           titleAuthorCombos.includes(qc)
         ) {
