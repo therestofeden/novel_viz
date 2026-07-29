@@ -739,7 +739,70 @@ import { isMustRead } from "@/lib/must-read";
  * non-fiction = 235) independently verified against the header docblock's
  * own claimed count.
  *
- * Classic count: 231 → 235 (163 fiction + 71 non-fiction). Left
+ * Classic count: 231 → 235 (163 fiction + 72 non-fiction — corrected
+ * 2026-07-29; the "71" originally recorded here was a stale miscount,
+ * caught during this round's own section-count verification). Left
+ * uncommitted, per the now-standard default for fully autonomous runs with
+ * no live user turn.
+ *
+ * 2026-07-29 (daily curation pass): added 5 titles, closing two
+ * philosophy-of-science/political-theory gaps plus three independent
+ * picks. Non-fiction: John Rawls's A Theory of Justice (1971) — 20th-
+ * century political philosophy's central text, and this list's contract-
+ * theory lineage (Hobbes/Locke/Rousseau/Federalist Papers) had nothing
+ * past Mill's On Liberty (1859); placed directly after it. Karl Popper's
+ * The Logic of Scientific Discovery (1934 German / 1959 English) —
+ * falsifiability, the dueling answer to the question Must Read's own
+ * Structure of Scientific Revolutions (Kuhn) asks decades later; placed
+ * beside Wittgenstein, both Vienna-adjacent. Karl Marx's Capital, Volume I
+ * (1867) — a genuinely different book from the Communist Manifesto already
+ * in Must Read (per the merit-not-quota principle, 2026-07-19): the actual
+ * economics Ricardo's labor theory of value led to, not the ten-page
+ * political pamphlet; placed right after Ricardo. Fiction: Isaac Asimov's
+ * Foundation (1951) — the Golden Age precursor this list's New Wave/
+ * cyberpunk science fiction (Dune, Neuromancer, Left Hand of Darkness) all
+ * descend from, and the only work ever to beat The Lord of the Rings for a
+ * Hugo (Best All-Time Series, 1966); placed first in the SF cluster,
+ * chronologically. T.S. Eliot's The Waste Land (1922) — modern poetry's
+ * founding rupture, closing a gap next to Sappho now that both ends of the
+ * lyric tradition (ancient origin, modernist break) are represented; no
+ * Western 20th-century poem was on either list before this. All five facts
+ * (Rawls's 1971 date and 2,000+-paper reception, Popper's 1934/1959
+ * publication split, Marx's 14 September 1867 date, Asimov's 1951/1966
+ * dates, Eliot's 1922 date and 434-line/five-language count) independently
+ * verified via WebSearch before writing each "why" line.
+ *
+ * Rawls and Popper are each flagged, not promoted, as possible Must Read
+ * candidates — the first new flags since 2026-07-27's Godot/Fear and
+ * Trembling pair. Rawls: its influence argues for the same tier as Kant's
+ * Critique of Pure Reason or Democracy in America (both Must Read as of
+ * 2026-07-26) rather than one step below — a case that political
+ * philosophy's actual center of 20th-century gravity is sitting in
+ * Classic. Popper: its direct dueling-pair relationship to Kuhn's already-
+ * Must-Read Structure of Scientific Revolutions is the same "one half of
+ * an argument already promoted, other half still waiting" pattern that
+ * argued for Fear and Trembling (paired against Hegel) on 2026-07-27.
+ * Marx's Capital, Asimov's Foundation, and Eliot's Waste Land were all
+ * explicitly checked and held at Classic: Capital is towering but a
+ * three-volume treatise read mostly for Volume I's core argument rather
+ * than cover to cover, the same "importance outweighs sit-down-and-read-
+ * it" logic as Elements/Principia/Summa Theologica; Foundation sits at the
+ * same tier as Dune/Neuromancer/Left Hand of Darkness, none of which has
+ * ever been promoted — consistent genre calibration, not an oversight;
+ * The Waste Land is poetry's Ulysses-level achievement but this list has
+ * never promoted a single poem to Must Read (Whitman's Leaves of Grass
+ * is the closest precedent and it, too, sits one tier down), so a single
+ * new poetry entry doesn't yet argue for lowering that bar.
+ *
+ * Verified: `npx tsc --noEmit` clean. Both vitest suites green
+ * (`must-read.test.ts` 85/1 — confirms untouched; `classic.test.ts`
+ * 240/3). Ran a normalized-fingerprint dedupe/collision check (NFD-strip-
+ * accents, grouped by key rather than raw frequency) across title and
+ * every `aka` on both files: 0 internal collisions on either list, 0
+ * cross-list collisions, all 5 new titles confirmed present in Classic and
+ * absent from Must Read.
+ *
+ * Classic count: 235 → 240 (165 fiction + 75 non-fiction). Left
  * uncommitted, per the now-standard default for fully autonomous runs with
  * no live user turn.
  */
@@ -757,6 +820,7 @@ export const CLASSIC: ClassicEntry[] = [
   // ── Fiction ────────────────────────────────────────────────────────────
   { title: "Epic of Gilgamesh", author: "Anonymous", why: "The oldest story still being read; a king learns mortality four thousand years before anyone else wrote it down.", aka: ["The Epic of Gilgamesh", "Gilgamesh"] },
   { title: "Sappho: Poems and Fragments", author: "Sappho", why: "Nine scrolls of songs written for the lyre, reduced by two thousand years to scraps and one complete poem — still the reason 'lyric' means what it means.", aka: ["The Poems of Sappho", "Sappho"] },
+  { title: "The Waste Land", author: "T.S. Eliot", why: "434 lines, five languages, a dedication to Ezra Pound, and modern poetry rewired in one go; the fragmented urban despair of 1922 still reads like it was written for right now.", aka: ["Waste Land"] },
   { title: "The Oresteia", author: "Aeschylus", why: "The only complete trilogy to survive from Greek tragedy — blood vengeance argued all the way to the first courtroom.", aka: ["Oresteia"] },
   { title: "Medea", author: "Euripides", why: "A wronged wife's revenge pushed past every limit; Greek tragedy's most unsettlingly modern psychology." },
   { title: "Lysistrata", author: "Aristophanes", why: "The women of Athens end a war by withholding sex; Old Comedy's rowdiest survivor, and still startlingly current." },
@@ -884,6 +948,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Gravity's Rainbow", author: "Thomas Pynchon", why: "Paranoia as a structuring principle; postwar fiction's most maximalist, hardest-earned achievement." },
   { title: "Infinite Jest", author: "David Foster Wallace", why: "Addiction, entertainment, and tennis, entwined into a thousand-page argument about attention." },
   { title: "White Noise", author: "Don DeLillo", why: "Consumerism and death anxiety, narrated by a professor of Hitler studies." },
+  { title: "Foundation", author: "Isaac Asimov", why: "Psychohistory predicts an empire's fall centuries out and tries to shorten the dark age after it; the Golden Age precursor this list's New Wave and cyberpunk descendants (Dune, Neuromancer, Left Hand of Darkness) all had to answer to, and the only book ever to beat The Lord of the Rings for a Hugo (Best All-Time Series, 1966)." },
   { title: "The Left Hand of Darkness", author: "Ursula K. Le Guin", why: "Gender reimagined from first principles; science fiction doing anthropology's job." },
   { title: "Dune", author: "Frank Herbert", why: "Ecology, empire, and messianic danger, built into science fiction's most complete world." },
   { title: "Neuromancer", author: "William Gibson", why: "Cyberspace named and imagined before the internet existed to prove it right." },
@@ -944,12 +1009,14 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "A Vindication of the Rights of Woman", author: "Mary Wollstonecraft", why: "Reason claimed as women's birthright, a century before suffrage was even on the table." },
   { title: "An Essay on the Principle of Population", author: "Thomas Malthus", why: "Population grows exponentially, food only arithmetically, catastrophe closes the gap — the pamphlet that handed Darwin his 'struggle for existence' the moment he read it.", aka: ["Essay on the Principle of Population"] },
   { title: "On the Principles of Political Economy and Taxation", author: "David Ricardo", why: "Two countries, two goods, and the 'four numbers' paragraph proving trade still pays off even when one side is better at making everything; comparative advantage, one of economics' oldest results and still one of its truest.", aka: ["Principles of Political Economy and Taxation", "The Principles of Political Economy and Taxation"] },
+  { title: "Capital, Volume I", author: "Karl Marx", why: "Ricardo's own labor theory of value, pushed to its logical end until it indicts the whole system it came from; the only volume Marx finished and published himself (1867), and a different book entirely from the Manifesto's ten pages of pamphlet fire — the actual economics, not just the slogan.", aka: ["Das Kapital", "Capital", "Capital: A Critique of Political Economy"] },
   { title: "The Federalist Papers", author: "Alexander Hamilton", why: "Constitutional argument as serial journalism; the owner's manual for a government built to check itself.", aka: ["Federalist Papers", "The Federalist"] },
   { title: "Phenomenology of Spirit", author: "G.W.F. Hegel", why: "Consciousness's long, dialectical education toward absolute knowing; difficult, and never fully superseded." },
   { title: "Fear and Trembling", author: "Søren Kierkegaard", why: "Abraham raises the knife over Isaac at God's command, and Kierkegaard refuses every comfortable reading of the story; written in direct revolt against the very Hegelian system just above it on this list, and the book that gave existentialism its first real subject — a faith no rational system can absorb.", aka: ["Frygt og Bæven"] },
   { title: "The Art of War", author: "Sun Tzu", why: "Twenty-five hundred years old and still the first book handed to anyone learning to think about conflict — military, corporate, or otherwise.", aka: ["Art of War"] },
   { title: "On War", author: "Carl von Clausewitz", why: "War as 'the continuation of policy by other means' — every strategist since has had to argue with this book, not around it.", aka: ["Vom Kriege"] },
   { title: "On Liberty", author: "John Stuart Mill", why: "The harm principle, stated once and never bettered; the case for dissent as a public good." },
+  { title: "A Theory of Justice", author: "John Rawls", why: "The veil of ignorance: design a society's rules before you know which seat in it you'll get. Over two thousand papers written in response and counting — the single work most credited with reviving political philosophy as a live discipline after a mid-century lull, extending Locke and Rousseau's contract tradition into 1971.", aka: ["Theory of Justice"] },
   { title: "The Interpretation of Dreams", author: "Sigmund Freud", why: "The unconscious given a grammar; whatever you think of the theory, the questions still stand." },
   { title: "Memories, Dreams, Reflections", author: "Carl Jung", why: "An autobiography written almost entirely from inside dreams and visions rather than outer events; the archetypes-and-collective-unconscious tradition Freud's own case histories never cover." },
   { title: "Course in General Linguistics", author: "Ferdinand de Saussure", why: "Lecture notes stitched together by students after their professor's death, and language hasn't been theorized the same way since; the arbitrary sign and the langue/parole split — structuralism's whole toolkit starts here.", aka: ["Cours de linguistique générale"] },
@@ -963,6 +1030,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Being and Nothingness", author: "Jean-Paul Sartre", why: "Freedom as a burden, not a gift; existentialism's fullest, most demanding statement." },
   { title: "The Myth of Sisyphus", author: "Albert Camus", why: "The one serious philosophical question — whether to keep living — answered with the boulder, pushed anyway." },
   { title: "Philosophical Investigations", author: "Ludwig Wittgenstein", why: "Language games replace the picture theory; twentieth-century philosophy's second, self-correcting act." },
+  { title: "The Logic of Scientific Discovery", author: "Karl Popper", why: "A theory earns the name 'scientific' not by how much it explains but by what it forbids — falsifiability, not verifiability, as the line between science and everything else. Vienna's other great answer to the question this list's own Structure of Scientific Revolutions asks decades later, and the two are still argued against each other in every philosophy-of-science syllabus.", aka: ["Logik der Forschung"] },
   { title: "The Origins of Totalitarianism", author: "Hannah Arendt", why: "How societies actually curdle into total domination, traced with unflinching historical rigor." },
   { title: "Notes of a Native Son", author: "James Baldwin", why: "Essays that fuse the personal and the political without either one flattening the other." },
   { title: "The Autobiography of Benjamin Franklin", author: "Benjamin Franklin", why: "Self-improvement as an American genre, invented by the man who lived it first." },
