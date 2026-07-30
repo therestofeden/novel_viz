@@ -793,7 +793,24 @@ Deno.serve(async (req) => {
       ? `https://openlibrary.org/search.json?author=${encodeURIComponent(q)}&limit=20&fields=${OL_FIELDS}`
       : null;
 
+    // 2026-07-30 daily perf pass: the fuzzy-escalation branch below used to
+    // run as a THIRD sequential await after the primary+fanout Promise.all
+    // already resolved (up to PRIMARY_OL_TIMEOUT_MS=3000ms), adding its own
+    // independent 2500ms budget on top -- so any query needing fuzzy escalation
+    // (typos, obscure titles: "logic of scientific discovery popper", "letters
+    // from a stoic seneca") had a worst-case OL wait of ~5.5s, not the ~3s the
+    // 2026-07-29 primary-timeout cut intended. Prod logs confirmed this:
+    // several fresh cache-miss calls landing at 3.4-5.9s even after that fix.
+    // Fixed by giving the whole OL pipeline (primary+fanout+fuzzy combined) one
+    // shared wall-clock budget instead of stacking independent per-stage
+    // budgets -- fuzzy now only gets whatever time remains after primary/fanout,
+    // capped at its old 2500ms ceiling. Typical case (primary resolves in
+    // 200-400ms per prod logs) is unaffected; worst case drops from ~5.5s to
+    // ~3.5s.
+    const OL_TOTAL_BUDGET_MS = 3500;
+
     const olFetchPromise = (async (): Promise<OLDoc[]> => {
+      const stageT0 = performance.now();
       const fetches: Promise<OLDoc[]>[] = [olFetch(baseUrl)];
       if (authorUrl) {
         fetches.push(
@@ -807,13 +824,18 @@ Deno.serve(async (req) => {
       let result = arrays.flat();
 
       if (result.filter((d) => pickDisplayTitle(q, d) !== null).length === 0) {
-        const fuzzyUrl =
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`;
-        try {
-          const fuzzy = await olFetch(fuzzyUrl, 2500);
-          result = result.concat(fuzzy);
-          timings.fuzzy_used = 1;
-        } catch (_e) { /* ignore */ }
+        const remainingBudgetMs = OL_TOTAL_BUDGET_MS - (performance.now() - stageT0);
+        if (remainingBudgetMs > 300) {
+          const fuzzyUrl =
+            `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`;
+          try {
+            const fuzzy = await olFetch(fuzzyUrl, Math.min(FUZZY_ESCALATION_TIMEOUT_MS, remainingBudgetMs));
+            result = result.concat(fuzzy);
+            timings.fuzzy_used = 1;
+          } catch (_e) { /* ignore */ }
+        } else {
+          timings.fuzzy_skipped_budget = 1;
+        }
       }
       return result;
     })();
