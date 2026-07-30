@@ -177,6 +177,15 @@ import { normalizeForSearch } from "@/lib/utils";
  * own flag — same read as his 2026-07-19 "you decide" on the first
  * three-flag backlog. No open Must Read promotion flags remain after
  * this. Must Read: 85 → 89 (61 fiction + 28 non-fiction).
+ *
+ * 2026-07-30 (daily curation pass, scheduled-task fire): this file itself
+ * untouched — see classic.ts's own 2026-07-30 note for that day's 3-title
+ * Classic addition (The Lord of the Rings, Omeros, The Mythical
+ * Man-Month). One new open flag from that round: The Lord of the Rings,
+ * as a possible Must Read promotion — its cultural/commercial weight
+ * arguably exceeds Foundation's (also Classic), and it's the specific
+ * book Foundation's own entry measures itself against. Left for Stefano's
+ * own review, same standing default as every prior flag.
  */
 
 export type MustReadEntry = {

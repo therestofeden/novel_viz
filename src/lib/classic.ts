@@ -817,6 +817,70 @@ import { isMustRead } from "@/lib/must-read";
  * independently argued on its own merits in the flag itself, not
  * manufactured together for this moment. Classic count: 240 → 236 (164
  * fiction + 72 non-fiction).
+ *
+ * 2026-07-30 (daily curation pass, scheduled-task fire, fully autonomous):
+ * confirmed both canon files matched the 2026-07-29 baseline exactly
+ * (Classic 236: 164 fiction + 72 non-fiction; Must Read 89, untouched)
+ * before starting — the "ok promote" commit (88507d2) had already landed
+ * and was folded into HEAD, so no stacked backlog this round. Actually
+ * invoked moser-the-librarian. Grepped a wide candidate pool (Tolkien,
+ * Turing, Knuth, Shannon, Fred Brooks, SICP, Dracula, Henry James,
+ * Catch-22, Vonnegut, Walcott, Friedan, Adichie, Mahfouz) — most already
+ * present; three genuine zero-hit gaps confirmed and closed.
+ *
+ * Added 3 entries (236 → 239: 166 fiction + 73 non-fiction), each closing
+ * an independent gap rather than one theme. High fantasy had zero
+ * representation despite this list's deep science-fiction cluster (Dune,
+ * Foundation, Neuromancer, Left Hand of Darkness) — closed with **The
+ * Lord of the Rings** (J.R.R. Tolkien, published in three volumes across
+ * 29 July 1954-20 October 1955, 150M+ copies sold since), placed directly
+ * beside Foundation since that entry's own "why" line already name-checks
+ * it as the book Foundation beat for the 1966 Hugo Best-All-Time-Series
+ * award — the comparison was sitting right there, unclosed, until now.
+ * Caribbean poetry was a real gap next to this list's Caribbean prose
+ * (Wide Sargasso Sea, A House for Mr Biswas) — closed with **Omeros**
+ * (Derek Walcott, 1990), the Iliad and Odyssey relocated to a Caribbean
+ * fishing village, published two years before Walcott's 1992 Nobel;
+ * placed beside The Waste Land in the modern-poetry cluster. Computer
+ * science/software engineering had zero representation across either
+ * list — closed with **The Mythical Man-Month** (Fred Brooks, 1975),
+ * the book that coined Brooks's Law ("adding manpower to a late software
+ * project makes it later") from Brooks's own experience managing IBM's
+ * OS/360; still the field's most commonly assigned non-textbook classic.
+ * All three facts (Tolkien's exact publication window and sales figure,
+ * Walcott's 1990/1992 dates, Brooks's 1975 date and OS/360 origin)
+ * independently verified via WebSearch before writing each "why" line.
+ *
+ * No new Must Read flag this round — all three explicitly checked
+ * against the S-tier bar and held at Classic. The Lord of the Rings came
+ * closest (its cultural weight arguably exceeds Foundation's, which also
+ * sits at Classic) but the calibration precedent Foundation itself set on
+ * 2026-07-29 — "sits at the same tier as its own genre-mates, none of
+ * which has ever been promoted" — applies with equal force here, so it's
+ * flagged rather than promoted unilaterally. Omeros and Mythical
+ * Man-Month are each civilization/field-defining within their own
+ * tradition, the tier Shahnameh and Ricardo already occupy, not a step
+ * above.
+ *
+ * The Lord of the Rings is flagged, not promoted, as a new possible Must
+ * Read candidate — first new flag since 2026-07-29's Rawls/Popper pair
+ * (both since cleared). Reasoning: near-unmatched sales and cultural
+ * saturation for a 70-year-old novel, and it's the direct rival
+ * Foundation's own entry measures itself against — if that entry treats
+ * losing to LOTR as the notable fact, LOTR's own claim is at least as
+ * strong, not weaker.
+ *
+ * Verified: `npx tsc --noEmit` clean. Both vitest suites green
+ * (`must-read.test.ts` 89/1 — confirms untouched; `classic.test.ts`
+ * 239/3). Ran a normalized-fingerprint dedupe/collision check (NFD-strip-
+ * accents, grouped by key rather than raw frequency) across title and
+ * every `aka` on both files: 0 internal collisions on either list, 0
+ * cross-list collisions, all 3 new titles confirmed present in Classic
+ * and absent from Must Read.
+ *
+ * Classic count: 236 → 239 (166 fiction + 73 non-fiction). Left
+ * uncommitted, per the standard default for fully autonomous runs with
+ * no live user turn.
  */
 
 export type ClassicEntry = {
@@ -833,6 +897,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Epic of Gilgamesh", author: "Anonymous", why: "The oldest story still being read; a king learns mortality four thousand years before anyone else wrote it down.", aka: ["The Epic of Gilgamesh", "Gilgamesh"] },
   { title: "Sappho: Poems and Fragments", author: "Sappho", why: "Nine scrolls of songs written for the lyre, reduced by two thousand years to scraps and one complete poem — still the reason 'lyric' means what it means.", aka: ["The Poems of Sappho", "Sappho"] },
   { title: "The Waste Land", author: "T.S. Eliot", why: "434 lines, five languages, a dedication to Ezra Pound, and modern poetry rewired in one go; the fragmented urban despair of 1922 still reads like it was written for right now.", aka: ["Waste Land"] },
+  { title: "Omeros", author: "Derek Walcott", why: "The Iliad and Odyssey relocated to a Caribbean fishing village, spoken by a fisherman named Achille; the book-length poem behind the 1992 Nobel, and the epic tradition's answer to a gap this list's Caribbean prose (Wide Sargasso Sea, A House for Mr Biswas) never closed on the poetry side." },
   { title: "The Oresteia", author: "Aeschylus", why: "The only complete trilogy to survive from Greek tragedy — blood vengeance argued all the way to the first courtroom.", aka: ["Oresteia"] },
   { title: "Medea", author: "Euripides", why: "A wronged wife's revenge pushed past every limit; Greek tragedy's most unsettlingly modern psychology." },
   { title: "Lysistrata", author: "Aristophanes", why: "The women of Athens end a war by withholding sex; Old Comedy's rowdiest survivor, and still startlingly current." },
@@ -960,6 +1025,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Infinite Jest", author: "David Foster Wallace", why: "Addiction, entertainment, and tennis, entwined into a thousand-page argument about attention." },
   { title: "White Noise", author: "Don DeLillo", why: "Consumerism and death anxiety, narrated by a professor of Hitler studies." },
   { title: "Foundation", author: "Isaac Asimov", why: "Psychohistory predicts an empire's fall centuries out and tries to shorten the dark age after it; the Golden Age precursor this list's New Wave and cyberpunk descendants (Dune, Neuromancer, Left Hand of Darkness) all had to answer to, and the only book ever to beat The Lord of the Rings for a Hugo (Best All-Time Series, 1966)." },
+  { title: "The Lord of the Rings", author: "J.R.R. Tolkien", why: "Middle-earth invented the modern fantasy genre almost single-handedly — every quest, every map printed inside the cover, answers to this one; published in three volumes across 1954-55, sold past 150 million copies since, and the very book Foundation's own entry above name-checks as the one it beat for that 1966 Hugo.", aka: ["Lord of the Rings", "LOTR", "The Fellowship of the Ring", "The Two Towers", "The Return of the King"] },
   { title: "The Left Hand of Darkness", author: "Ursula K. Le Guin", why: "Gender reimagined from first principles; science fiction doing anthropology's job." },
   { title: "Dune", author: "Frank Herbert", why: "Ecology, empire, and messianic danger, built into science fiction's most complete world." },
   { title: "Neuromancer", author: "William Gibson", why: "Cyberspace named and imagined before the internet existed to prove it right." },
@@ -1068,6 +1134,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Analects", author: "Confucius", why: "Fragments of a teacher's conversations that shaped how a quarter of the world thinks about conduct." },
   { title: "The Zhuangzi", author: "Zhuangzi", why: "Confucius's great philosophical rival: parable and paradox instead of maxims, arguing that clinging to fixed categories is the real trap — a man dreams he is a butterfly, then wakes unsure which one is dreaming which.", aka: ["Zhuangzi", "Chuang Tzu", "The Book of Chuang Tzu"] },
   { title: "The Masnavi", author: "Rumi", why: "Sixty-four thousand lines of Sufi parable and ecstatic teaching, dictated over twelve years to a single scribe; eight centuries later, still routinely America's best-selling poet in translation.", aka: ["Masnavi-ye Ma'navi", "Mathnawi", "Masnavi"] },
+  { title: "The Mythical Man-Month", author: "Fred Brooks", why: "Adding programmers to a late software project makes it later — Brooks's Law, distilled from watching his own team miss deadline after deadline managing IBM's OS/360 in the 1960s; fifty years on, still the first book handed to a new engineering manager, and computer science's total absence from this list until now.", aka: ["Mythical Man-Month", "The Mythical Man-Month: Essays on Software Engineering"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
