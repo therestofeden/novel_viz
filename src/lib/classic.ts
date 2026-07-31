@@ -938,6 +938,45 @@ import { isMustRead } from "@/lib/must-read";
  * Classic count: 239 → 243 (168 fiction + 75 non-fiction). Left
  * uncommitted, per the standard default for fully autonomous runs with
  * no live user turn.
+ *
+ * 2026-07-31, second pass same day (round 30, scheduled-task fire, fully
+ * autonomous): grepped for a fresh batch of plausible gaps beyond round
+ * 29's — confirmed genuine zero-hits for Canetti, Musil-adjacent Central
+ * European modernists (Musil himself already present, but no Schulz),
+ * Perec/Queneau (French postwar experimental fiction), and Poland's
+ * total absence from fiction specifically (Malinowski, added round 29,
+ * is anthropology, not fiction).
+ *
+ * Added 3 entries (243 → 246: 169 fiction + 77 non-fiction). Fiction:
+ * Bruno Schulz's The Street of Crocodiles (1934, aka Cinnamon Shops) —
+ * placed directly after Musil's The Man Without Qualities in the
+ * fin-de-empire Central European modernist cluster; closes Poland's
+ * total fiction absence. Georges Perec's Life A User's Manual (1978) —
+ * placed directly after Calvino's Invisible Cities, Oulipo's
+ * combinatorial-constraint game turned into the format's own
+ * masterpiece and the 1978 Prix Médicis winner. Non-fiction: Elias
+ * Canetti's Crowds and Power (1960, aka Masse und Macht) — placed
+ * directly after Arendt's Origins of Totalitarianism, the 1981 Nobel
+ * committee's stated reason for the prize and mass-psychology's
+ * counterpart to Arendt's institutional history of the same era. All
+ * three facts (Schulz's 1934 Polish publication and 1942 murder in the
+ * Drohobycz ghetto, Perec's 1978 Prix Médicis and Oulipo membership,
+ * Canetti's 1960 publication and 1981 Nobel) independently verified via
+ * WebSearch before writing each "why" line.
+ *
+ * No new Must Read flags this round — all three explicitly checked and
+ * held at Classic (dense, civilization-defining within their own
+ * tradition, but narrower in reach than the Must Read bar). LOTR from
+ * 2026-07-27 remains the sole open Must Read candidate.
+ *
+ * Verified: `npx tsc --noEmit` clean. Both vitest suites green
+ * (`must-read.test.ts` 89/1 — confirms untouched; `classic.test.ts`
+ * 246/3). Ran the same normalized-fingerprint dedupe/collision check
+ * across title and every `aka` on both files: 0 internal collisions on
+ * either list, 0 cross-list collisions, all 3 new titles confirmed
+ * present in Classic and absent from Must Read.
+ *
+ * Classic count: 243 → 246 (169 fiction + 77 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -1034,6 +1073,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Good Soldier Švejk", author: "Jaroslav Hašek", why: "War satirized through sheer, weaponized incompetence; anti-militarism's funniest weapon.", aka: ["The Good Soldier Svejk"] },
   { title: "All Quiet on the Western Front", author: "Erich Maria Remarque", why: "A German teenager's war strips away patriotism, then friendship, then feeling itself; the anti-war novel every later one still argues with, and the first book the Nazis burned.", aka: ["Im Westen nichts Neues"] },
   { title: "The Man Without Qualities", author: "Robert Musil", why: "An empire's collapse examined through a man who refuses to have a personality." },
+  { title: "The Street of Crocodiles", author: "Bruno Schulz", why: "A Galician backwater town's shabby cinnamon-colored shops rewritten as private myth, the father's slow metamorphosis into a cockroach then a condor rendered with total sincerity; a whole cosmology built from one small Polish town by a provincial drawing teacher, murdered by a Gestapo officer in the Drohobycz ghetto in 1942 with a second novel-in-progress never recovered. Poland's total absence from this list, closed.", aka: ["Cinnamon Shops", "Sklepy cynamonowe"] },
   { title: "Berlin Alexanderplatz", author: "Alfred Döblin", why: "Weimar Berlin's noise and squalor, montaged into one man's doomed comeback." },
   { title: "Steppenwolf", author: "Hermann Hesse", why: "A man split between bourgeois comfort and wolfish alienation; midlife crisis as metaphysics." },
   { title: "As I Lay Dying", author: "William Faulkner", why: "A family hauls a coffin across Mississippi; fifteen narrators, one impossible errand." },
@@ -1048,6 +1088,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Doctor Zhivago", author: "Boris Pasternak", why: "Revolution and love affair collide across decades; banned in its own country for telling the truth." },
   { title: "The Tin Drum", author: "Günter Grass", why: "A boy who refuses to grow, banging a drum through the Nazi era's madness." },
   { title: "Invisible Cities", author: "Italo Calvino", why: "Marco Polo describes cities that may not exist; fiction as pure architecture of ideas." },
+  { title: "Life A User's Manual", author: "Georges Perec", why: "Ninety-nine chapters tour a Paris apartment building room by room in a knight's-tour path across the floor plan, laying every resident's whole life bare at once; Oulipo's combinatorial-constraint method turned outward into the format's own masterpiece, and the 1978 Prix Médicis winner critics placed beside Ulysses. Belongs directly beside Calvino's own game-as-architecture novel above.", aka: ["La Vie mode d'emploi", "Life: A User's Manual"] },
   { title: "The Name of the Rose", author: "Umberto Eco", why: "A murder mystery inside a medieval monastery, and a treatise on semiotics in disguise." },
   { title: "Independent People", author: "Halldór Laxness", why: "An Icelandic sheep farmer's stubborn, doomed independence; Nobel-caliber bleak comedy." },
   { title: "Voss", author: "Patrick White", why: "An explorer vanishes into the Australian interior while a woman in Sydney lives the expedition psychically; the novel behind Australia's only Nobel." },
@@ -1167,6 +1208,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Myth of Sisyphus", author: "Albert Camus", why: "The one serious philosophical question — whether to keep living — answered with the boulder, pushed anyway." },
   { title: "Philosophical Investigations", author: "Ludwig Wittgenstein", why: "Language games replace the picture theory; twentieth-century philosophy's second, self-correcting act." },
   { title: "The Origins of Totalitarianism", author: "Hannah Arendt", why: "How societies actually curdle into total domination, traced with unflinching historical rigor." },
+  { title: "Crowds and Power", author: "Elias Canetti", why: "Soccer crowds, revolutionary mobs, and the Bushmen's pilgrimage all read through one taxonomy of how masses form, swell, and dissolve; decades of solitary study by a Bulgarian-born survivor of interwar Vienna's own mob violence, and the 1981 Nobel committee's stated reason for the prize. Sits directly beside Arendt's own study of how the crowd's psychology curdles into totalitarian domination, from the individual-experience angle her institutional history doesn't cover.", aka: ["Masse und Macht"] },
   { title: "Notes of a Native Son", author: "James Baldwin", why: "Essays that fuse the personal and the political without either one flattening the other." },
   { title: "The Autobiography of Benjamin Franklin", author: "Benjamin Franklin", why: "Self-improvement as an American genre, invented by the man who lived it first." },
   { title: "Walden", author: "Henry David Thoreau", why: "Two years in a cabin as an argument against a life of quiet desperation." },
