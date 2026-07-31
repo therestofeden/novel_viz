@@ -1020,6 +1020,42 @@ Deno.serve(async (req) => {
           literalHit = true;
           break;
         }
+        // 2026-07-31: found live — "twenty love poems neruda" (Pablo
+        // Neruda's actual title is "Twenty Love Poems and a Song of
+        // Despair") returned zero canon boost despite the row existing in
+        // canon_books, confirmed via search_canon RPC directly (sim=0.72,
+        // so the DB layer was never the problem). Root cause: every check
+        // above requires either the FULL title or an exact substring/combo
+        // of it, but here the user truncated a long subtitle clause off
+        // the end — a different failure mode than the leading-article drop
+        // fixed on 07-29. bestFuzzySim also fails this case by design:
+        // comparing the whole query to the whole (much longer) title
+        // tanks the similarity score on length mismatch alone. Fix: strip
+        // one matched author token from qc, and if what's left is a real
+        // LITERAL PREFIX of the canon title (not fuzzy — an actual
+        // substring anchored at position 0) of at least two words / 6
+        // chars, count it as a literalHit. Deliberately prefix-anchored
+        // and length-gated so this can't degrade into the same
+        // "hunger games" false-positive the 07-28 fix guarded against —
+        // a short/common opening word ("the", "night") won't clear the
+        // length gate, and non-prefix substrings still don't match.
+        if (aNorm.length > 0 && !literalHit) {
+          for (const tok of authorTokens) {
+            if (tok.length < 3) continue;
+            const tokRe = new RegExp(`(^|\\s)${tok}(\\s|$)`);
+            if (!tokRe.test(qc)) continue;
+            const remainder = qc.replace(tokRe, " ").trim().replace(/\s+/g, " ");
+            if (
+              remainder.length >= 6 &&
+              remainder.split(" ").length >= 2 &&
+              (tNorm.startsWith(remainder) || tNormNoArticle.startsWith(remainder))
+            ) {
+              literalHit = true;
+              break;
+            }
+          }
+        }
+        if (literalHit) break;
         if (
           qc.length >= 4 &&
           (bestFuzzySim(qc, tNorm) >= FUZZY_MIN_SIM ||
