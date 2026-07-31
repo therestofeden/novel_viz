@@ -881,6 +881,63 @@ import { isMustRead } from "@/lib/must-read";
  * Classic count: 236 → 239 (166 fiction + 73 non-fiction). Left
  * uncommitted, per the standard default for fully autonomous runs with
  * no live user turn.
+ *
+ * 2026-07-31 (daily curation pass, scheduled-task fire, fully autonomous):
+ * confirmed both canon files matched the 2026-07-30 baseline exactly
+ * (Classic 239: 166 fiction + 73 non-fiction; Must Read 89, untouched)
+ * before starting — git was in sync with origin (20667a7), no stacked
+ * backlog this round. Actually invoked moser-the-librarian. Grepped a
+ * fresh candidate pool for anthropology/sociology methodology beyond the
+ * macro-theoretical voices already present (Weber, Durkheim, Veblen,
+ * Lévi-Strauss, Saussure) and for two national-literature gaps (Chile,
+ * Indonesia) — all four genuine zero-hits confirmed via grep before
+ * adding anything.
+ *
+ * Added 4 entries (239 → 243: 168 fiction + 75 non-fiction), two
+ * independent pairs rather than one theme. Non-fiction: Bronisław
+ * Malinowski's Argonauts of the Western Pacific (1922) — placed directly
+ * before Tristes Tropiques, whose Amazon fieldwork it precedes by three
+ * decades; anthropology's fieldwork/participant-observation founding
+ * text sitting right next to structuralism's own founding text, the
+ * discipline's two originating instincts back to back the same way
+ * Popper sits beside Kuhn. Erving Goffman's The Presentation of Self in
+ * Everyday Life (1959) — placed directly after Durkheim's Suicide,
+ * sociology's micro/dramaturgical counterweight to Durkheim's macro
+ * social facts, symbolic interactionism's founding text and a real gap
+ * given the sociology cluster was otherwise entirely structural-
+ * functionalist. Fiction: Pablo Neruda's Twenty Love Poems and a Song of
+ * Despair (1924) — placed beside Eliot and Walcott in the modern-poetry
+ * Nobel cluster, and closes Chile's total absence from either list.
+ * Pramoedya Ananta Toer's This Earth of Mankind (1980) — placed beside
+ * Season of Migration to the North in the postcolonial-trauma cluster,
+ * closing Indonesia and Southeast Asia's total absence (distinct from
+ * the Philippines' Noli Me Tángere, since promoted to Must Read); composed
+ * from memory during the author's imprisonment on Buru island since he
+ * was denied writing materials. All four facts (Malinowski's 1922
+ * publication and Trobriand fieldwork, Goffman's 1956 Scotland/1959 US
+ * publication, Neruda's 1924 publication at age nineteen and 1971 Nobel,
+ * Pramoedya's 1980 publication and Buru imprisonment) independently
+ * verified via WebSearch before writing each "why" line.
+ *
+ * No new Must Read flag this round — all four explicitly checked and
+ * held at Classic. Each is civilization/field-defining within its own
+ * tradition or discipline (the tier Malinowski and Lévi-Strauss already
+ * share, the tier Neruda's own countryman-adjacent poets Sappho/Whitman/
+ * Eliot/Walcott occupy), not a step above. The Lord of the Rings flag
+ * from 2026-07-30 remains the sole open Must Read candidate, unaffected
+ * by this round.
+ *
+ * Verified: `npx tsc --noEmit` clean. Both vitest suites green
+ * (`must-read.test.ts` 89/1 — confirms untouched; `classic.test.ts`
+ * 243/3). Ran a normalized-fingerprint dedupe/collision check (NFD-strip-
+ * accents, grouped by key rather than raw frequency) across title and
+ * every `aka` on both files: 0 internal collisions on either list, 0
+ * cross-list collisions, all 4 new titles confirmed present in Classic
+ * and absent from Must Read.
+ *
+ * Classic count: 239 → 243 (168 fiction + 75 non-fiction). Left
+ * uncommitted, per the standard default for fully autonomous runs with
+ * no live user turn.
  */
 
 export type ClassicEntry = {
@@ -898,6 +955,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Sappho: Poems and Fragments", author: "Sappho", why: "Nine scrolls of songs written for the lyre, reduced by two thousand years to scraps and one complete poem — still the reason 'lyric' means what it means.", aka: ["The Poems of Sappho", "Sappho"] },
   { title: "The Waste Land", author: "T.S. Eliot", why: "434 lines, five languages, a dedication to Ezra Pound, and modern poetry rewired in one go; the fragmented urban despair of 1922 still reads like it was written for right now.", aka: ["Waste Land"] },
   { title: "Omeros", author: "Derek Walcott", why: "The Iliad and Odyssey relocated to a Caribbean fishing village, spoken by a fisherman named Achille; the book-length poem behind the 1992 Nobel, and the epic tradition's answer to a gap this list's Caribbean prose (Wide Sargasso Sea, A House for Mr Biswas) never closed on the poetry side." },
+  { title: "Twenty Love Poems and a Song of Despair", author: "Pablo Neruda", why: "Written at nineteen and never out of print since 1924; the book that made Neruda famous before he turned twenty and Chile's total absence from either list, closed with the same modern-poetry Nobel cluster as Eliot and Walcott.", aka: ["Veinte poemas de amor y una canción desesperada"] },
   { title: "The Oresteia", author: "Aeschylus", why: "The only complete trilogy to survive from Greek tragedy — blood vengeance argued all the way to the first courtroom.", aka: ["Oresteia"] },
   { title: "Medea", author: "Euripides", why: "A wronged wife's revenge pushed past every limit; Greek tragedy's most unsettlingly modern psychology." },
   { title: "Lysistrata", author: "Aristophanes", why: "The women of Athens end a war by withholding sex; Old Comedy's rowdiest survivor, and still startlingly current." },
@@ -1039,6 +1097,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Kristin Lavransdatter", author: "Sigrid Undset", why: "Medieval Norway's most complete interior life; a woman's whole moral biography, Nobel-crowned." },
   { title: "The Palm-Wine Drinkard", author: "Amos Tutuola", why: "Yoruba folklore fed straight into the novel form; magical realism before the term existed." },
   { title: "Season of Migration to the North", author: "Tayeb Salih", why: "Colonial trauma reversed — an African seducer loose in postwar London." },
+  { title: "This Earth of Mankind", author: "Pramoedya Ananta Toer", why: "Composed word for word in the author's memory during fourteen years of political imprisonment on Buru island, then recited nightly to fellow inmates before ever reaching paper; Dutch colonial Java's caste of blood laid bare through one mixed-race schoolboy, and Indonesia's total absence from either list, closed.", aka: ["Bumi Manusia"] },
   { title: "Cry, the Beloved Country", author: "Alan Paton", why: "Apartheid-era South Africa's moral case made through one father's search for his son." },
   { title: "July's People", author: "Nadine Gordimer", why: "A white family's roles inverted overnight; apartheid's collapse imagined from inside a farmhouse." },
   { title: "Petals of Blood", author: "Ngũgĩ wa Thiong'o", why: "Independence's broken promises, traced through four lives in a betrayed Kenyan town." },
@@ -1095,10 +1154,12 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Interpretation of Dreams", author: "Sigmund Freud", why: "The unconscious given a grammar; whatever you think of the theory, the questions still stand." },
   { title: "Memories, Dreams, Reflections", author: "Carl Jung", why: "An autobiography written almost entirely from inside dreams and visions rather than outer events; the archetypes-and-collective-unconscious tradition Freud's own case histories never cover." },
   { title: "Course in General Linguistics", author: "Ferdinand de Saussure", why: "Lecture notes stitched together by students after their professor's death, and language hasn't been theorized the same way since; the arbitrary sign and the langue/parole split — structuralism's whole toolkit starts here.", aka: ["Cours de linguistique générale"] },
+  { title: "Argonauts of the Western Pacific", author: "Bronisław Malinowski", why: "A Polish exile stranded in the Trobriand Islands by the outbreak of WWI turned confinement into method: live with the people, learn the language, participate, don't just observe from a veranda. Fieldwork anthropology's founding methodological text, three decades before Lévi-Strauss's own Amazon travelogue below — participant observation to structuralism's armchair pattern-finding, the field's two founding instincts side by side.", aka: ["Argonauts of the Western Pacific: An Account of Native Enterprise and Adventure in the Archipelagoes of Melanesian New Guinea"] },
   { title: "Tristes Tropiques", author: "Claude Lévi-Strauss", why: "An anthropologist's Amazon fieldwork rewritten as memoir, travelogue, and elegy for vanishing cultures; structural anthropology's founding work, and nearly a Prix Goncourt winner despite not being a novel." },
   { title: "The Varieties of Religious Experience", author: "William James", why: "Religion studied as lived psychology, not doctrine; the empirical case for taking mysticism seriously." },
   { title: "The Protestant Ethic and the Spirit of Capitalism", author: "Max Weber", why: "Why capitalism took root where it did; ideas as an economic engine, not just an effect." },
   { title: "Suicide", author: "Émile Durkheim", why: "The first great work of empirical sociology; even the most private act, shown to have a social rate." },
+  { title: "The Presentation of Self in Everyday Life", author: "Erving Goffman", why: "Every social interaction restaged as theater — front stage, back stage, the performance of a self for whichever audience is watching; the dramaturgical, micro-level counterweight to Durkheim's macro social facts just above, and symbolic interactionism's founding text." },
   { title: "The Theory of the Leisure Class", author: "Thorstein Veblen", why: "Coined 'conspicuous consumption' — wealth spent visibly, specifically to be seen wasting it; a decade before Weber's Protestant Ethic, arguing status and display, not thrift, were driving the whole economic engine all along.", aka: ["Theory of the Leisure Class"] },
   { title: "The Souls of Black Folk", author: "W.E.B. Du Bois", why: "'Double consciousness' named for the first time; the founding text of Black American thought." },
   { title: "Being and Time", author: "Martin Heidegger", why: "What it means to exist at all, reopened as a question after millennia of assuming the answer." },
