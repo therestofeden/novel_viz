@@ -977,6 +977,55 @@ import { isMustRead } from "@/lib/must-read";
  * present in Classic and absent from Must Read.
  *
  * Classic count: 243 → 246 (169 fiction + 77 non-fiction).
+ *
+ * 2026-08-01 (daily curation pass, scheduled-task fire, fully autonomous):
+ * confirmed both canon files matched the 2026-07-31 baseline exactly
+ * (Classic 246: 169 fiction + 77 non-fiction; Must Read 89, untouched)
+ * before starting — git was in sync with origin (9392bd1), no stacked
+ * backlog this round. Actually invoked moser-the-librarian. Grepped a
+ * fresh candidate pool — Mishima, Oe, Cortázar, Vargas Llosa, Allende,
+ * Ngugi, Adichie, Mahfouz, Jelinek, Munro, Han Kang, Undset, Grass, Böll —
+ * most already present (Cortázar/Hopscotch, Vargas Llosa/Feast of the
+ * Goat, Mahfouz/Palace Walk, Undset/Kristin Lavransdatter, Grass/Tin
+ * Drum, and — caught by the tilde in a follow-up grep — Ngũgĩ wa
+ * Thiong'o's Petals of Blood, already present since an earlier round);
+ * four genuine zero-hit gaps confirmed and closed.
+ *
+ * Added 4 titles (246 → 250, all fiction: 173 fiction + 77 non-fiction),
+ * closing three independent gaps. Japan's postwar cluster (Kawabata in
+ * Must Read; Sōseki, Tanizaki, Endō, Akutagawa, Murakami here) had never
+ * included Mishima or Oe — its two other towering, mutually opposed
+ * voices. Yukio Mishima's The Temple of the Golden Pavilion (1956) —
+ * aestheticism pushed further than Kawabata or Tanizaki ever risked, and
+ * grounded in a real 1950 arson at Kyoto's actual Kinkaku-ji; Kenzaburō
+ * Ōe's A Personal Matter (1964) — the rawer, more directly autobiographical
+ * postwar register, and the book behind Japan's second Nobel (1994),
+ * placed directly after Mishima as its generational counterpoint. Isabel
+ * Allende's The House of the Spirits (1982) closes Chile's total absence
+ * from fiction prose specifically — Neruda's poetry (added 2026-07-31)
+ * covers the country, but not the novel — placed beside García Márquez as
+ * the Boom's most successful woman writer's direct, acknowledged answer to
+ * One Hundred Years of Solitude. Heinrich Böll's Billiards at Half-Past
+ * Nine (1959) closes German postwar fiction's one-voice problem: Grass's
+ * Tin Drum, three lines up, had stood alone despite Böll's own Nobel
+ * (1972, the first German laureate since Thomas Mann) — placed directly
+ * beside Grass, a different register of the same reckoning, published the
+ * same year. All four facts (Mishima's 1956 publication and the real 1950
+ * Kinkaku-ji arson it dramatizes, Oe's 1964 publication and 1994 Nobel,
+ * Allende's 1982 Barcelona publication, Böll's 1959 publication and 1972
+ * Nobel) independently verified via WebSearch before writing each "why"
+ * line.
+ *
+ * No new Must Read flag this round — all four explicitly checked and held
+ * at Classic, each extending an already-represented national tradition
+ * rather than founding a new one (the same bar that has kept Foundation,
+ * Dune, and Neuromancer at Classic despite individual excellence). The
+ * Lord of the Rings flag from 2026-07-30 remains the sole open Must Read
+ * candidate, unaffected by this round.
+ *
+ * Classic count: 246 → 250 (173 fiction + 77 non-fiction). Left
+ * uncommitted, per the standard default for fully autonomous runs with no
+ * live user turn.
  */
 
 export type ClassicEntry = {
@@ -1087,6 +1136,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Nausea", author: "Jean-Paul Sartre", why: "Existentialism's founding novel — the sheer, physical horror of things simply existing.", aka: ["La Nausée"] },
   { title: "Doctor Zhivago", author: "Boris Pasternak", why: "Revolution and love affair collide across decades; banned in its own country for telling the truth." },
   { title: "The Tin Drum", author: "Günter Grass", why: "A boy who refuses to grow, banging a drum through the Nazi era's madness." },
+  { title: "Billiards at Half-Past Nine", author: "Heinrich Böll", why: "Three generations measure their lives against a Cologne abbey their patriarch built and his own son later helped demolish; German conscience worked through in prose published the same year as Grass's Tin Drum above, and the book behind the second German Nobel since Thomas Mann (1972).", aka: ["Billard um halb zehn"] },
   { title: "Invisible Cities", author: "Italo Calvino", why: "Marco Polo describes cities that may not exist; fiction as pure architecture of ideas." },
   { title: "Life A User's Manual", author: "Georges Perec", why: "Ninety-nine chapters tour a Paris apartment building room by room in a knight's-tour path across the floor plan, laying every resident's whole life bare at once; Oulipo's combinatorial-constraint method turned outward into the format's own masterpiece, and the 1978 Prix Médicis winner critics placed beside Ulysses. Belongs directly beside Calvino's own game-as-architecture novel above.", aka: ["La Vie mode d'emploi", "Life: A User's Manual"] },
   { title: "The Name of the Rose", author: "Umberto Eco", why: "A murder mystery inside a medieval monastery, and a treatise on semiotics in disguise." },
@@ -1135,6 +1185,7 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Death of Artemio Cruz", author: "Carlos Fuentes", why: "A dying revolutionary's life replayed in fractured tenses; Mexico's history as one man's conscience." },
   { title: "The Feast of the Goat", author: "Mario Vargas Llosa", why: "Trujillo's dictatorship reconstructed from three angles — the tyrant, the assassins, the survivor." },
   { title: "Love in the Time of Cholera", author: "Gabriel García Márquez", why: "A fifty-year courtship that treats love itself as a chronic, incurable condition." },
+  { title: "The House of the Spirits", author: "Isabel Allende", why: "Four generations of the Trueba family, ghosts included, across a thinly-veiled Chile sliding toward Pinochet's coup; written as a letter to a dying grandfather, and the Boom's most direct answer — from its most successful woman writer — to One Hundred Years of Solitude a few lines up.", aka: ["La Casa de los Espíritus"] },
   { title: "Kristin Lavransdatter", author: "Sigrid Undset", why: "Medieval Norway's most complete interior life; a woman's whole moral biography, Nobel-crowned." },
   { title: "The Palm-Wine Drinkard", author: "Amos Tutuola", why: "Yoruba folklore fed straight into the novel form; magical realism before the term existed." },
   { title: "Season of Migration to the North", author: "Tayeb Salih", why: "Colonial trauma reversed — an African seducer loose in postwar London." },
@@ -1145,6 +1196,8 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Death and the King's Horseman", author: "Wole Soyinka", why: "A colonial officer stops a Yoruba horseman's ritual suicide and breaks a cosmology he never understood; the first African Nobel laureate's most performed play." },
   { title: "Diary of a Madman and Other Stories", author: "Lu Xun", why: "A paranoid narrator becomes convinced everyone around him is secretly a cannibal; published in vernacular Chinese in 1918, the story credited with inventing modern Chinese literature by breaking, for the first time, from three thousand years of classical written Chinese.", aka: ["A Madman's Diary", "Diary of a Madman", "Diary of a Madman and Other Stories by Lu Xun"] },
   { title: "Red Sorghum", author: "Mo Yan", why: "Three generations of a Shandong family through war and revolution, Mao-era history broken open by ghosts, sorghum wine, and animal transformation; the 1986 breakthrough behind China's first Nobel Prize in Literature awarded to a citizen still living in the country, in 2012.", aka: ["Red Sorghum Clan", "Hong Gaoliang Jiazu"] },
+  { title: "The Temple of the Golden Pavilion", author: "Yukio Mishima", why: "A stuttering acolyte grows so obsessed with a temple's beauty he burns it down rather than watch it fade; postwar Japan's other towering voice, aestheticism pushed to the edge Kawabata and Tanizaki never went near.", aka: ["Kinkakuji"] },
+  { title: "A Personal Matter", author: "Kenzaburō Ōe", why: "A young father recoils from, then chooses, his brain-damaged newborn son — Oe's own life turned into fiction almost in real time; Japan's second Nobel laureate (1994), and a rawer postwar register than Mishima's aestheticism just above.", aka: ["Kojinteki na Taiken"] },
   { title: "Kokoro", author: "Natsume Sōseki", why: "Isolation and guilt in Meiji Japan; a friendship's quiet, devastating confession." },
   { title: "The Wind-Up Bird Chronicle", author: "Haruki Murakami", why: "A missing cat unspools into wells, wartime Manchuria, and Japan's buried history." },
   { title: "Silence", author: "Shūsaku Endō", why: "A missionary's faith tested by torture and God's total silence; conviction under real pressure." },
