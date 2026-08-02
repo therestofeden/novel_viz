@@ -1028,6 +1028,55 @@ import { isMustRead } from "@/lib/must-read";
  * live user turn.
  */
 
+/*
+ * 2026-08-02 (daily curation pass, scheduled-task fire, fully autonomous,
+ * round 34): confirmed both canon files matched the round-32 baseline
+ * exactly (Classic 250: 173 fiction + 77 non-fiction; Must Read 89,
+ * untouched) before starting — git in sync with origin (211a7c2). Note:
+ * an earlier round 33 same day added Burke/Bourdieu/Chomsky/Friedman but
+ * was left uncommitted in a session whose sandbox no longer exists, so
+ * that work was unrecoverable and is redone here from scratch (same four
+ * titles, independently re-verified) rather than assumed lost silently.
+ *
+ * Fiction (173) has pulled well ahead of non-fiction (77) across rounds
+ * 27-32 — every one of those rounds added fiction only — so this round
+ * deliberately searched non-fiction gaps instead. Grepped the full
+ * existing non-fiction list first to confirm no overlap before adding.
+ *
+ * Added 4 titles, all non-fiction (250 → 254: 173 fiction + 81
+ * non-fiction):
+ * - Edmund Burke's Reflections on the Revolution in France (Nov 1790) —
+ *   modern conservative political thought's founding text; political
+ *   philosophy here had Hobbes/Locke/Rousseau/Mill's liberal-and-radical
+ *   lineage but nothing arguing back against it.
+ * - Pierre Bourdieu's Distinction (1979, La Distinction) — taste as class
+ *   position, backed by real survey data; the empirical continuation of
+ *   Veblen's conspicuous consumption above, closing a 20th-century French
+ *   sociology gap next to Durkheim/Lévi-Strauss/Foucault.
+ * - Noam Chomsky's Syntactic Structures (1957) — reset linguistics into a
+ *   formal/cognitive science and helped trigger the broader cognitive
+ *   revolution; the generative counterpart to Saussure's structuralism.
+ * - Milton Friedman's Capitalism and Freedom (1962) — the Chicago
+ *   School's founding manifesto; economics' missing third leg beside
+ *   Keynes and Hayek, both already present.
+ *
+ * All four facts (Burke's Nov 1790 publication, Bourdieu's 1979 French
+ * publication, Chomsky's Feb 1957 publication and its role in
+ * linguistics' cognitive turn, Friedman's 1962 University of Chicago
+ * Press publication) independently verified via WebSearch before writing
+ * each "why" line.
+ *
+ * No new Must Read flag this round — all four are field-founding but
+ * judged "essential second-tier text for their own sub-field" rather
+ * than the higher bar recent Must Read promotions (Kant, Rawls, Popper)
+ * cleared. The Lord of the Rings flag (2026-07-30) remains the sole open
+ * Must Read candidate, unaffected.
+ *
+ * Classic count: 250 → 254 (173 fiction + 81 non-fiction). Committed and
+ * pushed this round (unlike round 33) specifically to avoid a repeat of
+ * the same-day data loss.
+ */
+
 export type ClassicEntry = {
   title: string;
   author: string;
@@ -1291,6 +1340,10 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Zhuangzi", author: "Zhuangzi", why: "Confucius's great philosophical rival: parable and paradox instead of maxims, arguing that clinging to fixed categories is the real trap — a man dreams he is a butterfly, then wakes unsure which one is dreaming which.", aka: ["Zhuangzi", "Chuang Tzu", "The Book of Chuang Tzu"] },
   { title: "The Masnavi", author: "Rumi", why: "Sixty-four thousand lines of Sufi parable and ecstatic teaching, dictated over twelve years to a single scribe; eight centuries later, still routinely America's best-selling poet in translation.", aka: ["Masnavi-ye Ma'navi", "Mathnawi", "Masnavi"] },
   { title: "The Mythical Man-Month", author: "Fred Brooks", why: "Adding programmers to a late software project makes it later — Brooks's Law, distilled from watching his own team miss deadline after deadline managing IBM's OS/360 in the 1960s; fifty years on, still the first book handed to a new engineering manager, and computer science's total absence from this list until now.", aka: ["Mythical Man-Month", "The Mythical Man-Month: Essays on Software Engineering"] },
+  { title: "Reflections on the Revolution in France", author: "Edmund Burke", why: "Published within a year of the Bastille's fall, while most of Europe still cheered the Revolution on — Burke predicted the Terror before it happened, and gave modern conservative political thought its founding argument against remaking society from first principles.", aka: ["Reflections on the Revolution in France: And on the Proceedings in Certain Societies in London Relative to That Event"] },
+  { title: "Distinction", author: "Pierre Bourdieu", why: "Taste, dressed up as pure aesthetic preference, unmasked as class position wearing a disguise — backed by a decade of French survey data. The rigorous empirical heir to Veblen's conspicuous consumption above, and 20th-century French sociology's missing entry beside Durkheim, Lévi-Strauss, and Foucault.", aka: ["Distinction: A Social Critique of the Judgement of Taste", "La Distinction"] },
+  { title: "Syntactic Structures", author: "Noam Chomsky", why: "A 28-year-old's first book proposed that grammar is a finite set of rules generating infinite sentences — and helped trigger the cognitive revolution across psychology, philosophy, and computer science along the way. Structuralism's Saussure, reopened as a question about the mind rather than the sign." },
+  { title: "Capitalism and Freedom", author: "Milton Friedman", why: "The Chicago School's founding manifesto — free markets as the precondition for political freedom, not just economic efficiency. Economics' missing third leg here beside Keynes's case for intervention and Hayek's Austrian warning against planning, both already on this list." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
