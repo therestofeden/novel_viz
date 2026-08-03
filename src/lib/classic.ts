@@ -1077,6 +1077,64 @@ import { isMustRead } from "@/lib/must-read";
  * the same-day data loss.
  */
 
+/*
+ * 2026-08-03 (daily curation pass, scheduled-task fire, fully autonomous,
+ * round 35): confirmed both canon files matched the round-34 baseline
+ * exactly (Classic 254: 173 fiction + 81 non-fiction; Must Read 89,
+ * untouched) before starting. Local sandbox git was stale (HEAD stuck at
+ * round-32's 211a7c2, two commits behind origin) with a redundant
+ * uncommitted duplicate of round-34's own diff sitting in the working
+ * tree (same four titles, re-typed with different wording) — reconciled
+ * by re-checking-out classic.ts from origin/main first, confirming zero
+ * duplicate CLASSIC entries resulted, before starting this round's work.
+ *
+ * Fiction (173) has been flat across rounds 27-34 while non-fiction (77 →
+ * 81) absorbed the last two rounds' additions — so this round added two
+ * of each to start narrowing that gap back, not out of quota but because
+ * both sides had genuine, independently-verified gaps:
+ *
+ * - José Saramago's Blindness (1995) — an unexplained epidemic strips a
+ *   city of sight and civilization collapses within days; the 1998 Nobel
+ *   committee's own centerpiece citation, and the Portuguese-language
+ *   canon's total absence from this list until now (Machado de Assis
+ *   covers Brazil, nothing covered Portugal itself).
+ * - Doris Lessing's The Golden Notebook (1962) — a writer's fractured
+ *   notebooks (black, red, yellow, blue) kept separate because no single
+ *   one could hold a woman's whole life at once; the 2007 Nobel citation's
+ *   named work, and second-wave feminism's foundational novel, sitting
+ *   beside Friedan's Feminine Mystique (already here) as its fictional
+ *   counterpart.
+ * - Robert Nozick's Anarchy, State, and Utopia (1974) — written explicitly
+ *   against Rawls's A Theory of Justice (1971, already Must Read), arguing
+ *   any state larger than a night-watchman violates individual rights;
+ *   the 1975 National Book Award winner, and the exact rebuttal essay this
+ *   list's Rawls entry has been missing since it was added.
+ * - Joseph Schumpeter's Capitalism, Socialism and Democracy (1942) — coined
+ *   "creative destruction," capitalism reframed as a process of continual
+ *   entrepreneurial upheaval rather than a static equilibrium; economics'
+ *   fourth leg now beside Keynes, Hayek, and Friedman, all already here,
+ *   and the account of capitalism none of the other three actually gives.
+ *
+ * All four facts (Saramago's 1995 publication and 1998 Nobel citation,
+ * Lessing's 1962 publication and 2007 Nobel citation, Nozick's 1974
+ * publication as a direct answer to Rawls's 1971 book plus its 1975
+ * National Book Award, Schumpeter's 1942 publication and the "creative
+ * destruction" coinage) independently verified via WebSearch before
+ * writing each "why" line.
+ *
+ * No new Must Read flag this round — Blindness and The Golden Notebook are
+ * both Nobel-citation-anchored and excellent but sit closer to "the
+ * essential novel for its own literary movement" than the higher
+ * foundation-of-everything bar Must Read reserves; Nozick and Schumpeter
+ * are the same "essential second-tier text for its sub-field" judgment
+ * applied to Burke/Bourdieu/Chomsky/Friedman last round. The Lord of the
+ * Rings flag (2026-07-30) remains the sole open Must Read candidate,
+ * unaffected by this round.
+ *
+ * Classic count: 254 → 258 (175 fiction + 83 non-fiction). Committed and
+ * pushed this round.
+ */
+
 export type ClassicEntry = {
   title: string;
   author: string;
@@ -1344,6 +1402,10 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Distinction", author: "Pierre Bourdieu", why: "Taste, dressed up as pure aesthetic preference, unmasked as class position wearing a disguise — backed by a decade of French survey data. The rigorous empirical heir to Veblen's conspicuous consumption above, and 20th-century French sociology's missing entry beside Durkheim, Lévi-Strauss, and Foucault.", aka: ["Distinction: A Social Critique of the Judgement of Taste", "La Distinction"] },
   { title: "Syntactic Structures", author: "Noam Chomsky", why: "A 28-year-old's first book proposed that grammar is a finite set of rules generating infinite sentences — and helped trigger the cognitive revolution across psychology, philosophy, and computer science along the way. Structuralism's Saussure, reopened as a question about the mind rather than the sign." },
   { title: "Capitalism and Freedom", author: "Milton Friedman", why: "The Chicago School's founding manifesto — free markets as the precondition for political freedom, not just economic efficiency. Economics' missing third leg here beside Keynes's case for intervention and Hayek's Austrian warning against planning, both already on this list." },
+  { title: "Blindness", author: "José Saramago", why: "A city goes blind for no explained reason, and civilization collapses within days — the 1998 Nobel committee's own centerpiece citation, and the Portuguese-language canon's total absence from this list until now.", aka: ["Ensaio sobre a Cegueira", "Blindness: A Novel"] },
+  { title: "The Golden Notebook", author: "Doris Lessing", why: "A writer keeps four separate notebooks — black, red, yellow, blue — because no single one could hold a woman's whole life at once; the 2007 Nobel citation's named work, and the fictional counterpart to Friedan's Feminine Mystique, already here." },
+  { title: "Anarchy, State, and Utopia", author: "Robert Nozick", why: "Written directly against Rawls's A Theory of Justice, already Must Read here, arguing any state larger than a night-watchman violates individual rights; the 1975 National Book Award winner, and the exact rebuttal essay this list's Rawls entry has been missing.", aka: ["Anarchy, State and Utopia"] },
+  { title: "Capitalism, Socialism and Democracy", author: "Joseph Schumpeter", why: "Coined 'creative destruction' — capitalism reframed as continual entrepreneurial upheaval rather than a static equilibrium; economics' fourth leg now beside Keynes, Hayek, and Friedman, all already here, and the account of capitalism none of the other three actually gives.", aka: ["Capitalism, Socialism, and Democracy"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
