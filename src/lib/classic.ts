@@ -1135,6 +1135,34 @@ import { isMustRead } from "@/lib/must-read";
  * pushed this round.
  */
 
+/*
+ * 2026-08-04 (daily curation pass, round 36): four titles closing four
+ * separate gaps. Fiction: Sundiata: An Epic of Old Mali (the West African
+ * oral-epic tradition had zero representation despite Gilgamesh, Beowulf,
+ * the Shahnameh, and the Ramayana all being here) and The Poetic Edda
+ * (Norse mythology's actual primary source — Njal's Saga, already
+ * present, is the saga tradition, a different genre; the Edda is the
+ * mythological wellspring behind it and a direct, documented source for
+ * The Lord of the Rings). Non-fiction: The Theory of Moral Sentiments
+ * (Adam Smith's own preferred book — the Wealth of Nations entry's
+ * missing origin point, and the actual first appearance of "the invisible
+ * hand") and Mencius (completes the Analects' dialectical counterpart in
+ * Confucianism's Four Books; two thousand years of joint use, five
+ * centuries as imperial-exam curriculum). All four facts (Niane's 1960
+ * translation and thirty-year bestseller run, the Codex Regius/Völuspá/
+ * Tolkien connection, Smith spending his final year revising Moral
+ * Sentiments over Wealth of Nations, Mencius's role in the Four Books)
+ * independently verified via WebSearch before writing each "why" line.
+ *
+ * No new Must Read flag this round — all four clear Classic comfortably
+ * but none argue for S-tier the way the existing Must Read epics
+ * (Gilgamesh's absence from Must Read entirely, notwithstanding) do not
+ * either. The Lord of the Rings flag (2026-07-30) remains the sole open
+ * Must Read candidate, unaffected.
+ *
+ * Classic count: 258 → 262 (177 fiction + 85 non-fiction).
+ */
+
 export type ClassicEntry = {
   title: string;
   author: string;
@@ -1406,6 +1434,10 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Golden Notebook", author: "Doris Lessing", why: "A writer keeps four separate notebooks — black, red, yellow, blue — because no single one could hold a woman's whole life at once; the 2007 Nobel citation's named work, and the fictional counterpart to Friedan's Feminine Mystique, already here." },
   { title: "Anarchy, State, and Utopia", author: "Robert Nozick", why: "Written directly against Rawls's A Theory of Justice, already Must Read here, arguing any state larger than a night-watchman violates individual rights; the 1975 National Book Award winner, and the exact rebuttal essay this list's Rawls entry has been missing.", aka: ["Anarchy, State and Utopia"] },
   { title: "Capitalism, Socialism and Democracy", author: "Joseph Schumpeter", why: "Coined 'creative destruction' — capitalism reframed as continual entrepreneurial upheaval rather than a static equilibrium; economics' fourth leg now beside Keynes, Hayek, and Friedman, all already here, and the account of capitalism none of the other three actually gives.", aka: ["Capitalism, Socialism, and Democracy"] },
+  { title: "Sundiata: An Epic of Old Mali", author: "Anonymous", why: "A griot's recitation of the 13th-century founding of the Mali Empire, brought to the page in 1960 by D.T. Niane from the oral telling of Djeli Mamoudou Kouyaté — a bestseller for thirty years, and the West African oral-epic tradition's total absence from this list until now, alongside Gilgamesh, Beowulf, the Shahnameh, and the Ramayana.", aka: ["Sundiata", "Sunjata", "Soundjata ou l'épopée mandingue"] },
+  { title: "The Poetic Edda", author: "Anonymous", why: "Norse myth's primary source, copied into the 13th-century Codex Regius from poems composed centuries earlier — Ragnarök, Odin's hanging on Yggdrasil, and the Völuspá that gave a young Tolkien, by his own account, an encounter with 'something of tremendous force.' The mythological wellspring behind Njal's Saga's world, already here, and a direct source for The Lord of the Rings above.", aka: ["Poetic Edda", "Elder Edda", "Saemundar Edda"] },
+  { title: "The Theory of Moral Sentiments", author: "Adam Smith", why: "Smith's first book, and by his own final judgment his better one — he spent his last year revising it rather than the Wealth of Nations. The 'invisible hand' actually debuts here, seventeen years early, in an argument about sympathy and moral judgment rather than markets; the psychological foundation Wealth of Nations quietly stands on, and this list's economics cluster finally gets its origin point rather than just its conclusions." },
+  { title: "Mencius", author: "Mencius", why: "The second of Confucianism's Four Books, read for two thousand years alongside the Analects, already here — where Confucius states, Mencius argues, making the case that human nature tends toward good and that a ruler forfeits his mandate by failing his people. Standard imperial-exam curriculum for over five centuries, and the Analects' missing dialectical counterpart." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
