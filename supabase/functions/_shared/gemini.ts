@@ -25,24 +25,37 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
-export const MODEL = "gemini-3-flash-preview";
+export const MODEL = "gemini-3.6-flash";
 export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
-// Fallback chain: newest → older versions (last resort for 503/429 surges).
-// gemini-1.5-flash and gemini-2.0-flash are both shut down (June 2026).
-// gemini-2.5-flash and gemini-2.5-flash-lite are deprecated but active until Oct 2026.
-// gemini-3.5-flash was deliberately REMOVED from this default chain on
-// 2026-07-05 — it was the direct cause of both the ~$0.30 and ~€1 cost
-// incidents (unbounded reasoning-token billing at $9/M output). It still
-// works and remains in MODEL_PRICING below; it can be reintroduced later as
-// an opt-in premium tier, but is not part of the default fallback chain now.
-export const MODEL_FALLBACKS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+// Fallback chain — rebuilt 2026-08-05, every member now a STABLE (GA) model.
+// The previous chain ([gemini-3-flash-preview, gemini-2.5-flash,
+// gemini-2.5-flash-lite]) had rotted out underneath us:
+//   - The primary never left preview status. Preview models get
+//     capacity-deprioritized (observed live 2026-08-05 ~03:57 UTC: TCP-stall
+//     timeouts on the preview primary plus 503 "high demand" on 2.5-flash-lite
+//     produced a user-facing hard-ceiling failure) and Google retires them
+//     without a sunset window (gemini-3-pro-preview is already gone).
+//   - Both 2.5 fallbacks are flagged "deprecated, will be shut down soon" on
+//     the official models page.
+// gemini-3.5-flash stays deliberately EXCLUDED, as it has been since
+// 2026-07-05 (the ~$0.30/~€1 cost incidents) — its $9/M output is the most
+// expensive of the family. Note gemini-3.6-flash is actually CHEAPER per
+// output token ($7.50/M) at the same $1.50/M input, and per-call cost is
+// bounded anyway by MAX_OUTPUT_TOKENS + the daily budget guard below.
+export const MODEL_FALLBACKS = [MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
 
-// Per-1M-token pricing (USD), standard tier, as of 2026-07-05 — used to
+// Per-1M-token pricing (USD), standard tier, as of 2026-08-05 — used to
 // estimate real $ cost per call for the daily spend guard below. Update
-// if Google changes pricing.
+// if Google changes pricing. Legacy models are kept so BYOK callers or a
+// not-yet-redeployed function recording spend against an old model still
+// log a real cost instead of $0.
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  "gemini-3.6-flash": { input: 1.50, output: 7.50 },
   "gemini-3.5-flash": { input: 1.50, output: 9.00 },
+  "gemini-3.5-flash-lite": { input: 0.30, output: 2.50 },
+  "gemini-3.1-flash-lite": { input: 0.25, output: 1.50 },
+  // Legacy (previous chain, pre-2026-08-05):
   "gemini-3-flash-preview": { input: 0.50, output: 3.00 },
   "gemini-2.5-flash": { input: 0.30, output: 2.50 },
   "gemini-2.5-flash-lite": { input: 0.10, output: 0.40 },
@@ -83,6 +96,7 @@ export type GeminiFailureReason =
   | "hard_ceiling"      // MAX_TOTAL_MS exceeded
   | "timeout"           // a model TCP-stalled past GEMINI_TIMEOUT_MS
   | "capacity"          // genuine transient Gemini 429/503
+  | "model_unavailable" // model ID unknown/retired (404) — that ONE model, not the account
   | "client_error";     // hard 4xx unrelated to quota (bad request, auth, etc.)
 
 // Matches Google's own wording for a depleted prepaid/billing balance
@@ -94,6 +108,15 @@ const QUOTA_EXHAUSTION_PATTERN = /RESOURCE_EXHAUSTED|prepayment credits|quota.*e
 export function classifyGeminiFailure(status: number, body: string): GeminiFailureReason {
   if (status === 429 && QUOTA_EXHAUSTION_PATTERN.test(body)) return "quota_exhausted";
   if (status === 429 || status >= 500) return "capacity";
+  // Gemini answers 404 NOT_FOUND for a model ID it no longer (or never)
+  // serves. Distinguished from other hard 4xxs because the correct reaction
+  // is opposite: a bad *request* would fail identically on every model
+  // (abort the chain), a retired *model* is exactly what the fallback chain
+  // exists to route around (skip it, keep going). Added 2026-08-05 while
+  // replacing a chain whose every member was preview/deprecated — this is
+  // what lets the app survive Google's NEXT model sunset without a
+  // same-day emergency redeploy.
+  if (status === 404) return "model_unavailable";
   return "client_error";
 }
 
@@ -157,17 +180,28 @@ const GEMINI_TIMEOUT_MS = 30_000;
 const RETRY_BACKOFF_MS = 1_500;
 const RETRY_BUDGET_MS = 45_000;
 
-// Hard ceiling on the ENTIRE geminiFetchWithFallback call (both passes,
-// all models). RETRY_BUDGET_MS above only gates whether a retry pass is
+// Hard DEFAULT ceiling on the ENTIRE geminiFetchWithFallback call (both
+// passes, all models) — callers can override per call via the maxTotalMs
+// parameter. RETRY_BUDGET_MS above only gates whether a retry pass is
 // allowed to *start* — it does not bound how long that pass itself can run,
 // so without this, two passes x 3 models x GEMINI_TIMEOUT_MS could take up
-// to ~180s for a single call. Callers like analyze-novel invoke this
-// function up to twice per request (initial + inadequate-result retry), so
-// an unbounded call risked exceeding Supabase's ~150s wall-clock function
-// limit — confirmed live: a real request hung 146s and was killed with a
-// 546 status. This Promise.race guarantees a deterministic return within
-// MAX_TOTAL_MS regardless of what's still in flight underneath.
-const MAX_TOTAL_MS = 45_000;
+// to ~180s for a single call. This Promise.race guarantees a deterministic
+// return within the ceiling regardless of what's still in flight underneath.
+//
+// Raised 45s → 90s on 2026-08-05: the old value was mathematically
+// incoherent with the chain it guarded. A single hung model already eats
+// GEMINI_TIMEOUT_MS (30s) of the budget, so hung-primary + slow-secondary
+// meant a guaranteed user-facing hard_ceiling failure at 45s even when the
+// third model was healthy and could have answered in 3s — observed live
+// 2026-08-05 ~03:57 UTC (the failure that triggered this rebuild). 90s
+// covers one full worst-case pass (3 × 30s), so the ceiling now only fires
+// on genuinely pathological states instead of routinely amputating the
+// fallback chain's whole reason to exist. Supabase's ~150s wall clock
+// (confirmed live once: a 146s request killed with a 546) stays safe:
+// analyze-novel, the only caller that can invoke this twice per request,
+// passes maxTotalMs=40_000 for its rare inadequate-result retry
+// (90 + 40 + non-AI overhead < 150).
+const MAX_TOTAL_MS = 90_000;
 
 // Hard per-call output/thinking cap — tuned 2026-07-05 as a follow-up to the
 // original $0.30/€1 cost-incident fix. Real production data from that fix's
@@ -332,6 +366,15 @@ async function attemptFallbackPass(
       if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
       return last;
     }
+    if (reason === "model_unavailable") {
+      // Retired/unknown model — skip to the next model instead of aborting
+      // the whole chain the way other hard 4xxs (correctly) do. Trip the
+      // circuit too: after CIRCUIT_TRIP_AFTER repeats the dead model stops
+      // costing a doomed round trip on every request, and if Google ever
+      // brings the ID back, the circuit's normal expiry re-admits it.
+      if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
+      continue;
+    }
     if (r.status === 429 || r.status >= 500) {
       // Transient — trip circuit (if threshold reached) and try the next model.
       if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
@@ -396,6 +439,7 @@ export async function geminiFetchWithFallback(
   payload: Record<string, unknown>,
   fallbackChain: string[] = MODEL_FALLBACKS,
   isServerKey: boolean = true,
+  maxTotalMs: number = MAX_TOTAL_MS,
 ): Promise<Response> {
   const work = (async (): Promise<Response> => {
     const budgetExceeded = isServerKey && await admin.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD })
@@ -448,13 +492,13 @@ export async function geminiFetchWithFallback(
 
   const timeout = new Promise<Response>((resolve) => {
     setTimeout(() => {
-      console.error(JSON.stringify({ fn: "geminiFetch", error: "hard_ceiling_exceeded", max_total_ms: MAX_TOTAL_MS }));
+      console.error(JSON.stringify({ fn: "geminiFetch", error: "hard_ceiling_exceeded", max_total_ms: maxTotalMs }));
       const hardCeilingReason: GeminiFailureReason = "hard_ceiling";
       resolve(new Response(
         JSON.stringify({ error: "Gemini fallback chain exceeded its time budget — please try again." }),
         { status: 503, headers: { "Content-Type": "application/json", [GEMINI_FAILURE_REASON_HEADER]: hardCeilingReason } },
       ));
-    }, MAX_TOTAL_MS);
+    }, maxTotalMs);
   });
 
   return Promise.race([work, timeout]);

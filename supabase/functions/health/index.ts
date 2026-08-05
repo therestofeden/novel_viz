@@ -31,7 +31,7 @@ const corsHeaders = {
 // shared module — health is meant to stay a minimal, dependency-light
 // endpoint, so a bug in _shared/gemini.ts can never take the health check
 // itself down.
-const GEMINI_FALLBACK_MODELS = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const GEMINI_FALLBACK_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]; // stable-chain rebuild 2026-08-05
 const DAILY_BUDGET_USD = Number(Deno.env.get("DAILY_GEMINI_BUDGET_USD") ?? "5.00");
 
 serve(async (req) => {

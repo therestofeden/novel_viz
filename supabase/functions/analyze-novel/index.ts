@@ -12,8 +12,8 @@ import { buildCorsHeaders } from "../_shared/cors.ts";
 // standalone constant wasn't part of that chain, so it kept firing on every
 // single fresh (non-cached) analysis with zero token/reasoning caps and zero
 // spend tracking — found + fixed same pass as adding those caps below. Now
-// reuses the shared MODEL (currently the cheaper gemini-3-flash-preview) so
-// there's one source of truth for "the model we call by default," plus an
+// reuses the shared MODEL (gemini-3.6-flash since the 2026-08-05 stable-chain
+// rebuild) so there's one source of truth for "the model we call by default," plus an
 // explicit low reasoning-effort + token cap and spend recording, since a
 // decorative one-liner teaser or best-effort preview lookup never needs deep
 // thinking and shouldn't be invisible to the daily budget circuit breaker.
@@ -963,11 +963,19 @@ function buildMetadataBlock(meta: BookMetadata): string {
 
 // ---------- AI call ----------
 
-// Drop the expensive primary (gemini-3.5-flash) — a second attempt on the
-// SAME priciest model isn't worth double-paying for; fall back to the
+// Drop the expensive primary (now gemini-3.6-flash) — a second attempt on
+// the SAME priciest model isn't worth double-paying for; fall back to the
 // cheaper models only. Fixed after a real failed request billed ~$0.30 by
 // paying full price twice.
 const RETRY_FALLBACK_CHAIN = MODEL_FALLBACKS.slice(1);
+
+// Ceiling for the inadequate-result RETRY invocation of the fallback chain.
+// The initial invocation gets the shared default (90s, one full worst-case
+// pass); the retry gets this tighter budget so the two together plus non-AI
+// overhead stay under Supabase's ~150s function wall clock. The retry chain
+// is also one model shorter (RETRY_FALLBACK_CHAIN above), so 40s still
+// covers a hung model plus a healthy one.
+const RETRY_MAX_TOTAL_MS = 40_000;
 
 async function callStructuredAnalysis(
   admin: SupabaseClient,
@@ -977,6 +985,7 @@ async function callStructuredAnalysis(
   knownBookType?: "fiction" | "nonfiction",
   fallbackChain?: string[],
   isServerKey: boolean = true,
+  maxTotalMs?: number,
 ): Promise<Analysis | null> {
   const messages: any[] = [
     { role: "system", content: SYSTEM_PROMPT },
@@ -1007,7 +1016,7 @@ async function callStructuredAnalysis(
     messages,
     tools,
     tool_choice,
-  }, fallbackChain, isServerKey);
+  }, fallbackChain, isServerKey, maxTotalMs);
 
   if (!response.ok) {
     const errText = await response.text();
@@ -1500,7 +1509,7 @@ Deno.serve(async (req) => {
             ? "Your previous response was incomplete after server-side validation. Please return at least 3 concepts, 2 chapters, and — most importantly — the argument_pillars (3-5) and idea_cards (8-10) fields with full claim sentences. Do not omit them."
             : "Your previous response was incomplete after server-side validation. Please return at least 6 events and 4 characters with valid laneIds (every event.laneId must match a defined lane.id; every character laneId must match or be an empty string).";
           try {
-            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective, analysis?.bookType, RETRY_FALLBACK_CHAIN, isServerKey);
+            const retry = await callStructuredAnalysis(supabase, GEMINI_API_KEY, enrichedPrompt, corrective, analysis?.bookType, RETRY_FALLBACK_CHAIN, isServerKey, RETRY_MAX_TOTAL_MS);
             // Accept any non-null retry — even a thin result is better than a hard failure.
             if (retry) analysis = retry;
           } catch (e) {
