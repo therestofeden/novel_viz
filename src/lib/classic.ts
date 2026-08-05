@@ -1161,6 +1161,62 @@ import { isMustRead } from "@/lib/must-read";
  * Must Read candidate, unaffected.
  *
  * Classic count: 258 → 262 (177 fiction + 85 non-fiction).
+ *
+ * 2026-08-04 (daily curation pass, round 37): four titles closing four
+ * more gaps. Non-fiction: The Spirit of the Laws (Montesquieu — the
+ * single most direct intellectual source for the U.S. Constitution's
+ * separation of powers) and Self-Reliance (Emerson — American
+ * individualism's founding scripture, Walden's philosophical parent,
+ * already here). Fiction: Miss Julie (Strindberg — Ibsen's naturalist
+ * rival, this list's second play after A Doll's House moved to Must
+ * Read) and Runaway (Munro — the short story's first-ever representation
+ * on this list, via the writer the Nobel called its master).
+ *
+ * Classic count: 262 → 266 (172 fiction + 94 non-fiction).
+ *
+ * 2026-08-05 (daily curation pass, round 38): four titles closing four
+ * more gaps, verified via WebSearch before writing. Fiction: Long Day's
+ * Journey Into Night (O'Neill — the only American playwright ever
+ * awarded the Nobel Prize in Literature, and modern American drama's
+ * missing entry beside Miller and Williams, both already here) and The
+ * Hour of the Star (Lispector — Brazilian fiction's second entry after
+ * Machado de Assis, closing a hundred-year gap in that national
+ * literature). Non-fiction: The Upanishads (Vedanta's actual source
+ * text, one entry upstream of the Bhagavad Gita already here — the
+ * Schopenhauer "solace of my life" line independently verified) and
+ * Parallel Lives (Plutarch — ancient historiography's missing
+ * biographical wing beside Herodotus, Thucydides, Tacitus, and Sima
+ * Qian, all already here, and the direct, heavily-lifted-from source of
+ * three Shakespeare Roman plays via Thomas North's 1579 translation).
+ *
+ * No Must Read flag this round. The Lord of the Rings flag (2026-07-30)
+ * remains the sole open Must Read candidate, unaffected.
+ *
+ * Classic count: 266 → 270.
+ *
+ * 2026-08-05 (same day, SECOND independent scheduled-task fire — a race,
+ * not a mistake): a concurrent session ran this same daily curation task
+ * in parallel and, working from the pre-this-round baseline, added its
+ * own four titles closing four more gaps: The Idiot (Dostoevsky's second
+ * Classic entry, within the multi-entry-author precedent this header
+ * already grants), In Praise of Folly (Erasmus) and Common Sense (Paine)
+ * — both towering, wholly-absent influences in Christian-humanist satire
+ * and revolutionary pamphleteering respectively — and Beyond Good and
+ * Evil (Nietzsche's aphoristic manifesto, a year ahead of his existing
+ * Must Read placement, On the Genealogy of Morals). Both sessions'
+ * entries independently clear the merit bar and are mutually
+ * non-overlapping (no duplicate titles/authors), so both are kept rather
+ * than one being reverted. See [[novelviz-daily-canon-curation-round38-2026-08-05]]
+ * for the full race writeup.
+ *
+ * Note on structure: recent daily rounds (36 onward) have appended new
+ * entries at the end of this array regardless of the Fiction/Non-fiction
+ * comment markers above, so those two markers no longer reliably bound
+ * every entry of their stated type below them — a known, harmless
+ * cosmetic drift (getClassic()/isClassic() don't depend on physical
+ * position), not something this round attempted to re-sort.
+ *
+ * Classic count: 270 → 274 (both rounds combined).
  */
 
 export type ClassicEntry = {
@@ -1438,10 +1494,29 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Poetic Edda", author: "Anonymous", why: "Norse myth's primary source, copied into the 13th-century Codex Regius from poems composed centuries earlier — Ragnarök, Odin's hanging on Yggdrasil, and the Völuspá that gave a young Tolkien, by his own account, an encounter with 'something of tremendous force.' The mythological wellspring behind Njal's Saga's world, already here, and a direct source for The Lord of the Rings above.", aka: ["Poetic Edda", "Elder Edda", "Saemundar Edda"] },
   { title: "The Theory of Moral Sentiments", author: "Adam Smith", why: "Smith's first book, and by his own final judgment his better one — he spent his last year revising it rather than the Wealth of Nations. The 'invisible hand' actually debuts here, seventeen years early, in an argument about sympathy and moral judgment rather than markets; the psychological foundation Wealth of Nations quietly stands on, and this list's economics cluster finally gets its origin point rather than just its conclusions." },
   { title: "Mencius", author: "Mencius", why: "The second of Confucianism's Four Books, read for two thousand years alongside the Analects, already here — where Confucius states, Mencius argues, making the case that human nature tends toward good and that a ruler forfeits his mandate by failing his people. Standard imperial-exam curriculum for over five centuries, and the Analects' missing dialectical counterpart." },
+  { title: "The Upanishads", author: "Anonymous", why: "Vedanta's foundational texts — Brahman, atman, moksha — that the Bhagavad Gita, already here, argues from rather than originates. Schopenhauer kept a copy open on his desk every night and called it 'the solace of my life, ... the solace of my death'; Hindu philosophy's actual taproot, one entry upstream of its most famous branch.", aka: ["Upanishad", "The Principal Upanishads"] },
+  { title: "Parallel Lives", author: "Plutarch", why: "Paired Greek-and-Roman biographies weighing character over chronology, translated into English by Thomas North in 1579 and lifted by Shakespeare almost verbatim for Julius Caesar, Antony and Cleopatra, and Coriolanus — whole speeches barely reworded. Ancient historiography's missing biographical wing beside Herodotus, Thucydides, Tacitus, and Sima Qian, all already here.", aka: ["Plutarch's Lives", "Lives of the Noble Grecians and Romans", "The Lives of the Noble Grecians and Romanes"] },
   { title: "The Spirit of the Laws", author: "Montesquieu", why: "Argues that liberty survives only when power is split into separate legislative, executive, and judicial branches that check each other — the single most direct intellectual source for the U.S. Constitution's structure, cited more by the American founders than almost any other work. Political philosophy's missing 18th-century hinge between Hobbes/Locke's state-of-nature arguments and Rousseau's Social Contract, both already here.", aka: ["De l'esprit des lois", "The Spirit of Laws"] },
   { title: "Self-Reliance", author: "Ralph Waldo Emerson", why: "'To believe your own thought, to believe that what is true for you in your private heart is true for all men — that is genius.' The essay that gave American individualism its founding scripture, and Thoreau's Walden, already here, its direct philosophical parent." },
   { title: "Miss Julie", author: "August Strindberg", why: "A midsummer night, a countess's daughter, and her father's valet collide across class and sex lines in real time on stage — Strindberg's own 1888 preface reads like modern theater's first realist manifesto, and Ibsen's naturalist drama, already here, gets its equally combative rival at last." },
   { title: "Runaway", author: "Alice Munro", why: "Eight stories the Nobel committee singled out by name as the 'crowning achievement' behind her 2013 prize, 'master of the contemporary short story' — the form itself, never before represented on this list even once, gets its entry through the writer who made it a major art on par with the novel." },
+  { title: "Long Day's Journey Into Night", author: "Eugene O'Neill", why: "One family, one day, morphine and old grief circling back on themselves by lamplight; O'Neill left instructions to lock the manuscript away for 25 years after his death, but his widow published it three years in instead. He remains the only American playwright ever awarded the Nobel Prize in Literature — modern American drama's missing entry beside Miller and Williams, both already here.", aka: ["Long Days Journey Into Night"] },
+  { title: "The Hour of the Star", author: "Clarice Lispector", why: "A ghostwriter narrator doubts his own right to tell a poor typist's story even as he tells it — Lispector's last book, finished months before her own death in 1977. Brazilian fiction's second entry after Machado de Assis, already here, closing a hundred-year gap this list otherwise jumps straight over.", aka: ["A Hora da Estrela"] },
+
+  // 2026-08-05 (daily curation pass): four more titles clearing the same
+  // Lindy bar, each closing a real gap rather than padding an author already
+  // represented. The Idiot is Dostoevsky's second Classic entry — explicitly
+  // within the precedent this file's header already grants him (see the
+  // Austen/Steinbeck/... list at the top). Erasmus and Paine were both
+  // wholly absent from the canon despite towering influence in their own
+  // genres (Christian humanist satire; revolutionary pamphleteering).
+  // Beyond Good and Evil gives Nietzsche a Classic-tier entry alongside his
+  // existing Must Read placement (On the Genealogy of Morals) — the
+  // aphoristic manifesto the Genealogy was written a year later to formalize.
+  { title: "The Idiot", author: "Fyodor Dostoevsky", why: "A genuinely, almost pathologically good man dropped into St. Petersburg society to see what his innocence costs him — written in the shadow of Dostoevsky's own near-execution and epilepsy, and his own candidate for the hardest character to write convincingly in all of fiction." },
+  { title: "In Praise of Folly", author: "Desiderius Erasmus", why: "Folly herself delivers her own mock-eulogy, skewering popes, scholastic theologians, and princes in one satirical sweep — dashed off in a few days as a guest's parlor trick at Thomas More's house, and read across humanist Europe right up to the eve of the Reformation it helped provoke.", aka: ["Moriae Encomium", "The Praise of Folly"] },
+  { title: "Common Sense", author: "Thomas Paine", why: "Fifty cents and forty-seven pages that turned a colonial tax dispute into an argument for outright independence — sold, per capita, more copies than any book in American history, Bible included." },
+  { title: "Beyond Good and Evil", author: "Friedrich Nietzsche", why: "Morality's family tree traced back to power and instinct rather than truth, in aphorisms rather than sustained argument — the manifesto that On the Genealogy of Morals, already here as a Must Read, was written a year later to formalize into essays.", aka: ["Beyond Good and Evil: Prelude to a Philosophy of the Future"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
