@@ -113,6 +113,14 @@
 // changes — a future session that figures out the correct multi-file
 // deploy_edge_function layout should restore the real import and delete this
 // inlined copy.
+//
+// 2026-08-05 daily backend audit: found the canon_books search_canon RPC call
+// (see canonPromise below) was the one upstream call in this pipeline with NO
+// timeout, despite every other stage (OL primary+fanout+fuzzy, GB) having been
+// explicitly bounded across the 2026-07-25/29/30 perf passes. Since it's raced
+// via the same Promise.allSettled, an unbounded canon lookup silently set an
+// unbounded floor under all that prior tuning. Added a 1000ms timeout that
+// degrades to an empty canon list, same shape as a genuine RPC failure.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = new Set([
@@ -840,12 +848,38 @@ Deno.serve(async (req) => {
       return result;
     })();
 
-    const canonPromise: Promise<CanonRow[]> = adminClient
+    // 2026-08-05 daily perf pass: every OTHER upstream call in this pipeline
+    // has an explicit ceiling (OL primary+fanout+fuzzy share OL_TOTAL_BUDGET_MS
+    // =3500ms total, GB is capped at 1200ms) — but this RPC to our own DB had
+    // none. Since it's awaited via the same Promise.allSettled as OL/GB, an
+    // unbounded canon lookup sets an unbounded floor on cache-miss latency
+    // regardless of how tight the other budgets are, which is the most likely
+    // explanation for prod log entries (e.g. a 5.5s "a culture of growth" call)
+    // that exceed the ~4s worst case the 2026-07-30 OL budget math implies.
+    // search_canon runs against canon_books' trigram indexes and is normally
+    // fast; 1000ms is generous headroom while still bounding the worst case.
+    // Times out to an empty canon list (same graceful-degradation shape as a
+    // genuine RPC failure below) rather than blocking the whole response.
+    const CANON_RPC_TIMEOUT_MS = 1000;
+
+    const canonRpcPromise: Promise<CanonRow[]> = adminClient
       .rpc("search_canon", { p_q: buildSearchCacheKey(q) })
       .then(({ data, error }: { data: CanonRow[] | null; error: unknown }) => {
         if (error) throw error;
         return data ?? [];
       });
+    // Prevent an unhandled-rejection warning if this loses the race below.
+    canonRpcPromise.catch(() => {});
+
+    const canonPromise: Promise<CanonRow[]> = Promise.race([
+      canonRpcPromise,
+      new Promise<CanonRow[]>((resolve) =>
+        setTimeout(() => {
+          timings.canon_timed_out = 1;
+          resolve([]);
+        }, CANON_RPC_TIMEOUT_MS)
+      ),
+    ]);
 
     const [olResult, gbResult, canonResult] = await Promise.allSettled([
       olFetchPromise,
@@ -1111,15 +1145,37 @@ Deno.serve(async (req) => {
       if (qTokCount > 1 && (t.startsWith(qNorm) || t.includes(` ${qNorm}`))) return true;
       return false;
     });
+    // 2026-08-05 daily perf pass: this block was a FOURTH sequential await
+    // (after primary+fanout, olFetchPromise's own internal fuzzy sub-stage,
+    // and the Promise.allSettled wait for GB/canon) with its own independent
+    // FUZZY_ESCALATION_TIMEOUT_MS=2500ms budget, completely uncoordinated
+    // with OL_TOTAL_BUDGET_MS above — the exact same stacking-timeouts bug
+    // pattern already fixed twice before (2026-07-25 GB timeout, 2026-07-30
+    // the OTHER fuzzy stage inside olFetchPromise), just never applied here.
+    // Found live: "a culture of growth" (real, obscure, non-canon nonfiction
+    // — no confident OL/GB match, triggers this exact branch) logged a
+    // 5489ms cache-miss response, consistent with ~3s OL pipeline + up to
+    // 2.5s more stacked on top. Fixed the same way as the 07-30 precedent:
+    // this stage only gets whatever's left of the shared OL_TOTAL_BUDGET_MS
+    // wall clock (tracked from olT0, the whole OL pipeline's start), capped
+    // at its old 2500ms ceiling — typical case (primary resolves fast, this
+    // branch usually doesn't even need to run) is unaffected; true worst
+    // case drops from ~5.5-6s to ~3.5s, matching the OL pipeline's own
+    // documented budget.
     if (!canonInjected && (qTokCount > 1 || qNorm.length >= 5) && !hasConfidentMatch) {
-      try {
-        const fuzzyDocs = await olFetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`,
-          FUZZY_ESCALATION_TIMEOUT_MS,
-        );
-        timings.fuzzy_escalated = 1;
-        for (const d of fuzzyDocs) addOlCandidate(d);
-      } catch (_e) { /* best-effort */ }
+      const escalationBudgetMs = OL_TOTAL_BUDGET_MS - (performance.now() - olT0);
+      if (escalationBudgetMs > 300) {
+        try {
+          const fuzzyDocs = await olFetch(
+            `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`,
+            Math.min(FUZZY_ESCALATION_TIMEOUT_MS, escalationBudgetMs),
+          );
+          timings.fuzzy_escalated = 1;
+          for (const d of fuzzyDocs) addOlCandidate(d);
+        } catch (_e) { /* best-effort */ }
+      } else {
+        timings.fuzzy_escalation_skipped_budget = 1;
+      }
     }
 
     // Author-query result-set fix (2026-07-13): a coincidentally same-titled
