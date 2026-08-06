@@ -1217,6 +1217,35 @@ import { isMustRead } from "@/lib/must-read";
  * position), not something this round attempted to re-sort.
  *
  * Classic count: 270 → 274 (both rounds combined).
+ *
+ * 2026-08-06 (daily curation pass, round 39): four titles, vetted against
+ * moser-the-librarian's rubric, closing a poetry gap this list had somehow
+ * left open despite otherwise-deep coverage: English Romanticism, American
+ * lyric's other founder, and classical Chinese verse each sat at zero
+ * representation, plus one physics companion pick. William Blake's Songs of
+ * Innocence and of Experience (1789/1794, hand-engraved and hand-colored by
+ * Blake himself) — English Romantic poetry's founding text, on a list that
+ * otherwise jumps straight from Milton (Must Read) to Whitman (Must Read)
+ * with nothing English in between. Emily Dickinson's Complete Poems
+ * (fewer than a dozen of her ~1,800 poems published before her 1886 death;
+ * first collected 1890) — American lyric's other founder, the private
+ * counterweight to Whitman's public shout, oddly absent given Whitman's own
+ * Must Read placement. Du Fu's Selected Poems — China's "Poet Sage," flagged
+ * as a candidate on 2026-07-26 alongside Li Bai but never actually added;
+ * closes classical Chinese verse's total absence despite this list's deep
+ * classical-Chinese fiction (all Four Great Classical Novels) and philosophy
+ * (Analects, Zhuangzi, Mencius) coverage. Einstein's Relativity: The Special
+ * and General Theory (December 1916, his own popular exposition, no calculus
+ * required) — physics' other founding text, placed as the companion Newton's
+ * Principia never had. All four facts (Blake's 1789/1794 publication dates
+ * and hand-printing method, Dickinson's ~1,800-poem count and 1890 first
+ * collection, Du Fu's life dates and An Lushan Rebellion context, Einstein's
+ * December 1916 publication) independently verified via WebSearch before
+ * writing each "why" line. All four clear the Lindy/A-tier bar with room to
+ * spare; none were close calls, and none rise to Must Read's "unmissable"
+ * bar — no new promotion flag this round.
+ *
+ * Classic count: 274 → 278 (178 fiction + 100 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -1517,6 +1546,18 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "In Praise of Folly", author: "Desiderius Erasmus", why: "Folly herself delivers her own mock-eulogy, skewering popes, scholastic theologians, and princes in one satirical sweep — dashed off in a few days as a guest's parlor trick at Thomas More's house, and read across humanist Europe right up to the eve of the Reformation it helped provoke.", aka: ["Moriae Encomium", "The Praise of Folly"] },
   { title: "Common Sense", author: "Thomas Paine", why: "Fifty cents and forty-seven pages that turned a colonial tax dispute into an argument for outright independence — sold, per capita, more copies than any book in American history, Bible included." },
   { title: "Beyond Good and Evil", author: "Friedrich Nietzsche", why: "Morality's family tree traced back to power and instinct rather than truth, in aphorisms rather than sustained argument — the manifesto that On the Genealogy of Morals, already here as a Must Read, was written a year later to formalize into essays.", aka: ["Beyond Good and Evil: Prelude to a Philosophy of the Future"] },
+
+  // 2026-08-06 (daily curation pass, round 39): four titles closing a
+  // three-way poetry gap this list had somehow left open despite deep
+  // coverage everywhere else (Sappho, Whitman in Must Read, Eliot, Walcott,
+  // Neruda, Bashō) — English Romanticism, American lyric's other founder,
+  // and classical Chinese verse — plus one physics companion to Newton's
+  // Principia, already here. Li Bai/Du Fu were flagged as a candidate pool
+  // on 2026-07-26 but never actually added; closed that overdue gap today.
+  { title: "Songs of Innocence and of Experience", author: "William Blake", why: "Hand-engraved, hand-printed, and hand-colored by Blake himself because no ordinary press could be trusted with it — innocence and experience set side by side as the two contrary states every soul cycles through. English Romantic poetry's founding text, on a list that otherwise jumps straight from Milton to Whitman with nothing in between.", aka: ["Songs of Innocence and Experience", "Songs of Innocence", "Songs of Experience"] },
+  { title: "The Complete Poems of Emily Dickinson", author: "Emily Dickinson", why: "Fewer than a dozen of her nearly 1,800 poems published in her lifetime; her sister found the rest in a locked box after her death in 1886, and the first collection appeared in 1890 with the dashes and slant rhymes smoothed out for Victorian taste. Compression and private cosmology as a whole poetics — American lyric's other founder, the quiet counterweight to Whitman's shout, already in Must Read." },
+  { title: "The Selected Poems of Du Fu", author: "Du Fu", why: "China's 'Poet Sage' — a scholar's son who failed the imperial exams, lived through the An Lushan Rebellion's famine and exile, and turned both into poems of such technical control and moral seriousness that, alongside his friend Li Bai, no later Chinese poet has been read as closely since. Classical Chinese verse's missing entry on a list with deep classical-Chinese fiction (all Four Great Classical Novels) and philosophy (Analects, Zhuangzi, Mencius) but nothing from its poetry.", aka: ["Du Fu: Selected Poems", "Tu Fu", "The Poetry of Du Fu"] },
+  { title: "Relativity: The Special and General Theory", author: "Albert Einstein", why: "Space and time unbuilt and rebuilt by the man who did it, explained in December 1916 for readers with no calculus required — physics' other founding text, the popular-but-authoritative companion Newton's Principia, already here, never had until now." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
