@@ -768,13 +768,44 @@ Deno.serve(async (req) => {
 
     const ip = getClientIp(req);
     const ipHash = await hashIp(ip);
+    // 2026-08-06 daily backend audit: this RPC runs sequentially BEFORE the
+    // OL/GB/canon Promise.allSettled even starts, on every single cache-miss
+    // request — so unlike the 2026-08-05 canon-RPC fix (which only bounded a
+    // call already racing inside a shared budget), this one had no timeout
+    // AND sat fully outside any parallel/bounded budget, meaning a slow
+    // count_recent_events call (DB load spike, lock contention) added its
+    // full delay on top of everything else, unconditionally, for every
+    // request. The existing try/catch only fails open on an RPC *error*, not
+    // a hang — same gap shape as every prior entry in this file's timeout
+    // lineage, just on a call upstream of where previous passes were looking.
+    // Bounded with the same Promise.race-timeout-to-safe-default pattern;
+    // fails open (treats as "under limit") on both error and timeout, since
+    // false negatives here just mean a very rare skipped rate-limit check,
+    // not a correctness bug.
+    const RATE_LIMIT_RPC_TIMEOUT_MS = 800;
     try {
-      const { data: count } = await adminClient.rpc("count_recent_events", {
-        p_ip_hash: ipHash,
-        p_route: ROUTE,
-        p_window_seconds: 3600,
-        p_prefetch_only: false,
-      });
+      const countPromise = adminClient
+        .rpc("count_recent_events", {
+          p_ip_hash: ipHash,
+          p_route: ROUTE,
+          p_window_seconds: 3600,
+          p_prefetch_only: false,
+        })
+        .then(({ data, error }: { data: number | null; error: unknown }) => {
+          if (error) throw error;
+          return data;
+        });
+      const count = await Promise.race([
+        countPromise,
+        new Promise<null>((resolve) => {
+          const timer = setTimeout(() => {
+            timings.rate_limit_check_timed_out = 1;
+            resolve(null);
+          }, RATE_LIMIT_RPC_TIMEOUT_MS);
+          // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+          if (timer?.unref) timer.unref();
+        }),
+      ]);
       if (typeof count === "number" && count >= RATE_LIMIT) {
         timings.total = Math.round(performance.now() - t0);
         console.log(JSON.stringify({ fn: "search-books", cache: "rate_limited", q: queryKey, timings }));
