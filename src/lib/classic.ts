@@ -1246,6 +1246,54 @@ import { isMustRead } from "@/lib/must-read";
  * bar — no new promotion flag this round.
  *
  * Classic count: 274 → 278 (178 fiction + 100 non-fiction).
+ *
+ * 2026-08-07 (daily curation pass, round 40): five titles, vetted against
+ * moser-the-librarian's rubric, closing four more world-poetry gaps in one
+ * sweep plus one independent non-fiction pick. Grepped a fresh candidate
+ * pool first — "Li Bai"/"Li Po", "Khayyam", "Rubaiyat", "Hughes", "Lorca",
+ * "Avicenna", "Ibn Sina", "Canon of Medicine" — across both lists; all
+ * confirmed genuine zero-hits (Li Bai appears only in this file's own prose,
+ * flagged as a candidate on 2026-07-26 and again in round 39's header, but
+ * never actually added as an entry until now). Li Bai's Selected Poems
+ * closes that overdue gap directly: Du Fu's own entry (added round 39)
+ * names Li Bai as his lifelong friend and the only other Tang poet read as
+ * closely — an odd omission to leave standing a full round later. The
+ * Rubaiyat of Omar Khayyam (tr. Edward FitzGerald, 1859) closes a second
+ * Persian-poetry gap this list's existing coverage (the Shahnameh's
+ * dynastic epic, Rumi's Sufi devotional Masnavi) never touched — the
+ * skeptical, carpe-diem quatrain tradition, plus one of English poetry's
+ * strangest afterlives: FitzGerald's translation sold as penny clearance
+ * stock at first, then became so admired by the Pre-Raphaelites that
+ * dedicated "Omar Khayyam Clubs" were founding across the English-speaking
+ * world by the 1880s. Langston Hughes's The Weary Blues (1926, Alfred A.
+ * Knopf) closes African American poetry's total absence from a list that
+ * already carries Du Bois, Baldwin, and Morrison in prose — blues and jazz
+ * rhythm braided into verse for the first time, written when Hughes was
+ * twenty-four and still the way most readers first meet the Harlem
+ * Renaissance in poetry. Federico García Lorca's Gypsy Ballads (Romancero
+ * Gitano, composed 1924-1927, published 1928) closes Spanish-language
+ * poetry's total absence — eighteen ballads in traditional eight-syllable
+ * meter that made Lorca Spain's most-read twentieth-century poet almost
+ * overnight, and the book he was already famous for when Francoist rebels
+ * shot him at the outset of the Civil War in 1936. Non-fiction: Avicenna's
+ * The Canon of Medicine (completed 1025) closes a gap in Islamic-world
+ * non-fiction distinct from the two entries already here (Ibn Khaldun's
+ * historical sociology in Must Read, Rumi's mysticism above) — medicine and
+ * natural science specifically, and about as Lindy-proven as a book can get:
+ * the standard medical textbook in European universities until the
+ * mid-seventeenth century and in parts of the Middle East into the
+ * nineteenth, reissued sixteen times in the last thirty years of the
+ * fifteenth century alone. All five facts (Li Bai's dates and ~1,100
+ * surviving poems, FitzGerald's 1859 first edition and its slow rise via
+ * the Pre-Raphaelites, Hughes's 1926 Knopf publication at age twenty-four,
+ * Lorca's 1924-1927 composition window and 1936 death, Avicenna's 1025
+ * completion date and its textbook lifespan) independently verified via
+ * WebSearch rather than trusted from recall. All five clear the Lindy/
+ * A-tier bar with room to spare; none rise to Must Read's "unmissable" bar
+ * — no new promotion flag this round. The Lord of the Rings flag
+ * (2026-07-30) remains the sole open Must Read candidate, unaffected.
+ *
+ * Classic count: 278 → 283 (182 fiction + 101 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -1558,6 +1606,18 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Complete Poems of Emily Dickinson", author: "Emily Dickinson", why: "Fewer than a dozen of her nearly 1,800 poems published in her lifetime; her sister found the rest in a locked box after her death in 1886, and the first collection appeared in 1890 with the dashes and slant rhymes smoothed out for Victorian taste. Compression and private cosmology as a whole poetics — American lyric's other founder, the quiet counterweight to Whitman's shout, already in Must Read." },
   { title: "The Selected Poems of Du Fu", author: "Du Fu", why: "China's 'Poet Sage' — a scholar's son who failed the imperial exams, lived through the An Lushan Rebellion's famine and exile, and turned both into poems of such technical control and moral seriousness that, alongside his friend Li Bai, no later Chinese poet has been read as closely since. Classical Chinese verse's missing entry on a list with deep classical-Chinese fiction (all Four Great Classical Novels) and philosophy (Analects, Zhuangzi, Mencius) but nothing from its poetry.", aka: ["Du Fu: Selected Poems", "Tu Fu", "The Poetry of Du Fu"] },
   { title: "Relativity: The Special and General Theory", author: "Albert Einstein", why: "Space and time unbuilt and rebuilt by the man who did it, explained in December 1916 for readers with no calculus required — physics' other founding text, the popular-but-authoritative companion Newton's Principia, already here, never had until now." },
+
+  // 2026-08-07 (daily curation pass, round 40): five titles closing four
+  // world-poetry gaps plus one Islamic-world science pick. Li Bai/Khayyam/
+  // Hughes/Lorca close a candidate pool flagged as far back as 2026-07-26
+  // (Li Bai specifically) and reflagged in round 39's own header; Avicenna
+  // closes a distinct Islamic-world non-fiction gap (medicine/natural
+  // science) beside Ibn Khaldun's history and Rumi's mysticism.
+  { title: "Selected Poems of Li Bai", author: "Li Bai", why: "Tang China's other giant, alongside his lifelong friend Du Fu (already here) — extravagant, Taoist-inflected imagination, a legendary love of wine, and a death said to have come from leaning out of a boat, drunk, to embrace the moon's reflection in the river. ~1,100 poems survive; closes the overdue gap left open when Du Fu's own entry named him a round ago.", aka: ["Li Po", "Li Bo", "The Selected Poems of Li Po"] },
+  { title: "The Rubaiyat of Omar Khayyam", author: "Omar Khayyam", why: "A Persian astronomer-mathematician's skeptical, carpe-diem quatrains, rendered into English by Edward FitzGerald in 1859 — sold off as penny clearance stock at first, then adopted so completely by the Pre-Raphaelites that dedicated 'Omar Khayyam Clubs' had sprung up across the English-speaking world within thirty years. Persian poetry's carpe-diem strand, distinct from the Shahnameh's epic and Rumi's mysticism, both already here.", aka: ["Rubaiyat of Omar Khayyam", "The Rubáiyát of Omar Khayyám"] },
+  { title: "The Weary Blues", author: "Langston Hughes", why: "Blues and jazz rhythm braided into verse for the first time, published by Alfred A. Knopf in 1926 when Hughes was twenty-four — 'The Negro Speaks of Rivers' and 'I, Too' among its best-known poems. Closes African American poetry's total absence from a list that already carries Du Bois, Baldwin, and Morrison in prose, and remains most readers' first encounter with the Harlem Renaissance in verse." },
+  { title: "Gypsy Ballads", author: "Federico García Lorca", why: "Eighteen ballads in traditional eight-syllable meter, composed 1924-1927 and published 1928, that made Lorca Spain's most-read poet of the century almost overnight — Spanish-language poetry's total absence, closed. He was already famous for this book when Francoist rebels shot him at the outset of the Civil War in 1936.", aka: ["Romancero Gitano", "Gypsy Ballads: Romancero Gitano"] },
+  { title: "The Canon of Medicine", author: "Avicenna", why: "A five-volume medical encyclopedia completed in 1025, synthesizing Greek, Roman, Indian, and Persian medicine with the author's own clinical observations — the standard medical textbook in European universities until the mid-seventeenth century and in parts of the Middle East into the nineteenth, reissued sixteen times in the last thirty years of the fifteenth century alone. Islamic-world science and medicine, distinct from Ibn Khaldun's historical sociology (Must Read) and Rumi's mysticism, both already here.", aka: ["Al-Qanun fi al-Tibb", "The Canon"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
