@@ -724,12 +724,45 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 2026-08-07 daily perf pass: this is the FIRST DB call on every single
+    // search-books request — cache HITS and cache MISSES alike, unlike the
+    // rate-limit RPC (fixed 2026-08-06) and canon RPC (fixed 2026-08-05)
+    // below, which only run on the cache-miss path. It had zero timeout
+    // protection despite sitting upstream of everything else, so a DB-side
+    // stall here (lock contention, load spike) added its full unbounded
+    // delay to literally 100% of traffic before any other budget even
+    // started — the worst single-point-of-failure shape in this whole
+    // pipeline. A cache-miss "determined sapolsky" request logged at 8003ms
+    // in prod, well above the ~4.3s theoretical worst case implied by the
+    // OL/GB/canon/rate-limit budgets combined, consistent with this being
+    // the unaccounted-for stall. Same fail-open Promise.race pattern as the
+    // other two RPC fixes: a plain equality lookup on an indexed column is
+    // normally sub-50ms, so 1000ms is generous headroom; on timeout it
+    // degrades to a cache miss (re-fetches from OL/GB/canon) rather than
+    // blocking the response, which is always correct behavior, just slower.
+    const CACHE_READ_TIMEOUT_MS = 1000;
     const cacheT0 = performance.now();
-    const { data: cacheRow } = await adminClient
+    const cacheReadPromise = adminClient
       .from("search_cache")
       .select("results, last_accessed_at")
       .eq("query_key", queryKey)
-      .maybeSingle();
+      .maybeSingle()
+      .then(({ data, error }: { data: { results: unknown; last_accessed_at: string } | null; error: unknown }) => {
+        if (error) throw error;
+        return data;
+      });
+    Promise.resolve(cacheReadPromise).catch(() => {});
+    const cacheRow = await Promise.race([
+      cacheReadPromise,
+      new Promise<null>((resolve) => {
+        const timer = setTimeout(() => {
+          timings.cache_read_timed_out = 1;
+          resolve(null);
+        }, CACHE_READ_TIMEOUT_MS);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
     timings.cache_read = Math.round(performance.now() - cacheT0);
 
     const isFresh = cacheRow?.last_accessed_at &&
