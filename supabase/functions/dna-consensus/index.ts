@@ -22,6 +22,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 
 // ---------- Tunables ----------
 const PRIOR_WEIGHT = 5; // original Gemini score counts as this many "votes"
@@ -144,9 +145,9 @@ Deno.serve(async (req) => {
     const ipHash = await hashIp(ip);
     const usingServerKey = !(typeof userKey === "string" && userKey.trim());
     if (usingServerKey) {
-      const { data: rlCount } = await admin.rpc("count_recent_events", {
+      const rlCount = await raceRateLimitCount(admin.rpc("count_recent_events", {
         p_ip_hash: ipHash, p_route: ROUTE, p_window_seconds: 3600, p_prefetch_only: false,
-      });
+      }));
       if (typeof rlCount === "number" && rlCount >= RATE_LIMIT) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },

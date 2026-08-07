@@ -6,6 +6,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 
 // ---------- Rate limiting ----------
 const ROUTE = "recommend-by-dna";
@@ -224,12 +225,12 @@ Deno.serve(async (req) => {
   // ---------- Rate-limit gate (only reached on a genuine cache miss) ----------
   const ip = getClientIp(req);
   const ipHash = await hashIp(ip);
-  const { data: rlCount } = await admin.rpc("count_recent_events", {
+  const rlCount = await raceRateLimitCount(admin.rpc("count_recent_events", {
     p_ip_hash: ipHash,
     p_route: ROUTE,
     p_window_seconds: 3600,
     p_prefetch_only: false,
-  });
+  }));
   if (typeof rlCount === "number" && rlCount >= RATE_LIMIT) {
     return new Response(
       JSON.stringify({ error: "Rate limit exceeded. Please wait before requesting more DNA recommendations." }),

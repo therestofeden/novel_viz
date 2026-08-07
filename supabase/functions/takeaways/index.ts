@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 
 // ─── SSE helpers ──────────────────────────────────────────────────────────────
 
@@ -330,19 +331,19 @@ Deno.serve(async (req) => {
     // into its own counter bucket under a distinct route key.
     const userIdHash = await hashIp(user.id);
     try {
-      const [{ data: ipCount }, { data: userCount }] = await Promise.all([
-        supabase.rpc("count_recent_events", {
+      const [ipCount, userCount] = await Promise.all([
+        raceRateLimitCount(supabase.rpc("count_recent_events", {
           p_ip_hash: ipHash,
           p_route: ROUTE,
           p_window_seconds: 3600,
           p_prefetch_only: false,
-        }),
-        supabase.rpc("count_recent_events", {
+        })),
+        raceRateLimitCount(supabase.rpc("count_recent_events", {
           p_ip_hash: userIdHash,
           p_route: `${ROUTE}:user`,
           p_window_seconds: 3600,
           p_prefetch_only: false,
-        }),
+        })),
       ]);
       if (
         (typeof ipCount === "number" && ipCount >= RATE_LIMIT) ||

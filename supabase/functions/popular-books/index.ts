@@ -10,6 +10,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 
 interface PopularBook {
   title: string;
@@ -97,12 +98,12 @@ Deno.serve(async (req) => {
     const ip = getClientIp(req);
     const ipHash = await hashIp(ip);
     try {
-      const { data: count } = await supabase.rpc("count_recent_events", {
+      const count = await raceRateLimitCount(supabase.rpc("count_recent_events", {
         p_ip_hash: ipHash,
         p_route: ROUTE,
         p_window_seconds: 3600,
         p_prefetch_only: false,
-      });
+      }));
       if (typeof count === "number" && count >= RATE_LIMIT) {
         console.log(JSON.stringify({ fn: "popular-books", cache: "rate_limited" }));
         // Prefer serving a stale memo over a hard failure — this is a public

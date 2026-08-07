@@ -7,6 +7,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 
 const ROUTE = "recommend-anti-shelf";
 
@@ -267,19 +268,19 @@ Deno.serve(async (req) => {
     const ipHash = await hashIp(ip);
     const userIdHash = await hashIp(userId);
     try {
-      const [{ data: count }, { data: userCount }] = await Promise.all([
-        admin.rpc("count_recent_events", {
+      const [count, userCount] = await Promise.all([
+        raceRateLimitCount(admin.rpc("count_recent_events", {
           p_ip_hash: ipHash,
           p_route: ROUTE,
           p_window_seconds: 3600,
           p_prefetch_only: false,
-        }),
-        admin.rpc("count_recent_events", {
+        })),
+        raceRateLimitCount(admin.rpc("count_recent_events", {
           p_ip_hash: userIdHash,
           p_route: `${ROUTE}:user`,
           p_window_seconds: 3600,
           p_prefetch_only: false,
-        }),
+        })),
       ]);
       if (
         (typeof count === "number" && count >= 20) ||

@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL, GEMINI_BASE, MODEL_FALLBACKS, recordGeminiSpend, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 
 // The raw preamble fetch and callPreview both bypass the shared
 // geminiFetchWithFallback — they're best-effort, short-timeout, no-retry
@@ -1283,9 +1284,9 @@ Deno.serve(async (req) => {
   if (!isInternalSeed) {
     try {
       if (isPrefetch) {
-        const { data: count } = await supabase.rpc("count_recent_events", {
+        const count = await raceRateLimitCount(supabase.rpc("count_recent_events", {
           p_ip_hash: ipHash, p_route: route, p_window_seconds: 3600, p_prefetch_only: true,
-        });
+        }));
         if ((count ?? 0) >= LIMITS.prefetchPerHour) {
           return new Response(
             JSON.stringify({ error: "Prefetch rate limit reached." }),
@@ -1293,13 +1294,13 @@ Deno.serve(async (req) => {
           );
         }
       } else {
-        const [{ data: hourCount }, { data: dayCount }] = await Promise.all([
-          supabase.rpc("count_recent_events", {
+        const [hourCount, dayCount] = await Promise.all([
+          raceRateLimitCount(supabase.rpc("count_recent_events", {
             p_ip_hash: ipHash, p_route: route, p_window_seconds: 3600, p_prefetch_only: false,
-          }),
-          supabase.rpc("count_recent_events", {
+          })),
+          raceRateLimitCount(supabase.rpc("count_recent_events", {
             p_ip_hash: ipHash, p_route: route, p_window_seconds: 86400, p_prefetch_only: false,
-          }),
+          })),
         ]);
         if ((hourCount ?? 0) >= LIMITS.realPerHour) {
           return new Response(
