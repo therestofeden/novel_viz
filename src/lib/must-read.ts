@@ -186,6 +186,10 @@ import { normalizeForSearch } from "@/lib/utils";
  * arguably exceeds Foundation's (also Classic), and it's the specific
  * book Foundation's own entry measures itself against. Left for Stefano's
  * own review, same standing default as every prior flag.
+ *
+ * 2026-08-07 (Stefano's direct instruction, live turn): The Lord of the
+ * Rings flag above reviewed and declined — stays at Classic, not promoted.
+ * No open Must Read promotion flags remain.
  */
 
 export type MustReadEntry = {
