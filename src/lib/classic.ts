@@ -1690,6 +1690,33 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Les Fleurs du Mal", author: "Charles Baudelaire", why: "Prosecuted for obscenity within a month of its 1857 publication — six poems banned by a Paris court and not legally restored until 1949 — from the poet Rimbaud called a genius and a visionary, and Verlaine credited with inventing modern man in verse. French Symbolist poetry's founding text, and the direct root T.S. Eliot's own Waste Land, already here, grew from.", aka: ["The Flowers of Evil", "Flowers of Evil"] },
   { title: "Duino Elegies", author: "Rainer Maria Rilke", why: "Ten years in the writing — begun at a castle on the Adriatic in 1912, stalled through the trauma of the First World War, then finished in a three-week creative burst in 1922 that also produced the Sonnets to Orpheus. Angels, mortality, and the difficulty of being fully present to one's own life, in German lyric poetry's clearest twentieth-century peak; this list's German representation was philosophy and the novel until now, with no poetry at all.", aka: ["Duineser Elegien", "The Duino Elegies"] },
   { title: "Dialogue Concerning the Two Chief World Systems", author: "Galileo Galilei", why: "Three characters argue Copernicus's heliocentrism against Ptolemy's earth-centered universe across four days of conversation — published in 1632 with a papal license, then the direct evidence used to try Galileo before the Inquisition and force his public recantation the following year. The scientific revolution's other founding text, arguing the very possibility Newton's Principia, already here, would go on to complete mathematically.", aka: ["Dialogue Concerning the Two Chief World Systems: Ptolemaic and Copernican", "Dialogo sopra i due massimi sistemi del mondo"] },
+
+  // 2026-08-08 (daily curation pass, round 42, second same-day pass): five
+  // more titles closing five further gaps found on a fresh sweep after
+  // round 41. Shakespeare's total footprint on this list was just two plays
+  // (Hamlet, King Lear, both Must Read) — Macbeth gives him a Classic-tier
+  // entry and closes the "only the two Must Read tragedies" gap, the same
+  // shape of oversight as round 41's Antigone/Sophocles fix. The Castle is
+  // Kafka's third entry (Metamorphosis and The Trial are both Must Read),
+  // within the multi-entry precedent this file's header already grants
+  // several authors, and specifically closes the gap that only his shorter
+  // work was represented, not either of his two great unfinished novels.
+  // Thus Spoke Zarathustra was explicitly flagged as a candidate as far
+  // back as this file's creation (see must-read.ts's own header note,
+  // 2026-07-14: "kept [Genealogy of Morals] over the more culturally iconic
+  // Thus Spoke Zarathustra... Zarathustra remains a candidate") but never
+  // actually added anywhere — added here at Classic tier, Nietzsche's third
+  // entry alongside Genealogy (Must Read) and Beyond Good and Evil
+  // (Classic), consistent with the multi-entry precedent. The Kalevala and
+  // Popol Vuh close two independent total-absence gaps in the world-epic
+  // cluster (Gilgamesh, Beowulf, Shahnameh, Ramayana, Mahabharata, Poetic
+  // Edda, Sundiata, all already here): Finland's national epic, and the
+  // Americas' total absence from that cluster until now.
+  { title: "Macbeth", author: "William Shakespeare", why: "A prophecy, an ambitious wife, and a murdered king's blood that won't wash off — written around 1606 in the shadow of the just-discovered Gunpowder Plot, and first printed only in the 1623 First Folio, seven years after Shakespeare's death. His shortest and bloodiest tragedy, and this list's only Shakespeare beyond the two Must Read plays (Hamlet, King Lear)." },
+  { title: "The Castle", author: "Franz Kafka", why: "A land surveyor summoned to a village spends the whole novel failing to reach the castle that summoned him, or even to confirm the summons was real — Kafka broke off mid-sentence in 1922, left instructions to burn it, and his executor Max Brod published it anyway in 1926, two years after Kafka's death. Bureaucracy as an unreachable, possibly nonexistent God; Kafka's third entry alongside The Metamorphosis and The Trial, both already Must Read.", aka: ["Das Schloss", "Das Schloß"] },
+  { title: "Thus Spoke Zarathustra", author: "Friedrich Nietzsche", why: "A prophet descends from his mountain to announce the death of God and the coming of the Übermensch, in verse-like parables rather than argument — published in four parts between 1883 and 1885 (the fourth printed in just forty copies), and eternal recurrence's first full statement. Explicitly flagged as a candidate when this list was founded in 2026-07-14 and never actually added until now; Nietzsche's third entry alongside On the Genealogy of Morals (Must Read) and Beyond Good and Evil, already here.", aka: ["Also sprach Zarathustra", "Thus Spake Zarathustra"] },
+  { title: "The Kalevala", author: "Anonymous", why: "Compiled by Elias Lönnrot from oral folk songs collected on journeys through 19th-century Karelia — the 'Old Kalevala' in 1835, expanded into its standard 50-poem, 22,000-verse form as the 'New Kalevala' in 1849. Finland's national epic, credited with anchoring a Finnish national identity under Russian rule and a direct influence Tolkien named on The Lord of the Rings, already here — the world-epic cluster's Finnish entry, alongside Gilgamesh, Beowulf, the Shahnameh, and the Poetic Edda.", aka: ["Kalevala"] },
+  { title: "Popol Vuh", author: "Anonymous", why: "The K'iche' Maya creation narrative — failed attempts to make humans from mud and wood before the gods succeed with maize, and the Hero Twins' underworld trickery against the Lords of Death — set down in the Latin alphabet around 1554-1558 by K'iche' authors writing under Spanish colonial pressure, then copied and translated into Spanish around 1701 by the Dominican friar Francisco Ximénez after the original K'iche' manuscript was lost. The Americas' total absence from this list's world-epic cluster, closed.", aka: ["Popol Wuj", "The Book of the People"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────

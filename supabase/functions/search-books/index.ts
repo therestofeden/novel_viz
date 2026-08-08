@@ -1289,11 +1289,45 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 2026-08-08 daily perf pass: this "is it already analyzed" badge lookup
+    // (drives the `cached: true` / +18 score boost only — never gates
+    // results) is the LAST DB call on every single cache-miss request, and
+    // was the one remaining stage in this pipeline with no timeout at all,
+    // despite sitting after five other calls (cache read, rate-limit RPC,
+    // OL primary/fanout/fuzzy, GB, canon RPC) that were each independently
+    // bounded across the 2026-07-25 through 2026-08-07 perf passes. A DB-side
+    // stall here (lock contention, load spike) would add its full unbounded
+    // delay right before the response is finally sent, after all that other
+    // tuning. Same fail-open Promise.race pattern as the rest of this file:
+    // cache_key has a unique index, so a plain IN() lookup is normally
+    // sub-50ms; 800ms is generous headroom. On timeout, degrades to "nothing
+    // is cached" — every candidate just misses the cosmetic badge/score
+    // boost for this one response, never a correctness or availability bug.
+    const ANALYSIS_LOOKUP_TIMEOUT_MS = 800;
     const analysisT0 = performance.now();
     const analysisKeys = candidates.map((c) => buildAnalysisCacheKey(c.title, c.author));
-    const { data: cachedAnalysisRows } = analysisKeys.length > 0
-      ? await adminClient.from("novel_analyses").select("cache_key").in("cache_key", analysisKeys)
-      : { data: [] as Array<{ cache_key: string }> };
+    const cachedAnalysisRows = analysisKeys.length > 0
+      ? await Promise.race([
+        Promise.resolve(
+          adminClient
+            .from("novel_analyses")
+            .select("cache_key")
+            .in("cache_key", analysisKeys)
+            .then(({ data, error }: { data: Array<{ cache_key: string }> | null; error: unknown }) => {
+              if (error) throw error;
+              return data ?? [];
+            }),
+        ).catch(() => [] as Array<{ cache_key: string }>),
+        new Promise<Array<{ cache_key: string }>>((resolve) => {
+          const timer = setTimeout(() => {
+            timings.analysis_lookup_timed_out = 1;
+            resolve([]);
+          }, ANALYSIS_LOOKUP_TIMEOUT_MS);
+          // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+          if (timer?.unref) timer.unref();
+        }),
+      ])
+      : ([] as Array<{ cache_key: string }>);
     timings.analysis_lookup = Math.round(performance.now() - analysisT0);
 
     const cachedSet = new Set<string>();
