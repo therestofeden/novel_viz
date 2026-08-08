@@ -190,6 +190,19 @@ import { normalizeForSearch } from "@/lib/utils";
  * 2026-08-07 (Stefano's direct instruction, live turn): The Lord of the
  * Rings flag above reviewed and declined — stays at Classic, not promoted.
  * No open Must Read promotion flags remain.
+ *
+ * 2026-08-08 (daily curation pass, round 41): this file itself untouched
+ * — see classic.ts's own 2026-08-08 note for that day's 5-title Classic
+ * addition (The Quran, Antigone, Les Fleurs du Mal, Duino Elegies,
+ * Dialogue Concerning the Two Chief World Systems). One new open flag
+ * from that round: The Quran, as a possible Must Read promotion — its
+ * world-historical weight (read today by well over a billion people,
+ * standardized into a single canonical text under Caliph Uthman around
+ * 650 CE) arguably rivals or exceeds several works already here, though
+ * note this isn't a clean call either way since its closest analogues on
+ * these two lists (the Bhagavad Gita, the Upanishads) are themselves only
+ * Classic, not Must Read. Left for Stefano's own review, same standing
+ * default as every prior flag.
  */
 
 export type MustReadEntry = {

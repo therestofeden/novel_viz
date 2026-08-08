@@ -1294,6 +1294,52 @@ import { isMustRead } from "@/lib/must-read";
  * (2026-07-30) remains the sole open Must Read candidate, unaffected.
  *
  * Classic count: 278 → 283 (182 fiction + 101 non-fiction).
+ *
+ * 2026-08-08 (daily curation pass, round 41): five titles closing five
+ * distinct, substantial gaps rather than another single-theme sweep.
+ * Grepped a fresh candidate pool first — "Antigone", "Quran", "Koran",
+ * "Baudelaire", "Rilke", "Galileo", "Sophocles" (present only via its own
+ * Must Read Oedipus Rex entry) — across both lists; all confirmed genuine
+ * zero-hits, including "Bible"/"Torah"/"New Testament" (mentioned only as
+ * a comparison point in two existing entries' prose, never as a title of
+ * their own). The Quran was the largest single gap found: standardized
+ * into a single canonical text under Caliph Uthman around 650 CE, with
+ * all divergent copies ordered destroyed, and read today by well over a
+ * billion people — this list already had room for the Bhagavad Gita, Tao
+ * Te Ching, Analects, and the Upanishads, so the Quran's total absence
+ * looked more like an oversight than a judgment call. Flagged in
+ * must-read.ts as a possible Must Read candidate given its comparable
+ * world-historical weight to those texts (Bhagavad Gita and the Upanishads
+ * are themselves only Classic, so this isn't a clean slot either way) —
+ * not promoted here, per the standing default that S-tier calls are
+ * Stefano's alone. Antigone gives Sophocles a second, independently
+ * merited entry beside Oedipus Rex — a different play, a different
+ * conflict (family duty against the state, first performed around 441
+ * BC), and the exact text Hegel's Phenomenology of Spirit, already here,
+ * builds one of its most celebrated readings on. Les Fleurs du Mal (1857)
+ * closes French Symbolist poetry's total absence: prosecuted for
+ * obscenity within a month of publication (six poems banned by a Paris
+ * court, not legally restored until 1949), and the book Rimbaud and
+ * Verlaine both credited by name as the direct root T.S. Eliot's own
+ * Waste Land, already here, grew from. Duino Elegies closes German-
+ * language lyric poetry's gap — this list's German representation was
+ * philosophy (Kant, Nietzsche, Heidegger, and more) and the novel
+ * (Buddenbrooks, The Magic Mountain) until now, with no poetry at all;
+ * ten years in the writing, stalled through the trauma of the First World
+ * War, finished in a three-week burst in 1922. Dialogue Concerning the
+ * Two Chief World Systems (1632) pairs with Newton's Principia, already
+ * here, as the scientific revolution's other founding text — and the
+ * book that put Galileo before the Inquisition and forced his public
+ * recantation the following year. All five facts (the Uthmanic
+ * standardization date, Antigone's performance date and its role in
+ * Hegel, the 1857 trial and 1949 restoration, Duino Elegies' 1912-1922
+ * composition window, the 1632 publication and 1633 trial) independently
+ * verified via WebSearch rather than trusted from recall. All five clear
+ * the Lindy/A-tier bar with room to spare; none rise to Must Read's
+ * "unmissable" bar on their own — no new promotion flag this round beyond
+ * the Quran note above.
+ *
+ * Classic count: 283 → 288 (185 fiction + 103 non-fiction).
  */
 
 export type ClassicEntry = {
@@ -1618,6 +1664,32 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Weary Blues", author: "Langston Hughes", why: "Blues and jazz rhythm braided into verse for the first time, published by Alfred A. Knopf in 1926 when Hughes was twenty-four — 'The Negro Speaks of Rivers' and 'I, Too' among its best-known poems. Closes African American poetry's total absence from a list that already carries Du Bois, Baldwin, and Morrison in prose, and remains most readers' first encounter with the Harlem Renaissance in verse." },
   { title: "Gypsy Ballads", author: "Federico García Lorca", why: "Eighteen ballads in traditional eight-syllable meter, composed 1924-1927 and published 1928, that made Lorca Spain's most-read poet of the century almost overnight — Spanish-language poetry's total absence, closed. He was already famous for this book when Francoist rebels shot him at the outset of the Civil War in 1936.", aka: ["Romancero Gitano", "Gypsy Ballads: Romancero Gitano"] },
   { title: "The Canon of Medicine", author: "Avicenna", why: "A five-volume medical encyclopedia completed in 1025, synthesizing Greek, Roman, Indian, and Persian medicine with the author's own clinical observations — the standard medical textbook in European universities until the mid-seventeenth century and in parts of the Middle East into the nineteenth, reissued sixteen times in the last thirty years of the fifteenth century alone. Islamic-world science and medicine, distinct from Ibn Khaldun's historical sociology (Must Read) and Rumi's mysticism, both already here.", aka: ["Al-Qanun fi al-Tibb", "The Canon"] },
+
+  // 2026-08-08 (daily curation pass, round 41): five titles closing five
+  // distinct, substantial gaps. The Quran's total absence was the largest
+  // one found — this list already carries the Bhagavad Gita, Tao Te Ching,
+  // Analects, and the Upanishads, but not Islam's own foundational
+  // scripture; flagged in must-read.ts as a possible Must Read candidate
+  // given its comparable world-historical weight to those texts, but not
+  // promoted here — S-tier calls remain Stefano's, per the standing
+  // default. Antigone gives Sophocles a second, independently merited
+  // entry beside his Must Read Oedipus Rex: a different play, a different
+  // conflict (family duty against the state), and the exact text Hegel's
+  // Phenomenology of Spirit, already here, builds one of its most
+  // celebrated readings on. Les Fleurs du Mal closes French Symbolist
+  // poetry's total absence — the book Rimbaud and Verlaine both credited
+  // by name, and the direct root T.S. Eliot's own Waste Land, already
+  // here, grew from. Duino Elegies closes German-language lyric poetry's
+  // gap; this list's German representation was philosophy and the novel
+  // until now, no poetry at all. Dialogue Concerning the Two Chief World
+  // Systems pairs with Newton's Principia, already here, as the
+  // scientific revolution's other founding text — and the book that put
+  // Galileo before the Inquisition.
+  { title: "The Quran", author: "Anonymous", why: "Recited by Muhammad over 23 years and standardized into a single canonical text under Caliph Uthman around 650 CE, with all divergent copies ordered destroyed — the foundational scripture of a civilization of over a billion readers, on a list that already had room for the Bhagavad Gita, Tao Te Ching, and Upanishads.", aka: ["Koran", "The Koran", "Al-Quran", "The Holy Quran"] },
+  { title: "Antigone", author: "Sophocles", why: "A sister defies the king's decree and buries her brother anyway, choosing unwritten divine law over the state's — first performed around 441 BC, and the exact text Hegel's Phenomenology of Spirit, already here, builds one of its most celebrated arguments on: family duty against civic law as ethical life's founding conflict. Sophocles's second entry, independently merited alongside his Must Read Oedipus Rex.", aka: ["Antigonē"] },
+  { title: "Les Fleurs du Mal", author: "Charles Baudelaire", why: "Prosecuted for obscenity within a month of its 1857 publication — six poems banned by a Paris court and not legally restored until 1949 — from the poet Rimbaud called a genius and a visionary, and Verlaine credited with inventing modern man in verse. French Symbolist poetry's founding text, and the direct root T.S. Eliot's own Waste Land, already here, grew from.", aka: ["The Flowers of Evil", "Flowers of Evil"] },
+  { title: "Duino Elegies", author: "Rainer Maria Rilke", why: "Ten years in the writing — begun at a castle on the Adriatic in 1912, stalled through the trauma of the First World War, then finished in a three-week creative burst in 1922 that also produced the Sonnets to Orpheus. Angels, mortality, and the difficulty of being fully present to one's own life, in German lyric poetry's clearest twentieth-century peak; this list's German representation was philosophy and the novel until now, with no poetry at all.", aka: ["Duineser Elegien", "The Duino Elegies"] },
+  { title: "Dialogue Concerning the Two Chief World Systems", author: "Galileo Galilei", why: "Three characters argue Copernicus's heliocentrism against Ptolemy's earth-centered universe across four days of conversation — published in 1632 with a papal license, then the direct evidence used to try Galileo before the Inquisition and force his public recantation the following year. The scientific revolution's other founding text, arguing the very possibility Newton's Principia, already here, would go on to complete mathematically.", aka: ["Dialogue Concerning the Two Chief World Systems: Ptolemaic and Copernican", "Dialogo sopra i due massimi sistemi del mondo"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
