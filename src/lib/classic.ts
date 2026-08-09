@@ -1717,6 +1717,31 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Thus Spoke Zarathustra", author: "Friedrich Nietzsche", why: "A prophet descends from his mountain to announce the death of God and the coming of the Übermensch, in verse-like parables rather than argument — published in four parts between 1883 and 1885 (the fourth printed in just forty copies), and eternal recurrence's first full statement. Explicitly flagged as a candidate when this list was founded in 2026-07-14 and never actually added until now; Nietzsche's third entry alongside On the Genealogy of Morals (Must Read) and Beyond Good and Evil, already here.", aka: ["Also sprach Zarathustra", "Thus Spake Zarathustra"] },
   { title: "The Kalevala", author: "Anonymous", why: "Compiled by Elias Lönnrot from oral folk songs collected on journeys through 19th-century Karelia — the 'Old Kalevala' in 1835, expanded into its standard 50-poem, 22,000-verse form as the 'New Kalevala' in 1849. Finland's national epic, credited with anchoring a Finnish national identity under Russian rule and a direct influence Tolkien named on The Lord of the Rings, already here — the world-epic cluster's Finnish entry, alongside Gilgamesh, Beowulf, the Shahnameh, and the Poetic Edda.", aka: ["Kalevala"] },
   { title: "Popol Vuh", author: "Anonymous", why: "The K'iche' Maya creation narrative — failed attempts to make humans from mud and wood before the gods succeed with maize, and the Hero Twins' underworld trickery against the Lords of Death — set down in the Latin alphabet around 1554-1558 by K'iche' authors writing under Spanish colonial pressure, then copied and translated into Spanish around 1701 by the Dominican friar Francisco Ximénez after the original K'iche' manuscript was lost. The Americas' total absence from this list's world-epic cluster, closed.", aka: ["Popol Wuj", "The Book of the People"] },
+
+  // 2026-08-09 (daily curation pass, round 43): five more titles, all
+  // poetry or verse-drama, closing five independent gaps rather than one
+  // theme — the same "several distinct oversights in one pass" shape as
+  // round 41. Petrarch's Canzoniere completes Florence's "Three Crowns"
+  // alongside Dante's Divine Comedy (Must Read) and Boccaccio's Decameron,
+  // already here — an odd trio to have left two-thirds represented.
+  // Tagore's Gitanjali closes Indian literature's total absence from
+  // modern poetry specifically (Ramayana, Mahabharata, and the Bhagavad
+  // Gita already cover epic and philosophy, but nothing written in the
+  // last thousand years). Akhmatova's Requiem closes Russian-language
+  // poetry's total absence on a list that runs deep in Russian prose
+  // (Tolstoy, Dostoevsky, both multi-entry authors here). Schiller's
+  // Wallenstein gives Goethe's own Weimar Classicism collaborator, and
+  // German drama generally, its first entry — Faust has stood alone in
+  // that slot since this list's founding. W.B. Yeats's Collected Poems
+  // closes modern English-language lyric poetry's gap and happens to
+  // connect directly to the Tagore entry added the same round: Yeats
+  // wrote Gitanjali's English introduction in 1912, a year before Tagore
+  // won the Nobel Prize Yeats himself would win a decade later.
+  { title: "Canzoniere", author: "Petrarch", why: "317 sonnets and other lyric poems addressed to Laura, written and endlessly revised from 1330 until Petrarch's death in 1374 — the founding text of the sonnet sequence, imitated across Europe by Wyatt, Shakespeare, and Ronsard for the next three centuries. Completes Florence's 'Three Crowns' alongside Dante's Divine Comedy (Must Read) and Boccaccio's Decameron, already here.", aka: ["Il Canzoniere", "Rerum vulgarium fragmenta", "Sonnets to Laura"] },
+  { title: "Gitanjali", author: "Rabindranath Tagore", why: "A Bengali poet's own English prose-translation of his devotional songs, published in London in November 1912 with an introduction by W.B. Yeats — within a year it made Tagore the first non-European ever awarded the Nobel Prize in Literature (1913). This list's Indian representation was epic and philosophy (the Ramayana, the Mahabharata, the Bhagavad Gita) with no modern poetry at all until now.", aka: ["Gitanjali: Song Offerings", "Song Offerings"] },
+  { title: "Requiem", author: "Anna Akhmatova", why: "Composed in fragments between 1935 and 1940 while her son sat in a Leningrad prison during Stalin's Great Terror, then committed to memory and burned page by page so no written copy existed in the house — trusted friends memorized stanzas as insurance. Not published in the Soviet Union until 1987 (Munich, 1963, in the meantime). Russian-language poetry's total absence, closed, on a list that already runs deep in Russian prose.", aka: ["Rekviem"] },
+  { title: "Wallenstein", author: "Friedrich Schiller", why: "A trilogy — Wallenstein's Camp, The Piccolomini, Wallenstein's Death — following an imperial general's fall during the Thirty Years' War, written 1796-1799 during the intense collaborative friendship with Goethe (already here, Faust) that historians call Weimar Classicism; generally ranked as Schiller's dramatic masterpiece. Gives German classical drama its first second voice — Faust has stood alone in that slot since this list's founding.", aka: ["The Wallenstein Trilogy", "Wallenstein: A Dramatic Poem"] },
+  { title: "The Collected Poems of W.B. Yeats", author: "W.B. Yeats", why: "First assembled in 1933, gathering half a century of work from the Celtic Twilight lyricism of his twenties through 'The Second Coming' (1919) and 'Sailing to Byzantium' (1928) — T.S. Eliot called him, in a 1940 memorial lecture, 'the greatest poet of his time.' First Irish laureate of the Nobel Prize in Literature (1923); wrote the English introduction to Tagore's Gitanjali, already here, the year before Tagore won his own Nobel.", aka: ["Collected Poems of W.B. Yeats", "The Poems of W.B. Yeats"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
