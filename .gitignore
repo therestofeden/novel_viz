@@ -42,3 +42,10 @@ vitest.config.ts.timestamp-*.mjs
 # local file against the live deployed source before pushing.
 *.deploy_reconstructed.ts
 *_deploy_scratch_reconstructed.ts
+
+# Sandbox FUSE mount blocks unlink() on arbitrary files, so agent sessions
+# rename stray scratch files instead of deleting them (see project memory
+# novelviz-infra.md) — cover the resulting patterns so they stop showing up
+# as untracked noise every session.
+*.bak_*
+_to_delete/
