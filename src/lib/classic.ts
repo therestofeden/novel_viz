@@ -1742,6 +1742,34 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Requiem", author: "Anna Akhmatova", why: "Composed in fragments between 1935 and 1940 while her son sat in a Leningrad prison during Stalin's Great Terror, then committed to memory and burned page by page so no written copy existed in the house — trusted friends memorized stanzas as insurance. Not published in the Soviet Union until 1987 (Munich, 1963, in the meantime). Russian-language poetry's total absence, closed, on a list that already runs deep in Russian prose.", aka: ["Rekviem"] },
   { title: "Wallenstein", author: "Friedrich Schiller", why: "A trilogy — Wallenstein's Camp, The Piccolomini, Wallenstein's Death — following an imperial general's fall during the Thirty Years' War, written 1796-1799 during the intense collaborative friendship with Goethe (already here, Faust) that historians call Weimar Classicism; generally ranked as Schiller's dramatic masterpiece. Gives German classical drama its first second voice — Faust has stood alone in that slot since this list's founding.", aka: ["The Wallenstein Trilogy", "Wallenstein: A Dramatic Poem"] },
   { title: "The Collected Poems of W.B. Yeats", author: "W.B. Yeats", why: "First assembled in 1933, gathering half a century of work from the Celtic Twilight lyricism of his twenties through 'The Second Coming' (1919) and 'Sailing to Byzantium' (1928) — T.S. Eliot called him, in a 1940 memorial lecture, 'the greatest poet of his time.' First Irish laureate of the Nobel Prize in Literature (1923); wrote the English introduction to Tagore's Gitanjali, already here, the year before Tagore won his own Nobel.", aka: ["Collected Poems of W.B. Yeats", "The Poems of W.B. Yeats"] },
+
+  // 2026-08-10 (daily curation pass, round 44): five titles closing five
+  // author-level gaps rather than one theme, same shape as rounds 41-43.
+  // Schopenhauer and Russell were both genuine total-absence gaps: this
+  // list already quotes Schopenhauer twice in its own header prose (his
+  // "solace of my life" line on the Upanishads entry) without ever giving
+  // him an entry of his own, and Russell — a Nobel laureate in Literature
+  // (1950) "in recognition of his varied and significant writings in which
+  // he champions humanitarian ideals and freedom of thought" — had no
+  // presence at all despite this list's deep philosophy bench (Kant,
+  // Nietzsche, Hegel, Heidegger). Brecht closes German-language drama's
+  // second gap in as many rounds: Schiller gave Goethe's Faust its first
+  // companion voice last round, but that's still 18th/19th-century Weimar
+  // Classicism — twentieth-century German theater, and its most
+  // influential form (epic theater, the Verfremdungseffekt), had zero
+  // representation. Uncle Vanya gives Chekhov a second entry alongside The
+  // Cherry Orchard, the same "only one play" gap this list already closed
+  // for Shakespeare (Macbeth, round 42) and Sophocles (Antigone, round
+  // 41). The Labyrinth of Solitude closes a genre gap rather than an
+  // author gap: this list's Latin American strength is almost entirely
+  // fiction (García Márquez, Borges, Cortázar, Vargas Llosa, Rulfo,
+  // Fuentes) with no essay or non-fiction voice from the same tradition —
+  // Paz's own Nobel (1990) rests substantially on this book.
+  { title: "Mother Courage and Her Children", author: "Bertolt Brecht", why: "A canteen wagon-woman drags her three children across the Thirty Years' War, profiting from the fighting until it takes all of them — written in 1939 as Brecht fled the Nazis through Scandinavia, and first staged in Zurich in 1941. The founding text of epic theater's alienation effect (Verfremdungseffekt), and twentieth-century German drama's total absence on this list until now; Schiller's Wallenstein, added last round, is the same war seen through the previous century's very different dramatic idiom.", aka: ["Mother Courage", "Mutter Courage und ihre Kinder"] },
+  { title: "The World as Will and Representation", author: "Arthur Schopenhauer", why: "The world reduced to two aspects — a blind, striving 'will' underlying everything, and the merely representational surface our minds perceive — published in 1818 to near-total silence, then expanded into a second volume in 1844 once Schopenhauer's ideas had finally found an audience. Kept open on Schopenhauer's own desk was the Upanishads, already here, which he called 'the solace of my life... the solace of my death' — his direct influence on Nietzsche, Wagner, and Freud, and a total absence on this list until now despite being quoted twice in its own prose." },
+  { title: "A History of Western Philosophy", author: "Bertrand Russell", why: "Written in the United States during the Second World War and published in 1945, tracing philosophy from Thales to logical positivism in prose deliberately built for general readers rather than specialists — the book Russell's 1950 Nobel Prize in Literature citation names directly, for writings that 'champion humanitarian ideals and freedom of thought.' A philosophy bench running from Kant through Heidegger had no twentieth-century British voice until now.", aka: ["History of Western Philosophy"] },
+  { title: "Uncle Vanya", author: "Anton Chekhov", why: "A rural estate, a professor's second marriage, and the family who kept it running for him finally admitting how much of their lives they've wasted — a 1897 rewrite of Chekhov's earlier, unsuccessful The Wood Demon, then staged by Stanislavski's Moscow Art Theatre in 1899 to the acclaim the original never got. Chekhov's second entry alongside The Cherry Orchard, closing the same 'only one play' gap this list already closed for Shakespeare and Sophocles.", aka: ["Dyadya Vanya"] },
+  { title: "The Labyrinth of Solitude", author: "Octavio Paz", why: "Nine essays on Mexican identity written from Paris in 1950, tracing solitude and the fiesta, the Conquest and La Malinche, through to Mexico's place in the modern world — the book substantially behind Paz's own 1990 Nobel Prize in Literature. This list's Latin American strength runs almost entirely through fiction (García Márquez, Borges, Cortázar, Vargas Llosa, Rulfo, Fuentes); its first non-fiction voice from the same tradition.", aka: ["El Laberinto de la Soledad"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
