@@ -2422,6 +2422,20 @@ const POPULAR_BOOKS = [
   "The Theory of the Leisure Class by Thorstein Veblen",
   "This Earth of Mankind by Pramoedya Ananta Toer",
   "Wallenstein by Friedrich Schiller",
+
+  // ── Round 46 (2026-08-11, seed-cache reconciliation) — daily canon curation
+  // rounds 44 (2026-08-10: Brecht/Schopenhauer/Russell/Chekhov/Paz) and 45
+  // (2026-08-11: Maimonides/Racine/Weil/Césaire/Washington) added 10 titles to
+  // canon_books, but this pre-warm list wasn't reconciled since Round 24. Of
+  // those 10, 3 (Schopenhauer, Russell, Chekhov's 2nd) were already covered
+  // here from earlier rounds; these 7 were genuine gaps ──
+  "Mother Courage and Her Children by Bertolt Brecht",
+  "The Labyrinth of Solitude by Octavio Paz",
+  "The Guide for the Perplexed by Maimonides",
+  "Phèdre by Jean Racine",
+  "Gravity and Grace by Simone Weil",
+  "Notebook of a Return to the Native Land by Aimé Césaire",
+  "Up From Slavery by Booker T. Washington",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
