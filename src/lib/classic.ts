@@ -1770,6 +1770,35 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "A History of Western Philosophy", author: "Bertrand Russell", why: "Written in the United States during the Second World War and published in 1945, tracing philosophy from Thales to logical positivism in prose deliberately built for general readers rather than specialists — the book Russell's 1950 Nobel Prize in Literature citation names directly, for writings that 'champion humanitarian ideals and freedom of thought.' A philosophy bench running from Kant through Heidegger had no twentieth-century British voice until now.", aka: ["History of Western Philosophy"] },
   { title: "Uncle Vanya", author: "Anton Chekhov", why: "A rural estate, a professor's second marriage, and the family who kept it running for him finally admitting how much of their lives they've wasted — a 1897 rewrite of Chekhov's earlier, unsuccessful The Wood Demon, then staged by Stanislavski's Moscow Art Theatre in 1899 to the acclaim the original never got. Chekhov's second entry alongside The Cherry Orchard, closing the same 'only one play' gap this list already closed for Shakespeare and Sophocles.", aka: ["Dyadya Vanya"] },
   { title: "The Labyrinth of Solitude", author: "Octavio Paz", why: "Nine essays on Mexican identity written from Paris in 1950, tracing solitude and the fiesta, the Conquest and La Malinche, through to Mexico's place in the modern world — the book substantially behind Paz's own 1990 Nobel Prize in Literature. This list's Latin American strength runs almost entirely through fiction (García Márquez, Borges, Cortázar, Vargas Llosa, Rulfo, Fuentes); its first non-fiction voice from the same tradition.", aka: ["El Laberinto de la Soledad"] },
+
+  // 2026-08-11 (daily curation pass, round 45): five titles closing five
+  // independent gaps, same "distinct oversights in one pass" shape as
+  // rounds 41-44. Maimonides closes medieval Jewish philosophy's total
+  // absence on a list that already runs both of its natural counterparts —
+  // Avicenna's Islamic-world philosophy/medicine and Aquinas's Christian
+  // scholasticism (Summa Theologica) — without ever giving the third,
+  // connecting tradition its own entry; the Guide directly shaped Aquinas's
+  // own synthesis a century later. Racine closes French neoclassical
+  // tragedy's total absence: Molière's Tartuffe has represented 17th-century
+  // French theater alone since this list's founding, comedy with no
+  // tragic counterpart. Simone Weil closes a genuine total-absence gap for
+  // a singular 20th-century voice — political radical, mystic, and factory
+  // worker at once, admired across otherwise incompatible camps (Camus
+  // called her "the only great spirit of our times," T.S. Eliot wrote her
+  // English introduction). Césaire closes Négritude's total absence: this
+  // list already carries its direct intellectual heir (Fanon's The
+  // Wretched of the Earth) without the founding text that coined the term
+  // itself. Booker T. Washington closes the same "dueling counterpart"
+  // pattern this list has used before (Freud/Jung, Hegel/Kierkegaard,
+  // Kuhn/Popper) — Du Bois's The Souls of Black Folk, already here,
+  // is one half of the most consequential debate in early Black American
+  // political thought; Washington's accommodationist case was the other,
+  // and arguably the more widely read of the two in its own time.
+  { title: "The Guide for the Perplexed", author: "Maimonides", why: "Composed in Judeo-Arabic in Fustat, Egypt around 1190 as a private letter to a troubled disciple, then translated into Hebrew in 1204 by Samuel ibn Tibbon — an attempt to reconcile Aristotelian philosophy with biblical revelation that became the single most influential text in the history of Jewish philosophy, and controversial enough that some communities banned its study outright. Medieval Jewish philosophy's total absence, closed, alongside the Islamic (Avicenna) and Christian (Aquinas) scholastic traditions already here — Maimonides directly shaped Aquinas's own synthesis a century later.", aka: ["The Guide of the Perplexed", "Guide of the Perplexed", "Moreh Nevukhim", "Dalalat al-Ha'irin"] },
+  { title: "Phèdre", author: "Jean Racine", why: "A queen's confession of forbidden love for her stepson unravels an entire royal house in 1,654 alexandrine lines — premiered January 1, 1677 at the Hôtel de Bourgogne in Paris, reworking Euripides' Hippolytus into French neoclassical tragedy's defining achievement. Racine's seventh tragedy and his last secular play before retiring from the stage. French 17th-century theater's tragic half, closed — Molière's Tartuffe has stood alone here as its comic half since this list's founding.", aka: ["Phaedra", "Phèdre et Hippolyte"] },
+  { title: "Gravity and Grace", author: "Simone Weil", why: "Aphorisms on suffering, attention, and the 'decreation' of the self, assembled from eleven notebooks Weil entrusted to the farmer-philosopher Gustave Thibon in 1942, a year before her death at 34 — Thibon published the arrangement in 1947, giving posthumous shape to a body of thought Weil herself never lived to organize into a book. Camus called her 'the only great spirit of our times'; T.S. Eliot wrote the English edition's introduction. A singular 20th-century voice — political radical, factory worker, and Christian mystic in one person — with no presence on this list until now.", aka: ["La Pesanteur et la Grâce"] },
+  { title: "Notebook of a Return to the Native Land", author: "Aimé Césaire", why: "A booklength poem written between 1935 and 1939 on Césaire's return from Paris to colonial Martinique, first published in the journal Volontés in August 1939 — the text that coined the word 'négritude' and became the founding document of the movement it named. This list already carries Négritude's direct intellectual descendant (Fanon's The Wretched of the Earth) without ever including the poem that started it.", aka: ["Cahier d'un retour au pays natal", "Notebook of a Return to My Native Land", "Return to My Native Land"] },
+  { title: "Up From Slavery", author: "Booker T. Washington", why: "An autobiography tracing Washington's path from enslaved childhood to founding the Tuskegee Institute, serialized in The Outlook from late 1900 before its 1901 book publication — the clearest statement of his accommodationist strategy for Black advancement through vocational education and economic self-reliance, argued directly against by W.E.B. Du Bois's The Souls of Black Folk, already here. The two books together are the two halves of early Black American political thought's defining argument; only one side has sat on this list until now.", aka: ["Up from Slavery: An Autobiography"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
