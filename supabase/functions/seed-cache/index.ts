@@ -2379,6 +2379,49 @@ const POPULAR_BOOKS = [
   "Civilization and Its Discontents by Sigmund Freud",
   "The Origin of Species by Charles Darwin",
   "The Bluest Eye by Toni Morrison",
+
+  // ── Round 24 (2026-08-09, seed-cache reconciliation) — POPULAR_BOOKS reconciliation
+  // against classic.ts/canon_books had drifted since Round 23 (2026-07-28): daily canon
+  // curation kept running (rounds 24-43, 2026-07-29 through 2026-08-09) but nothing
+  // reconciled those additions into this pre-warm list, so ~20 rounds' worth of newly
+  // canonized books were falling through to a live, uncached Gemini call on first
+  // visualize instead of an instant cache hit. Cross-checked every canon_books row
+  // sourced from that window against this file; these 31 were genuine gaps (many others
+  // — Diary of a Madman, Persepolis, Narrow Road to the Deep North, Waiting for Godot,
+  // Ethics/Spinoza, Tale of Kiều, Noli Me Tángere, and more — were already covered here
+  // from earlier rounds, confirming the two systems still converge independently most
+  // of the time; this just closes the residual gap) ──
+  "Anarchy, State, and Utopia by Robert Nozick",
+  "Argonauts of the Western Pacific by Bronisław Malinowski",
+  "Canzoniere by Petrarch",
+  "Capitalism and Freedom by Milton Friedman",
+  "Capitalism, Socialism and Democracy by Joseph Schumpeter",
+  "Dialogue Concerning the Two Chief World Systems by Galileo Galilei",
+  "Distinction by Pierre Bourdieu",
+  "Duino Elegies by Rainer Maria Rilke",
+  "Crowds and Power by Elias Canetti",
+  "Gypsy Ballads by Federico García Lorca",
+  "The Quran",
+  "The Flowers of Evil by Charles Baudelaire",
+  "Life A User's Manual by Georges Perec",
+  "Red Sorghum by Mo Yan",
+  "Reflections on the Revolution in France by Edmund Burke",
+  "Requiem by Anna Akhmatova",
+  "Relativity: The Special and General Theory by Albert Einstein",
+  "Selected Poems of Li Bai",
+  "Songs of Innocence and of Experience by William Blake",
+  "Syntactic Structures by Noam Chomsky",
+  "The Canon of Medicine by Avicenna",
+  "The Collected Poems of W.B. Yeats",
+  "The Golden Notebook by Doris Lessing",
+  "The Logic of Scientific Discovery by Karl Popper",
+  "The Mythical Man-Month by Fred Brooks",
+  "The Presentation of Self in Everyday Life by Erving Goffman",
+  "The Selected Poems of Du Fu",
+  "The Street of Crocodiles by Bruno Schulz",
+  "The Theory of the Leisure Class by Thorstein Veblen",
+  "This Earth of Mankind by Pramoedya Ananta Toer",
+  "Wallenstein by Friedrich Schiller",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
