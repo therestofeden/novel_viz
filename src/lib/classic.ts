@@ -1825,6 +1825,47 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Prison Notebooks", author: "Antonio Gramsci", why: "More than thirty notebooks and 3,000 pages written in fragments between 1929 and 1935 inside Mussolini's prisons, where Gramsci's own prosecutor demanded a sentence built 'to stop this brain from functioning for twenty years' — smuggled out after his 1937 death and published in Italy from 1947 onward. Introduces 'cultural hegemony': the idea that ruling classes secure consent through culture and institutions as much as through coercion. Marx, already here, addresses political economy; Gramsci is a distinct, later argument about how power actually reproduces itself day to day.", aka: ["Selections from the Prison Notebooks", "Quaderni del carcere"] },
   { title: "Against Interpretation", author: "Susan Sontag", why: "Sontag's 1966 debut essay collection, arguing that criticism had grown obsessed with excavating a work's hidden 'meaning' at the expense of its sensory surface — includes 'Notes on Camp,' the 1964 essay that pulled a private aesthetic sensibility into mainstream vocabulary almost overnight. A commanding American critical voice for the second half of the twentieth century, with zero representation on this list until now.", aka: ["Against Interpretation and Other Essays"] },
   { title: "Zorba the Greek", author: "Nikos Kazantzakis", why: "A buttoned-up Greek intellectual and the boisterous, appetite-driven miner who upends his careful plans on a Cretan hillside — published in 1946, drawn from Kazantzakis's real friendship with a miner named Georgios Zorbas, and the basis for the 1964 film that made Zorba's dance a global shorthand for joy over caution. Modern Greek literature's total absence, closed — every other Greek voice on this list (Aeschylus, Sophocles, Aristophanes, Plato, Aristotle) predates the Common Era by two thousand years.", aka: ["Life and Times of Alexis Zorbas", "Vios kai Politeia tou Alexi Zorba"] },
+
+  // 2026-08-13 (daily curation pass, round 47): five more titles closing
+  // five independent gaps, same discipline as rounds 41-46. Cicero closes
+  // Roman oratory and practical ethics' total absence — this list runs
+  // Roman Stoicism (Seneca, Epictetus, Marcus Aurelius) and Epicureanism
+  // (Lucretius) but never the statesman-orator whose own synthesis shaped
+  // Western moral and political thought from the Church Fathers through the
+  // Renaissance to the Enlightenment. The Dhammapada closes the largest
+  // remaining religious gap on either list: this list already runs
+  // Hinduism (Bhagavad Gita, Upanishads), Islam (the Quran), Judaism
+  // (Maimonides), Confucianism and Taoism (the Analects, Tao Te Ching, the
+  // Zhuangzi) — but Buddhism, one of the world's major religious and
+  // philosophical traditions, had zero representation. Hafez closes a
+  // specific gap inside Persian poetry, already represented by three other
+  // forms (Ferdowsi's epic Shahnameh, Rumi's mystical-narrative Masnavi,
+  // Khayyam's quatrains) but never by the ghazal, the lyric form Hafez
+  // himself perfected. The Mabinogion closes Celtic mythology's total
+  // absence next to the other national myth-cycles already here (the
+  // Kalevala, the Poetic Edda, Sundiata, Popol Vuh, Njal's Saga) — the last
+  // major European mythological tradition still missing. Calderón closes
+  // Spanish Golden Age theater's total absence: this list's theater cluster
+  // runs French (Molière), Norwegian (Ibsen), Russian (Chekhov), German
+  // (Brecht, Schiller), Greek (Aeschylus, Euripides, Aristophanes), but
+  // nothing from Spain's own dramatic golden age, the contemporary
+  // counterpart to Lope de Vega whom Calderón succeeded as its leading
+  // voice. All five facts (Cicero's October-November 44 BCE composition
+  // after Caesar's assassination; the Dhammapada's c. 250 BCE compilation
+  // within the Pali Canon; Hafez's 1325-1390 lifespan and the Divan's
+  // posthumous compilation by Mohammad Golandam; the Mabinogion's two core
+  // manuscripts, the White Book of Rhydderch (c. 1350) and the Red Book of
+  // Hergest (c. 1382-1410); Life Is a Dream's 1635 premiere and 1636
+  // publication) independently verified via WebSearch rather than trusted
+  // from recall. All five clear the Lindy/A-tier bar with room to spare;
+  // none rise to Must Read's "unmissable" bar on their own — no new
+  // promotion flag this round, and the Quran flag from round 41
+  // (2026-08-08) remains the sole open Must Read candidate.
+  { title: "On Duties", author: "Cicero", why: "A father's advice to his student son, written as a didactic letter in October-November 44 BCE during the chaos following Julius Caesar's assassination — Cicero's synthesis of Stoic ethics (chiefly Panaetius's) into a practical Roman guide for public life: what is honorable, what is advantageous, and what to do when the two seem to conflict. Rome's greatest orator's total absence on this list, closed — a treatise transmitted through the Church Fathers, given central place again by Petrarch in the Renaissance, and read closely by the Enlightenment statesmen who founded the American republic.", aka: ["De Officiis", "On Obligations"] },
+  { title: "The Dhammapada", author: "Anonymous", why: "423 verses in 26 chapters, compiled within the Pali Canon around 250 BCE and later glossed by the 5th-century scholar Buddhaghosa — a compact anthology distilling the Buddha's teaching on the path, virtue, and the mind that the Pali Canon's forty-odd volumes elaborate at length. Buddhism's total absence on either list, closed, alongside the Hinduism, Islam, Judaism, Confucianism, and Taoism already represented here.", aka: ["Dhammapada"] },
+  { title: "The Divan of Hafez", author: "Hafez", why: "Compiled after Hafez's 1390 death by his friend Mohammad Golandam from ghazals written across a lifetime in Shiraz — Hafez brought the ghazal, a lyric form of linked couplets built on symbol and mood rather than argument, to a perfection Persian poetry has never surpassed. Closes a distinct gap inside a tradition this list already covers three other ways: Ferdowsi's epic Shahnameh, Rumi's mystical Masnavi, Khayyam's quatrains — never, until now, the ghazal itself.", aka: ["Divan-e Hafez", "The Divan-i-Hafiz", "Diwan of Hafez"] },
+  { title: "The Mabinogion", author: "Anonymous", why: "Eleven medieval Welsh tales of shape-shifting kings, cursed queens, and Arthurian knights, drawing on oral tradition far older than their two surviving manuscripts, the White Book of Rhydderch (c. 1350) and the Red Book of Hergest (c. 1382-1410) — the richest surviving store of Celtic myth, and a direct influence on Tolkien and the Arthurian romance tradition alike. Celtic mythology's total absence, closed, the last major European myth-cycle still missing beside the Kalevala, the Poetic Edda, Sundiata, Popol Vuh, and Njal's Saga already here.", aka: ["Mabinogion"] },
+  { title: "Life Is a Dream", author: "Pedro Calderón de la Barca", why: "Prince Segismundo, imprisoned from birth on a prophecy that he'll become a tyrant, is drugged and briefly given the throne to test the prophecy — then told, once his rule turns violent, that the whole episode was only a dream. Probably first staged in 1635 and published in Madrid in 1636, the defining achievement of Spain's Golden Age theater by the dramatist who inherited Lope de Vega's mantle as its leading voice. Spanish Golden Age drama's total absence on this list, closed, beside the French (Molière), Norwegian (Ibsen), Russian (Chekhov), and German (Brecht, Schiller) theater already here.", aka: ["La vida es sueño"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
