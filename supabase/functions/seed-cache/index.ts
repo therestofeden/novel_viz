@@ -2445,6 +2445,21 @@ const POPULAR_BOOKS = [
   "Prison Notebooks by Antonio Gramsci",
   "Against Interpretation by Susan Sontag",
   "Zorba the Greek by Nikos Kazantzakis",
+
+  // ── Round 48 (2026-08-14, seed-cache reconciliation) — daily canon curation
+  // rounds 47 (2026-08-13: Cicero/Dhammapada/Hafez/Mabinogion/Calderón) and 48
+  // (2026-08-14: Guru Granth Sahib/Vasari/Pirandello/Milton's Areopagitica)
+  // were never reconciled into this pre-warm list; closing both gaps in one
+  // pass. Solzhenitsyn/Gulag Archipelago already covered above, skipped ──
+  "On Duties by Cicero",
+  "The Dhammapada",
+  "The Divan of Hafez by Hafez",
+  "The Mabinogion",
+  "Life Is a Dream by Pedro Calderón de la Barca",
+  "Guru Granth Sahib",
+  "Lives of the Most Excellent Painters, Sculptors, and Architects by Giorgio Vasari",
+  "Six Characters in Search of an Author by Luigi Pirandello",
+  "Areopagitica by John Milton",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
