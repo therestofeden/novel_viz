@@ -1866,6 +1866,48 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Divan of Hafez", author: "Hafez", why: "Compiled after Hafez's 1390 death by his friend Mohammad Golandam from ghazals written across a lifetime in Shiraz — Hafez brought the ghazal, a lyric form of linked couplets built on symbol and mood rather than argument, to a perfection Persian poetry has never surpassed. Closes a distinct gap inside a tradition this list already covers three other ways: Ferdowsi's epic Shahnameh, Rumi's mystical Masnavi, Khayyam's quatrains — never, until now, the ghazal itself.", aka: ["Divan-e Hafez", "The Divan-i-Hafiz", "Diwan of Hafez"] },
   { title: "The Mabinogion", author: "Anonymous", why: "Eleven medieval Welsh tales of shape-shifting kings, cursed queens, and Arthurian knights, drawing on oral tradition far older than their two surviving manuscripts, the White Book of Rhydderch (c. 1350) and the Red Book of Hergest (c. 1382-1410) — the richest surviving store of Celtic myth, and a direct influence on Tolkien and the Arthurian romance tradition alike. Celtic mythology's total absence, closed, the last major European myth-cycle still missing beside the Kalevala, the Poetic Edda, Sundiata, Popol Vuh, and Njal's Saga already here.", aka: ["Mabinogion"] },
   { title: "Life Is a Dream", author: "Pedro Calderón de la Barca", why: "Prince Segismundo, imprisoned from birth on a prophecy that he'll become a tyrant, is drugged and briefly given the throne to test the prophecy — then told, once his rule turns violent, that the whole episode was only a dream. Probably first staged in 1635 and published in Madrid in 1636, the defining achievement of Spain's Golden Age theater by the dramatist who inherited Lope de Vega's mantle as its leading voice. Spanish Golden Age drama's total absence on this list, closed, beside the French (Molière), Norwegian (Ibsen), Russian (Chekhov), and German (Brecht, Schiller) theater already here.", aka: ["La vida es sueño"] },
+
+  // 2026-08-14 (daily curation pass, round 48): five more titles closing
+  // five independent gaps, same discipline as rounds 41-47. The Guru
+  // Granth Sahib closes the largest remaining religious gap of all: this
+  // list runs Hinduism, Buddhism, Islam, Judaism, Christianity, and
+  // Confucianism/Taoism, but Sikhism — a tradition of roughly 25-30 million
+  // adherents worldwide — had zero representation on either list. Vasari
+  // closes a total gap in genre rather than tradition: nowhere on this
+  // list is there a work of art history or criticism, despite deep
+  // coverage of literary, philosophical, and scientific non-fiction; this
+  // is the book that invented the biographical survey of artists as a
+  // form. Pirandello closes Italian theater's total absence — this list's
+  // Italian strength (Manzoni, Calvino, Eco, Lampedusa) runs entirely
+  // through fiction, with no dramatic voice at all, despite a theater
+  // cluster already running French, Norwegian, Russian, German, Greek, and
+  // Spanish (Calderón, added last round). Areopagitica gives Milton a
+  // second, independently merited entry beside his Must Read Paradise
+  // Lost — a different genre entirely (prose polemic, not epic verse) and
+  // the founding text of free-press argument, distinct from Mill's later
+  // On Liberty already here. The Gulag Archipelago closes a gap inside an
+  // already-covered category: this list runs Holocaust testimony (If This
+  // Is a Man, Night, The Diary of a Young Girl) but no equivalent
+  // first-person reckoning with the Soviet camp system, despite already
+  // carrying Solzhenitsyn's own fiction (One Day in the Life of Ivan
+  // Denisovich). All five facts (the Adi Granth's completion on 29
+  // August 1604 and its 1708 elevation to eternal Guru; Vasari's 1550 first
+  // edition and expanded 1568 second edition; Six Characters' 10 May 1921
+  // Rome premiere and the riot it caused; Areopagitica's 23 November 1644
+  // publication in defiance of the 1643 Licensing Order; the Gulag
+  // Archipelago's 1973 Paris publication by YMCA-Press and its 1918-1956
+  // subtitle) independently verified via WebSearch. All five clear the
+  // Lindy/A-tier bar with room to spare; The Gulag Archipelago is arguably
+  // Must-Read-caliber given its world-historical weight, but the
+  // established calibration precedent (Iliad/Oedipus Rex/Quran sitting in
+  // Classic despite comparable weight) argues for consistency — flagged
+  // for Stefano, not promoted here. The Quran flag from round 41 remains
+  // the longest-open Must Read candidate.
+  { title: "Guru Granth Sahib", author: "Guru Arjan Dev", why: "Compiled by the fifth Sikh Guru and completed on 29 August 1604, weaving hymns of the first five Gurus together with verses from Hindu and Muslim mystic poets — an act of interfaith synthesis built into the scripture's foundation. In 1708 the tenth Guru, Gobind Singh, declared it the eternal, living Guru of the Sikh faith; no human successor has been named since. Sikhism's total absence on either list, closed — a tradition of some 25-30 million adherents worldwide.", aka: ["Adi Granth", "Sri Guru Granth Sahib", "The Adi Granth"] },
+  { title: "Lives of the Most Excellent Painters, Sculptors, and Architects", author: "Giorgio Vasari", why: "Gossip, myth, and genuine research fused into the first biographical survey of artistic genius, written by a working painter who knew several of his subjects personally — a slim single volume in 1550, expanded to three books and 161 lives in a definitive 1568 edition that closes with Vasari's own 42-page autobiography. The book that invented art history as a genre and a total gap on a list otherwise deep in literary, philosophical, and scientific non-fiction.", aka: ["The Lives of the Artists", "Lives of the Artists", "Le Vite"] },
+  { title: "Six Characters in Search of an Author", author: "Luigi Pirandello", why: "Six unfinished fictional characters interrupt a theater company's rehearsal, demanding someone finally stage the story their own author abandoned — the 10 May 1921 Rome premiere caused a genuine riot, audience members shouting 'madhouse' and worse before the play went on to reshape twentieth-century drama's relationship to its own artifice. Italian theater's total absence on this list, closed; its fiction (Manzoni, Calvino, Eco, Lampedusa) has never had a dramatic counterpart.", aka: ["Sei personaggi in cerca d'autore"] },
+  { title: "Areopagitica", author: "John Milton", why: "Published 23 November 1644 in open defiance of the very Licensing Order it argues against — Parliament required every book pass a government censor before printing, and Milton put his own name on a pamphlet that hadn't. The first great argument for a free press, predating the concept it's now read as anticipating by a century and a half. Milton's second, independently merited entry beside his Must Read Paradise Lost — polemic prose rather than epic verse, and the founding text Mill's own On Liberty, already here, follows two centuries later." },
+  { title: "The Gulag Archipelago", author: "Aleksandr Solzhenitsyn", why: "Eleven years of secret writing, built from Solzhenitsyn's own eight years in the camps plus testimony smuggled to him by 227 fellow survivors — published in Paris in 1973 once a typist under interrogation revealed a hidden copy's location, forcing his hand. Subtitled 1918-1956, it made the Soviet camp system impossible to deny abroad and cost its author his citizenship and exile within months. Closes the gap left inside this list's Holocaust-testimony cluster (If This Is a Man, Night, The Diary of a Young Girl), which had no Soviet equivalent despite Solzhenitsyn's own fiction (One Day in the Life of Ivan Denisovich) already being here.", aka: ["The Gulag Archipelago, 1918-1956"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
