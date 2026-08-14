@@ -2436,6 +2436,15 @@ const POPULAR_BOOKS = [
   "Gravity and Grace by Simone Weil",
   "Notebook of a Return to the Native Land by Aimé Césaire",
   "Up From Slavery by Booker T. Washington",
+
+  // ── Round 47 (2026-08-12, seed-cache reconciliation) — daily canon curation
+  // round 46 (2026-08-12: Luther/Benjamin/Gramsci/Sontag/Kazantzakis) added 5
+  // titles to canon_books; none were previously covered in this pre-warm list ──
+  "On the Freedom of a Christian by Martin Luther",
+  "The Work of Art in the Age of Mechanical Reproduction by Walter Benjamin",
+  "Prison Notebooks by Antonio Gramsci",
+  "Against Interpretation by Susan Sontag",
+  "Zorba the Greek by Nikos Kazantzakis",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
