@@ -1947,6 +1947,49 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Compendious Book on Calculation by Completion and Balancing", author: "Muhammad ibn Musa al-Khwarizmi", why: "Written around 820 CE at the House of Wisdom in Baghdad, the source of both major words for its own field: 'algebra' from al-jabr in the book's Arabic title, and 'algorithm' from Algoritmi, the Latinized form of the author's own name that medieval European translators used for his systematic step-by-step methods. Closes a gap beside Euclid's Elements (geometry) and Newton's Principia (physics) already here — nothing on this list represented algebra's own origin.", aka: ["Al-Jabr", "Al-Jabr wa'l-Muqabala", "Kitab al-Jabr", "The Compendious Book on Calculation"] },
   { title: "The Natya Shastra", author: "Bharata Muni", why: "A Sanskrit treatise on the performing arts — 36 chapters and roughly 6,000 verses laying down principles of acting, music, dance, stagecraft, and rasa (aesthetic emotion) theory — traditionally attributed to the sage Bharata and dated by most scholarly estimates to 200 BCE-200 CE. Closes a gap that ran through the West alone: Aristotle's Poetics (Must Read) was this list's only treatise on how drama itself works, despite Sanskrit drama already being represented here by Shakuntala.", aka: ["Natyashastra", "Natya Sastra", "The Natyashastra"] },
   { title: "The Book of Dede Korkut", author: "Anonymous", why: "Twelve tales of the Oghuz Turks rooted in oral tradition dating to the 9th or 10th century CE, first written down in the 14th or 15th century as the Oghuz migrated west into Anatolia, surviving today in a single manuscript copied in 16th-century Dresden and rediscovered there in 1815. Closes the Turkic gap in this list's world-epic cluster — Gilgamesh, Beowulf, the Shahnameh, the Kalevala, the Poetic Edda, and Njal's Saga cover the Mesopotamian, Germanic, Persian, Finnish, Norse, and Icelandic traditions, but none represented the Turkic one.", aka: ["Kitab-i Dedem Korkut", "Dede Korkut", "The Book of Dede Korkut: A Turkish Epic"] },
+
+  // Round 50 (2026-08-15, second same-day curation pass): five more picks,
+  // continuing straight past round 49's five without any overlap in scope.
+  // The Táin closes Ireland's absence from this list's world-epic cluster —
+  // Gilgamesh, Beowulf, the Shahnameh, the Kalevala, the Poetic Edda, Njal's
+  // Saga, and (round 49) the Book of Dede Korkut span Mesopotamian, Old
+  // English, Persian, Finnish, Norse, Icelandic, and Turkic epic traditions,
+  // but Ireland — whose Táin is routinely called the country's national
+  // epic — had never been represented despite this list's deep coverage of
+  // later Irish literature. The Code of Hammurabi closes a genre this list
+  // had never touched at all: law itself, sitting beside Gilgamesh (epic)
+  // and the Tao Te Ching (philosophy) as a third pillar of the ancient
+  // Mesopotamian-adjacent world, and the oldest and longest surviving
+  // written legal code from antiquity. Shannon's 1948 paper and Boyle's
+  // 1661 dialogue close two hard-science gaps side by side: physics
+  // (Newton, Einstein), biology (Darwin, Watson), astronomy (Galileo), and
+  // mathematics (Euclid) were all represented, but chemistry as its own
+  // discipline had no founding text, and information theory — the
+  // mathematical bedrock under every digital communication system since —
+  // had none either, despite computer science already appearing here via
+  // The Mythical Man-Month; Shannon is a genuinely-novel-field pick, judged
+  // on rigor and foundational status rather than age, the same substitution
+  // this list already makes for Brooks's book. Zeami's Fūshikaden closes
+  // the East Asian side of the dramatic-theory gap round 49 only partly
+  // closed: Aristotle's Poetics (Must Read) covers the West and the Natya
+  // Shastra (round 49) covers Sanskrit drama, but nothing represented Noh,
+  // whose 14th-century origins make it one of the oldest major theatrical
+  // traditions still actively performed. All five facts (the Táin's oldest
+  // manuscript witness in the late-11th/early-12th-century Lebor na hUidre,
+  // its textual roots traceable to the 7th century CE or earlier, and its
+  // pre-Christian first-century CE setting; Hammurabi's code carved c. 1754
+  // BCE, rediscovered at Susa in 1901, now in the Louvre; Shannon's paper
+  // published in two parts in the Bell System Technical Journal, July and
+  // October 1948; Boyle's dialogue published in London in 1661; Zeami's
+  // Fūshikaden composed 1400-1402, kept as a secret family transmission
+  // within the Kanze school and not published until texts began emerging in
+  // the early 20th century, with over a dozen out by 1909) independently
+  // verified via WebSearch, continuing the practice standing since round 45.
+  { title: "The Táin", author: "Anonymous", why: "Ireland's national epic: the Connacht queen Medb invades Ulster to steal a prize stud bull, opposed almost single-handedly by the teenage hero Cú Chulainn. Its oldest surviving text sits in the Book of the Dun Cow (Lebor na hUidre), compiled at Clonmacnoise in the late 11th or early 12th century, though the underlying material is textually traceable to the 7th century CE or earlier and set in a pre-Christian first-century heroic age. Closes the Irish gap in this list's world-epic cluster — Gilgamesh, Beowulf, the Shahnameh, the Kalevala, the Poetic Edda, Njal's Saga, and (round 49) the Book of Dede Korkut cover the Mesopotamian, Old English, Persian, Finnish, Norse, Icelandic, and Turkic traditions, but none represented Ireland's.", aka: ["Táin Bó Cúailnge", "The Cattle Raid of Cooley", "The Tain"] },
+  { title: "Code of Hammurabi", author: "Hammurabi", why: "282 laws carved onto a seven-foot basalt stele around 1754 BCE under the sixth king of Babylon's First Dynasty, covering everything from wages to false accusation to the lex talionis principle of proportional retribution — the oldest and longest surviving legal code from antiquity, and the text the entire idea of written law descends from. Rediscovered in 1901 at Susa in present-day Iran, where it had been carried off as war plunder roughly six centuries after it was carved; now in the Louvre. Closes a genre this list had never touched — nothing here represented law itself, despite deep coverage of the same ancient Mesopotamian-adjacent world through Gilgamesh (epic) and the Tao Te Ching (philosophy).", aka: ["Code of Hammurabi", "Hammurabi's Code", "Laws of Hammurabi"] },
+  { title: "A Mathematical Theory of Communication", author: "Claude Shannon", why: "Published in two parts in the Bell System Technical Journal in July and October 1948, this single paper invented information theory whole — defining information mathematically as a reduction of uncertainty, formalizing the bit as its unit, and proving the channel-capacity limits every digital communication system since (modems, Wi-Fi, deep-space probes) has had to obey. James Gleick later called it the single most important development of 1948, ahead of the transistor. A genuinely-novel-field pick, judged on rigor and foundational status rather than age — the same substitution this list already makes for The Mythical Man-Month — closing computer science's information-theory gap the way Euclid and Newton anchor geometry and physics here.", aka: ["The Mathematical Theory of Communication"] },
+  { title: "The Sceptical Chymist", author: "Robert Boyle", why: "Published in 1661 as a dialogue demolishing the Aristotelian four-element theory and the alchemists' three-principle model alike, replacing both with something close to the modern definition of a chemical element — a substance that cannot be broken down further by any known method. The historian J.R. Partington credited Boyle as the founder of modern chemistry largely on the strength of this one book, which insisted every claim be settled by experiment rather than inherited authority. Closes chemistry's total absence from this list's hard-science cluster: physics (Newton, Einstein), biology (Darwin, Watson), astronomy (Galileo), and mathematics (Euclid) were all here; chemistry as its own discipline was not.", aka: ["The Skeptical Chemist", "Sceptical Chymist"] },
+  { title: "Fūshikaden", author: "Zeami Motokiyo", why: "Composed in stages beginning around 1400-1402 by Noh theater's own founding actor-playwright, kept as a secret transmission within his family's Kanze school rather than published, until Zeami's treatises began emerging publicly in the early 20th century, with over a dozen texts out by 1909 — Japan's first treatise on drama, part practical acting manual and part philosophy of a life spent performing, built around 'the flower' (hana), the fleeting bloom of a performer's presence that must be constantly renewed rather than mastered once. Closes the East Asian side of a dramatic-theory gap round 49 only partly closed: Aristotle's Poetics (Must Read) covers the West and the Natya Shastra (round 49) covers Sanskrit drama, but nothing here represented Noh, whose 14th-century origins make it one of the oldest major theatrical traditions still actively performed.", aka: ["Fushikaden", "Kadensho", "Style and the Flower", "Fūshi Kaden"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
