@@ -1908,6 +1908,45 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Six Characters in Search of an Author", author: "Luigi Pirandello", why: "Six unfinished fictional characters interrupt a theater company's rehearsal, demanding someone finally stage the story their own author abandoned — the 10 May 1921 Rome premiere caused a genuine riot, audience members shouting 'madhouse' and worse before the play went on to reshape twentieth-century drama's relationship to its own artifice. Italian theater's total absence on this list, closed; its fiction (Manzoni, Calvino, Eco, Lampedusa) has never had a dramatic counterpart.", aka: ["Sei personaggi in cerca d'autore"] },
   { title: "Areopagitica", author: "John Milton", why: "Published 23 November 1644 in open defiance of the very Licensing Order it argues against — Parliament required every book pass a government censor before printing, and Milton put his own name on a pamphlet that hadn't. The first great argument for a free press, predating the concept it's now read as anticipating by a century and a half. Milton's second, independently merited entry beside his Must Read Paradise Lost — polemic prose rather than epic verse, and the founding text Mill's own On Liberty, already here, follows two centuries later." },
   { title: "The Gulag Archipelago", author: "Aleksandr Solzhenitsyn", why: "Eleven years of secret writing, built from Solzhenitsyn's own eight years in the camps plus testimony smuggled to him by 227 fellow survivors — published in Paris in 1973 once a typist under interrogation revealed a hidden copy's location, forcing his hand. Subtitled 1918-1956, it made the Soviet camp system impossible to deny abroad and cost its author his citizenship and exile within months. Closes the gap left inside this list's Holocaust-testimony cluster (If This Is a Man, Night, The Diary of a Young Girl), which had no Soviet equivalent despite Solzhenitsyn's own fiction (One Day in the Life of Ivan Denisovich) already being here.", aka: ["The Gulag Archipelago, 1918-1956"] },
+
+  // Round 49 (2026-08-15): five picks closing structural gaps the prior 48
+  // rounds hadn't reached. The Hebrew Bible closes the largest remaining
+  // hole on either list — Quran, Guru Granth Sahib, Bhagavad Gita, and
+  // Dhammapada are all here as scripture read for literary and historical
+  // weight, but the text underlying more of this list's own DNA than any
+  // other (Paradise Lost, The Scarlet Letter, East of Eden, Moby-Dick) was
+  // itself absent. De Architectura closes a pure genre gap: Vasari (round
+  // 48) gave this list its first work of art history, but no architectural
+  // theory existed anywhere on it, despite Vitruvius's ten books being the
+  // only major architectural treatise to survive from classical antiquity.
+  // Al-Khwarizmi's algebra treatise closes a parallel gap in mathematics —
+  // Euclid's Elements (geometry) and Newton's Principia (physics) are here,
+  // but nothing represents algebra's own origin, despite both "algebra"
+  // (from the book's Arabic title) and "algorithm" (from the Latinized
+  // author's name) descending directly from this one text. The Natya
+  // Shastra closes a gap in dramatic theory specifically: Aristotle's
+  // Poetics (Must Read) is this list's sole treatise on how drama works,
+  // meaning that entire category ran through the West alone despite Sanskrit
+  // drama already being represented here by Shakuntala. The Book of Dede
+  // Korkut closes a gap in the world-epic cluster (Gilgamesh, Beowulf, the
+  // Shahnameh, the Kalevala, the Poetic Edda, Njal's Saga) — Persian,
+  // Germanic, Finnish, Norse, and Icelandic epic traditions were all
+  // present, but nothing represented the Turkic epic tradition. All five
+  // facts (the Hebrew Bible's staged canonization, the Torah by the 5th
+  // century BCE, Nevi'im by the 2nd century BCE, Ketuvim debated until
+  // roughly 100 CE; De Architectura's composition c. 30-15 BCE, dedicated
+  // to Augustus; Al-Jabr's composition c. 820 CE at Baghdad's House of
+  // Wisdom; the Natya Shastra's compilation window of 200 BCE-200 CE within
+  // a wider 500 BCE-500 CE range of scholarly estimates; Dede Korkut's oral
+  // roots in the 9th-10th century CE Oghuz Turkic tradition, written down in
+  // the 14th-15th century, surviving in a single 16th-century Dresden
+  // manuscript of 12 tales discovered in 1815) independently verified via
+  // WebSearch, continuing the practice standing since round 45.
+  { title: "The Hebrew Bible", author: "Anonymous", why: "Compiled and canonized in stages across roughly a millennium: the Torah reached canonical status by the 5th century BCE following the return from Babylonian exile, the Nevi'im (Prophets) was largely fixed by the 2nd century BCE, and the Ketuvim (Writings) — the last section — remained debated until close to 100 CE. Closes this list's largest remaining gap: the Quran, Guru Granth Sahib, Bhagavad Gita, and Dhammapada are all here as scripture read for literary and historical weight, but the text with arguably the deepest influence on the rest of this very list — Paradise Lost, The Scarlet Letter, East of Eden, Moby-Dick — was itself absent.", aka: ["Tanakh", "The Tanakh", "Hebrew Scriptures", "Hebrew Bible"] },
+  { title: "De Architectura", author: "Vitruvius", why: "Composed roughly 30-15 BCE and dedicated to the emperor Augustus, this is the only major work of architectural theory to survive from classical antiquity — ten books covering materials, construction, city planning, and the proportional theory of the human body that Leonardo later drew as the Vitruvian Man. Closes a pure genre gap: Vasari (round 48) gave this list its first work of art history, but nothing represented architecture, despite deep coverage of literary and philosophical non-fiction elsewhere.", aka: ["On Architecture", "The Ten Books on Architecture", "De architectura libri decem"] },
+  { title: "The Compendious Book on Calculation by Completion and Balancing", author: "Muhammad ibn Musa al-Khwarizmi", why: "Written around 820 CE at the House of Wisdom in Baghdad, the source of both major words for its own field: 'algebra' from al-jabr in the book's Arabic title, and 'algorithm' from Algoritmi, the Latinized form of the author's own name that medieval European translators used for his systematic step-by-step methods. Closes a gap beside Euclid's Elements (geometry) and Newton's Principia (physics) already here — nothing on this list represented algebra's own origin.", aka: ["Al-Jabr", "Al-Jabr wa'l-Muqabala", "Kitab al-Jabr", "The Compendious Book on Calculation"] },
+  { title: "The Natya Shastra", author: "Bharata Muni", why: "A Sanskrit treatise on the performing arts — 36 chapters and roughly 6,000 verses laying down principles of acting, music, dance, stagecraft, and rasa (aesthetic emotion) theory — traditionally attributed to the sage Bharata and dated by most scholarly estimates to 200 BCE-200 CE. Closes a gap that ran through the West alone: Aristotle's Poetics (Must Read) was this list's only treatise on how drama itself works, despite Sanskrit drama already being represented here by Shakuntala.", aka: ["Natyashastra", "Natya Sastra", "The Natyashastra"] },
+  { title: "The Book of Dede Korkut", author: "Anonymous", why: "Twelve tales of the Oghuz Turks rooted in oral tradition dating to the 9th or 10th century CE, first written down in the 14th or 15th century as the Oghuz migrated west into Anatolia, surviving today in a single manuscript copied in 16th-century Dresden and rediscovered there in 1815. Closes the Turkic gap in this list's world-epic cluster — Gilgamesh, Beowulf, the Shahnameh, the Kalevala, the Poetic Edda, and Njal's Saga cover the Mesopotamian, Germanic, Persian, Finnish, Norse, and Icelandic traditions, but none represented the Turkic one.", aka: ["Kitab-i Dedem Korkut", "Dede Korkut", "The Book of Dede Korkut: A Turkish Epic"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
