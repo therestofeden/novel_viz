@@ -1990,6 +1990,50 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "A Mathematical Theory of Communication", author: "Claude Shannon", why: "Published in two parts in the Bell System Technical Journal in July and October 1948, this single paper invented information theory whole — defining information mathematically as a reduction of uncertainty, formalizing the bit as its unit, and proving the channel-capacity limits every digital communication system since (modems, Wi-Fi, deep-space probes) has had to obey. James Gleick later called it the single most important development of 1948, ahead of the transistor. A genuinely-novel-field pick, judged on rigor and foundational status rather than age — the same substitution this list already makes for The Mythical Man-Month — closing computer science's information-theory gap the way Euclid and Newton anchor geometry and physics here.", aka: ["The Mathematical Theory of Communication"] },
   { title: "The Sceptical Chymist", author: "Robert Boyle", why: "Published in 1661 as a dialogue demolishing the Aristotelian four-element theory and the alchemists' three-principle model alike, replacing both with something close to the modern definition of a chemical element — a substance that cannot be broken down further by any known method. The historian J.R. Partington credited Boyle as the founder of modern chemistry largely on the strength of this one book, which insisted every claim be settled by experiment rather than inherited authority. Closes chemistry's total absence from this list's hard-science cluster: physics (Newton, Einstein), biology (Darwin, Watson), astronomy (Galileo), and mathematics (Euclid) were all here; chemistry as its own discipline was not.", aka: ["The Skeptical Chemist", "Sceptical Chymist"] },
   { title: "Fūshikaden", author: "Zeami Motokiyo", why: "Composed in stages beginning around 1400-1402 by Noh theater's own founding actor-playwright, kept as a secret transmission within his family's Kanze school rather than published, until Zeami's treatises began emerging publicly in the early 20th century, with over a dozen texts out by 1909 — Japan's first treatise on drama, part practical acting manual and part philosophy of a life spent performing, built around 'the flower' (hana), the fleeting bloom of a performer's presence that must be constantly renewed rather than mastered once. Closes the East Asian side of a dramatic-theory gap round 49 only partly closed: Aristotle's Poetics (Must Read) covers the West and the Natya Shastra (round 49) covers Sanskrit drama, but nothing here represented Noh, whose 14th-century origins make it one of the oldest major theatrical traditions still actively performed.", aka: ["Fushikaden", "Kadensho", "Style and the Flower", "Fūshi Kaden"] },
+
+  // Round 51 (2026-08-16): five picks closing five independent world-
+  // tradition gaps, continuing straight past round 50's five with no
+  // overlap in scope. The Epic of Manas closes Central Asia's absence
+  // from this list's world-epic cluster and gives the Turkic tradition
+  // its second, genuinely distinct entry alongside round 49's Dede Korkut
+  // — that one fixed the Oghuz migration into Anatolia in a 14th/15th-
+  // century manuscript, this one is still a living oral practice recited
+  // whole from memory by trained manaschis, and the Guinness World
+  // Records holder for the world's longest epic poem at roughly 500,000
+  // lines. The Knight in the Panther's Skin closes the Caucasus's total
+  // absence from the same cluster — Georgia's national epic, previously
+  // touched on this list only through Lermontov's A Hero of Our Time, a
+  // Russian outsider's account of the region rather than a text from
+  // inside it. Kebra Nagast closes the Horn of Africa's total absence,
+  // distinct from Sundiata's West African griot tradition already here —
+  // the text that legitimized Ethiopia's Solomonic monarchy into the 20th
+  // century and later became a founding Rastafari scripture. The Egyptian
+  // Book of the Dead closes ancient Egypt's total absence: this list runs
+  // ancient Mesopotamia twice over (Gilgamesh, Hammurabi) and the wider
+  // ancient Near East a third time (the Hebrew Bible) without ever
+  // representing Egypt, one of the same era's other founding
+  // civilizations. Humboldt's Personal Narrative closes a genre gap
+  // distinct from this list's existing medieval travel-literature pair
+  // (Marco Polo's Travels, Ibn Battuta's Rihla) — scientific field travel
+  // writing rather than civilizational eyewitness account, and the book
+  // Darwin carried aboard the Beagle and cited more than 400 times in his
+  // own work. All five facts (Manas's roughly 500,000-line length and
+  // Guinness record, its 1856 partial transcription by Chokan Valikhanov
+  // and 1920s first full publication; Rustaveli's Vepkhistqaosani composed
+  // c. 1180-1207 during Queen Tamar's reign and dedicated to her; the
+  // Kebra Nagast's 14th-century Ge'ez compilation, most likely under
+  // Emperor Amda Seyon (1314-1344); the Book of the Dead's roots in
+  // Pyramid Texts (c. 2400 BCE) and Coffin Texts (c. 2000 BCE), papyrus
+  // copies from c. 1550 BCE onward, and the 1250 BCE Papyrus of Ani's 1888
+  // acquisition by E.A. Wallis Budge; Humboldt's Personal Narrative
+  // published in seven volumes 1814-1829 and Darwin's 400-plus citations
+  // of it) independently verified via WebSearch, continuing the practice
+  // standing since round 45.
+  { title: "The Epic of Manas", author: "Anonymous", why: "Roughly 500,000 lines long — Guinness World Records' holder for the longest epic poem, some twenty times the combined length of the Iliad and Odyssey — recited whole from memory by trained oral performers called manaschis rather than read from any fixed text; the first partial transcription came only in 1856, from the Kazakh scholar Chokan Valikhanov, and the first full published version not until the 1920s. Closes this list's Central Asian gap in the world-epic cluster: round 49's Dede Korkut covered the Oghuz Turkic tradition that migrated west into Anatolia and was fixed in a 14th/15th-century manuscript, but nothing represented the Kyrgyz steppe tradition further east, which remains a living oral practice rather than a settled text the way Gilgamesh, Beowulf, and the rest of that cluster are.", aka: ["Manas", "Epic of Manas", "Manas Epic"] },
+  { title: "The Knight in the Panther's Skin", author: "Shota Rustaveli", why: "6,648 lines in the Rustavelian quatrain form Rustaveli built the poem around, composed roughly 1180-1207 during the reign of Queen Tamar of Georgia and dedicated to her in its prologue — two interwoven love stories, nominally set in Arabia and India, that became Georgia's national epic and the text credited with fixing literary Georgian for the eight centuries since. Closes the Caucasus's total absence from this list's world-epic cluster (Gilgamesh, Beowulf, the Shahnameh, the Kalevala, the Poetic Edda, Njal's Saga, Dede Korkut, the Táin, and this round's own Manas) — a region otherwise touched only through Lermontov's A Hero of Our Time, set there but written by a Russian outsider.", aka: ["Vepkhistqaosani", "The Man in the Panther's Skin", "The Knight in the Tiger's Skin"] },
+  { title: "Kebra Nagast", author: "Anonymous", why: "Ethiopia's national epic, compiled in Ge'ez sometime in the 1300s — most likely during the reign of Emperor Amda Seyon (1314-1344) — from older oral and biblical material to trace the Solomonic dynasty's founder, Menelik I, to a union between King Solomon and the Queen of Sheba, and to explain how the Ark of the Covenant came to rest in Ethiopia. The text that legitimized an Ethiopian monarchy ruling into 1974, and later a founding scripture for the Rastafari movement. The Horn of Africa's total absence on this list, closed — distinct from Sundiata's West African griot tradition, already here.", aka: ["The Glory of Kings", "Glory of the Kings", "Kebra Negast"] },
+  { title: "The Egyptian Book of the Dead", author: "Anonymous", why: "Not a single fixed text but an evolving collection of roughly 200 spells guiding the soul through the afterlife, rooted in Pyramid Texts dating to around 2400 BCE and Coffin Texts from around 2000 BCE, then copied onto papyrus for burial use from roughly 1550 BCE through the Ptolemaic era. Its most celebrated surviving copy, the 1250 BCE Papyrus of Ani, was cut into thirty-seven sheets and brought to the British Museum by E.A. Wallis Budge in 1888. Ancient Egypt's total absence, closed — this list already runs ancient Mesopotamia twice over (Gilgamesh, Hammurabi) and the wider ancient Near East a third time (the Hebrew Bible), but Egypt, one of the same era's other founding civilizations, had never been represented.", aka: ["Book of the Dead", "The Book of Coming Forth by Day", "Papyrus of Ani"] },
+  { title: "Personal Narrative of Travels to the Equinoctial Regions of the New Continent", author: "Alexander von Humboldt", why: "Seven volumes published between 1814 and 1829, recounting Humboldt's 1799-1804 expedition across Latin America — plant geography, ocean currents, volcanic geology, and the interdependence of living systems, argued in prose rather than tabulated as data alone. Darwin carried a dog-eared copy aboard the Beagle in 1831, called it the book that first made him want to travel and observe at all, and cited Humboldt more than 400 times across his own writing. Closes a genre gap distinct from this list's existing medieval travel-literature pair — Marco Polo's Travels and Ibn Battuta's Rihla, both already here, are civilizational eyewitness accounts; this is travel writing rewired into scientific method several centuries later, and the direct link to Darwin's own On the Origin of Species, already here.", aka: ["Personal Narrative", "Personal Narrative of a Journey to the Equinoctial Regions of the New Continent"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
