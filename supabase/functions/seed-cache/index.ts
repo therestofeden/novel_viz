@@ -2460,6 +2460,31 @@ const POPULAR_BOOKS = [
   "Lives of the Most Excellent Painters, Sculptors, and Architects by Giorgio Vasari",
   "Six Characters in Search of an Author by Luigi Pirandello",
   "Areopagitica by John Milton",
+
+  // ── Round 49 (2026-08-16, seed-cache reconciliation) — daily canon curation
+  // rounds 49 (2026-08-15: Hebrew Bible/De Architectura/Al-Jabr/Natya Shastra/
+  // Dede Korkut), 50 (2026-08-15, 2nd pass: Táin/Hammurabi/Shannon/Boyle/
+  // Zeami), and 51 (2026-08-16: Manas/Rustaveli/Kebra Nagast/Book of the
+  // Dead/Humboldt) added 15 titles to canon_books/classic.ts across three
+  // rounds; none were previously covered in this pre-warm list (checked by
+  // direct grep — only false-positive near-matches, e.g. "Samantha Shannon"
+  // and "Humboldt's Gift by Saul Bellow", already present for unrelated
+  // reasons) ──
+  "The Hebrew Bible",
+  "De Architectura by Vitruvius",
+  "The Compendious Book on Calculation by Completion and Balancing by Muhammad ibn Musa al-Khwarizmi",
+  "The Natya Shastra by Bharata Muni",
+  "The Book of Dede Korkut",
+  "The Táin",
+  "Code of Hammurabi",
+  "A Mathematical Theory of Communication by Claude Shannon",
+  "The Sceptical Chymist by Robert Boyle",
+  "Fūshikaden by Zeami Motokiyo",
+  "The Epic of Manas",
+  "The Knight in the Panther's Skin by Shota Rustaveli",
+  "Kebra Nagast",
+  "The Egyptian Book of the Dead",
+  "Personal Narrative of Travels to the Equinoctial Regions of the New Continent by Alexander von Humboldt",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
