@@ -2485,6 +2485,24 @@ const POPULAR_BOOKS = [
   "Kebra Nagast",
   "The Egyptian Book of the Dead",
   "Personal Narrative of Travels to the Equinoctial Regions of the New Continent by Alexander von Humboldt",
+
+  // ── Round 52 (2026-08-17, seed-cache reconciliation) — canon curation round
+  // 52 (source tag "curation_round52") added Politics/Pensées/I Ching/On the
+  // Revolutions of the Heavenly Spheres/Grimms' Fairy Tales to canon_books;
+  // none were previously covered here (checked by direct grep — Aristotle's
+  // Nicomachean Ethics and Poetics are present, Politics was not) ──
+  "Politics by Aristotle",
+  "Pensées by Blaise Pascal",
+  "I Ching",
+  "On the Revolutions of the Heavenly Spheres by Nicolaus Copernicus",
+  "Grimms' Fairy Tales",
+
+  // ── Round 52b (2026-08-17, same-day addendum) — five more picks added to
+  // classic.ts/canon_books alongside the round 52 reconciliation above ──
+  "Micrologus by Guido of Arezzo",
+  "Liber Abaci by Fibonacci",
+  "Comentarios Reales de los Incas by Inca Garcilaso de la Vega",
+  "I Quattro Libri dell'Architettura by Andrea Palladio",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

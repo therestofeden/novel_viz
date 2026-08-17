@@ -2034,6 +2034,93 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Kebra Nagast", author: "Anonymous", why: "Ethiopia's national epic, compiled in Ge'ez sometime in the 1300s — most likely during the reign of Emperor Amda Seyon (1314-1344) — from older oral and biblical material to trace the Solomonic dynasty's founder, Menelik I, to a union between King Solomon and the Queen of Sheba, and to explain how the Ark of the Covenant came to rest in Ethiopia. The text that legitimized an Ethiopian monarchy ruling into 1974, and later a founding scripture for the Rastafari movement. The Horn of Africa's total absence on this list, closed — distinct from Sundiata's West African griot tradition, already here.", aka: ["The Glory of Kings", "Glory of the Kings", "Kebra Negast"] },
   { title: "The Egyptian Book of the Dead", author: "Anonymous", why: "Not a single fixed text but an evolving collection of roughly 200 spells guiding the soul through the afterlife, rooted in Pyramid Texts dating to around 2400 BCE and Coffin Texts from around 2000 BCE, then copied onto papyrus for burial use from roughly 1550 BCE through the Ptolemaic era. Its most celebrated surviving copy, the 1250 BCE Papyrus of Ani, was cut into thirty-seven sheets and brought to the British Museum by E.A. Wallis Budge in 1888. Ancient Egypt's total absence, closed — this list already runs ancient Mesopotamia twice over (Gilgamesh, Hammurabi) and the wider ancient Near East a third time (the Hebrew Bible), but Egypt, one of the same era's other founding civilizations, had never been represented.", aka: ["Book of the Dead", "The Book of Coming Forth by Day", "Papyrus of Ani"] },
   { title: "Personal Narrative of Travels to the Equinoctial Regions of the New Continent", author: "Alexander von Humboldt", why: "Seven volumes published between 1814 and 1829, recounting Humboldt's 1799-1804 expedition across Latin America — plant geography, ocean currents, volcanic geology, and the interdependence of living systems, argued in prose rather than tabulated as data alone. Darwin carried a dog-eared copy aboard the Beagle in 1831, called it the book that first made him want to travel and observe at all, and cited Humboldt more than 400 times across his own writing. Closes a genre gap distinct from this list's existing medieval travel-literature pair — Marco Polo's Travels and Ibn Battuta's Rihla, both already here, are civilizational eyewitness accounts; this is travel writing rewired into scientific method several centuries later, and the direct link to Darwin's own On the Origin of Species, already here.", aka: ["Personal Narrative", "Personal Narrative of a Journey to the Equinoctial Regions of the New Continent"] },
+
+  // Round 52 (2026-08-17): five picks closing five independent gaps,
+  // continuing straight past round 51's five with no overlap in scope. The
+  // I Ching closes a gap this list's Confucian/Daoist cluster (the
+  // Analects, Mencius, the Tao Te Ching, Zhuangzi) left standing even after
+  // round 49's Hebrew Bible closed the scripture gap — nothing represented
+  // the older divinatory/cosmological root both traditions grew out of, and
+  // its reach extends past Chinese philosophy entirely into the accidental
+  // origin story of binary computation. Guido of Arezzo's Micrologus closes
+  // music theory's total absence from this list — every other performing
+  // art has a founding treatise here (Aristotle's Poetics for Western drama,
+  // round 49's Natya Shastra for Sanskrit drama, round 50's Fūshikaden for
+  // Noh) but music itself had none, despite this one short 11th-century
+  // treatise being the direct ancestor of the staff notation and solfège
+  // syllables still taught to every beginning musician today. Fibonacci's
+  // Liber Abaci closes the numeral-system gap under this list's existing
+  // mathematics cluster: Euclid's Elements (geometry, Must Read) and round
+  // 49's Al-Jabr (algebra) were both here, but nothing represented the
+  // Hindu-Arabic numeral system itself, the notation both are written in.
+  // Comentarios Reales de los Incas closes the Andean gap in this list's
+  // cluster of pre-Columbian and colonial-Indigenous civilizational texts —
+  // Popol Vuh (Maya/Mesoamerica, round 41) and round 51's Kebra Nagast and
+  // Egyptian Book of the Dead cover other continents' founding
+  // civilizations, but Inca Peru, the Americas' other great pre-Columbian
+  // empire besides the Maya/Aztec sphere, was never represented. Palladio's
+  // I Quattro Libri dell'Architettura closes the half of the architecture
+  // gap round 49's De Architectura left open: Vitruvius gave this list
+  // antiquity's architectural theory, but nothing represented the practical
+  // pattern-book tradition that carried that theory into the buildings of
+  // the next four centuries, from Palladio's own executed villas through
+  // Inigo Jones to Thomas Jefferson. All five facts (the I Ching's core
+  // text compiled in stages during the Western Zhou dynasty and likely
+  // fixed by the 9th century BCE, its Ten Wings commentaries added later
+  // and the whole canonized in 136 BCE, and Leibniz's 1701 letter to the
+  // Jesuit missionary Joachim Bouvet that led Bouvet to identify its
+  // hexagrams with Leibniz's own new binary arithmetic; the Micrologus's
+  // composition c. 1025-1026 and its solmization syllables drawn from the
+  // hymn "Ut queant laxis"; Liber Abaci's 1202 composition by a Pisan
+  // merchant's son who had learned arithmetic from an Arab teacher in
+  // Bugia; Comentarios Reales's 1609 publication in Lisbon and its 1617
+  // posthumous second part, Historia General del Perú; I Quattro Libri's
+  // 1570 publication in Venice in four volumes) independently verified via
+  // WebSearch, continuing the practice standing since round 45.
+  { title: "I Ching", author: "Anonymous", why: "The oldest of the Chinese classics: a divination manual of 64 hexagrams built from broken and unbroken lines, its core text compiled in stages during the Western Zhou dynasty and likely fixed by the 9th century BCE, its interpretive commentaries (the 'Ten Wings') added centuries later and traditionally credited to Confucius, and the whole canonized in 136 BCE as first among the Han dynasty's Five Classics. In 1701 Leibniz described his newly invented binary arithmetic in a letter to the Jesuit missionary Joachim Bouvet in Beijing, who wrote back that same year with a diagram of the 64 hexagrams showing that Chinese scholars had been using the same binary logic — broken and unbroken lines standing in for 0 and 1 — millennia earlier. Closes a gap this list's Confucian/Daoist cluster (the Analects, Mencius, the Tao Te Ching, Zhuangzi) left standing: divination and cosmology, the root both traditions grew out of, rather than the ethical philosophy that grew from it.", aka: ["Yijing", "Yi Jing", "Book of Changes", "Zhouyi"] },
+  { title: "Micrologus", author: "Guido of Arezzo", why: "Written around 1025-1026 by a Benedictine monk trying to teach choirboys new hymns faster than rote memorization allowed, this treatise introduced the four-line staff that fixed pitch to a specific vertical position for the first time, and the solmization syllables — ut-re-mi-fa-sol-la, drawn from the hymn 'Ut queant laxis' — that became do-re-mi. It was, after Boethius's own De institutione musica, the most widely copied music treatise of the Middle Ages, and its staff and solfège are the direct ancestors of the notation every musician still learns today. Closes music theory's total absence from this list.", aka: ["Micrologus de disciplina artis musicae", "Guido's Micrologus"] },
+  { title: "Liber Abaci", author: "Fibonacci", why: "Written in 1202 by a Pisan merchant's son who had learned arithmetic from an Arab teacher in Bugia, on the North African coast, this book introduced Hindu-Arabic numerals and base-10 positional notation to a Europe still doing sums in Roman numerals — the zero included. Its worked problems for merchants (currency conversion, profit margins, and a rabbit-breeding puzzle that produced the sequence later named for its author) sold the new numerals on utility as much as elegance, though full European adoption still took another three centuries. Closes this list's mathematics cluster's remaining gap: Euclid's Elements (geometry, Must Read) and round 49's Al-Jabr (algebra) were both here, but nothing represented the numeral system either is written in.", aka: ["Liber Abaci", "The Book of Calculation", "Book of the Abacus"] },
+  { title: "Comentarios Reales de los Incas", author: "Inca Garcilaso de la Vega", why: "Published in Lisbon in 1609, written by the son of a Spanish conquistador and an Inca princess who left Peru for Spain at twenty and spent the rest of his life reconstructing, from childhood memory and correspondence with relatives still in Cuzco, the empire that Spanish conquest had erased within a single generation. Its posthumous second part, published in 1617 as Historia General del Perú, covers the conquest itself; Garcilaso styled himself 'mestizo' in print before the word had wide currency, and the book is now widely credited as the first great work of literature by an American-born author. Closes the Andean gap in this list's cluster of pre-Columbian and colonial-Indigenous civilizational texts — Popol Vuh (Maya/Mesoamerica, round 41) and round 51's Kebra Nagast and Egyptian Book of the Dead cover other continents' founding civilizations, but Inca Peru, the Americas' other great pre-Columbian empire, was never represented.", aka: ["Comentarios Reales", "Royal Commentaries of the Incas", "The Royal Commentaries of the Incas"] },
+  { title: "I Quattro Libri dell'Architettura", author: "Andrea Palladio", why: "Published in four volumes in Venice in 1570, distilling Palladio's own survey of Roman ruins and Vitruvius's ancient theory (round 49's De Architectura) into practical designs — classical orders, proportional systems, temple reconstructions, and his own executed villas, including the domed Villa Rotonda — illustrated with woodcuts after his own drawings. Translated into every major Western European language within two centuries and the direct template for Palladianism, from Inigo Jones's English country houses to Thomas Jefferson's Monticello and the University of Virginia's Rotunda, modeled explicitly on Palladio's own dome. Closes the half of round 49's architecture gap that De Architectura left open: Vitruvius gave this list antiquity's theory, but nothing represented the practical pattern-book tradition that carried that theory into the buildings of the next four centuries.", aka: ["The Four Books of Architecture", "I Quattro Libri", "Four Books on Architecture"] },
+
+  // Round 52 canon_books reconciliation (2026-08-17, second same-day pass):
+  // backfills this list's editorial side for the migration
+  // `canon_books_curation_round52_2026_08_17` (source tag "curation_round52",
+  // applied earlier the same day), which added Politics, Pensées, On the
+  // Revolutions of the Heavenly Spheres, and Grimms' Fairy Tales straight to
+  // canon_books without a matching classic.ts/must-read.ts entry — the same
+  // drift pattern flagged in [[novelviz-book-coverage-strategy]] as worth
+  // catching early (round 14->15 precedent). I Ching was also part of that
+  // migration but is not repeated here — it already has its own entry above,
+  // added independently the same day. All four judged Classic (A-tier), not
+  // Must Read (S-tier): Politics joins Nicomachean Ethics and Poetics,
+  // already here, continuing the standing exception that gives Aristotle
+  // three Classic entries rather than the usual one-per-author default —
+  // flagged, like Oedipus Rex before it, as arguably Must-Read-caliber on
+  // influence alone, but calibration consistency with the rest of Aristotle's
+  // placement argues for Classic. On the Revolutions of the Heavenly Spheres
+  // joins The Principia and Galileo's Dialogue Concerning the Two Chief World
+  // Systems, both already here, completing that three-book arc of the
+  // scientific revolution (Copernicus proposes it, Galileo is tried for
+  // defending it, Newton mathematically completes it) at the same tier Origin
+  // of Species' Must Read promotion did not extend to the rest of this
+  // cluster. Grimms' Fairy Tales joins One Thousand and One Nights, already
+  // here, as this list's second great folklore-into-literature collection.
+  // Pensées joins Montaigne's Essays (Must Read) as the other major work in
+  // the French tradition of fragmentary personal philosophical prose, arguing
+  // toward faith rather than doubt. All four facts (Politics' composition
+  // c. 350 BCE across eight books, its "man is a political animal" argument;
+  // Pensées' composition 1658-1662 and posthumous 1670 publication, three
+  // years after Pascal's 1662 death, built around the wager argument for
+  // belief under uncertainty; De revolutionibus orbium coelestium's 1543
+  // Nuremberg publication, reputedly placed in Copernicus's hands only as he
+  // lay dying that same year; the Grimm brothers' first 1812 edition of
+  // Kinder- und Hausmärchen, expanded across seven editions through 1857)
+  // independently verified via WebSearch.
+  { title: "Politics", author: "Aristotle", why: "Eight books arguing the polis is the natural unit of human life — 'man is a political animal' — surveying and comparing real constitutions rather than designing an ideal one from first principles, the empirical counterweight to Plato's Republic, already here. Joins Aristotle's Nicomachean Ethics and Poetics, both already here.", aka: ["The Politics"] },
+  { title: "Pensées", author: "Blaise Pascal", why: "Unfinished fragments for a planned defense of Christianity, found and published in 1670, three years after Pascal's death — includes the wager, his famous bet that believing in God is the only rational move under genuine uncertainty about his existence. The French tradition of fragmentary personal philosophical prose that Montaigne's Essays, already here, began, aimed now toward faith rather than doubt.", aka: ["Pensees", "Thoughts"] },
+  { title: "On the Revolutions of the Heavenly Spheres", author: "Nicolaus Copernicus", why: "Published in Nuremberg in 1543, reputedly placed in Copernicus's hands as he lay dying that same year, proposing that the Earth orbits the sun rather than the reverse — the book that started the scientific revolution Galileo's Dialogue Concerning the Two Chief World Systems, already here, would be tried for defending and Newton's Principia, already here, would mathematically complete.", aka: ["De revolutionibus orbium coelestium", "On the Revolutions of the Celestial Spheres", "De Revolutionibus"] },
+  { title: "Grimms' Fairy Tales", author: "Jacob and Wilhelm Grimm", why: "Two philologist brothers' 1812 first edition of Kinder- und Hausmärchen, expanded across seven editions through 1857 — Cinderella, Snow White, Hansel and Gretel, collected from oral sources and shaped into the template the modern fairy tale still follows. This list's second great folklore-into-literature collection, beside One Thousand and One Nights, already here.", aka: ["Grimm's Fairy Tales", "Kinder- und Hausmärchen", "Children's and Household Tales"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
