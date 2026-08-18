@@ -1528,6 +1528,27 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Lucky Jim", author: "Kingsley Amis", why: "The campus novel's founding comedy; academic phoniness skewered from the inside." },
   { title: "Lord of the Flies", author: "William Golding", why: "Schoolboys revert to savagery without adults watching; civilization's thinness, tested and found wanting." },
 
+  // Round 53 (2026-08-18): five picks closing five independent gaps. The
+  // Tragical History of Doctor Faustus closes a real hole in this list's
+  // drama cluster: Goethe's Faust is already here, but nothing represented
+  // the version that came two centuries earlier and gave the legend its
+  // first great stage treatment — Marlowe dramatizing the German Faustbuch
+  // (by way of its 1592 English translation) just months before his own
+  // death, in blank verse that helped set the template Shakespeare wrote
+  // in. The Adventures of Pinocchio closes children's literature's total
+  // absence from this list — Grimms' Fairy Tales (round 52) is a folklore
+  // collection, not a single authored children's novel, and nothing else
+  // on either list represents the form at all, despite Pinocchio's status
+  // as one of the most translated books ever written. All five facts
+  // (Doctor Faustus's A-text publication in 1604 and posthumous B-text in
+  // 1616, three years after Marlowe's 1593 death, and its 1592 English
+  // source; Pinocchio's 1881-1883 serialization in Giornale per i bambini
+  // under the title "Storia di un burattino" and 1883 first book
+  // publication) independently verified via WebSearch, continuing the
+  // practice standing since round 45.
+  { title: "The Tragical History of Doctor Faustus", author: "Christopher Marlowe", why: "Dramatized from the German Faustbuch by way of its 1592 English translation, written in the last months before Marlowe's own death in a 1593 tavern brawl, and published posthumously — the A-text in 1604, a longer B-text in 1616 — this is the Faust legend's first great stage treatment, two centuries before Goethe's Faust, already here. Blank verse pushed toward its Elizabethan limit, and a direct model for the tragic form Shakespeare inherited.", aka: ["Doctor Faustus", "The Tragical History of the Life and Death of Doctor Faustus"] },
+  { title: "The Adventures of Pinocchio", author: "Carlo Collodi", why: "Serialized in installments from 1881 as \"Storia di un burattino\" in the Giornale per i bambini — a wooden puppet's nose growing with every lie — and originally meant to end with Pinocchio hanged for his misbehavior partway through; reader demand pushed Collodi to keep going, and the completed novel appeared in book form in 1883. Since translated into more languages than almost any book outside religious scripture. Closes children's literature's total absence from both lists — Grimms' Fairy Tales (round 52) is a folklore collection, not a single authored children's novel, and nothing else here represents the form.", aka: ["Le avventure di Pinocchio", "Pinocchio", "The Story of a Puppet"] },
+
   // ── Non-fiction ────────────────────────────────────────────────────────
   { title: "The History of the Peloponnesian War", author: "Thucydides", why: "Power politics analyzed without myth or piety; the realist tradition's founding text." },
   { title: "The Annals", author: "Tacitus", why: "Rome's emperors dissected by a senator who trusted no one's motives, least of all the ones in power; history written as autopsy.", aka: ["Annals", "The Annals of Imperial Rome"] },
@@ -2121,6 +2142,42 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Pensées", author: "Blaise Pascal", why: "Unfinished fragments for a planned defense of Christianity, found and published in 1670, three years after Pascal's death — includes the wager, his famous bet that believing in God is the only rational move under genuine uncertainty about his existence. The French tradition of fragmentary personal philosophical prose that Montaigne's Essays, already here, began, aimed now toward faith rather than doubt.", aka: ["Pensees", "Thoughts"] },
   { title: "On the Revolutions of the Heavenly Spheres", author: "Nicolaus Copernicus", why: "Published in Nuremberg in 1543, reputedly placed in Copernicus's hands as he lay dying that same year, proposing that the Earth orbits the sun rather than the reverse — the book that started the scientific revolution Galileo's Dialogue Concerning the Two Chief World Systems, already here, would be tried for defending and Newton's Principia, already here, would mathematically complete.", aka: ["De revolutionibus orbium coelestium", "On the Revolutions of the Celestial Spheres", "De Revolutionibus"] },
   { title: "Grimms' Fairy Tales", author: "Jacob and Wilhelm Grimm", why: "Two philologist brothers' 1812 first edition of Kinder- und Hausmärchen, expanded across seven editions through 1857 — Cinderella, Snow White, Hansel and Gretel, collected from oral sources and shaped into the template the modern fairy tale still follows. This list's second great folklore-into-literature collection, beside One Thousand and One Nights, already here.", aka: ["Grimm's Fairy Tales", "Kinder- und Hausmärchen", "Children's and Household Tales"] },
+
+  // Round 53 non-fiction (2026-08-18), continuing straight from this
+  // round's two fiction picks above with three more closing three
+  // independent gaps. On Crimes and Punishments closes this list's
+  // longstanding political-theory/law gap: Two Treatises, The Social
+  // Contract, On Liberty, Democracy in America, The Federalist Papers, and
+  // The Spirit of Laws are all here, but nothing represented the founding
+  // text of modern criminal-justice reform itself — a 26-year-old
+  // Milanese nobleman's 1764 case against torture and the death penalty
+  // that Voltaire annotated, Catherine the Great tried to legislate, and
+  // Jefferson copied into his own commonplace book. Astronomia Nova closes
+  // the missing middle of this list's scientific-revolution arc: round 52
+  // added On the Revolutions of the Heavenly Spheres (Copernicus proposes
+  // heliocentrism) and Galileo's Dialogue Concerning the Two Chief World
+  // Systems (Galileo is tried for defending it) already sit beside
+  // Newton's Principia (Newton mathematically completes it) — but the
+  // book that actually replaced circular orbits with ellipses, the
+  // physical breakthrough Newton's laws of motion would later explain,
+  // was never here. On the Sublime closes an aesthetics gap distinct from
+  // this list's existing rhetoric/poetics cluster (Aristotle's Poetics,
+  // already here) — a 1st-century-CE treatise of disputed authorship,
+  // ignored for a millennium, then rediscovered and translated by Boileau
+  // in 1674 to become the direct ancestor of Burke's and Kant's writing on
+  // the sublime, neither of which is on this list on its own merits but
+  // both of which take their central term from this one. All three facts
+  // (On Crimes and Punishments's anonymous 1764 publication, its Voltaire
+  // commentary and Jefferson commonplace-book citation; Astronomia Nova's
+  // 1609 publication after Kepler's decade-long study of Mars using Tycho
+  // Brahe's observational data; On the Sublime's 1st-century CE Roman-era
+  // Greek composition, disputed authorship conventionally assigned to
+  // "Longinus," and Boileau's 1674 French translation) independently
+  // verified via WebSearch, continuing the practice standing since round
+  // 45.
+  { title: "On Crimes and Punishments", author: "Cesare Beccaria", why: "Published anonymously in Milan in 1764 by a 26-year-old nobleman, the founding text of modern penology — the first sustained case against torture and the death penalty, arguing punishment should be proportionate, certain, and public rather than cruel. Voltaire published an annotated French edition, Catherine the Great tried to write its principles into Russian law, and Thomas Jefferson copied passages into his own commonplace book. Closes this list's remaining political-theory/law gap: Two Treatises, The Social Contract, On Liberty, Democracy in America, The Federalist Papers, and The Spirit of Laws are all here, but nothing represented criminal-justice theory itself.", aka: ["Dei delitti e delle pene", "An Essay on Crimes and Punishments", "Of Crimes and Punishments"] },
+  { title: "Astronomia Nova", author: "Johannes Kepler", why: "Published in 1609 after a ten-year study of the planet Mars built on Tycho Brahe's observational data, the book that discarded two thousand years of circular-orbit astronomy and proposed, for the first time, that planets move in ellipses. Closes the missing middle of this list's scientific-revolution arc: round 52's On the Revolutions of the Heavenly Spheres (Copernicus proposes heliocentrism) and Galileo's Dialogue Concerning the Two Chief World Systems, already here (Galileo is tried for defending it), flank Newton's Principia, already here (Newton mathematically completes it) — but the physical breakthrough connecting the two, elliptical orbits replacing circular ones, was never represented.", aka: ["New Astronomy", "Astronomia nova ΑΙΤΙΟΛΟΓΗΤΟΣ", "On the Motion of Mars"] },
+  { title: "On the Sublime", author: "Longinus", why: "A Roman-era Greek treatise on literary greatness, dated to the 1st century CE and traditionally credited to a shadowy figure called Longinus, though the true author remains disputed. Effectively ignored for a millennium before Boileau's 1674 French translation gave it a second life, making it the direct ancestor of Burke's A Philosophical Enquiry into the Sublime and Beautiful and Kant's Critique of the Power of Judgment, neither on this list independently but both drawing their central term straight from this one. Closes an aesthetics gap distinct from this list's existing rhetoric cluster — Aristotle's Poetics, already here, covers dramatic structure; nothing covered the sublime itself.", aka: ["Peri Hypsous", "On Great Writing", "De Sublimitate", "Pseudo-Longinus"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────

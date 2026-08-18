@@ -2503,6 +2503,17 @@ const POPULAR_BOOKS = [
   "Liber Abaci by Fibonacci",
   "Comentarios Reales de los Incas by Inca Garcilaso de la Vega",
   "I Quattro Libri dell'Architettura by Andrea Palladio",
+
+  // ── Round 53 (2026-08-18) — canon curation round 53 (source tag
+  // "daily_agent_canon_backfill_2026_08_18") added five titles to
+  // canon_books, closing gaps in drama, children's literature, political
+  // theory/law, foundational science, and aesthetics; none were previously
+  // covered here (checked by direct grep) ──
+  "The Tragical History of Doctor Faustus by Christopher Marlowe",
+  "The Adventures of Pinocchio by Carlo Collodi",
+  "On Crimes and Punishments by Cesare Beccaria",
+  "Astronomia Nova by Johannes Kepler",
+  "On the Sublime by Longinus",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
