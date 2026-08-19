@@ -740,8 +740,21 @@ Deno.serve(async (req) => {
     // normally sub-50ms, so 1000ms is generous headroom; on timeout it
     // degrades to a cache miss (re-fetches from OL/GB/canon) rather than
     // blocking the response, which is always correct behavior, just slower.
+    // 2026-08-19 daily perf pass: the timeout timer below was never cleared
+    // when the real query won the race, so on any request whose TOTAL time
+    // exceeded CACHE_READ_TIMEOUT_MS (routine — the OL fetch budget alone is
+    // 3500ms) the orphaned setTimeout fired later in the same invocation and
+    // stamped cache_read_timed_out=1 into `timings` regardless of whether the
+    // real lookup had already resolved fast. Confirmed in prod logs: entries
+    // with cache_read=145ms (well under the 1000ms budget) still carrying
+    // cache_read_timed_out=1. This corrupted the exact telemetry every prior
+    // perf pass in this file relies on to find real stalls — same bug shape
+    // repeated at the rate-limit, canon, and analysis-lookup timeouts below.
+    // Fixed by clearing the timer once the real promise settles, via
+    // .finally(), so the flag only gets set when the timeout genuinely wins.
     const CACHE_READ_TIMEOUT_MS = 1000;
     const cacheT0 = performance.now();
+    let cacheReadTimer: ReturnType<typeof setTimeout> | undefined;
     const cacheReadPromise = adminClient
       .from("search_cache")
       .select("results, last_accessed_at")
@@ -750,17 +763,20 @@ Deno.serve(async (req) => {
       .then(({ data, error }: { data: { results: unknown; last_accessed_at: string } | null; error: unknown }) => {
         if (error) throw error;
         return data;
+      })
+      .finally(() => {
+        if (cacheReadTimer) clearTimeout(cacheReadTimer);
       });
     Promise.resolve(cacheReadPromise).catch(() => {});
     const cacheRow = await Promise.race([
       cacheReadPromise,
       new Promise<null>((resolve) => {
-        const timer = setTimeout(() => {
+        cacheReadTimer = setTimeout(() => {
           timings.cache_read_timed_out = 1;
           resolve(null);
         }, CACHE_READ_TIMEOUT_MS);
         // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
-        if (timer?.unref) timer.unref();
+        if (cacheReadTimer?.unref) cacheReadTimer.unref();
       }),
     ]);
     timings.cache_read = Math.round(performance.now() - cacheT0);
@@ -817,6 +833,10 @@ Deno.serve(async (req) => {
     // not a correctness bug.
     const RATE_LIMIT_RPC_TIMEOUT_MS = 800;
     try {
+      // 2026-08-19: same uncleared-timer telemetry bug as cache_read above —
+      // fixed the same way (.finally() clears the timer once the real RPC
+      // settles, so rate_limit_check_timed_out only fires when genuinely won).
+      let rateLimitTimer: ReturnType<typeof setTimeout> | undefined;
       const countPromise = adminClient
         .rpc("count_recent_events", {
           p_ip_hash: ipHash,
@@ -827,16 +847,19 @@ Deno.serve(async (req) => {
         .then(({ data, error }: { data: number | null; error: unknown }) => {
           if (error) throw error;
           return data;
+        })
+        .finally(() => {
+          if (rateLimitTimer) clearTimeout(rateLimitTimer);
         });
       const count = await Promise.race([
         countPromise,
         new Promise<null>((resolve) => {
-          const timer = setTimeout(() => {
+          rateLimitTimer = setTimeout(() => {
             timings.rate_limit_check_timed_out = 1;
             resolve(null);
           }, RATE_LIMIT_RPC_TIMEOUT_MS);
           // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
-          if (timer?.unref) timer.unref();
+          if (rateLimitTimer?.unref) rateLimitTimer.unref();
         }),
       ]);
       if (typeof count === "number" && count >= RATE_LIMIT) {
@@ -926,23 +949,31 @@ Deno.serve(async (req) => {
     // genuine RPC failure below) rather than blocking the whole response.
     const CANON_RPC_TIMEOUT_MS = 1000;
 
+    // 2026-08-19: same uncleared-timer telemetry bug as cache_read/rate-limit
+    // above — fixed the same way.
+    let canonTimer: ReturnType<typeof setTimeout> | undefined;
     const canonRpcPromise: Promise<CanonRow[]> = adminClient
       .rpc("search_canon", { p_q: buildSearchCacheKey(q) })
       .then(({ data, error }: { data: CanonRow[] | null; error: unknown }) => {
         if (error) throw error;
         return data ?? [];
+      })
+      .finally(() => {
+        if (canonTimer) clearTimeout(canonTimer);
       });
     // Prevent an unhandled-rejection warning if this loses the race below.
     canonRpcPromise.catch(() => {});
 
     const canonPromise: Promise<CanonRow[]> = Promise.race([
       canonRpcPromise,
-      new Promise<CanonRow[]>((resolve) =>
-        setTimeout(() => {
+      new Promise<CanonRow[]>((resolve) => {
+        canonTimer = setTimeout(() => {
           timings.canon_timed_out = 1;
           resolve([]);
-        }, CANON_RPC_TIMEOUT_MS)
-      ),
+        }, CANON_RPC_TIMEOUT_MS);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (canonTimer?.unref) canonTimer.unref();
+      }),
     ]);
 
     const [olResult, gbResult, canonResult] = await Promise.allSettled([
@@ -1303,9 +1334,12 @@ Deno.serve(async (req) => {
     // sub-50ms; 800ms is generous headroom. On timeout, degrades to "nothing
     // is cached" — every candidate just misses the cosmetic badge/score
     // boost for this one response, never a correctness or availability bug.
+    // 2026-08-19: same uncleared-timer telemetry bug as the three timeouts
+    // above — fixed the same way.
     const ANALYSIS_LOOKUP_TIMEOUT_MS = 800;
     const analysisT0 = performance.now();
     const analysisKeys = candidates.map((c) => buildAnalysisCacheKey(c.title, c.author));
+    let analysisTimer: ReturnType<typeof setTimeout> | undefined;
     const cachedAnalysisRows = analysisKeys.length > 0
       ? await Promise.race([
         Promise.resolve(
@@ -1317,14 +1351,17 @@ Deno.serve(async (req) => {
               if (error) throw error;
               return data ?? [];
             }),
-        ).catch(() => [] as Array<{ cache_key: string }>),
+        ).catch(() => [] as Array<{ cache_key: string }>)
+          .finally(() => {
+            if (analysisTimer) clearTimeout(analysisTimer);
+          }),
         new Promise<Array<{ cache_key: string }>>((resolve) => {
-          const timer = setTimeout(() => {
+          analysisTimer = setTimeout(() => {
             timings.analysis_lookup_timed_out = 1;
             resolve([]);
           }, ANALYSIS_LOOKUP_TIMEOUT_MS);
           // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
-          if (timer?.unref) timer.unref();
+          if (analysisTimer?.unref) analysisTimer.unref();
         }),
       ])
       : ([] as Array<{ cache_key: string }>);
