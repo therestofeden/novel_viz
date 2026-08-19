@@ -2178,6 +2178,62 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "On Crimes and Punishments", author: "Cesare Beccaria", why: "Published anonymously in Milan in 1764 by a 26-year-old nobleman, the founding text of modern penology — the first sustained case against torture and the death penalty, arguing punishment should be proportionate, certain, and public rather than cruel. Voltaire published an annotated French edition, Catherine the Great tried to write its principles into Russian law, and Thomas Jefferson copied passages into his own commonplace book. Closes this list's remaining political-theory/law gap: Two Treatises, The Social Contract, On Liberty, Democracy in America, The Federalist Papers, and The Spirit of Laws are all here, but nothing represented criminal-justice theory itself.", aka: ["Dei delitti e delle pene", "An Essay on Crimes and Punishments", "Of Crimes and Punishments"] },
   { title: "Astronomia Nova", author: "Johannes Kepler", why: "Published in 1609 after a ten-year study of the planet Mars built on Tycho Brahe's observational data, the book that discarded two thousand years of circular-orbit astronomy and proposed, for the first time, that planets move in ellipses. Closes the missing middle of this list's scientific-revolution arc: round 52's On the Revolutions of the Heavenly Spheres (Copernicus proposes heliocentrism) and Galileo's Dialogue Concerning the Two Chief World Systems, already here (Galileo is tried for defending it), flank Newton's Principia, already here (Newton mathematically completes it) — but the physical breakthrough connecting the two, elliptical orbits replacing circular ones, was never represented.", aka: ["New Astronomy", "Astronomia nova ΑΙΤΙΟΛΟΓΗΤΟΣ", "On the Motion of Mars"] },
   { title: "On the Sublime", author: "Longinus", why: "A Roman-era Greek treatise on literary greatness, dated to the 1st century CE and traditionally credited to a shadowy figure called Longinus, though the true author remains disputed. Effectively ignored for a millennium before Boileau's 1674 French translation gave it a second life, making it the direct ancestor of Burke's A Philosophical Enquiry into the Sublime and Beautiful and Kant's Critique of the Power of Judgment, neither on this list independently but both drawing their central term straight from this one. Closes an aesthetics gap distinct from this list's existing rhetoric cluster — Aristotle's Poetics, already here, covers dramatic structure; nothing covered the sublime itself.", aka: ["Peri Hypsous", "On Great Writing", "De Sublimitate", "Pseudo-Longinus"] },
+
+  // Round 54 (2026-08-19): five titles closing five gaps that survived a
+  // targeted sweep for categories under-represented after 53 rounds —
+  // world literature outside the already-dense French/Russian/Latin
+  // American clusters, and non-Western philosophy/social science, both
+  // explicitly called out as under-covered. Fiction: Effi Briest (Fontane)
+  // closes a real gap in German Realism — Buddenbrooks (Mann), already
+  // here, is itself acknowledged (including by Mann himself) as walking
+  // the road Effi Briest paved, and the two novels even share a name: a
+  // minor character called Buddenbrook appears in Effi Briest's chapter
+  // 28, years before Mann borrowed the name for his own family saga. And
+  // Quiet Flows the Don (Sholokhov) closes this list's absence of any
+  // Soviet-era Russian epic distinct from the 19th-century Tolstoy/
+  // Dostoevsky cluster — a Nobel Prize (1965) specifically for "the epic
+  // of the Don," covering Cossack life through WWI, the Revolution, and
+  // the Civil War from inside the community it depicts. Non-fiction: The
+  // Incoherence of the Philosophers (al-Ghazali) closes this list's
+  // Islamic-philosophy gap — The Muqaddimah (Must Read) and Al-Jabr
+  // (mathematics) represent the Islamic Golden Age's historiography and
+  // mathematics, but nothing represented its philosophy, specifically the
+  // c. 1095 critique of Avicenna and al-Farabi's Aristotelianism that
+  // provoked Averroes' book-length rebuttal (The Incoherence of the
+  // Incoherence) seventy years later — one of philosophy's great direct
+  // arguments-across-decades, the same structural role Popper/Kuhn play
+  // opposite each other on this list. The Yoga Sutras (Patanjali) closes
+  // this list's Indian-philosophy gap left open by the Upanishads and the
+  // Bhagavad Gita (both Must Read, round 38): those are devotional/
+  // metaphysical texts, while this is systematic praxis — 196 aphorisms
+  // across four padas organizing the eight-limbed (ashtanga) path
+  // classical Yoga still trains from, a different register entirely from
+  // scripture. The Interpretation of Cultures (Geertz) closes this list's
+  // total absence of anthropology as its own discipline — Tristes
+  // Tropiques (Lévi-Strauss) and Malinowski's fieldwork are both here, but
+  // neither represents the interpretive turn Geertz's 1973 essay
+  // collection (esp. "Thick Description") caused, still the standard
+  // starting point for "what does 'culture' even mean" in the field.
+  // Judged on rigor/reference-point status rather than hard Lindy age for
+  // this one specifically, flagged per the standing rule for fields where
+  // the Lindy filter alone underserves a genuinely foundational, still-
+  // load-bearing text (same substitution basis as Shannon/round-50 and
+  // Mythical Man-Month). All five facts (Effi Briest's Oct 1894–Mar 1895
+  // Deutsche Rundschau serialization and 1895 book publication, Mann's
+  // 1919 essay naming it one of "the six most significant novels ever
+  // written," and the chapter-28 Buddenbrook cameo; And Quiet Flows the
+  // Don's 1928–1940 four-volume publication and Sholokhov's 1965 Nobel
+  // citation; Tahafut al-Falasifa's c. 1095 composition attacking Avicenna
+  // and al-Farabi, and Averroes' Tahafut al-Tahafut rebuttal; the Yoga
+  // Sutras' 196 aphorisms, four padas, and ashtanga's eight limbs first
+  // named in sutra 2.29; The Interpretation of Cultures's 1973 Basic Books
+  // publication and its "Thick Description" opening essay) independently
+  // verified via WebSearch.
+  { title: "Effi Briest", author: "Theodor Fontane", why: "A seventeen-year-old married off to a much older baron, then slowly suffocated by Prussian propriety and a long-past affair that catches up with her — serialized in 1894–95 and judged Fontane's masterpiece of German Realism. Thomas Mann called it one of 'the six most significant novels ever written' and it directly paved the way for his own Buddenbrooks, already here; a minor character named Buddenbrook even appears in Effi Briest's chapter 28, years before Mann borrowed the name.", aka: ["Effi Briest: A Novel"] },
+  { title: "And Quiet Flows the Don", author: "Mikhail Sholokhov", why: "Don Cossack life torn apart across four volumes (1928–1940) by the First World War, the Revolution, and the Civil War that follows — the epic that won Sholokhov the 1965 Nobel Prize in Literature 'for the artistic power and integrity with which... he has given expression to a historic phase in the life of the Russian people.' This list's Soviet-era Russian epic, distinct from the 19th-century Tolstoy/Dostoevsky cluster already here.", aka: ["The Quiet Don", "Tikhy Don", "Tikhii Don"] },
+  { title: "The Incoherence of the Philosophers", author: "Al-Ghazali", why: "Written around 1095, a systematic attack on twenty metaphysical claims of the Islamic Aristotelian philosophers — chiefly Avicenna and al-Farabi — using their own logical methods to argue their conclusions never met the demonstrative rigor they claimed. Provoked one of philosophy's great direct rebuttals seventy years later: Averroes' book-length The Incoherence of the Incoherence, arguing point by point that al-Ghazali had misread the philosophers he attacked. Closes this list's Islamic-philosophy gap beside The Muqaddimah (Must Read) and Al-Jabr, already here, which cover historiography and mathematics but not philosophy itself.", aka: ["Tahafut al-Falasifa", "The Incoherence of the Philosophers"] },
+  { title: "The Yoga Sutras", author: "Patanjali", why: "196 aphorisms compiled around 400 CE across four padas (chapters), organizing what the text itself names ashtanga — the eight-limbed path from ethical restraint through posture and breath control to absorption — into classical Yoga's founding systematic text. Distinct in register from the Upanishads and the Bhagavad Gita, both Must Read: those are devotional and metaphysical, this is a practice manual, one of Hindu philosophy's six orthodox schools built on a single book.", aka: ["Yoga Sutras of Patanjali", "Patanjali's Yoga Sutras", "Yogasutra"] },
+  { title: "The Interpretation of Cultures", author: "Clifford Geertz", why: "A 1973 essay collection built around 'Thick Description,' arguing culture is a web of significance people spin themselves and anthropology's job is to interpret it, not just catalog it — still the standard starting point for what 'culture' means as an analytic term, across anthropology and well beyond it. Closes this list's total absence of anthropology as its own discipline: Tristes Tropiques (Lévi-Strauss) and Malinowski's fieldwork are both here, but neither represents the interpretive turn this book caused. A rigor/reference-point pick rather than a hard-Lindy one — flagged per this list's standing practice for fields the age filter alone underserves.", aka: ["Interpretation of Cultures", "The Interpretation of Cultures: Selected Essays"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────

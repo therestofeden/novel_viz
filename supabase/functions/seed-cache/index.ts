@@ -2514,6 +2514,17 @@ const POPULAR_BOOKS = [
   "On Crimes and Punishments by Cesare Beccaria",
   "Astronomia Nova by Johannes Kepler",
   "On the Sublime by Longinus",
+
+  // ── Round 54 (2026-08-19) — canon curation round 54 (source tag
+  // "daily_agent_canon_backfill_2026_08_19") added five titles to
+  // canon_books, closing gaps in German Realism, Soviet-era Russian epic,
+  // Islamic philosophy, Indian philosophy/practice, and anthropology; none
+  // were previously covered here (checked by direct grep) ──
+  "Effi Briest by Theodor Fontane",
+  "And Quiet Flows the Don by Mikhail Sholokhov",
+  "The Incoherence of the Philosophers by Al-Ghazali",
+  "The Yoga Sutras by Patanjali",
+  "The Interpretation of Cultures by Clifford Geertz",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
