@@ -2559,6 +2559,19 @@ const POPULAR_BOOKS = [
   "Utopia by Thomas More",
   "Anabasis by Xenophon",
   "Tractatus Logico-Philosophicus by Ludwig Wittgenstein",
+
+  // ── Round 58 (2026-08-22) — canon curation round 58 (source tag
+  // "daily_agent_canon_backfill_2026_08_22") added five titles to
+  // canon_books, closing gaps in Heian-era Japanese prose, Greek
+  // cosmogony, German Romanticism, Indian fable literature, and Roman
+  // prose fiction. Two ("The Pillow Book by Sei Shonagon" and "The
+  // Sorrows of Young Werther by Johann Wolfgang von Goethe") were already
+  // present above from earlier general popular-book seeding — only the
+  // three genuinely new titles are added here to avoid duplicate cache
+  // warmup entries ──
+  "Theogony by Hesiod",
+  "Panchatantra by Vishnu Sharma",
+  "Satyricon by Petronius",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

@@ -2346,6 +2346,49 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Utopia", author: "Thomas More", why: "Published in Latin in 1516, More's account of an imaginary island society coined its own title word — a Greek pun meaning both 'no place' and 'good place' — and founded a literary genre still active five centuries later, running straight through to Brave New World and We, both already here. Closes a real gap beside The Prince, already here and written the same decade: Machiavelli's realism and More's idealism are the twin foundations of modern political thought, and neither reads complete without the other.", aka: ["Libellus vere aureus", "De optimo rei publicae statu deque nova insula Utopia"] },
   { title: "Anabasis", author: "Xenophon", why: "A first-person account, composed around 370 BCE, of 10,000 Greek mercenaries stranded deep in Persian territory after the death of the prince who hired them, and their fighting march of a thousand miles back to the Black Sea — the oldest surviving work of military memoir, studied by Alexander the Great and cited by the Founding Fathers. Closes a genre gap beside Thucydides and Herodotus, already here: both wrote history from the outside, Xenophon lived the retreat himself and wrote it from inside the column.", aka: ["The Anabasis", "The March Up Country", "The March of the Ten Thousand", "The Persian Expedition"] },
   { title: "Tractatus Logico-Philosophicus", author: "Ludwig Wittgenstein", why: "Written largely in the trenches of the First World War and published in 1921, the only philosophy book Wittgenstein published in his own lifetime — 525 numbered propositions arguing that language pictures reality, closing with the line that whatever can't be said clearly should be passed over in silence. Distinct from Philosophical Investigations, already here: the Tractatus is the early, austere system Wittgenstein spent his later career dismantling, twentieth-century analytic philosophy's other bookend rather than a repeat of it.", aka: ["Logisch-Philosophische Abhandlung", "Logical-Philosophical Treatise"] },
+
+  // 2026-08-22 (daily curation pass, round 58): five titles closing five
+  // distinct gaps found by re-scanning the full list against major
+  // literary traditions already represented here. The Pillow Book gives
+  // Heian Japan a second foundational text alongside The Tale of Genji,
+  // already here — Genji is fiction, this is the founding text of the
+  // zuihitsu ("following the brush") essay/list genre, written by a rival
+  // lady-in-waiting at the same imperial court in the same decade.
+  // Theogony closes a genre gap next to Homer's Iliad and Odyssey (Must
+  // Read): Homer wrote heroic epic, Hesiod wrote the only surviving
+  // systematic account of how the Greek gods and cosmos themselves came to
+  // be — a different tradition entirely, and the standard version of
+  // Greek creation myth for the whole of antiquity. The Sorrows of Young
+  // Werther gives Goethe, already here via Faust, a second independently
+  // merited entry — the same multi-entry-author precedent as Augustine,
+  // Wittgenstein, and others above — and closes a real gap as the founding
+  // novel of literary Romanticism, distinct from Faust's verse drama.
+  // Panchatantra closes a gap beside the Ramayana and Mahabharata, already
+  // here: those are epic narrative, this is India's ancient fable
+  // tradition, the direct ancestor (via Arabic translation as Kalila wa
+  // Dimna) of Aesop's Fables' influence on world literature. Satyricon
+  // closes a fiction gap in the Roman-literature cluster (Aeneid,
+  // Metamorphoses, Annals, On Duties, Meditations, Confessions, City of
+  // God, On the Nature of Things, Consolation of Philosophy are all here)
+  // — the only surviving work of Roman prose fiction, and the acknowledged
+  // ancestor of the picaresque novel form this list already tracks through
+  // Lazarillo de Tormes. All five facts (The Pillow Book's completion
+  // c. 1002 CE as the founding zuihitsu text; Theogony's composition
+  // c. 730-700 BCE as the standard Greek cosmogony; Werther's five-and-a-
+  // half-week composition and 1774 publication that made Goethe an
+  // international celebrity at 24 and coined the "Werther effect"; the
+  // Panchatantra's Sanskrit composition, its 570 CE Pahlavi and 750 CE
+  // Arabic (Kalila wa Dimna) translations; Satyricon's composition
+  // c. 63-65 CE under Nero and its status as the first Roman prose
+  // fiction) independently verified via WebSearch rather than trusted from
+  // recall. All five clear the Lindy/A-tier bar with room to spare; none
+  // rise to Must Read's "unmissable" bar — no new promotion flag this
+  // round.
+  { title: "The Pillow Book", author: "Sei Shōnagon", why: "185 entries of court gossip, ranked lists ('Things that make the heart beat faster'), and sharp observation, completed around 1002 CE by a lady-in-waiting at the same Heian court Murasaki Shikibu was writing The Tale of Genji (Must Read) in — and the founding text of zuihitsu, the 'follow the brush' essay-and-list genre Japanese writers still work in a thousand years later.", aka: ["Makura no Sōshi", "Makura no Soshi"] },
+  { title: "Theogony", author: "Hesiod", why: "Composed around 730-700 BCE, the oldest surviving systematic account of how the Greek gods and the universe itself came into being — Chaos, then the Titans, then Zeus's ordered reign — and the version of Greek creation myth antiquity itself treated as standard. Closes a genre gap beside Homer's Iliad and Odyssey, both already Must Read: Homer wrote heroic epic, Hesiod wrote cosmogony, and Greek literature rests on both." },
+  { title: "The Sorrows of Young Werther", author: "Johann Wolfgang von Goethe", why: "Written in five and a half feverish weeks and published in 1774, an epistolary novel of unrequited love and suicide that made the 24-year-old Goethe an international celebrity overnight, ignited the Sturm und Drang movement, and set off a real wave of copycat suicides across Europe — the 'Werther effect' still names the phenomenon in psychiatry today. Gives Goethe, already here via Faust, a second independently merited entry: this is the novel that founded literary Romanticism, not a repeat of the verse drama that followed it.", aka: ["Die Leiden des jungen Werthers"] },
+  { title: "Panchatantra", author: "Vishnu Sharma", why: "An ancient Sanskrit collection of animal fables framed as a Brahmin tutor's lessons for three unteachable princes, reaching its final form by the Gupta period — translated into Persian in 570 CE and from there into Arabic as Kalila wa Dimna in 750 CE, becoming one of the most widely translated non-religious books in history and a direct influence on La Fontaine's Fables. Closes a gap beside the Ramayana and Mahabharata, already here: those are epic narrative, this is the fable tradition beside it.", aka: ["Panchatantram", "The Fables of Bidpai", "Kalila wa Dimna"] },
+  { title: "Satyricon", author: "Petronius", why: "A sprawling, filthy, brilliant satire of nouveau-riche excess in Nero's Rome, written around 63-65 CE and surviving only in fragments — the sole work of Roman prose fiction to come down to us, and the acknowledged ancestor of the picaresque novel this list already tracks through Lazarillo de Tormes, already here, sixteen centuries later.", aka: ["The Satyricon", "Satyrica"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
