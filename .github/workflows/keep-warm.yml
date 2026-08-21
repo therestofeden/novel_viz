@@ -1,8 +1,23 @@
 name: Keep Edge Functions Warm
 
-# Pings all Gemini edge functions every 5 minutes with is_warmup: true.
-# Each function returns 200 immediately — no DB or Gemini calls are made.
-# This prevents Supabase cold starts (~1-2s penalty) on the first real request.
+# Pings edge functions every 5 minutes to prevent Supabase cold starts
+# (~1-2s penalty) on the first real request.
+# - The 4 Gemini functions (analyze-novel, takeaways, recommend-anti-shelf,
+#   recommend-by-dna) return 200 immediately on {is_warmup:true} — no DB or
+#   Gemini calls are made.
+# - dna-consensus also supports {is_warmup:true} (added 2026-07-02) but was
+#   never added here until 2026-08-21 — found during a backend audit.
+# - search-books (GET) and popular-books (GET) have no is_warmup flag, but
+#   both have genuinely free paths: search-books short-circuits to
+#   `{results: []}` for any query under 2 chars (a blank q= ping costs
+#   nothing — no OL/GB/DB calls), and popular-books either serves its
+#   in-memory memo (free) or, on a true cold isolate, runs its normal DB
+#   scan once — which also means this ping keeps the memo itself fresh for
+#   the next real user, not just the isolate warm.
+# - search-books and popular-books are the two highest-frequency,
+#   most latency-sensitive endpoints in the app (autocomplete-driven) and
+#   were the only public-facing functions with zero warm-keeping until this
+#   pass — added 2026-08-21 daily backend audit.
 #
 # Setup required (one-time):
 #   GitHub → repo Settings → Secrets and variables → Actions → New repository secret
@@ -58,4 +73,30 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -d '{"is_warmup":true}' \
             https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/recommend-by-dna
+        continue-on-error: true
+
+      - name: Ping dna-consensus
+        run: |
+          curl -sf -o /dev/null \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -d '{"is_warmup":true}' \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/dna-consensus
+        continue-on-error: true
+
+      - name: Ping search-books
+        run: |
+          curl -sf -o /dev/null \
+            -G \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            --data-urlencode "q=" \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/search-books
+        continue-on-error: true
+
+      - name: Ping popular-books
+        run: |
+          curl -sf -o /dev/null \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/popular-books
         continue-on-error: true
