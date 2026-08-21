@@ -2547,6 +2547,18 @@ const POPULAR_BOOKS = [
   "On the Fabric of the Human Body by Andreas Vesalius",
   "Elements of Chemistry by Antoine Lavoisier",
   "Experiments on Plant Hybridization by Gregor Mendel",
+
+  // ── Round 57 (2026-08-21) — canon curation round 57 (source tag
+  // "daily_agent_canon_backfill_2026_08_21") added five titles to
+  // canon_books, closing gaps in Christian scripture, Christian
+  // philosophy of history, political-idealist theory, military memoir,
+  // and early analytic philosophy; none were previously covered here
+  // (checked by direct grep) ──
+  "The New Testament",
+  "The City of God by Saint Augustine",
+  "Utopia by Thomas More",
+  "Anabasis by Xenophon",
+  "Tractatus Logico-Philosophicus by Ludwig Wittgenstein",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

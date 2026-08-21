@@ -2306,6 +2306,46 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "On the Fabric of the Human Body", author: "Andreas Vesalius", why: "Published in 1543 and built on Vesalius's own human dissections rather than Galen's centuries-old animal-derived anatomy, correcting over two hundred of Galen's errors along the way — the founding text of modern anatomy, and the empirical course that led directly to Harvey's discovery of blood circulation eighty-five years later. Distinct from the Hippocratic Corpus (round 55) and Avicenna's Canon of Medicine, already here, neither of which involved systematic human dissection.", aka: ["De Humani Corporis Fabrica", "De humani corporis fabrica libri septem"] },
   { title: "Elements of Chemistry", author: "Antoine Lavoisier", why: "Chemistry's first modern textbook, published in 1789 and built on Lavoisier's own experiments establishing the conservation of mass and a reformed chemical nomenclature still recognizably in use today. Distinct from Boyle's The Sceptical Chymist, already here — a 1661 critique of alchemical theory, not yet the positive systematic discipline Lavoisier founded.", aka: ["Traité élémentaire de chimie", "Elementary Treatise on Chemistry"] },
   { title: "Experiments on Plant Hybridization", author: "Gregor Mendel", why: "Eight years and 29,000 pea plants distilled into the paired discrete units of inheritance now called genes — delivered as two lectures in 1865, published in 1866, then ignored for thirty-five years until its rediscovery around 1900. Genetics' founding text, and the missing mechanism Darwin's On the Origin of Species (Must Read) needed and never had.", aka: ["Experiments in Plant Hybridization", "Versuche über Pflanzen-Hybriden", "Experiments on Plant Hybridisation"] },
+
+  // 2026-08-21 (daily curation pass, round 57): five titles closing five
+  // distinct gaps, the largest of which was explicitly flagged and left
+  // open back in round 41 (2026-08-08) — re-grepped "New Testament" this
+  // round to confirm it was still a genuine zero-hit (mentioned only once,
+  // in passing, inside the Hebrew Bible entry's own prose) before closing
+  // it. The New Testament closes the same category of gap the Hebrew
+  // Bible (round 47) did: the Quran, Guru Granth Sahib, Bhagavad Gita, and
+  // Dhammapada already sit here as scripture read for literary and
+  // historical weight, and Christianity's own founding text — the most
+  // reproduced and translated book in history — was the obvious remaining
+  // absence. The City of God gives Augustine, already here via
+  // Confessions, a second independently merited work, the same precedent
+  // this list already sets for Dostoevsky/Woolf/Camus/Morrison/McCarthy
+  // and others. Utopia is the idealist mirror this list was missing beside
+  // Machiavelli's The Prince (same decade, opposite premise) and the
+  // direct root of Brave New World and We, both already here. Anabasis
+  // closes a pure genre gap next to Thucydides and Herodotus, already
+  // here: both wrote history from the outside, Xenophon wrote the only
+  // first-person military memoir on this list, from inside the retreating
+  // column itself. Tractatus Logico-Philosophicus gives Wittgenstein a
+  // second, independently merited entry beside Philosophical
+  // Investigations, already here — his own later work spent arguing
+  // against the Tractatus's early system, not a restatement of it. All
+  // five facts (the New Testament's first-century composition window and
+  // 367 CE Athanasian canon list, Augustine's 413-426 CE composition
+  // window and its direct response to Rome's 410 CE sack, More's 1516
+  // Latin first edition and the word "utopia" itself as his own coinage,
+  // Xenophon's composition of Anabasis c. 370 BCE roughly three decades
+  // after the march it describes, Wittgenstein's 1921 German first
+  // edition and 1922 English/Latin-titled edition as the only philosophy
+  // book he published in his own lifetime) independently verified via
+  // WebSearch rather than trusted from recall. All five clear the Lindy/
+  // A-tier bar with room to spare; none rise to Must Read's "unmissable"
+  // bar — no new promotion flag this round.
+  { title: "The New Testament", author: "Anonymous", why: "Composed across the first and early second centuries CE — the four Gospels, Paul's letters, and Revelation among its 27 books — and first listed in its now-standard form in Athanasius's Easter letter of 367 CE, later ratified by the Councils of Hippo (393) and Carthage (397/419). Closes the same gap the Hebrew Bible (round 47) did: the Quran, Guru Granth Sahib, Bhagavad Gita, and Dhammapada already sit here as scripture read for literary and historical weight, and Christianity's own founding text — the single most reproduced and translated book in history — was the obvious remaining absence.", aka: ["New Testament", "The Christian Scriptures", "The Greek New Testament"] },
+  { title: "The City of God", author: "Saint Augustine", why: "Twenty-two books written between 413 and 426 CE as a direct response to the Visigoths' sack of Rome in 410, when pagan Romans blamed the catastrophe on Christianity's abandonment of the old gods — Augustine's answer became the first great work of Christian philosophy of history, dividing all of human society into the City of God and the City of Man. Gives Augustine, already here via Confessions, a second independently merited entry, the same precedent this list sets for its other multi-entry authors.", aka: ["De Civitate Dei", "The City of God Against the Pagans", "De civitate Dei contra paganos"] },
+  { title: "Utopia", author: "Thomas More", why: "Published in Latin in 1516, More's account of an imaginary island society coined its own title word — a Greek pun meaning both 'no place' and 'good place' — and founded a literary genre still active five centuries later, running straight through to Brave New World and We, both already here. Closes a real gap beside The Prince, already here and written the same decade: Machiavelli's realism and More's idealism are the twin foundations of modern political thought, and neither reads complete without the other.", aka: ["Libellus vere aureus", "De optimo rei publicae statu deque nova insula Utopia"] },
+  { title: "Anabasis", author: "Xenophon", why: "A first-person account, composed around 370 BCE, of 10,000 Greek mercenaries stranded deep in Persian territory after the death of the prince who hired them, and their fighting march of a thousand miles back to the Black Sea — the oldest surviving work of military memoir, studied by Alexander the Great and cited by the Founding Fathers. Closes a genre gap beside Thucydides and Herodotus, already here: both wrote history from the outside, Xenophon lived the retreat himself and wrote it from inside the column.", aka: ["The Anabasis", "The March Up Country", "The March of the Ten Thousand", "The Persian Expedition"] },
+  { title: "Tractatus Logico-Philosophicus", author: "Ludwig Wittgenstein", why: "Written largely in the trenches of the First World War and published in 1921, the only philosophy book Wittgenstein published in his own lifetime — 525 numbered propositions arguing that language pictures reality, closing with the line that whatever can't be said clearly should be passed over in silence. Distinct from Philosophical Investigations, already here: the Tractatus is the early, austere system Wittgenstein spent his later career dismantling, twentieth-century analytic philosophy's other bookend rather than a repeat of it.", aka: ["Logisch-Philosophische Abhandlung", "Logical-Philosophical Treatise"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
