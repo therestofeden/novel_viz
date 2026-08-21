@@ -2536,6 +2536,17 @@ const POPULAR_BOOKS = [
   "The Kumulipo",
   "Khamsa by Alisher Navoi",
   "Theory of Games and Economic Behavior by John von Neumann and Oskar Morgenstern",
+
+  // ── Round 56 (2026-08-20) — canon curation round 56 (source tag
+  // "daily_agent_canon_backfill_2026_08_20") added five titles to
+  // canon_books, closing gaps in French and Spanish national epic poetry
+  // and the founding texts of modern anatomy, chemistry, and genetics;
+  // none were previously covered here (checked by direct grep) ──
+  "The Song of Roland",
+  "Cantar de Mio Cid",
+  "On the Fabric of the Human Body by Andreas Vesalius",
+  "Elements of Chemistry by Antoine Lavoisier",
+  "Experiments on Plant Hybridization by Gregor Mendel",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

@@ -2245,6 +2245,67 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Kumulipo", author: "Anonymous", why: "A roughly 2,100-line genealogical creation chant tracing the Hawaiian cosmos from primordial darkness through coral polyps, fish, and birds up to the birth of the chiefly line it was composed to honor — likely composed around 1700 CE, transmitted orally for generations until Queen Liliʻuokalani, writing after the 1893 overthrow of the Hawaiian Kingdom, translated it into English and published it in 1897 specifically so it would survive. The single most important text in Hawaiian oral literature, and Pacific/Oceania's total absence from this list's world-cosmogony cluster, closed — Popol Vuh (round 41), Kebra Nagast, and the Egyptian Book of the Dead (both round 51) cover the Americas, the Horn of Africa, and ancient Egypt's founding cosmologies, but no Pacific tradition had ever been represented.", aka: ["Kumulipo", "He Kumulipo", "A Hawaiian Creation Chant"] },
   { title: "Khamsa", author: "Alisher Navoi", why: "Five narrative poems — including Farhad and Shirin and a Layli and Majnun retelling — composed in Chagatai Turkic between 1483 and 1485 by the poet-statesman who set out to prove a Turkic language could carry the same literary weight as Persian, the region's prestige language at the time; Navoi is still called the father of Uzbek and, more broadly, Central Asian Turkic literature, and UNESCO marked his 550th birth-year with an international commemorative year in 1991. Closes a Central Asian gap distinct from this list's existing entries from the region: the Epic of Manas (round 51) is Kyrgyz oral performance and the Book of Dede Korkut (round 49) is an Oghuz oral cycle fixed centuries after composition, while Navoi is deliberately authored, written-down literary poetry — the same register as Ferdowsi's Shahnameh, already here.", aka: ["Khamsa of Navoi", "The Five Poems", "Hamsa"] },
   { title: "Theory of Games and Economic Behavior", author: "John von Neumann and Oskar Morgenstern", why: "Published in 1944, this six-hundred-page collaboration between a mathematician and an economist founded game theory as a mathematical discipline — the minimax theorem and expected-utility axioms it formalizes are what John Nash's own equilibrium concept would extend seven years later. Still the reference point every subsequent result in strategic decision theory, from Cold War deterrence modeling to modern auction design, has had to build on rather than around. Closes a gap sitting at the exact intersection this list had never filled from either side — its mathematics cluster (Euclid's geometry, Al-Khwarizmi's algebra, Fibonacci's numerals, Shannon's information theory) and its economics bench (Smith, Ricardo, Marx, Keynes, Hayek, Friedman, Schumpeter) both stop just short of it.", aka: ["Theory of Games and Economic Behaviour"] },
+
+  // 2026-08-20 (daily curation pass, round 56): five titles closing two
+  // gaps — national epic poetry's two largest remaining absences, and a
+  // trio of the empirical sciences' own founding texts. Grepped a fresh
+  // candidate pool first — "Roland", "Cid", "Vesalius", "Lavoisier",
+  // "Mendel" — across both lists; all confirmed genuine zero-hits.
+  // Fiction: this list has built out national epic poetry extensively
+  // across three years of rounds (Gilgamesh, Beowulf, the Shahnameh, the
+  // Ramayana and Mahabharata, the Kalevala, Njal's Saga and the Poetic
+  // Edda, the Book of Dede Korkut, the Epic of Manas, the Knight in the
+  // Panther's Skin, Sundiata, the Mabinogion, the Lusiads) but had never
+  // closed its two largest remaining holes: France and Spain. The Song of
+  // Roland (Anonymous, traditionally credited to a scribe named Turold,
+  // composed c. 1040–1115) is the oldest surviving major work of French
+  // literature and the founding chanson de geste — Charlemagne's rearguard
+  // annihilated at Roncevaux, Roland refusing to sound his horn for help
+  // until it's too late out of pure stubborn pride. The Cantar de Mio Cid
+  // (Anonymous, composed c. 1140–1207) is the oldest preserved Castilian
+  // epic, following the historical knight Rodrigo Díaz de Vivar through
+  // exile and reconquest — Spain's national epic the same way the Lusiads,
+  // already here, are Portugal's. Non-fiction: three founding texts of the
+  // empirical sciences, placed as a deliberate trio the same way Euclid/
+  // Newton and Vesalius/Lavoisier's own near-contemporaries were paired
+  // earlier on this list — each is the moment its discipline broke from
+  // inherited authority and started testing the world directly. On the
+  // Fabric of the Human Body (Andreas Vesalius, 1543) is the founding text
+  // of modern anatomy: the first major treatise based on Vesalius's own
+  // human dissections rather than Galen's centuries-old animal-derived
+  // anatomy, correcting over two hundred of Galen's errors and setting
+  // medicine on the empirical course that led to Harvey's discovery of
+  // blood circulation eighty-five years later — distinct from the
+  // Hippocratic Corpus (round 55, ancient clinical observation) and
+  // Avicenna's Canon of Medicine, already here (medieval synthesis),
+  // neither of which involved systematic human dissection. Elements of
+  // Chemistry (Antoine Lavoisier, 1789) is chemistry's first modern
+  // textbook, built on Lavoisier's own experiments establishing the
+  // conservation of mass and a reformed chemical nomenclature still
+  // recognizably in use today — distinct from Boyle's The Sceptical
+  // Chymist, already here (a 1661 critique of alchemical theory, not yet a
+  // positive systematic discipline). Experiments on Plant Hybridization
+  // (Gregor Mendel, delivered as two 1865 lectures, published 1866) is
+  // genetics' founding text: eight years and 29,000 pea plants distilled
+  // into the paired discrete units of inheritance now called genes,
+  // ignored for thirty-five years until its rediscovery around 1900 — the
+  // missing mechanism Darwin's On the Origin of Species (Must Read) needed
+  // and never had. All five facts (Roland's c. 1040–1115 composition
+  // window and Oxford manuscript dating, the Cid's c. 1140–1207 composition
+  // and Per Abbat's 1207 copy, Vesalius's 1543 publication and correction
+  // of two hundred-plus Galenic errors, Lavoisier's 1789 Traité and
+  // conservation-of-mass formulation, Mendel's 1865 lectures/1866
+  // publication and 29,000-plant pea study) independently verified via
+  // WebSearch rather than trusted from recall. All five clear the Lindy/
+  // A-tier bar with room to spare; none rise to Must Read's "unmissable"
+  // bar — the three science texts sit at Classic on the same "importance
+  // outweighs sit-down-and-read-it" tier as Euclid, Newton, and Kepler
+  // already here, not a step above them.
+  { title: "The Song of Roland", author: "Anonymous", why: "Charlemagne's rearguard is annihilated at Roncevaux while Roland, too proud to sound his horn for help until it's too late, holds the pass to the death — composed c. 1040–1115, the oldest surviving major work of French literature and the founding chanson de geste. France's national epic, closing this list's last major gap in the epic-poetry cluster built up alongside the Lusiads, the Shahnameh, and the Nibelungenlied's Iberian and Persian counterparts.", aka: ["Chanson de Roland", "La Chanson de Roland"] },
+  { title: "Cantar de Mio Cid", author: "Anonymous", why: "The historical knight Rodrigo Díaz de Vivar is exiled by his king, wins back honor and territory by the sword, and marries his daughters into royalty — composed c. 1140–1207, the oldest preserved Castilian epic poem and the founding text of Spanish literature. Spain's national epic, the same role the Lusiads, already here, play for Portugal.", aka: ["El Cid", "Cantar de mio Cid", "The Poem of the Cid", "Song of the Cid"] },
+  { title: "On the Fabric of the Human Body", author: "Andreas Vesalius", why: "Published in 1543 and built on Vesalius's own human dissections rather than Galen's centuries-old animal-derived anatomy, correcting over two hundred of Galen's errors along the way — the founding text of modern anatomy, and the empirical course that led directly to Harvey's discovery of blood circulation eighty-five years later. Distinct from the Hippocratic Corpus (round 55) and Avicenna's Canon of Medicine, already here, neither of which involved systematic human dissection.", aka: ["De Humani Corporis Fabrica", "De humani corporis fabrica libri septem"] },
+  { title: "Elements of Chemistry", author: "Antoine Lavoisier", why: "Chemistry's first modern textbook, published in 1789 and built on Lavoisier's own experiments establishing the conservation of mass and a reformed chemical nomenclature still recognizably in use today. Distinct from Boyle's The Sceptical Chymist, already here — a 1661 critique of alchemical theory, not yet the positive systematic discipline Lavoisier founded.", aka: ["Traité élémentaire de chimie", "Elementary Treatise on Chemistry"] },
+  { title: "Experiments on Plant Hybridization", author: "Gregor Mendel", why: "Eight years and 29,000 pea plants distilled into the paired discrete units of inheritance now called genes — delivered as two lectures in 1865, published in 1866, then ignored for thirty-five years until its rediscovery around 1900. Genetics' founding text, and the missing mechanism Darwin's On the Origin of Species (Must Read) needed and never had.", aka: ["Experiments in Plant Hybridization", "Versuche über Pflanzen-Hybriden", "Experiments on Plant Hybridisation"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
