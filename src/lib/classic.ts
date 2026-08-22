@@ -2389,6 +2389,47 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Sorrows of Young Werther", author: "Johann Wolfgang von Goethe", why: "Written in five and a half feverish weeks and published in 1774, an epistolary novel of unrequited love and suicide that made the 24-year-old Goethe an international celebrity overnight, ignited the Sturm und Drang movement, and set off a real wave of copycat suicides across Europe — the 'Werther effect' still names the phenomenon in psychiatry today. Gives Goethe, already here via Faust, a second independently merited entry: this is the novel that founded literary Romanticism, not a repeat of the verse drama that followed it.", aka: ["Die Leiden des jungen Werthers"] },
   { title: "Panchatantra", author: "Vishnu Sharma", why: "An ancient Sanskrit collection of animal fables framed as a Brahmin tutor's lessons for three unteachable princes, reaching its final form by the Gupta period — translated into Persian in 570 CE and from there into Arabic as Kalila wa Dimna in 750 CE, becoming one of the most widely translated non-religious books in history and a direct influence on La Fontaine's Fables. Closes a gap beside the Ramayana and Mahabharata, already here: those are epic narrative, this is the fable tradition beside it.", aka: ["Panchatantram", "The Fables of Bidpai", "Kalila wa Dimna"] },
   { title: "Satyricon", author: "Petronius", why: "A sprawling, filthy, brilliant satire of nouveau-riche excess in Nero's Rome, written around 63-65 CE and surviving only in fragments — the sole work of Roman prose fiction to come down to us, and the acknowledged ancestor of the picaresque novel this list already tracks through Lazarillo de Tormes, already here, sixteen centuries later.", aka: ["The Satyricon", "Satyrica"] },
+
+  // 2026-08-22 (daily curation pass, round 59): five titles closing five
+  // more gaps found by re-scanning against major traditions and authors
+  // already represented here. Othello closes a startling hole in the
+  // Shakespeare coverage: Hamlet and King Lear are Must Read, Macbeth is
+  // here, but the fourth of the four great tragedies was missing entirely
+  // — a jealousy engineered from nothing by literature's most efficient
+  // villain, and still the most-staged of the four on modern stages.
+  // Gargantua and Pantagruel closes the French Renaissance's absence
+  // beside Boccaccio's Decameron and Cervantes' Don Quixote, both already
+  // here — comic prose fiction's other founding giant, source of the
+  // word "Rabelaisian" itself. An Essay Concerning Human Understanding
+  // gives Locke, already here via Two Treatises of Government, a second
+  // independently merited entry: that book is his political theory, this
+  // is the epistemology underneath it, and the direct target Hume's own
+  // An Enquiry Concerning Human Understanding, already here, was written
+  // to update. Jerusalem Delivered closes the Italian Renaissance epic
+  // gap beside Ariosto's Orlando Furioso, already here: Ariosto wrote
+  // chivalric romance for its own sake, Tasso answered with epic
+  // seriousness and a real historical subject, becoming opera's
+  // single most-adapted literary source in the process. Civilization and
+  // Its Discontents gives Freud, already here via The Interpretation of
+  // Dreams, a second independently merited entry — that book is clinical
+  // theory of the individual mind, this is Freud turned outward onto
+  // culture and history. All five facts (Othello's 1603-04 composition
+  // and 1 November 1604 premiere for King James I at Whitehall; Pantagruel
+  // (1532) and Gargantua's (1534) publication under the pen name
+  // "Alcofribas Nasier"; Locke's Essay completed during his Dutch exile
+  // and published in late 1689, dated 1690 on its title page; Tasso's
+  // decade of work completed 1575 and first authorized 1581 Ferrara
+  // edition after a pirated version forced his hand; Freud's Civilization
+  // and Its Discontents written in 1929 and published in German in 1930
+  // as Das Unbehagen in der Kultur) independently verified via WebSearch
+  // rather than trusted from recall. All five clear the Lindy/A-tier bar
+  // with room to spare; none rise to Must Read's "unmissable" bar — no
+  // new promotion flag this round.
+  { title: "Othello", author: "William Shakespeare", why: "Written 1603-04 and first performed on Hallowmas night, 1 November 1604, for King James I in the banqueting hall at Whitehall — a jealousy engineered from nothing by literature's most efficient villain, and the missing fourth of Shakespeare's four great tragedies: Hamlet and King Lear are already Must Read, Macbeth is already here, and Othello was, oddly, absent from this list until now.", aka: ["The Tragedy of Othello, the Moor of Venice"] },
+  { title: "Gargantua and Pantagruel", author: "François Rabelais", why: "Published under the pen name 'Alcofribas Nasier' — an anagram of the author's own name, adopted to dodge censors who banned the books anyway — Pantagruel appeared in 1532 and Gargantua in 1534, the first two installments of a five-book comic epic that gave the language the word 'Rabelaisian.' Comic prose fiction's other founding giant beside Boccaccio's Decameron and Cervantes' Don Quixote, both already here.", aka: ["Gargantua et Pantagruel", "The Life of Gargantua and of Pantagruel"] },
+  { title: "An Essay Concerning Human Understanding", author: "John Locke", why: "Completed during Locke's years of political exile in Holland and published in London in late 1689 (dated 1690 on its title page), arguing the mind begins as a blank slate filled only by experience, against the era's dominant claim of innate ideas. Gives Locke, already here via Two Treatises of Government, a second independently merited entry: that book is his political theory, this is the epistemology underneath it, and the direct target Hume's own An Enquiry Concerning Human Understanding, already here, was written to update." },
+  { title: "Jerusalem Delivered", author: "Torquato Tasso", why: "A decade in the writing, completed in 1575 and first authorized in a 1581 Ferrara edition after a pirated version forced Tasso's hand — an epic of the First Crusade in 1,917 stanzas of ottava rima that became opera's single most-adapted literary source, with Monteverdi, Handel, and Rossini all setting scenes from it. Closes the Italian Renaissance epic gap beside Ariosto's Orlando Furioso, already here: Ariosto wrote chivalric romance for its own sake, Tasso answered him with epic seriousness and a real historical subject.", aka: ["Gerusalemme Liberata"] },
+  { title: "Civilization and Its Discontents", author: "Sigmund Freud", why: "Written in 1929 as Freud watched Europe's postwar order fraying, and published in German in 1930 as Das Unbehagen in der Kultur — one of his last books and among his most-read, arguing that civilization survives only by forcing individuals to renounce aggression and desire, and that the resulting guilt is the price of society itself. Gives Freud, already here via The Interpretation of Dreams, a second independently merited entry: that book is clinical theory of the individual mind, this is Freud turned outward onto culture and history.", aka: ["Das Unbehagen in der Kultur"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────

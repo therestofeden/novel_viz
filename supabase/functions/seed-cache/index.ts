@@ -2572,6 +2572,20 @@ const POPULAR_BOOKS = [
   "Theogony by Hesiod",
   "Panchatantra by Vishnu Sharma",
   "Satyricon by Petronius",
+
+  // ── Round 59 (2026-08-22) — canon curation round 59 (source tag
+  // "daily_agent_canon_backfill_2026_08_22") added five titles to
+  // canon_books, closing gaps in English tragic drama, French Renaissance
+  // comic fiction, empiricist epistemology, Italian Renaissance epic, and
+  // a second Freud entry. "Civilization and Its Discontents by Sigmund
+  // Freud" was already present above (twice, in fact — a pre-existing
+  // duplicate not touched by this round) from earlier general
+  // popular-book seeding — only the four genuinely new titles are added
+  // here to avoid duplicate cache warmup entries ──
+  "Othello by William Shakespeare",
+  "Gargantua and Pantagruel by François Rabelais",
+  "An Essay Concerning Human Understanding by John Locke",
+  "Jerusalem Delivered by Torquato Tasso",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
