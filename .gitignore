@@ -49,3 +49,16 @@ vitest.config.ts.timestamp-*.mjs
 # as untracked noise every session.
 *.bak_*
 _to_delete/
+
+# supabase CLI regenerates this local project-link cache every session —
+# never source, shouldn't have been tracked.
+supabase/.temp/
+
+# 2026-08-20 seed-cache reconstruction left these scratch intermediates
+# behind in the function dir; FUSE blocks unlink() so they can't be
+# deleted from a sandbox session (see novelviz-infra.md). Ignored so they
+# stop appearing as untracked noise; safe to delete by hand from Finder.
+supabase/functions/seed-cache/array_body.txt
+supabase/functions/seed-cache/index_minimal_preview.ts
+supabase/functions/seed-cache/index_reconstructed.ts
+supabase/functions/seed-cache/remaining_entries.txt
