@@ -62,3 +62,9 @@ supabase/functions/seed-cache/array_body.txt
 supabase/functions/seed-cache/index_minimal_preview.ts
 supabase/functions/seed-cache/index_reconstructed.ts
 supabase/functions/seed-cache/remaining_entries.txt
+
+# 2026-08-23 round 61's deploy-verification subagent left this scratch
+# copy of seed-cache/index.ts behind (same FUSE unlink-block pattern as
+# the 2026-08-20 scratch files above); ignored so it stops appearing as
+# untracked noise, safe to delete by hand from Finder.
+supabase/functions/seed-cache/index.verify.ts
