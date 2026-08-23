@@ -2430,6 +2430,96 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "An Essay Concerning Human Understanding", author: "John Locke", why: "Completed during Locke's years of political exile in Holland and published in London in late 1689 (dated 1690 on its title page), arguing the mind begins as a blank slate filled only by experience, against the era's dominant claim of innate ideas. Gives Locke, already here via Two Treatises of Government, a second independently merited entry: that book is his political theory, this is the epistemology underneath it, and the direct target Hume's own An Enquiry Concerning Human Understanding, already here, was written to update." },
   { title: "Jerusalem Delivered", author: "Torquato Tasso", why: "A decade in the writing, completed in 1575 and first authorized in a 1581 Ferrara edition after a pirated version forced Tasso's hand — an epic of the First Crusade in 1,917 stanzas of ottava rima that became opera's single most-adapted literary source, with Monteverdi, Handel, and Rossini all setting scenes from it. Closes the Italian Renaissance epic gap beside Ariosto's Orlando Furioso, already here: Ariosto wrote chivalric romance for its own sake, Tasso answered him with epic seriousness and a real historical subject.", aka: ["Gerusalemme Liberata"] },
   { title: "Civilization and Its Discontents", author: "Sigmund Freud", why: "Written in 1929 as Freud watched Europe's postwar order fraying, and published in German in 1930 as Das Unbehagen in der Kultur — one of his last books and among his most-read, arguing that civilization survives only by forcing individuals to renounce aggression and desire, and that the resulting guilt is the price of society itself. Gives Freud, already here via The Interpretation of Dreams, a second independently merited entry: that book is clinical theory of the individual mind, this is Freud turned outward onto culture and history.", aka: ["Das Unbehagen in der Kultur"] },
+
+  // 2026-08-23 (daily curation pass, round 60): five titles closing five
+  // more gaps found by re-scanning against major traditions already
+  // represented here. Le Morte d'Arthur closes a real hole in the medieval
+  // romance cluster: The Song of Roland and the Nibelungenlied (added this
+  // same round) cover the French and German epic traditions, but English
+  // Arthurian legend — the single most adapted body of story in the
+  // language, feeding everything from Tennyson to White to modern film —
+  // had no source text at all. The Nibelungenlied itself closes the German
+  // epic gap beside The Song of Roland, already here: the "German Iliad,"
+  // the direct source for Wagner's Ring Cycle, and the founding text of
+  // written heroic poetry in German. Uncle Tom's Cabin closes a gap in the
+  // American abolitionist/social-reform cluster beside Narrative of the
+  // Life of Frederick Douglass, already here — the best-selling American
+  // novel of the 19th century and the book Lincoln reportedly credited
+  // with starting the Civil War when he met its author at the White House.
+  // So Long a Letter gives African literature a second, distinct entry
+  // beside Things Fall Apart and Petals of Blood, already here — the first
+  // major work of Francophone African women's writing, and a foundational
+  // text of African feminism specifically, a gap those two didn't close.
+  // Hedda Gabler gives Ibsen, already here via A Doll's House, a second
+  // independently merited entry: that play indicts a marriage from the
+  // outside, this one is a portrait of suffocating ambition from within
+  // one of drama's great, ambiguous title roles. All five facts (Malory
+  // completing the text in Newgate Prison between March 1469 and March
+  // 1470, printed by Caxton in 1485 as the last major English work before
+  // print and the only source for it since no manuscript survives; the
+  // Nibelungenlied's composition c. 1200 in Middle High German, likely
+  // near Passau; Uncle Tom's Cabin serialized in The National Era June
+  // 1851-April 1852 and published as a book 20 March 1852, with Lincoln's
+  // "little woman who wrote the book that started this great war" line
+  // from their 1862 White House meeting; So Long a Letter's 1979 French
+  // publication as Une si longue lettre and its 1980 Noma Award for
+  // Publishing in Africa, the award's first year; Hedda Gabler published
+  // 16 December 1890 and premiered 31 January 1891 at Munich's Königliches
+  // Residenz-Theater) independently verified via WebSearch rather than
+  // trusted from recall. All five clear the Lindy/A-tier bar with room to
+  // spare; none rise to Must Read's "unmissable" bar — no new promotion
+  // flag this round.
+  { title: "Le Morte d'Arthur", author: "Thomas Malory", why: "Completed in Newgate Prison between March 1469 and March 1470, during the last years of Malory's life, and first printed by William Caxton in 1485 — the last major English work written before print, and since no manuscript survives, the only text we have of it. Closes a real hole beside The Song of Roland and the Nibelungenlied, both here this round: English Arthurian legend, the single most adapted body of story in the language, had no source text on this list at all.", aka: ["Le Morte Darthur", "The Death of Arthur"] },
+  { title: "The Nibelungenlied", author: "Anonymous", why: "Composed around 1200 CE in Middle High German, likely near Passau — 9,516 lines telling of the dragon-slayer Siegfried's murder and his widow Kriemhild's annihilating revenge, later dubbed the 'German Iliad' and the direct source Wagner drew on for the Ring Cycle. Closes the German epic gap beside The Song of Roland, already here: France's national epic had a German counterpart missing from this list.", aka: ["The Nibelungenlied: The Lay of the Nibelungs", "Das Nibelungenlied"] },
+  { title: "Uncle Tom's Cabin", author: "Harriet Beecher Stowe", why: "Serialized in the abolitionist paper The National Era from June 1851 to April 1852, then published as a book on 20 March 1852 — the best-selling American novel of the 19th century, so widely credited with hardening Northern opinion against slavery that Lincoln reportedly greeted Stowe at the White House in 1862 as 'the little woman who wrote the book that started this great war.' Closes a gap in the American abolitionist cluster beside Narrative of the Life of Frederick Douglass, already here: Douglass wrote testimony, Stowe wrote the novel that turned that testimony into a mass political fact." },
+  { title: "So Long a Letter", author: "Mariama Bâ", why: "Published in French in 1979 as Une si longue lettre and awarded the first Noma Award for Publishing in Africa in 1980 — an extended letter from a newly widowed Senegalese schoolteacher to her closest friend, reckoning with her husband's second, younger wife and the costs of tradition for women in post-colonial Senegal. Gives African literature a second, distinct entry beside Things Fall Apart and Petals of Blood, already here: both are landmark novels by men, this is the foundational text of Francophone African women's writing specifically.", aka: ["Une si longue lettre"] },
+  { title: "Hedda Gabler", author: "Henrik Ibsen", why: "Published 16 December 1890 and premiered 31 January 1891 at Munich's Königliches Residenz-Theater, with Ibsen watching from backstage — a general's daughter trapped by marriage to a plodding academic, manipulating everyone around her toward catastrophe out of sheer suffocated ambition, in one of drama's great, still-debated title roles. Gives Ibsen, already here via A Doll's House, a second independently merited entry: that play indicts a marriage from outside its heroine, this one is written entirely from inside one." },
+
+  // 2026-08-23 (daily curation pass, round 61 — same-day second pass,
+  // reconciled against a concurrent round 60 already in this file): five
+  // more titles closing five distinct gaps. Siddhartha gives Hermann
+  // Hesse, already here via Steppenwolf, a second independently merited
+  // entry: that novel is the existential crisis of modern man, this one
+  // is a spiritual-quest bildungsroman set in the time of the Buddha —
+  // different genre, different lineage, and one of the most-translated
+  // German novels of the 20th century in its own right. The Hunchback of
+  // Notre-Dame gives Victor Hugo, already here via Les Misérables, a
+  // second independently merited entry: that novel is his social-justice
+  // epic, this one is the Gothic-revival historical novel that so
+  // stirred public feeling over the cathedral's neglect that it is
+  // directly credited with triggering France's 1842 restoration project.
+  // Bartleby, the Scrivener closes a gap beside Moby-Dick, already here:
+  // gives Melville a second, entirely different-register entry — the
+  // short story ("I would prefer not to") that became one of the most
+  // cited texts in later philosophy (Deleuze, Agamben, Žižek all wrote on
+  // it), rather than a repeat of the whaling epic. Utilitarianism closes
+  // a structural gap in the ethics cluster: this list had virtue ethics
+  // (Nicomachean Ethics) and existentialist ethics (Fear and Trembling)
+  // but no primary consequentialist text at all — Mill's book is the
+  // Lindy-tested reference point for that entire tradition. The
+  // Conference of the Birds closes the Persian Sufi poetry gap beside
+  // Rumi's Masnavi and The Divan of Hafez, both already here: next to the
+  // Masnavi it is considered the single most important text in that
+  // tradition, an allegory of thirty birds searching for a king that
+  // becomes a search for themselves. All five facts (Hesse finishing
+  // Siddhartha in summer 1922 after a 20-month hiatus, announced in an
+  // August 19, 1922 letter, published by S. Fischer Verlag; Hugo's 1831
+  // Notre-Dame de Paris and the Minister of Justice and Worship's 1842
+  // decision to fund the cathedral's major restoration; "Bartleby"
+  // serialized anonymously in Putnam's Monthly Magazine in November and
+  // December 1853 before its 1856 collection in The Piazza Tales; Mill's
+  // Utilitarianism first appearing as three Fraser's Magazine articles
+  // October-December 1861 and collected as a book in 1863; Attar's
+  // Conference of the Birds composed c. 1177 CE and running over 5,000
+  // lines) independently verified via WebSearch rather than trusted from
+  // recall. All five clear the Lindy/A-tier bar with room to spare; none
+  // rise to Must Read's "unmissable" bar — no new promotion flag this
+  // round.
+  { title: "Siddhartha", author: "Hermann Hesse", why: "Begun in late 1919, set aside for more than 20 months, and finished in summer 1922 — Hesse announced its completion in a letter dated August 19, 1922, and S. Fischer Verlag published it in German that autumn as Siddhartha: Eine Indische Dichtung. A spiritual-quest bildungsroman set in the time of the Buddha, inspired by Hesse's prewar travels to Sri Lanka and Indonesia, and one of the most-translated German novels of the 20th century. Gives Hesse, already here via Steppenwolf, a second independently merited entry: that novel is the existential crisis of modern man, this one is a journey toward enlightenment centuries earlier." },
+  { title: "The Hunchback of Notre-Dame", author: "Victor Hugo", why: "Published in 1831, the novel's portrait of the cathedral as the soul of France stirred such public feeling over its dilapidated state that the Minister of Justice and Worship approved a major restoration project in 1842 — Hugo, who had done more than anyone to make Notre-Dame the mirror of the nation, later called it 'superiorly restored.' Gives Hugo, already here via Les Misérables, a second independently merited entry: that novel is his social-justice epic, this one is the Gothic-revival historical novel that arguably saved an actual building.", aka: ["Notre-Dame de Paris"] },
+  { title: "Bartleby, the Scrivener", author: "Herman Melville", why: "Published anonymously in Putnam's Monthly Magazine, serialized across the November and December 1853 issues, then collected in Melville's 1856 volume The Piazza Tales — a Wall Street copyist's quiet refusal ('I would prefer not to') that became one of the most-cited texts in later philosophy, read by Deleuze, Agamben, and Žižek among others. Gives Melville, already here via Moby-Dick, a second entry in an entirely different register: a whaling epic beside a claustrophobic office story.", aka: ["Bartleby the Scrivener", "Bartleby, the Scrivener: A Story of Wall-Street"] },
+  { title: "Utilitarianism", author: "John Stuart Mill", why: "First serialized as three articles in Fraser's Magazine between October and December 1861, then collected and revised as a single book in 1863 — the classic exposition and defense of the utilitarian position, judging actions by their consequences for aggregate happiness. Closes a structural gap in this list's ethics cluster: virtue ethics (Nicomachean Ethics) and existentialist ethics (Fear and Trembling) were both represented, but consequentialism, one of the three major Western ethical frameworks, had no primary text at all." },
+  { title: "The Conference of the Birds", author: "Farid ud-Din Attar", why: "Composed around 1177 CE in over 5,000 lines of Persian verse — an allegory in which thirty birds journey to find their king, the mythical Simorgh, only to discover the search was for themselves all along ('si morgh' means 'thirty birds' in Persian, the poem's own pun on its ending). Closes the Persian Sufi poetry gap beside Rumi's Masnavi and The Divan of Hafez, both already here: next to the Masnavi, it is considered the single most important text in that tradition.", aka: ["Mantiq al-Tayr", "Mantiq ut-Tayr", "The Speech of the Birds"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────

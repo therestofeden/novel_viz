@@ -2586,6 +2586,29 @@ const POPULAR_BOOKS = [
   "Gargantua and Pantagruel by François Rabelais",
   "An Essay Concerning Human Understanding by John Locke",
   "Jerusalem Delivered by Torquato Tasso",
+
+  // ── Round 60 (2026-08-23) — canon curation round 60 (source tag
+  // "canon_books_curation_round60_2026_08_23") added five titles to
+  // canon_books, closing gaps in English Arthurian romance, German heroic
+  // epic, American abolitionist fiction, Francophone African women's
+  // writing, and a second Ibsen entry. "So Long a Letter by Mariama Ba" was
+  // already present above from earlier general popular-book seeding — only
+  // the four genuinely new titles are added here to avoid duplicate cache
+  // warmup entries ──
+  "Le Morte d'Arthur by Thomas Malory",
+  "The Nibelungenlied by Anonymous",
+  "Uncle Tom's Cabin by Harriet Beecher Stowe",
+  "Hedda Gabler by Henrik Ibsen",
+
+  // ── Round 61 (2026-08-23, same-day second pass) — canon curation round
+  // 61 (source tag "classic_daily_curation_round61_2026_08_23") added five
+  // titles to canon_books: Siddhartha and Utilitarianism were already
+  // present above from earlier general popular-book seeding — only the
+  // three genuinely new titles are added here to avoid duplicate cache
+  // warmup entries ──
+  "The Hunchback of Notre-Dame by Victor Hugo",
+  "Bartleby, the Scrivener by Herman Melville",
+  "The Conference of the Birds by Farid ud-Din Attar",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
