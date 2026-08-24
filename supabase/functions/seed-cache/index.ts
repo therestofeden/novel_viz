@@ -2623,6 +2623,16 @@ const POPULAR_BOOKS = [
   "QED: The Strange Theory of Light and Matter by Richard Feynman",
   "What Is Life? by Erwin Schrödinger",
   "The Twelve Caesars by Suetonius",
+
+  // ── Round 63 (2026-08-24) — canon curation round 63 (source tag
+  // "classic_daily_curation_round63_2026_08_24") added two titles to
+  // canon_books, closing the remaining half of English Romanticism's "Big
+  // Six": Keats and Percy Bysshe Shelley were both fully absent even after
+  // round 62 added Lyrical Ballads/Don Juan. Checked by grep against the
+  // full file first — neither author had any other title seeded (Mary
+  // Shelley's Frankenstein, already present, is a different person) ──
+  "Lamia, Isabella, The Eve of St. Agnes, and Other Poems by John Keats",
+  "Prometheus Unbound by Percy Bysshe Shelley",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

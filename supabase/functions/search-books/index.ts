@@ -283,6 +283,35 @@ function normalizeForSearch(s: string): string {
     .replace(/\s+/g, " ");
 }
 
+// 2026-08-24: comparison-only helper for the canon literal-hit gate below —
+// NOT folded into normalizeForSearch itself, because qNorm's own "Author -
+// Title" splitter (qSegments, near the canon-injection loop) depends on
+// hyphens/colons surviving normalizeForSearch untouched. Strips a small set
+// of punctuation that shows up in real canon titles (colons before a
+// subtitle, trailing question marks, etc. — e.g. "QED: The Strange Theory
+// of Light and Matter", "What Is Life?") but which a plain-typed search
+// query essentially never includes, plus any standalone "the/a/an" token
+// anywhere in the string (not just a leading one — tNormNoArticle above
+// only strips a LEADING article). Used only to widen the literal-hit
+// comparison in the canon-injection loop; scoring/dedup keys elsewhere
+// still use the untouched normalizeForSearch output.
+function canonForm(s: string): string {
+  return s
+    .toLowerCase()
+    // 2026-08-24 round 63 follow-up: originally only stripped a small
+    // hand-picked punctuation set, which missed the period in abbreviations
+    // like "St." (e.g. Keats's "...The Eve of St. Agnes..." vs. a plainly
+    // typed "st agnes") — found live verifying this exact canon row.
+    // Broadened to strip ANY non-alphanumeric character, which is safe
+    // specifically because canonForm is scoped to this comparison-only
+    // gate and never touches qNorm/qSegments (the "Author - Title" hyphen
+    // splitter above depends on the raw, un-canonForm'd qNorm).
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\b(the|a|an)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const MEMORY_CACHE_TTL_MS = 10 * 60 * 1000;
 const MEMORY_CACHE_MAX = 256;
 
@@ -1149,6 +1178,31 @@ Deno.serve(async (req) => {
           literalHit = true;
           break;
         }
+        // 2026-08-24: found live — "qed strange theory of light and
+        // matter" (embedded, non-leading "the" dropped) and "what is life
+        // erwin schrodinger" (full title + full first+last author name)
+        // both returned zero canon boost despite the exact rows existing
+        // in canon_books, confirmed via search_canon RPC directly
+        // (sim=0.975 for the QED case, so the DB layer was never the
+        // problem). Root cause in both cases: tNorm/titleAuthorCombos still
+        // carry the canon title's own punctuation ("qed:", "life?") that a
+        // plain-typed query never reproduces, and the QED case additionally
+        // has "the" mid-title rather than leading (tNormNoArticle only
+        // strips a LEADING article). canonForm() strips both, scoped to
+        // this comparison only. Verified live: both queries now
+        // canon-boost correctly; "hunger games" still does NOT canon-boost
+        // toward Hamsun's "Hunger" (canonForm preserves the
+        // tNorm-must-be-the-longer-side containment direction).
+        const qcCanon = canonForm(qc);
+        if (
+          canonForm(tNorm) === qcCanon || canonForm(tNorm).includes(qcCanon) ||
+          (aNorm.length > 0 &&
+            (canonForm(`${tNorm} ${aNorm}`) === qcCanon ||
+              canonForm(`${aNorm} ${tNorm}`) === qcCanon))
+        ) {
+          literalHit = true;
+          break;
+        }
         // 2026-07-31: found live — "twenty love poems neruda" (Pablo
         // Neruda's actual title is "Twenty Love Poems and a Song of
         // Despair") returned zero canon boost despite the row existing in
@@ -1177,7 +1231,14 @@ Deno.serve(async (req) => {
             if (
               remainder.length >= 6 &&
               remainder.split(" ").length >= 2 &&
-              (tNorm.startsWith(remainder) || tNormNoArticle.startsWith(remainder))
+              (tNorm.startsWith(remainder) || tNormNoArticle.startsWith(remainder) ||
+                // 2026-08-24 round 63 follow-up: the two raw startsWith
+                // checks above fail whenever the canon title has internal
+                // punctuation the query naturally drops (e.g. "St. Agnes"
+                // vs "st agnes") — same root cause as the canonForm fix
+                // added to the equality/combo checks earlier in this loop,
+                // just needed here too for the truncated-subtitle path.
+                canonForm(tNorm).startsWith(canonForm(remainder)))
             ) {
               literalHit = true;
               break;

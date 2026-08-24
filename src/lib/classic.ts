@@ -2571,6 +2571,39 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "QED: The Strange Theory of Light and Matter", author: "Richard Feynman", why: "An edited transcript of four public lectures Feynman delivered at UCLA in 1983 as the inaugural Alix G. Mautner Memorial Lecture series — named for a friend of 22 years who had a career in literature and had long asked him to explain quantum physics to her without equations — published as a book in 1985. Walks a general audience through quantum electrodynamics using nothing but arrows and probabilities, without softening the theory's genuine strangeness. The clearest working example on this list of a serious physicist explaining real, hard science to lay readers rather than diluting it." },
   { title: "What Is Life?", author: "Erwin Schrödinger", why: "Delivered as three public lectures in February 1943 at the Dublin Institute for Advanced Studies, Trinity College Dublin, and published as a book by Cambridge University Press in 1944 — a physicist asking, from first principles, how heredity could be governed by a stable molecular structure small enough to fit inside a cell, and proposing the idea of an 'aperiodic crystal' carrying genetic information years before DNA's structure was known. Both James Watson and Francis Crick later credited it as a direct spur toward their own work. Pairs with The Double Helix, already here via James D. Watson: Schrödinger asked the question a physicist wasn't supposed to be able to answer, Watson's book is the answer.", aka: ["What is Life? The Physical Aspect of the Living Cell"] },
   { title: "The Twelve Caesars", author: "Suetonius", why: "Written around 121 CE while its author served as Hadrian's personal secretary, and dedicated to the Praetorian prefect Gaius Septicius Clarus — twelve biographies running from Julius Caesar through Domitian, mixing public record with palace gossip, physical description, and sexual scandal in a way earlier Roman historians had avoided. The founding text of biography as character study rather than chronicle, and the direct primary source Robert Graves drew on for I, Claudius. Closes a gap beside Herodotus, Thucydides, Xenophon, Tacitus, and Plutarch, all already here: none of them write this close to the person behind the office.", aka: ["De Vita Caesarum", "Lives of the Twelve Caesars", "The Lives of the Twelve Caesars"] },
+
+  // 2026-08-24 (canon curation round 63, daily scheduled task): direct
+  // follow-up to round 62's finding that English Romantic poetry had zero
+  // representation until Lyrical Ballads and Don Juan closed it — but that
+  // still left two of the movement's traditional "Big Six" (Blake, already
+  // solo on this list; Wordsworth and Coleridge via Lyrical Ballads; Byron
+  // via Don Juan) completely absent: John Keats and Percy Bysshe Shelley.
+  // Both wrote almost entirely within a few years of each other and died
+  // within eighteen months of each other (Keats February 1821, Shelley
+  // July 1822), and — found via WebSearch, not assumed — each published his
+  // single most significant lifetime volume within seven weeks of the
+  // other in 1820: Keats's "Lamia, Isabella, The Eve of St. Agnes, and
+  // Other Poems" (printed by Thomas Davison for Taylor and Hessey, the last
+  // week of June 1820 — his third and final book, and the one containing
+  // nearly every ode he's now read for: Ode to a Nightingale, Ode on a
+  // Grecian Urn, Ode to Psyche, To Autumn, Ode on Melancholy, plus Lamia,
+  // Isabella, The Eve of St. Agnes, and the Hyperion fragment) and
+  // Shelley's "Prometheus Unbound: A Lyrical Drama in Four Acts, With Other
+  // Poems" (published by Charles Ollier on 14 August 1820, proofread by
+  // John Gisborne while Shelley was abroad in Italy — his four-act lyrical
+  // drama recasting the Prometheus myth as a parable of political
+  // liberation, bundled with Ode to the West Wind, To a Skylark, and The
+  // Cloud). Closes the "Big Six" of English Romantic poetry completely:
+  // Blake, Wordsworth, Coleridge, Byron, Keats, and Shelley are all now
+  // represented. Both facts independently WebSearch-verified, not trusted
+  // from recall. Both clear the Lindy/A-tier bar comfortably; neither is
+  // being flagged for Must Read promotion this round — Must Read's existing
+  // poetry slate (Sappho, Whitman, Dickinson) already covers the
+  // "unmissable single collection" niche and these two sit correctly one
+  // tier below it, same call made for Lyrical Ballads and Don Juan last
+  // round.
+  { title: "Lamia, Isabella, The Eve of St. Agnes, and Other Poems", author: "John Keats", why: "Keats's third and final book, printed for Taylor and Hessey in the last week of June 1820, less than a year before his death from tuberculosis at 25 — and the volume that happens to contain nearly every poem he's now remembered for: Ode to a Nightingale, Ode on a Grecian Urn, Ode to Psyche, To Autumn, Ode on Melancholy, alongside the title narrative poems and the unfinished epic fragment Hyperion. The most sustained run of great odes any English poet produced in a single year.", aka: ["Lamia, Isabella, and the Eve of St Agnes, and Other Poems", "The Complete Poems of John Keats"] },
+  { title: "Prometheus Unbound", author: "Percy Bysshe Shelley", why: "Published 14 August 1820 by Charles Ollier as 'Prometheus Unbound: A Lyrical Drama in Four Acts, With Other Poems' — Shelley was abroad in Italy at the time, so his friend John Gisborne proofread it on his behalf. A four-act lyrical drama that rewrites the Prometheus myth as political liberation rather than punishment, bundled with Ode to the West Wind and To a Skylark. Closes English Romanticism's 'Big Six' completely alongside Blake, Wordsworth and Coleridge (Lyrical Ballads), Byron (Don Juan), and Keats, added this same round.", aka: ["Prometheus Unbound: A Lyrical Drama in Four Acts, With Other Poems", "Prometheus Unbound: A Lyrical Drama"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
