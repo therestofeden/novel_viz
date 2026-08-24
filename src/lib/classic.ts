@@ -2520,6 +2520,57 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Bartleby, the Scrivener", author: "Herman Melville", why: "Published anonymously in Putnam's Monthly Magazine, serialized across the November and December 1853 issues, then collected in Melville's 1856 volume The Piazza Tales — a Wall Street copyist's quiet refusal ('I would prefer not to') that became one of the most-cited texts in later philosophy, read by Deleuze, Agamben, and Žižek among others. Gives Melville, already here via Moby-Dick, a second entry in an entirely different register: a whaling epic beside a claustrophobic office story.", aka: ["Bartleby the Scrivener", "Bartleby, the Scrivener: A Story of Wall-Street"] },
   { title: "Utilitarianism", author: "John Stuart Mill", why: "First serialized as three articles in Fraser's Magazine between October and December 1861, then collected and revised as a single book in 1863 — the classic exposition and defense of the utilitarian position, judging actions by their consequences for aggregate happiness. Closes a structural gap in this list's ethics cluster: virtue ethics (Nicomachean Ethics) and existentialist ethics (Fear and Trembling) were both represented, but consequentialism, one of the three major Western ethical frameworks, had no primary text at all." },
   { title: "The Conference of the Birds", author: "Farid ud-Din Attar", why: "Composed around 1177 CE in over 5,000 lines of Persian verse — an allegory in which thirty birds journey to find their king, the mythical Simorgh, only to discover the search was for themselves all along ('si morgh' means 'thirty birds' in Persian, the poem's own pun on its ending). Closes the Persian Sufi poetry gap beside Rumi's Masnavi and The Divan of Hafez, both already here: next to the Masnavi, it is considered the single most important text in that tradition.", aka: ["Mantiq al-Tayr", "Mantiq ut-Tayr", "The Speech of the Birds"] },
+
+  // 2026-08-24 (daily curation pass, round 62): five titles closing two
+  // distinct gaps. Lyrical Ballads and Don Juan together close the single
+  // largest hole re-scanning this list turned up: English Romantic poetry
+  // had zero representation — Blake sits here alone, and nothing by
+  // Wordsworth, Coleridge, Byron, or Shelley appears on either list, despite
+  // the movement being as foundational to English literature as anything
+  // already present. Lyrical Ballads is the movement's own founding
+  // document — the 1798 volume, and especially its 1800 Preface, is where
+  // Wordsworth explicitly stakes out what Romantic poetry is for. Don Juan
+  // gives the same movement a second, deliberately different register:
+  // Byron's mock-epic satire against Wordsworth's plain-speech lyricism,
+  // the two poles of what "Romantic" meant in practice. QED and What Is
+  // Life? close a modern-science gap this list had left entirely to 19th-
+  // and early-20th-century figures (Darwin, Einstein, Copernicus, Galileo,
+  // Kepler, Newton) with no mid-to-late-20th-century physicist's own prose
+  // anywhere on it. Schrödinger's book is the more consequential of the
+  // two by direct causal effect — Watson and Crick both named it as a
+  // spur toward DNA — and pairs naturally with James D. Watson's The
+  // Double Helix, already here: Schrödinger asked the question a physicist
+  // shouldn't have been able to answer, Watson's book is the answer.
+  // Feynman's is the clearer specimen of the genre itself: a working
+  // physicist explaining real, hard quantum theory to a lay audience
+  // without faking the difficulty away, the standard the entire popular-
+  // science shelf is measured against. The Twelve Caesars closes a gap
+  // in the classical-history cluster beside Herodotus, Thucydides,
+  // Xenophon, Tacitus, and Plutarch, all already here: the founding text
+  // of political biography as gossip and character study rather than
+  // military or constitutional history, and the direct source for
+  // Robert Graves' I, Claudius. All five facts (Lyrical Ballads published
+  // anonymously on 4 October 1798 by Bristol bookseller Joseph Cottle,
+  // 500 copies, 23 poems, 19 by Wordsworth and 4 by Coleridge; Don Juan's
+  // first two cantos published 15 July 1819 with neither Byron's nor
+  // publisher John Murray's name on the title page, the full 16 cantos
+  // appearing in installments through 26 March 1824, an unfinished 17th
+  // canto left at Byron's death that April; Feynman's four Alix G.
+  // Mautner Memorial Lectures delivered at UCLA in 1983, published as QED
+  // in 1985; Schrödinger's three "What is Life?" lectures delivered
+  // February 1943 at the Dublin Institute for Advanced Studies, Trinity
+  // College Dublin, published as a book by Cambridge University Press in
+  // 1944; Suetonius writing De Vita Caesarum around 121 CE while serving
+  // as Hadrian's personal secretary, dedicated to the Praetorian prefect
+  // Gaius Septicius Clarus) independently verified via WebSearch rather
+  // than trusted from recall. All five clear the Lindy/A-tier bar with
+  // room to spare; none rise to Must Read's "unmissable" bar — no new
+  // promotion flag this round.
+  { title: "Lyrical Ballads", author: "William Wordsworth and Samuel Taylor Coleridge", why: "Published anonymously on 4 October 1798 by Bristol bookseller Joseph Cottle in a run of 500 copies — 23 poems, 19 by Wordsworth and 4 by Coleridge (including 'The Rime of the Ancient Mariner'), generally credited as the volume that launched English Romanticism. Wordsworth's Preface to the expanded 1800 edition, arguing poetry should use 'the real language of men' rather than inherited poetic diction, became the movement's founding manifesto. Closes a real hole: English Romantic poetry had zero representation on this list before now.", aka: ["Lyrical Ballads, with a Few Other Poems"] },
+  { title: "Don Juan", author: "Lord Byron", why: "Begun in 1818 and left unfinished at Byron's death in April 1824, the poem appeared in installments — cantos I and II on 15 July 1819 with neither Byron's nor publisher John Murray's name on the title page, the last completed cantos (XV and XVI) on 26 March 1824 through a different publisher after Murray balked at their content. A mock-epic satire recasting the legendary seducer as a passive figure buffeted by the world around him, and the vehicle for some of Byron's sharpest social and political comedy. Gives English Romanticism a second entry beside Lyrical Ballads, added this same round: Wordsworth's plain-speech sincerity answered by Byron's ironic, worldly wit — the two poles the movement actually spanned." },
+  { title: "QED: The Strange Theory of Light and Matter", author: "Richard Feynman", why: "An edited transcript of four public lectures Feynman delivered at UCLA in 1983 as the inaugural Alix G. Mautner Memorial Lecture series — named for a friend of 22 years who had a career in literature and had long asked him to explain quantum physics to her without equations — published as a book in 1985. Walks a general audience through quantum electrodynamics using nothing but arrows and probabilities, without softening the theory's genuine strangeness. The clearest working example on this list of a serious physicist explaining real, hard science to lay readers rather than diluting it." },
+  { title: "What Is Life?", author: "Erwin Schrödinger", why: "Delivered as three public lectures in February 1943 at the Dublin Institute for Advanced Studies, Trinity College Dublin, and published as a book by Cambridge University Press in 1944 — a physicist asking, from first principles, how heredity could be governed by a stable molecular structure small enough to fit inside a cell, and proposing the idea of an 'aperiodic crystal' carrying genetic information years before DNA's structure was known. Both James Watson and Francis Crick later credited it as a direct spur toward their own work. Pairs with The Double Helix, already here via James D. Watson: Schrödinger asked the question a physicist wasn't supposed to be able to answer, Watson's book is the answer.", aka: ["What is Life? The Physical Aspect of the Living Cell"] },
+  { title: "The Twelve Caesars", author: "Suetonius", why: "Written around 121 CE while its author served as Hadrian's personal secretary, and dedicated to the Praetorian prefect Gaius Septicius Clarus — twelve biographies running from Julius Caesar through Domitian, mixing public record with palace gossip, physical description, and sexual scandal in a way earlier Roman historians had avoided. The founding text of biography as character study rather than chronicle, and the direct primary source Robert Graves drew on for I, Claudius. Closes a gap beside Herodotus, Thucydides, Xenophon, Tacitus, and Plutarch, all already here: none of them write this close to the person behind the office.", aka: ["De Vita Caesarum", "Lives of the Twelve Caesars", "The Lives of the Twelve Caesars"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────

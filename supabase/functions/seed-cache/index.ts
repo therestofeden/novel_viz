@@ -2609,6 +2609,20 @@ const POPULAR_BOOKS = [
   "The Hunchback of Notre-Dame by Victor Hugo",
   "Bartleby, the Scrivener by Herman Melville",
   "The Conference of the Birds by Farid ud-Din Attar",
+
+  // ── Round 62 (2026-08-24) — canon curation round 62 (source tag
+  // "classic_daily_curation_round62_2026_08_24") added five titles to
+  // canon_books, closing an English Romantic poetry gap (Lyrical Ballads,
+  // Don Juan) and a modern-physics/classical-biography gap (QED, What Is
+  // Life?, The Twelve Caesars). QED's author already has two other titles
+  // seeded above ("Surely You're Joking, Mr. Feynman", "Six Easy Pieces")
+  // but not this one — all five below are genuinely new, checked by grep
+  // against the full file before adding ──
+  "Lyrical Ballads by William Wordsworth and Samuel Taylor Coleridge",
+  "Don Juan by Lord Byron",
+  "QED: The Strange Theory of Light and Matter by Richard Feynman",
+  "What Is Life? by Erwin Schrödinger",
+  "The Twelve Caesars by Suetonius",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
