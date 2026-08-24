@@ -2710,6 +2710,12 @@ Deno.serve(async (req) => {
           Authorization: `Bearer ${SERVICE_KEY}`,
         },
         body: JSON.stringify({ title: `${book.title} by ${book.author}`, prefetch: true }),
+        // analyze-novel's own Gemini fallback chain is bounded at 3 models x 30s
+        // (GEMINI_TIMEOUT_MS in _shared/gemini.ts) = 90s worst case. Without this,
+        // a stuck downstream call hangs this loop (and the whole batch) forever —
+        // same unbounded-fetch bug class fixed repeatedly in search-books/
+        // recommend-by-dna/dna-consensus. 100s gives headroom over the 90s ceiling.
+        signal: AbortSignal.timeout(100_000),
       });
 
       // Drain the SSE stream (analyze-novel streams; we only care it completed).
