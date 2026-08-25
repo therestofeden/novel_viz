@@ -2633,6 +2633,19 @@ const POPULAR_BOOKS = [
   // Shelley's Frankenstein, already present, is a different person) ──
   "Lamia, Isabella, The Eve of St. Agnes, and Other Poems by John Keats",
   "Prometheus Unbound by Percy Bysshe Shelley",
+
+  // ── Round 64 (2026-08-25) — canon curation round 64 (source tag
+  // "daily_agent_canon_backfill_2026_08_25") added three titles to
+  // canon_books, closing three distinct gaps: Chinese Legalism (Han Feizi,
+  // the missing third school alongside Confucianism/Daoism), Indian
+  // political theory (Arthashastra, the statecraft counterpart to The
+  // Prince/The Art of War), and history-of-science physiology (Harvey's De
+  // Motu Cordis, the successor Vesalius's already-seeded On the Fabric of
+  // the Human Body points toward). Checked by grep against the full file
+  // first — none of the three authors had any other title seeded ──
+  "Han Feizi by Han Fei",
+  "Arthashastra by Kautilya",
+  "On the Motion of the Heart and Blood in Animals by William Harvey",
 ];
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.

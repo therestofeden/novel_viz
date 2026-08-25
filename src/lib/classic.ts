@@ -2604,6 +2604,33 @@ export const CLASSIC: ClassicEntry[] = [
   // round.
   { title: "Lamia, Isabella, The Eve of St. Agnes, and Other Poems", author: "John Keats", why: "Keats's third and final book, printed for Taylor and Hessey in the last week of June 1820, less than a year before his death from tuberculosis at 25 — and the volume that happens to contain nearly every poem he's now remembered for: Ode to a Nightingale, Ode on a Grecian Urn, Ode to Psyche, To Autumn, Ode on Melancholy, alongside the title narrative poems and the unfinished epic fragment Hyperion. The most sustained run of great odes any English poet produced in a single year.", aka: ["Lamia, Isabella, and the Eve of St Agnes, and Other Poems", "The Complete Poems of John Keats"] },
   { title: "Prometheus Unbound", author: "Percy Bysshe Shelley", why: "Published 14 August 1820 by Charles Ollier as 'Prometheus Unbound: A Lyrical Drama in Four Acts, With Other Poems' — Shelley was abroad in Italy at the time, so his friend John Gisborne proofread it on his behalf. A four-act lyrical drama that rewrites the Prometheus myth as political liberation rather than punishment, bundled with Ode to the West Wind and To a Skylark. Closes English Romanticism's 'Big Six' completely alongside Blake, Wordsworth and Coleridge (Lyrical Ballads), Byron (Don Juan), and Keats, added this same round.", aka: ["Prometheus Unbound: A Lyrical Drama in Four Acts, With Other Poems", "Prometheus Unbound: A Lyrical Drama"] },
+
+  // 2026-08-25 (daily curation pass, round 64): three non-fiction titles
+  // closing three distinct, previously-identified gaps in the statecraft/
+  // history-of-science clusters. Chinese classical philosophy had two of
+  // its three canonical schools represented (Confucianism via the Analects
+  // and Mencius, Daoism via the Tao Te Ching and Zhuangzi) but nothing from
+  // Legalism, the third — Han Feizi closes it. Indian non-fiction was
+  // entirely religious/philosophical (Bhagavad Gita, Upanishads, Yoga
+  // Sutras) with no political-theory counterpart to The Prince or The Art
+  // of War, both already here — the Arthashastra closes it, and is
+  // routinely compared to both in secondary literature. History of science
+  // had Vesalius's On the Fabric of the Human Body (1543, anatomy's
+  // founding text) explicitly flagging its own successor in that entry's
+  // own "why" line without that successor actually being on the list —
+  // Harvey's De Motu Cordis (1628, physiology's founding text) closes that
+  // eighty-five-year gap. All three facts WebSearch-verified, not trusted
+  // from recall (Han Fei's 233 BCE death in Qin custody; the Arthashastra's
+  // 1905 rediscovery by R. Shamasastry among uncatalogued manuscripts at
+  // the Mysore Oriental Library, only published in English in 1915; De
+  // Motu Cordis's 1628 Frankfurt publication as a 72-page quantitative
+  // refutation of Galenic physiology). All three clear the Lindy bar with
+  // room to spare — Han Feizi and the Arthashastra by roughly 2,300 years,
+  // De Motu Cordis by nearly 400; none are close calls, and none are being
+  // flagged for Must Read promotion.
+  { title: "Han Feizi", author: "Han Fei", why: "Compiled by Han Fei in the closing years of the Warring States period — he died in 233 BCE, a prisoner of the state of Qin whose eventual unification of China his ideas helped engineer — this is the definitive text of Legalism, the third of ancient China's three great philosophical schools alongside Confucianism (the Analects, Mencius) and Daoism (the Tao Te Ching, the Zhuangzi), both already on these two lists. Where Confucius argued a ruler governs through virtue and Laozi through inaction, Han Fei argued for governing through codified law, uniform punishment, and the impersonal mechanics of institutional power — the doctrine the Qin dynasty adopted wholesale to end the Warring States. The missing third leg of the classical Chinese philosophical tripod.", aka: ["The Han Feizi", "Han Fei Tzu", "Basic Writings of Han Fei Tzu"] },
+  { title: "Arthashastra", author: "Kautilya", why: "Attributed to Kautilya (also known as Chanakya), chief advisor to Chandragupta Maurya, founder of the Maurya Empire around 321 BCE — a comprehensive, unsentimental treatise on statecraft, taxation, and military strategy, structured as a working handbook for the exercise of power. Lost for centuries and rediscovered only in 1905, when R. Shamasastry, librarian at the Mysore Oriental Library, found the manuscript among a heap of uncatalogued Sanskrit texts (Sanskrit edition published 1909, English translation 1915). Fills the same statecraft niche in the Indian tradition that The Prince and The Art of War already fill for the Italian and Chinese ones, and is routinely compared to both — closing a real gap, since Indian non-fiction on this list was until now religious/philosophical only (Bhagavad Gita, Upanishads, Yoga Sutras), with no political-theory counterpart.", aka: ["The Arthashastra", "Kautilya's Arthashastra", "Arthasastra"] },
+  { title: "On the Motion of the Heart and Blood in Animals", author: "William Harvey", why: "Published in Frankfurt in 1628 as the 72-page Exercitatio Anatomica de Motu Cordis et Sanguinis in Animalibus — the treatise that overturned thirteen centuries of Galenic physiology by demonstrating, through quantitative experiment rather than appeal to authority, that blood circulates in a closed loop pumped by the heart rather than being continuously generated and consumed by the body. The direct successor this list's own Vesalius entry (On the Fabric of the Human Body, 1543) points toward without yet including — anatomy's founding text and physiology's founding text, eighty-five years apart, now both present.", aka: ["De Motu Cordis", "Exercitatio Anatomica de Motu Cordis et Sanguinis in Animalibus", "An Anatomical Disquisition on the Motion of the Heart and Blood in Animals", "An Anatomical Exercise on the Motion of the Heart and Blood in Living Beings"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
