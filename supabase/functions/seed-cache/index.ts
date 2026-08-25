@@ -21,15 +21,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-seed-secret",
 };
 
-// ~2000 popular books across all major genres.
-// Sorted roughly by expected search frequency — top entries are seeded first.
-// Run the seeder multiple times (it skips already-cached books) until pending reaches 0.
-import { BOOKS_1 } from "./_books/part1.ts";
-import { BOOKS_2 } from "./_books/part2.ts";
-import { BOOKS_3 } from "./_books/part3.ts";
-import { BOOKS_4 } from "./_books/part4.ts";
-
-const POPULAR_BOOKS: string[] = [...BOOKS_1, ...BOOKS_2, ...BOOKS_3, ...BOOKS_4];
+// The warmup book list (~2100 popular books across all major genres) lives in
+// the seed_book_list table, not hardcoded in this file. It previously lived
+// as a single POPULAR_BOOKS array (then split into _books/part{1..4}.ts) —
+// both approaches kept hitting deploy_edge_function's chat-transport size
+// limits every time the list grew via canon curation (per-file ~50-60KB limit,
+// AND a separate aggregate all-files-in-one-call output-token limit discovered
+// 2026-08-25 that the 4-file split didn't solve). Moving the list into the DB
+// means future growth is just an INSERT — this file never needs to change or
+// be redeployed for list growth again. See
+// novelviz-seedcache-db-backed-list-2026-08-25 memory for the migration.
+function parseBook(entry: string): { title: string; author: string; cacheKey: string } {
+  const byIdx = entry.lastIndexOf(" by ");
+  if (byIdx === -1) return { title: entry, author: "", cacheKey: buildCacheKey(entry, "") };
+  const title = entry.slice(0, byIdx).trim();
+  const author = entry.slice(byIdx + 4).trim();
+  return { title, author, cacheKey: buildCacheKey(title, author) };
+}
 
 // Must match analyze-novel's CACHE_VERSION + buildCacheKey exactly.
 const CACHE_VERSION = "v3";
@@ -37,14 +45,6 @@ function buildCacheKey(title: string, author: string): string {
   const t = title.trim().toLowerCase().replace(/\s+/g, " ");
   const a = (author ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   return `${CACHE_VERSION}|${t}||${a}`;
-}
-
-function parseBook(entry: string): { title: string; author: string; cacheKey: string } {
-  const byIdx = entry.lastIndexOf(" by ");
-  if (byIdx === -1) return { title: entry, author: "", cacheKey: buildCacheKey(entry, "") };
-  const title = entry.slice(0, byIdx).trim();
-  const author = entry.slice(byIdx + 4).trim();
-  return { title, author, cacheKey: buildCacheKey(title, author) };
 }
 
 Deno.serve(async (req) => {
@@ -77,6 +77,27 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  // Fetch the warmup list from the DB (paginate past PostgREST's default 1000-row cap).
+  const POPULAR_BOOKS: string[] = [];
+  {
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data: page, error: listErr } = await supabase
+        .from("seed_book_list")
+        .select("entry")
+        .order("id", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (listErr) {
+        return new Response(JSON.stringify({ error: `seed_book_list read failed: ${listErr.message}` }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!page || page.length === 0) break;
+      for (const row of page) POPULAR_BOOKS.push(row.entry as string);
+      if (page.length < PAGE) break;
+    }
   }
 
   // Fetch all already-cached keys in one query.
