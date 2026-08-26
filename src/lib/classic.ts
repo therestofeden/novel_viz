@@ -2631,6 +2631,53 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Han Feizi", author: "Han Fei", why: "Compiled by Han Fei in the closing years of the Warring States period — he died in 233 BCE, a prisoner of the state of Qin whose eventual unification of China his ideas helped engineer — this is the definitive text of Legalism, the third of ancient China's three great philosophical schools alongside Confucianism (the Analects, Mencius) and Daoism (the Tao Te Ching, the Zhuangzi), both already on these two lists. Where Confucius argued a ruler governs through virtue and Laozi through inaction, Han Fei argued for governing through codified law, uniform punishment, and the impersonal mechanics of institutional power — the doctrine the Qin dynasty adopted wholesale to end the Warring States. The missing third leg of the classical Chinese philosophical tripod.", aka: ["The Han Feizi", "Han Fei Tzu", "Basic Writings of Han Fei Tzu"] },
   { title: "Arthashastra", author: "Kautilya", why: "Attributed to Kautilya (also known as Chanakya), chief advisor to Chandragupta Maurya, founder of the Maurya Empire around 321 BCE — a comprehensive, unsentimental treatise on statecraft, taxation, and military strategy, structured as a working handbook for the exercise of power. Lost for centuries and rediscovered only in 1905, when R. Shamasastry, librarian at the Mysore Oriental Library, found the manuscript among a heap of uncatalogued Sanskrit texts (Sanskrit edition published 1909, English translation 1915). Fills the same statecraft niche in the Indian tradition that The Prince and The Art of War already fill for the Italian and Chinese ones, and is routinely compared to both — closing a real gap, since Indian non-fiction on this list was until now religious/philosophical only (Bhagavad Gita, Upanishads, Yoga Sutras), with no political-theory counterpart.", aka: ["The Arthashastra", "Kautilya's Arthashastra", "Arthasastra"] },
   { title: "On the Motion of the Heart and Blood in Animals", author: "William Harvey", why: "Published in Frankfurt in 1628 as the 72-page Exercitatio Anatomica de Motu Cordis et Sanguinis in Animalibus — the treatise that overturned thirteen centuries of Galenic physiology by demonstrating, through quantitative experiment rather than appeal to authority, that blood circulates in a closed loop pumped by the heart rather than being continuously generated and consumed by the body. The direct successor this list's own Vesalius entry (On the Fabric of the Human Body, 1543) points toward without yet including — anatomy's founding text and physiology's founding text, eighty-five years apart, now both present.", aka: ["De Motu Cordis", "Exercitatio Anatomica de Motu Cordis et Sanguinis in Animalibus", "An Anatomical Disquisition on the Motion of the Heart and Blood in Animals", "An Anatomical Exercise on the Motion of the Heart and Blood in Living Beings"] },
+
+  // 2026-08-26 (canon curation round 65, daily scheduled task): pulled the
+  // full current title lists from classic.ts/must-read.ts before picking
+  // anything, same discipline as every prior round. Re-checked a wide
+  // candidate pool flagged-but-not-closed in round 30's own notes (2026-07-30:
+  // "Turing, Knuth, Shannon, Fred Brooks, SICP... most already present") —
+  // Shannon and Brooks were added that round, but Turing was named and then
+  // never actually added; confirmed via grep this is still a genuine
+  // zero-hit gap, not a stale note. Separately, "Adichie" appears twice in
+  // this file's own prior-round comments (rounds 30 and a later fiction
+  // sweep) as a name considered alongside Ngũgĩ/Mahfouz/Jelinek/Munro, but —
+  // unlike those others — was never actually given an entry; confirmed via
+  // grep (only "Ngũgĩ wa Thiong'o" has an actual title row, via Petals of
+  // Blood, added an earlier round; Adichie has none).
+  //
+  // Closed both. (1) Theoretical computer science / computability theory:
+  // this list already has computer science represented twice, but from
+  // opposite non-theoretical angles — Shannon's 1948 paper (information
+  // theory, engineering) and Brooks's Mythical Man-Month (software
+  // management, 1975) — with nothing from the field's actual mathematical
+  // foundation. Alan Turing's "On Computable Numbers, with an Application to
+  // the Entscheidungsproblem," published in the Proceedings of the London
+  // Mathematical Society (series 2, vol. 42, 1936-37, pp. 230-265, appearing
+  // in two installments dated 30 November and 23 December 1936), answered
+  // Hilbert's decision problem by inventing an abstract "universal machine"
+  // capable of executing any well-defined procedure — the concept later
+  // named the Turing machine, and the paper's proof that no single
+  // mechanical process can decide all mathematical questions is the direct
+  // theoretical root every general-purpose computer since has been built on.
+  // (2) Contemporary African fiction: this list already carries Achebe
+  // (Must Read), Ngũgĩ wa Thiong'o and Mariama Bâ (Classic), all writing
+  // from the mid-to-late 20th century — nothing from the 21st century's own
+  // major African literary voice. Chimamanda Ngozi Adichie's Half of a
+  // Yellow Sun (2006), set during Nigeria's 1967-70 civil war and the short-
+  // lived secessionist state of Biafra, won the Orange Prize for Fiction in
+  // 2007 and was later named the prize's own "Winner of Winners" (2020,
+  // its 25th-anniversary retrospective award chosen from all past
+  // laureates) — a rare case of a 21st-century book already accumulating
+  // the kind of durable, re-confirmed critical standing this list otherwise
+  // waits decades to see. Both facts (Turing's exact journal/volume/page
+  // range and two-part December 1936 publication; Half of a Yellow Sun's
+  // 2007 Orange Prize and 2020 Winner-of-Winners award) WebSearch-verified
+  // rather than trusted from recall. Neither is being flagged for Must Read
+  // promotion — both are excellent, foundational-to-their-field entries,
+  // but not judged to clear that higher bar this round.
+  { title: "On Computable Numbers, with an Application to the Entscheidungsproblem", author: "Alan Turing", why: "Published in the Proceedings of the London Mathematical Society in two installments dated 30 November and 23 December 1936, this paper answers David Hilbert's Entscheidungsproblem — is there a mechanical procedure that can decide the truth of any mathematical statement? — by inventing an abstract 'universal machine' that could, in principle, carry out any well-defined computation, then proving some problems no such machine can ever solve. The concept became known as the Turing machine, and this proof is the theoretical foundation every general-purpose computer since has been built on. Closes computer science's third and most fundamental gap on this list, distinct from Shannon's information theory and Brooks's software-engineering management, already here.", aka: ["On Computable Numbers", "Turing's On Computable Numbers"] },
+  { title: "Half of a Yellow Sun", author: "Chimamanda Ngozi Adichie", why: "Published in 2006 and set during Nigeria's 1967-70 civil war and the short-lived secessionist state of Biafra, told through a houseboy, a British expatriate, and twin sisters on opposite sides of the widening catastrophe. Won the Orange Prize for Fiction in 2007, then in 2020 was named the prize's own 'Winner of Winners' — chosen, on the award's 25th anniversary, as the single best novel from among every past laureate. Gives this list's African-fiction cluster (Achebe, Ngũgĩ wa Thiong'o, Mariama Bâ, all already here) its first 21st-century voice." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
