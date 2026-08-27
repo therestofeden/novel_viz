@@ -2678,6 +2678,43 @@ export const CLASSIC: ClassicEntry[] = [
   // but not judged to clear that higher bar this round.
   { title: "On Computable Numbers, with an Application to the Entscheidungsproblem", author: "Alan Turing", why: "Published in the Proceedings of the London Mathematical Society in two installments dated 30 November and 23 December 1936, this paper answers David Hilbert's Entscheidungsproblem — is there a mechanical procedure that can decide the truth of any mathematical statement? — by inventing an abstract 'universal machine' that could, in principle, carry out any well-defined computation, then proving some problems no such machine can ever solve. The concept became known as the Turing machine, and this proof is the theoretical foundation every general-purpose computer since has been built on. Closes computer science's third and most fundamental gap on this list, distinct from Shannon's information theory and Brooks's software-engineering management, already here.", aka: ["On Computable Numbers", "Turing's On Computable Numbers"] },
   { title: "Half of a Yellow Sun", author: "Chimamanda Ngozi Adichie", why: "Published in 2006 and set during Nigeria's 1967-70 civil war and the short-lived secessionist state of Biafra, told through a houseboy, a British expatriate, and twin sisters on opposite sides of the widening catastrophe. Won the Orange Prize for Fiction in 2007, then in 2020 was named the prize's own 'Winner of Winners' — chosen, on the award's 25th anniversary, as the single best novel from among every past laureate. Gives this list's African-fiction cluster (Achebe, Ngũgĩ wa Thiong'o, Mariama Bâ, all already here) its first 21st-century voice." },
+
+  // ── Round 66 (2026-08-27) ─────────────────────────────────────────────
+  // Per round 65's own closing note, checked its "re-open a stale
+  // candidate flag" pattern first (grepped every "considered/flagged/
+  // candidate" comment across this file and must-read.ts) — round 30's
+  // 2026-07-30 pool ("Turing, Knuth, Shannon, Fred Brooks, SICP...") is
+  // now fully resolved (Shannon/Brooks/Turing all present; Knuth/SICP
+  // deliberately excluded as reference/textbook-shaped, re-confirmed this
+  // round, still correct) and no other pool yielded an unclosed name. Fell
+  // back to a fresh targeted sweep instead, checking specific canonical
+  // "founder" texts against fields this list already represents by a
+  // *later* figure in the same tradition — the same asymmetry pattern
+  // that caught Turing (present: applied CS via Shannon/Brooks; absent:
+  // theoretical CS's own founder) and Du Fu (present: Li Bai; absent: the
+  // other half of the Tang dynasty's poetic peak) in earlier rounds.
+  // Two such gaps found. (1) Classical Chinese philosophy: this list has
+  // carried Confucius (Analects) and Mencius (Mengzi) for many rounds —
+  // Confucianism's founder and its "human nature is good" successor — but
+  // never Xunzi, the third of the tradition's three canonical founding
+  // figures and Mencius's direct philosophical opponent (arguing human
+  // nature is bad, not good, and only ritual and education make people
+  // moral). Having two-thirds of a named trio for this many rounds without
+  // noticing looked like an oversight once found, not a judgment call —
+  // closes it. (2) Utilitarianism: John Stuart Mill (On Liberty,
+  // Utilitarianism) has been here since this list's early rounds, but
+  // Jeremy Bentham — the doctrine's actual founder, whom Mill was raised
+  // by his father to succeed and whose felicific calculus and "greatest
+  // happiness principle" Mill inherited and refined rather than invented
+  // — was never added. Same asymmetry as Xunzi/Mencius: the successor was
+  // here, the founder wasn't. Both facts (Xunzi's dates and doctrine;
+  // Bentham's 1780-printed/1789-published Introduction to the Principles
+  // of Morals and Legislation) WebSearch-verified rather than trusted from
+  // recall. Neither flagged for Must Read — both foundational-to-their-
+  // field Classic-tier entries, consistent with this list's existing
+  // treatment of Confucius/Mencius and Mill.
+  { title: "Xunzi", author: "Xunzi", why: "The third of classical Confucianism's three founding figures, alongside Confucius and Mencius, both already here — but where Mencius argued human nature is innately good and only corrupted by circumstance, Xunzi (c. 310-c. 235 BCE) argued the opposite: people are born selfish, and only deliberate ritual, education, and social structure make them moral. Thirty-two essays of sustained, topically organized argument rather than the aphoristic form of the Analects or Mengzi — the tradition's most systematic voice, and the direct ancestor of Han Feizi's Legalism (already here) via Xunzi's own student.", aka: ["Xun Zi", "Hsun Tzu", "The Xunzi"] },
+  { title: "An Introduction to the Principles of Morals and Legislation", author: "Jeremy Bentham", why: "Printed in 1780 and formally published in 1789, this is utilitarianism's founding text: the 'greatest happiness principle' and a literal felicific calculus for weighing an act's pleasure against its pain, applied systematically to ethics and law alike. John Stuart Mill, raised from childhood by his father specifically to carry this project forward, inherited and refined it in On Liberty and Utilitarianism, already here — this closes the gap of having the successor's books without the founder's.", aka: ["Principles of Morals and Legislation", "Introduction to the Principles of Morals and Legislation"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
