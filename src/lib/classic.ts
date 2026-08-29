@@ -2744,6 +2744,35 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Septology", author: "Jon Fosse", why: "A widowed painter watches another version of himself, one who took a different turn decades ago, over seven unbroken days and one unbroken sentence — the Swedish Academy's own named 'magnum opus' behind Fosse's 2023 Nobel, 'for his innovative plays and prose which give voice to the unsayable.'", aka: ["Septologien", "The Other Name", "I Is Another", "A New Name"] },
   { title: "The Vegetarian", author: "Han Kang", why: "A woman decides to stop eating meat and, by increments, to stop participating in being human at all — three narrators circle her refusal without ever fully explaining it. Won the International Booker Prize in 2016 and remains the work most named behind Han's 2024 Nobel, 'for her intense poetic prose that confronts historical traumas and exposes the fragility of human life.'", aka: ["Chaesikjuuija"] },
   { title: "Satantango", author: "László Krasznahorkai", why: "A collapsing collective farm waits for a man everyone believes is dead to return and save them; twelve chapters that advance and retreat like the tango's own steps, in the sentence-long paragraphs that became Krasznahorkai's signature. His 1985 debut, later filmed by Béla Tarr as a seven-and-a-half-hour single work, and the novel most cited behind his 2025 Nobel, 'for his compelling and visionary oeuvre that, in the midst of apocalyptic terror, reaffirms the power of art.'", aka: ["Sátántangó"] },
+
+  // ── Round 68 (2026-08-29) ─────────────────────────────────────────────
+  // Continued the founder-vs-successor asymmetry sweep rounds 65-66
+  // established (Turing/Shannon+Brooks, Xunzi/Mencius, Bentham/Mill),
+  // checking whether traditions already represented here have their
+  // actual founder present or only a later successor. Found two, both
+  // WebSearch-verified rather than trusted from recall: (1) Economics —
+  // this list's Austrian-school voice is Friedrich Hayek (The Road to
+  // Serfdom, already here), but Hayek's own teacher's teacher, Carl
+  // Menger, who founded the Austrian School and co-discovered the
+  // marginal utility revolution alongside Jevons and Walras in 1871, was
+  // never added. Same shape as Bentham/Mill: the tradition's most famous
+  // popularizer was here, its actual founder wasn't. (2) Philosophy — "By
+  // common consent, the three founders of the modern analytic tradition
+  // are, in chronological order, Gottlob Frege, Bertrand Russell and
+  // Ludwig Wittgenstein" (Internet Encyclopedia of Philosophy); this list
+  // already has Russell (A History of Western Philosophy) and Wittgenstein
+  // (Tractatus, Philosophical Investigations) but not Frege, whose work
+  // both men built directly on — Russell rediscovered and championed
+  // Frege's logicism in 1902, and Wittgenstein corresponded with and was
+  // invited to Jena by Frege himself. Two-thirds of a named founding trio
+  // again, exactly the Xunzi/Confucius+Mencius shape. Neither flagged for
+  // Must Read — both are foundational, technically demanding texts more
+  // suited to sustained study than a general reading list's front rank,
+  // consistent with how this list already treats other dense-but-essential
+  // philosophy and economics entries (Kant's three Critiques, Theory of
+  // Games and Economic Behavior).
+  { title: "Principles of Economics", author: "Carl Menger", why: "Published in 1871 as the Grundsätze der Volkswirtschaftslehre, this founded the Austrian School and, alongside Jevons and Walras working independently in England and France the same years, launched the marginal revolution — the idea that a good's value comes from its capacity to satisfy a want at the margin, not from the labor that made it, overturning the classical labor theory of value this list's Smith and Ricardo both held. Friedrich Hayek's Road to Serfdom, already here, descends from Menger through Hayek's own teacher Ludwig von Mises; this closes the gap of having the tradition's most famous defender without its founder.", aka: ["Grundsätze der Volkswirtschaftslehre", "Principles of Economics: First, General Part"] },
+  { title: "The Foundations of Arithmetic", author: "Gottlob Frege", why: "Published in 1884 as Die Grundlagen der Arithmetik, this is the accessible entry point into the logicist project Frege spent his career on: the attempt to show that arithmetic reduces entirely to logic, built on the formal system his 1879 Begriffsschrift had introduced. Frege died believing his life's work a failure, largely unread — until Bertrand Russell wrote to him in 1902 pointing out a paradox in the system, then spent the rest of his own career building on Frege's logicism anyway, and Ludwig Wittgenstein, both already here, corresponded with Frege and was invited to Jena to discuss his ideas directly. The philosopher two of this list's existing entries were both responding to.", aka: ["Die Grundlagen der Arithmetik", "Foundations of Arithmetic"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
