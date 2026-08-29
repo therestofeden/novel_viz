@@ -2715,6 +2715,35 @@ export const CLASSIC: ClassicEntry[] = [
   // treatment of Confucius/Mencius and Mill.
   { title: "Xunzi", author: "Xunzi", why: "The third of classical Confucianism's three founding figures, alongside Confucius and Mencius, both already here — but where Mencius argued human nature is innately good and only corrupted by circumstance, Xunzi (c. 310-c. 235 BCE) argued the opposite: people are born selfish, and only deliberate ritual, education, and social structure make them moral. Thirty-two essays of sustained, topically organized argument rather than the aphoristic form of the Analects or Mengzi — the tradition's most systematic voice, and the direct ancestor of Han Feizi's Legalism (already here) via Xunzi's own student.", aka: ["Xun Zi", "Hsun Tzu", "The Xunzi"] },
   { title: "An Introduction to the Principles of Morals and Legislation", author: "Jeremy Bentham", why: "Printed in 1780 and formally published in 1789, this is utilitarianism's founding text: the 'greatest happiness principle' and a literal felicific calculus for weighing an act's pleasure against its pain, applied systematically to ethics and law alike. John Stuart Mill, raised from childhood by his father specifically to carry this project forward, inherited and refined it in On Liberty and Utilitarianism, already here — this closes the gap of having the successor's books without the founder's.", aka: ["Principles of Morals and Legislation", "Introduction to the Principles of Morals and Legislation"] },
+
+  // ── Round 67 (2026-08-29) ─────────────────────────────────────────────
+  // Fell back on a different, easily-checkable gap category this round:
+  // grepped every Nobel Prize in Literature laureate's name against both
+  // this file and must-read.ts and found the four most recent winners —
+  // 2022 through 2025 — entirely absent, despite this list carrying a
+  // deep bench of older laureates (Munro 2013, Alice Munro just above,
+  // Mo Yan, Saramago, Lessing, and many more scattered throughout). Not a
+  // judgment call about quality — a straightforward four-year maintenance
+  // gap in a list that otherwise tracks the prize closely. Added each
+  // laureate's own Nobel-cited or Academy-named signature work, verified
+  // via WebSearch rather than trusted from recall: Ernaux's citation
+  // itself is broader ("the courage and clinical acuity with which she
+  // uncovers the roots, estrangements and collective restraints of
+  // personal memory") but The Years is her most internationally read and
+  // acclaimed single book, shortlisted for the 2019 International Booker;
+  // Fosse's Septology is the Swedish Academy's own named "magnum opus" in
+  // its bio-bibliography; Han Kang's The Vegetarian won the 2016
+  // International Booker Prize and remains her best-known work by far;
+  // Krasznahorkai's Satantango (1985) is the novel his reputation and the
+  // Béla Tarr film adaptation both rest on. None flagged for Must Read —
+  // all four are recent enough that the list's usual Lindy discipline
+  // argues for patience before a higher-tier promotion, consistent with
+  // how this list already treats Munro, Ishiguro, and other 21st-century
+  // laureates.
+  { title: "The Years", author: "Annie Ernaux", why: "A life told entirely in 'we' and 'one,' never 'I' — six decades of postwar France reconstructed through shared memory, old photographs, and half-remembered advertising jingles rather than personal confession. Shortlisted for the 2019 International Booker and the book most credited with her 2022 Nobel, 'for the courage and clinical acuity with which she uncovers the roots, estrangements and collective restraints of personal memory.'", aka: ["Les Années", "Les Annees"] },
+  { title: "Septology", author: "Jon Fosse", why: "A widowed painter watches another version of himself, one who took a different turn decades ago, over seven unbroken days and one unbroken sentence — the Swedish Academy's own named 'magnum opus' behind Fosse's 2023 Nobel, 'for his innovative plays and prose which give voice to the unsayable.'", aka: ["Septologien", "The Other Name", "I Is Another", "A New Name"] },
+  { title: "The Vegetarian", author: "Han Kang", why: "A woman decides to stop eating meat and, by increments, to stop participating in being human at all — three narrators circle her refusal without ever fully explaining it. Won the International Booker Prize in 2016 and remains the work most named behind Han's 2024 Nobel, 'for her intense poetic prose that confronts historical traumas and exposes the fragility of human life.'", aka: ["Chaesikjuuija"] },
+  { title: "Satantango", author: "László Krasznahorkai", why: "A collapsing collective farm waits for a man everyone believes is dead to return and save them; twelve chapters that advance and retreat like the tango's own steps, in the sentence-long paragraphs that became Krasznahorkai's signature. His 1985 debut, later filmed by Béla Tarr as a seven-and-a-half-hour single work, and the novel most cited behind his 2025 Nobel, 'for his compelling and visionary oeuvre that, in the midst of apocalyptic terror, reaffirms the power of art.'", aka: ["Sátántangó"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
