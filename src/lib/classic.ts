@@ -2773,6 +2773,30 @@ export const CLASSIC: ClassicEntry[] = [
   // Games and Economic Behavior).
   { title: "Principles of Economics", author: "Carl Menger", why: "Published in 1871 as the Grundsätze der Volkswirtschaftslehre, this founded the Austrian School and, alongside Jevons and Walras working independently in England and France the same years, launched the marginal revolution — the idea that a good's value comes from its capacity to satisfy a want at the margin, not from the labor that made it, overturning the classical labor theory of value this list's Smith and Ricardo both held. Friedrich Hayek's Road to Serfdom, already here, descends from Menger through Hayek's own teacher Ludwig von Mises; this closes the gap of having the tradition's most famous defender without its founder.", aka: ["Grundsätze der Volkswirtschaftslehre", "Principles of Economics: First, General Part"] },
   { title: "The Foundations of Arithmetic", author: "Gottlob Frege", why: "Published in 1884 as Die Grundlagen der Arithmetik, this is the accessible entry point into the logicist project Frege spent his career on: the attempt to show that arithmetic reduces entirely to logic, built on the formal system his 1879 Begriffsschrift had introduced. Frege died believing his life's work a failure, largely unread — until Bertrand Russell wrote to him in 1902 pointing out a paradox in the system, then spent the rest of his own career building on Frege's logicism anyway, and Ludwig Wittgenstein, both already here, corresponded with Frege and was invited to Jena to discuss his ideas directly. The philosopher two of this list's existing entries were both responding to.", aka: ["Die Grundlagen der Arithmetik", "Foundations of Arithmetic"] },
+
+  // ── Round 69 (2026-08-30) ─────────────────────────────────────────────
+  // One more pass on the founder-vs-successor vein (rounds 65-66-68), this
+  // time in physics rather than economics/philosophy. This list's modern-
+  // physics arc already runs Copernicus → Galileo → Kepler → Newton
+  // (classical mechanics) and Einstein (relativity), plus Richard Feynman's
+  // QED (already here) walking a lay audience through quantum
+  // electrodynamics. But QED is a late-1940s refinement built on top of
+  // quantum mechanics itself — and the actual founding generation of QM
+  // (matrix mechanics, 1925; the uncertainty principle, 1927) has zero
+  // representation. Feynman explaining the theory's later, stranger
+  // consequences was here; nobody who actually built the theory was.
+  // WebSearch-verified: Werner Heisenberg received the 1932 Nobel Prize in
+  // Physics "for the creation of quantum mechanics," and is routinely
+  // described as quantum physics's founding figure on that basis. Physics
+  // and Philosophy (1958), grown out of his 1955-56 Gifford Lectures at
+  // St. Andrews, is Heisenberg's own reflective, equation-free account of
+  // the revolution he helped create and its philosophical consequences —
+  // the same "founder explains it themselves, for general readers" shape
+  // as Einstein's Relativity, already here. Placed in Classic rather than
+  // Must Read, consistent with how this list treats its other essential-
+  // but-demanding physics/philosophy entries (Einstein's Relativity,
+  // Kant's three Critiques).
+  { title: "Physics and Philosophy", author: "Werner Heisenberg", why: "Grown out of Heisenberg's 1955-56 Gifford Lectures at the University of St. Andrews and published in 1958, this is the physicist who formulated matrix mechanics in 1925 and the uncertainty principle in 1927 — work for which he won the 1932 Nobel Prize in Physics 'for the creation of quantum mechanics' — turning to explain, without equations, why quantum theory forced physics to abandon strict determinism and admit probability into the description of nature itself. Richard Feynman's QED, already here, walks a lay reader through quantum electrodynamics' later, stranger consequences; this is the founding revolution Feynman's own generation built on, told by the man who helped start it.", aka: ["Physics and Philosophy: The Revolution in Modern Science"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
