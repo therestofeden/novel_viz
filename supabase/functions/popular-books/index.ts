@@ -1,12 +1,31 @@
 // popular-books — returns a flat list of popular books for the client to use as
-// an instant in-memory autocomplete index. The client filters this locally on
-// every keystroke; only when local hits are thin does it fall back to search-books.
+// an instant in-memory autocomplete index ("Tier 1" in Index.tsx — covers ~80%
+// of searches with zero network round-trip). The client filters this locally
+// on every keystroke; only when local hits are thin does it fall back to
+// search-books.
 //
 // Sources combined:
 // 1. novel_analyses — actually-analyzed books (highest signal)
 // 2. search_cache — books that have appeared in popular search results
+// 3. canon_books — the daily-curated Must-Read/Classics list (added
+//    2026-08-30 daily_novel_viz_feat pass; see note below)
+// 4. seed_book_list — the seed-cache warmup list (added same pass)
 //
-// Deduped by (title|author), capped at 800. Cached aggressively at the edge.
+// Deduped by (title|author). Cached aggressively at the edge.
+//
+// 2026-08-30 (daily_novel_viz_feat): found live that this endpoint — the ONLY
+// zero-network path in the whole search-to-visualization pipeline, per
+// Index.tsx's own "Tier 1" comment — only ever drew from novel_analyses (442
+// rows at time of writing, pre-launch) and search_cache (7 rows, 24h TTL,
+// usually near-empty). Meanwhile canon_books (835 rows) and seed_book_list
+// (2118 rows) — the entire output of the separate daily-must-read-and-classic
+// and seed-cache curation efforts, specifically built so "as many books as
+// possible, starting with the Classics" are available — were invisible to
+// this fast path. A curated classic with no real user traffic yet fell all
+// the way through to the slower Tier-2 network search (search-books, subject
+// to OL/GB latency and rate limits) instead of being instant like it should
+// be. Wiring both tables in directly closes the gap between two months of
+// curation work and the feature that's supposed to surface it fastest.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
@@ -27,7 +46,8 @@ const MEMO_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // ---------- Rate limiting (memo-miss path only) ----------
 // popular-books is public/unauthenticated and returns up to 10k rows built
-// from two DB scans (limit 6000 + limit 3000). The 5-minute in-process memo
+// from four DB sources (novel_analyses limit 6000, search_cache limit 3000,
+// canon_books + seed_book_list both paginated via fetchAllRows). The 5-minute in-process memo
 // absorbs almost all real traffic for free, but every other public function
 // in this project (search-books, all Gemini functions) rate-limits its real
 // cost path — this one didn't, leaving the only DB-scanning public endpoint
@@ -69,6 +89,52 @@ function normalize(s: string): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, " ");
+}
+
+// seed_book_list stores each entry as a single free-text "Title by Author"
+// string (not separate columns — see round 2026-08-25's DB-backed-list
+// migration). Split on the LAST " by " so a title that itself legitimately
+// contains the word "by" (rare, but real English titles exist) still splits
+// correctly on the actual author boundary rather than an earlier false hit.
+function splitSeedEntry(entry: string): { title: string; author: string } {
+  const lower = entry.toLowerCase();
+  const idx = lower.lastIndexOf(" by ");
+  if (idx === -1) return { title: entry.trim(), author: "" };
+  return { title: entry.slice(0, idx).trim(), author: entry.slice(idx + 4).trim() };
+}
+
+// 2026-08-30, same-day follow-up: found live IMMEDIATELY after first
+// deploying the canon_books/seed_book_list wiring below — a plain
+// `.limit(5000)` on seed_book_list (2118 rows at time of writing, > 1000)
+// silently came back truncated to only the first ~1000 rows by insertion
+// order, even though the request explicitly asked for up to 5000. This is
+// PostgREST's `db-max-rows` server-side ceiling: it hard-caps every query's
+// *returned* row count regardless of what `Range`/`.limit()` the client
+// requests, and — critically — it does NOT error or flag anything when it
+// truncates; the response just silently has fewer rows than asked for.
+// Confirmed live: "My Life in France" (seed_book_list id 1160) and "The
+// Places in Between" (id 1774) were both missing from the live popular-books
+// response right after the naive-limit version deployed, despite both rows
+// definitely existing in the table (verified via direct SQL). canon_books
+// (835 rows, under 1000) wasn't affected THIS time, but will hit the exact
+// same silent-truncation wall once the daily canon curation task pushes it
+// past 1000 rows (~current growth rate: ~1 month away) if left as a plain
+// .limit() call — so both tables are paginated the same way here, not just
+// the one that broke first.
+async function fetchAllRows<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+  maxRows = 10000,
+): Promise<T[]> {
+  const PAGE_SIZE = 1000; // stay at/under the likely db-max-rows ceiling per page
+  const out: T[] = [];
+  for (let from = 0; from < maxRows; from += PAGE_SIZE) {
+    const { data, error } = await page(from, from + PAGE_SIZE - 1);
+    if (error) break; // best-effort: return whatever pages succeeded before a failure
+    const rows = data ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE_SIZE) break; // last page — fewer rows than requested means we're done
+  }
+  return out;
 }
 
 Deno.serve(async (req) => {
@@ -131,8 +197,14 @@ Deno.serve(async (req) => {
       .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
       .then(() => {}).catch(() => {});
 
-    // Pull analyzed books (strong signal) + cached search results in parallel.
-    const [analysesRes, cacheRes] = await Promise.all([
+    // Pull analyzed books (strong signal) + cached search results + the two
+    // curated coverage tables in parallel. canon_books/seed_book_list are
+    // both service-role-only (deny-all RLS) — this function already uses the
+    // service-role client for the other two tables, so no policy change
+    // needed. The curated tables are paginated via fetchAllRows (see its
+    // comment above) rather than a plain .limit(), since both are large
+    // enough to hit PostgREST's silent per-query row ceiling.
+    const [analysesRes, cacheRes, canonRows, seedRows] = await Promise.all([
       supabase
         .from("novel_analyses")
         .select("title, author, hit_count")
@@ -143,6 +215,12 @@ Deno.serve(async (req) => {
         .select("results, hit_count")
         .order("hit_count", { ascending: false })
         .limit(3000),
+      fetchAllRows<{ title: string; author: string }>((from, to) =>
+        supabase.from("canon_books").select("title, author").range(from, to)
+      ),
+      fetchAllRows<{ entry: string }>((from, to) =>
+        supabase.from("seed_book_list").select("entry").range(from, to)
+      ),
     ]);
 
     const dedupe = new Map<string, PopularBook>();
@@ -179,6 +257,42 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Curated Must-Read/Classics list (2026-08-30): flat popularity, deliberately
+    // below any real analyzed/cached signal — curated existence isn't the same
+    // as confirmed real-world popularity — but well above zero so these titles
+    // now actually surface in the instant Tier-1 index instead of being
+    // invisible until the slower network fallback. Only raises an existing
+    // entry's popularity floor (keeps whichever title/author string a
+    // higher-priority source already contributed) — never overwrites a
+    // stronger analyzed/cached hit.
+    for (const row of canonRows) {
+      const title = (row as any).title?.trim();
+      const author = (row as any).author?.trim() ?? "";
+      if (!title) continue;
+      const key = `${normalize(title)}|${normalize(author)}`;
+      const pop = 500;
+      const existing = dedupe.get(key);
+      if (!existing) dedupe.set(key, { title, author, popularity: pop, normTitle: normalize(title), normAuthor: normalize(author) });
+      else if (existing.popularity < pop) existing.popularity = pop;
+    }
+
+    // Seed-cache warmup list (2026-08-30): same treatment, slightly below
+    // canon_books' floor since this list is a broader popular-books warmup
+    // set rather than a hand-curated canon, and a few entries are the raw
+    // "Title by Author" free-text form (parsed via splitSeedEntry above),
+    // which is a little noisier than canon_books' clean columns.
+    for (const row of seedRows) {
+      const entry = (row as any).entry?.trim();
+      if (!entry) continue;
+      const { title, author } = splitSeedEntry(entry);
+      if (!title) continue;
+      const key = `${normalize(title)}|${normalize(author)}`;
+      const pop = 480;
+      const existing = dedupe.get(key);
+      if (!existing) dedupe.set(key, { title, author, popularity: pop, normTitle: normalize(title), normAuthor: normalize(author) });
+      else if (existing.popularity < pop) existing.popularity = pop;
+    }
+
     const results = Array.from(dedupe.values())
       .filter((b) => b.title.length > 1)
       .sort((a, b) => b.popularity - a.popularity)
@@ -193,6 +307,8 @@ Deno.serve(async (req) => {
       total: results.length,
       analyses: analysesRes.data?.length ?? 0,
       cache_rows: cacheRes.data?.length ?? 0,
+      canon_rows: canonRows.length,
+      seed_rows: seedRows.length,
       ms: Math.round(performance.now() - t0),
     }));
 
