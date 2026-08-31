@@ -1226,6 +1226,17 @@ const Index = () => {
                               const hint = s.author && s.author !== "Unknown" ? `${s.title} by ${s.author}` : s.title;
                               prefetchAnalysis(hint);
                             }}
+                            onTouchStart={() => {
+                              // Mobile has no hover — onMouseEnter never fires before a tap,
+                              // so touch users got zero benefit from the prefetch-on-hover
+                              // mechanism above. touchstart fires ~100-300ms before the click
+                              // that follows a tap, which is enough head start for the backend
+                              // cache lookup (or in-flight dedup) to resolve before the user's
+                              // finger lifts. Mirrors the onMouseEnter hint logic exactly.
+                              setActiveIndex(i);
+                              const hint = s.author && s.author !== "Unknown" ? `${s.title} by ${s.author}` : s.title;
+                              prefetchAnalysis(hint);
+                            }}
                             onClick={() => pickSuggestion(s)}
                             className={cn(
                               "flex w-full items-baseline gap-3 border-b border-foreground/20 px-4 py-3 text-left transition-colors",
@@ -1301,6 +1312,7 @@ const Index = () => {
                       <motion.button
                         onMouseEnter={() => prefetchAnalysis(s)}
                         onFocus={() => prefetchAnalysis(s)}
+                        onTouchStart={() => prefetchAnalysis(s)}
                         onClick={() => {
                           setTitle(s);
                           fetchAnalysis(s);
