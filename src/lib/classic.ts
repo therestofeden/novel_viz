@@ -2797,6 +2797,33 @@ export const CLASSIC: ClassicEntry[] = [
   // but-demanding physics/philosophy entries (Einstein's Relativity,
   // Kant's three Critiques).
   { title: "Physics and Philosophy", author: "Werner Heisenberg", why: "Grown out of Heisenberg's 1955-56 Gifford Lectures at the University of St. Andrews and published in 1958, this is the physicist who formulated matrix mechanics in 1925 and the uncertainty principle in 1927 — work for which he won the 1932 Nobel Prize in Physics 'for the creation of quantum mechanics' — turning to explain, without equations, why quantum theory forced physics to abandon strict determinism and admit probability into the description of nature itself. Richard Feynman's QED, already here, walks a lay reader through quantum electrodynamics' later, stranger consequences; this is the founding revolution Feynman's own generation built on, told by the man who helped start it.", aka: ["Physics and Philosophy: The Revolution in Modern Science"] },
+
+  // ── Round 70 (2026-08-31) ────────────────────────────────────────────
+  // Round 69 closed the Heisenberg side of quantum mechanics' founding
+  // generation and flagged, as an open question, whether Bohr — the
+  // theory's other central founding voice — had the same gap. Checked
+  // directly this round: "Bohr" appears nowhere in either must-read.ts or
+  // classic.ts. Schrödinger was already ruled out as a false lead in round
+  // 69 (What Is Life?, already here, is his biology-adjacent side work,
+  // not his QM founding papers) — but Bohr had genuinely zero
+  // representation, the same asymmetry Heisenberg's addition just closed
+  // on the other side of the Bohr-Heisenberg-Copenhagen axis.
+  // WebSearch-verified: Niels Bohr won the 1922 Nobel Prize in Physics
+  // "for his services in the investigation of the structure of atoms and
+  // of the radiation emanating from them" (the 1913 Bohr model), then in
+  // 1927 introduced the principle of complementarity at a conference in
+  // Como — the conceptual core of the Copenhagen interpretation he and
+  // Heisenberg developed together, and the very framework Heisenberg's
+  // Physics and Philosophy, already here, explains from the inside.
+  // Atomic Physics and Human Knowledge collects Bohr's own philosophical
+  // essays on that framework, published the same year (1958) as
+  // Heisenberg's book — an unusually tight parallel: two founders of the
+  // same revolution, on opposite sides of its central interpretive debate,
+  // each publishing their own reflective account in the same year. Placed
+  // in Classic rather than Must Read, same calibration as Heisenberg and
+  // Einstein's Relativity — foundational and demanding rather than
+  // front-rank general-reader material.
+  { title: "Atomic Physics and Human Knowledge", author: "Niels Bohr", why: "A collection of Bohr's own philosophical essays and lectures from 1932-1957, published in 1958 — the same year as Heisenberg's Physics and Philosophy, already here. Bohr won the 1922 Nobel Prize in Physics for the atomic model he proposed in 1913, then in 1927 introduced the principle of complementarity, the conceptual core of the Copenhagen interpretation he and Heisenberg built together and argued over with Einstein for a decade. Where Heisenberg's book explains the revolution from the uncertainty principle's side, this is the same revolution from the side of the man whose institute gave the Copenhagen interpretation its name.", aka: ["Essays 1958-1962 on Atomic Physics and Human Knowledge"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
