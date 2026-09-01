@@ -25,25 +25,35 @@ name: Keep Edge Functions Warm
 #   Value: the anon/publishable key from your Supabase project (already in your .env)
 #
 # 2026-08-27 (daily backend agent): also fires db-maintenance (search_cache/
-# rate_limit_events/etc purge) once per hour from here, in addition to its own
+# rate_limit_events/etc purge) from here, in addition to its own
 # nightly-maintenance.yml cron. Root cause: querying live data found
 # search_cache and rate_limit_events had accumulated rows well past their own
 # purge thresholds (24h / 7d) despite nightly-maintenance.yml showing 15/15
 # consecutive daily "success" runs — then a direct GitHub API check showed its
 # last actual run was >28h before this one, a full scheduled slot silently
-# skipped, while this very keep-warm.yml cron (running every 5 min) never
-# missed a beat in the same window. This is a known GitHub Actions limitation,
-# not a bug in db-maintenance itself (a manual invocation the same session
-# purged the accumulated rows instantly, no errors) — GitHub's own docs warn
-# low-frequency (e.g. once-daily) schedules are the most likely to be silently
-# dropped under scheduler load, with no built-in retry. Rather than trying to
-# make a once-a-day cron slot more reliable (not really fixable from the repo
-# side), piggybacking on this 5-minute cron — which has a ~24x/day firing rate
-# and has proven itself reliable — turns one flaky trigger into ~24 redundant
-# opportunities. The purge RPCs are idempotent (a purge with nothing stale to
-# delete is a harmless no-op), so calling hourly instead of nightly costs
-# nothing beyond a few trivial DELETE queries against small tables. Kept
-# nightly-maintenance.yml as-is (still useful, still mostly works) — this is
+# skipped. Piggybacking on this cron (originally assumed to fire ~24x/day)
+# was meant to turn one flaky trigger into many redundant opportunities.
+#
+# 2026-09-01 (daily backend agent): the original fix above gated the
+# db-maintenance call to only fire on minute 00-04 of each hour, on the
+# assumption this cron actually runs every 5 minutes as scheduled (`*/5`).
+# Pulled the real run history via the GitHub API (100 most recent runs,
+# 2026-08-24 to 2026-09-01): average gap between runs was ~115 minutes, max
+# gap ~700 minutes (11.6h), NOT ~5 minutes — GitHub Actions' `schedule`
+# trigger is well-documented as best-effort/delayable, and in practice this
+# repo's */5 cron behaves more like a ~12x/day cron. With only ~12 real
+# firings/day and each one independently landing in the minute-00-04 window
+# only ~8% of the time (5/60), the gate was mathematically throwing away
+# ~92% of an already-scarce trigger — live-querying rate_limit_events
+# confirmed this: 14 of 116 rows (12%) were already past the 7-day purge
+# threshold, i.e. the "hourly backstop" wasn't meaningfully more reliable
+# than nightly-maintenance.yml alone, contrary to its own stated intent.
+# Removed the minute gate entirely — db-maintenance now fires on every
+# keep-warm run, whatever that run's real-world cadence turns out to be.
+# Safe regardless of how often this actually fires: the purge RPCs are
+# idempotent (a purge with nothing stale to delete is a harmless no-op)
+# against small tables, so there's no cost to calling it on every firing
+# instead of gating it. Kept nightly-maintenance.yml as-is — this is
 # additive redundancy, not a replacement.
 
 on:
@@ -123,20 +133,18 @@ jobs:
             https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/popular-books
         continue-on-error: true
 
-      - name: Run db-maintenance (hourly, redundant backstop for nightly-maintenance.yml)
-        # Only fire on the first 5-minute slot of each hour (minute 00-04) so
-        # this runs ~24x/day instead of every 5 minutes — plenty of redundancy
-        # for a once-a-day job without hammering the DB or cluttering logs.
+      - name: Run db-maintenance (redundant backstop for nightly-maintenance.yml)
+        # Fires on every run of this workflow, whatever cadence GitHub
+        # actually delivers for the schedule trigger (see comment at top of
+        # file — empirically ~12x/day, not the nominal 288x/day). No minute
+        # gating: the purge RPCs are idempotent no-ops when nothing is stale,
+        # so there's no downside to calling this every time instead of trying
+        # to throttle an already-scarce, unreliable trigger.
         run: |
-          MINUTE=$(date -u +%M)
-          if [ "$MINUTE" -lt 5 ]; then
-            curl -sf -o /dev/null \
-              -X POST \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-              -H "x-maintenance-secret: ${{ secrets.MAINTENANCE_SECRET }}" \
-              https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/db-maintenance
-          else
-            echo "skipping this slot (minute=$MINUTE), not the top of the hour"
-          fi
+          curl -sf -o /dev/null \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-maintenance-secret: ${{ secrets.MAINTENANCE_SECRET }}" \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/db-maintenance
         continue-on-error: true
