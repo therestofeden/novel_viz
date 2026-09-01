@@ -153,6 +153,19 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
     }
   }, [title, author, resolved]);
 
+  // Mobile has no hover — onMouseEnter never fires before a tap, so touch
+  // readers always paid the full resolve-buy-link round trip on first tap
+  // (either a raw navigation delay, or a delay before the vendor picker
+  // opens). touchstart fires ~100-300ms before the click that follows a
+  // tap, giving this fire-and-forget warm-up time to land in `memo` before
+  // onClick runs. Mirrors the same touchstart-prefetch fix already applied
+  // to Index.tsx's autocomplete/suggestion prefetch (2026-08-31).
+  const onTouchStart = useCallback(() => {
+    if (!resolved) {
+      resolve(title, author).then(setResolved).catch(() => {});
+    }
+  }, [title, author, resolved]);
+
   // Close dropdown when clicking outside.
   useEffect(() => {
     if (!open) return;
@@ -219,6 +232,7 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
         type="button"
         onClick={onClick}
         onMouseEnter={onMouseEnter}
+        onTouchStart={onTouchStart}
         disabled={loading}
         title={
           resolved
