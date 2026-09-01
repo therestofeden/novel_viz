@@ -2824,6 +2824,36 @@ export const CLASSIC: ClassicEntry[] = [
   // Einstein's Relativity — foundational and demanding rather than
   // front-rank general-reader material.
   { title: "Atomic Physics and Human Knowledge", author: "Niels Bohr", why: "A collection of Bohr's own philosophical essays and lectures from 1932-1957, published in 1958 — the same year as Heisenberg's Physics and Philosophy, already here. Bohr won the 1922 Nobel Prize in Physics for the atomic model he proposed in 1913, then in 1927 introduced the principle of complementarity, the conceptual core of the Copenhagen interpretation he and Heisenberg built together and argued over with Einstein for a decade. Where Heisenberg's book explains the revolution from the uncertainty principle's side, this is the same revolution from the side of the man whose institute gave the Copenhagen interpretation its name.", aka: ["Essays 1958-1962 on Atomic Physics and Human Knowledge"] },
+
+  // ── Round 71 (2026-09-01) ────────────────────────────────────────────
+  // Rounds 69-70 filled quantum mechanics' two central interpretive
+  // founders (Heisenberg, Bohr) but both entries are reflective, equation-
+  // free essay collections written well after the fact (1958) — neither is
+  // the actual technical founding document of the theory. Round 70's own
+  // "for next round" note flagged this directly: Dirac's Principles of
+  // Quantum Mechanics (1930), "still a standard graduate text," was named
+  // but not checked. Grepped "dirac" across both must-read.ts and
+  // classic.ts: zero matches. Confirmed real gap — a different kind of gap
+  // than Heisenberg/Bohr's, since this is the technical text itself rather
+  // than a later popular account of it, but it completes the same trio:
+  // Dirac shared the 1933 Nobel Prize in Physics with Schrödinger (whose
+  // What Is Life?, already here, was ruled out in round 69 as unrelated
+  // biology-adjacent work, not a QM-founding text).
+  // WebSearch-verified: published 1930 by Clarendon Press, this was the
+  // first complete, logically axiomatic exposition of quantum mechanics'
+  // general formalism, built on "observables" and "states" as primitives
+  // — Einstein called it "the most logically perfect presentation of
+  // quantum theory." Still in print and still assigned as a standard
+  // graduate text nearly a century later, the clearest Lindy signal
+  // available for a technical work: not read because it's historically
+  // important, read because it remains the reference. Placed in Classic,
+  // same calibration as Heisenberg and Bohr's entries and this list's
+  // other dense-but-essential technical/philosophical texts (Kant's three
+  // Critiques, Theory of Games and Economic Behavior) — a foundational
+  // graduate-level text, not front-rank general-reader material, but this
+  // list has never restricted itself to trade nonfiction where a denser
+  // source is genuinely the canonical one.
+  { title: "The Principles of Quantum Mechanics", author: "Paul Dirac", why: "Published in 1930 by Clarendon Press, this is the first complete, logically axiomatic exposition of quantum mechanics' general formalism, built on the notions of 'observables' and 'states' as primitives — Einstein called it 'the most logically perfect presentation of quantum theory,' and it remains a standard graduate text today, nearly a century later. Dirac shared the 1933 Nobel Prize in Physics with Erwin Schrödinger (whose What Is Life?, already here, is unrelated biology-adjacent work) 'for the discovery of new productive forms of atomic theory.' Where Heisenberg's Physics and Philosophy and Bohr's Atomic Physics and Human Knowledge, both already here, are each founders' own later reflective accounts of quantum mechanics' meaning, this is the technical document itself — the theory's formal foundation, not a popular explanation of it.", aka: ["Principles of Quantum Mechanics"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
