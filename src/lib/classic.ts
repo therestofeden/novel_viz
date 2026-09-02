@@ -2854,6 +2854,51 @@ export const CLASSIC: ClassicEntry[] = [
   // list has never restricted itself to trade nonfiction where a denser
   // source is genuinely the canonical one.
   { title: "The Principles of Quantum Mechanics", author: "Paul Dirac", why: "Published in 1930 by Clarendon Press, this is the first complete, logically axiomatic exposition of quantum mechanics' general formalism, built on the notions of 'observables' and 'states' as primitives — Einstein called it 'the most logically perfect presentation of quantum theory,' and it remains a standard graduate text today, nearly a century later. Dirac shared the 1933 Nobel Prize in Physics with Erwin Schrödinger (whose What Is Life?, already here, is unrelated biology-adjacent work) 'for the discovery of new productive forms of atomic theory.' Where Heisenberg's Physics and Philosophy and Bohr's Atomic Physics and Human Knowledge, both already here, are each founders' own later reflective accounts of quantum mechanics' meaning, this is the technical document itself — the theory's formal foundation, not a popular explanation of it.", aka: ["Principles of Quantum Mechanics"] },
+
+  // ── Round 72 (2026-09-02) ───────────────────────────────────────────────
+  // Round 71's own "for next round" note flagged two unmined veins:
+  // national-literature/discipline coverage gaps, and Pulitzer/Booker Prize
+  // winners as a vein under-swept relative to Nobel (the two prizes are
+  // currently cited only as *reasons* for a handful of existing entries,
+  // never checked systematically). Checked the Pulitzer Prize for Fiction
+  // roll directly against both must-read.ts and classic.ts and found a
+  // genuinely startling omission: To Kill a Mockingbird (Harper Lee) —
+  // among the most widely read and taught novels in American history —
+  // appears nowhere on either list. Grepped "mockingbird" and "Harper Lee"
+  // case-insensitive across both files: zero matches, confirming a real
+  // gap rather than a naming mismatch. WebSearch-verified: published July
+  // 11, 1960; won the Pulitzer Prize for Fiction in 1961; has sold 30-40
+  // million copies worldwide and remains a fixture of American secondary
+  // education 65 years later — as strong a Lindy signal as any American
+  // novel already on either list. Its closest calibration neighbors — The
+  // Grapes of Wrath, Invisible Man, Beloved, The Great Gatsby — all sit in
+  // Must Read, not Classic, which raises the obvious question of whether
+  // this belongs there too. Per the standing default must-read.ts's own
+  // 2026-07-26 note set for this exact scheduled task ("S-tier calls
+  // remain Stefano's" — the daily run should stay in its "normal
+  // single-digit-Classic-only cadence, not treat volume as license to
+  // promote into Must Read on its own initiative"), added here at Classic
+  // and flagged, not auto-promoted, for Stefano's own review — same
+  // treatment Oedipus Rex, The Muqaddimah, A Doll's House, and Waiting for
+  // Godot received before their eventual promotions, and that The Lord of
+  // the Rings and The Quran received when he later declined/left them open.
+  //
+  // Second gap, non-fiction: Robert Caro's The Power Broker (1974), winner
+  // of the 1975 Pulitzer Prize for Biography. Fifty years on it remains
+  // the reference work on municipal power and urban planning — Robert
+  // Moses, its subject, reshaped New York City and State more than any of
+  // the elected officials who nominally outranked him, and the book is
+  // still cited routinely by working politicians, journalists, and city
+  // planners, named to the Modern Library's 100 greatest nonfiction books
+  // of the 20th century, and the standard every later Caro biography (his
+  // ongoing Lyndon Johnson series) gets measured against. Same shape as
+  // this list's other dense, technical-but-essential narrative-nonfiction
+  // entries (The Guns of August, The Rise and Fall of the Third Reich) —
+  // placed at Classic on that same calibration, not flagged for Must Read
+  // given its length and specialist urban-politics focus relative to this
+  // list's more general-reader Must Read nonfiction.
+  { title: "To Kill a Mockingbird", author: "Harper Lee", why: "Atticus Finch defends a Black man falsely accused of rape in Depression-era Alabama, narrated through the eyes of his young daughter Scout — winner of the 1961 Pulitzer Prize for Fiction, one of the best-selling novels ever published (30-40 million copies), and a fixture of American secondary-school curricula for over sixty years running. Its closest calibration neighbors on this list's Must Read side — The Grapes of Wrath, Invisible Man, Beloved — are American novels of comparable moral weight and comparable durability; flagged here for Stefano's own consideration of that same promotion, not auto-promoted, per this scheduled task's standing S-tier-is-Stefano's-call default." },
+  { title: "The Power Broker", author: "Robert A. Caro", why: "An 1,100-plus-page biography of Robert Moses, the unelected New York official who built more bridges, parks, and highways than any government body in American history and reshaped the city and state for half a century without ever winning an election for the offices that gave him his power — winner of the 1975 Pulitzer Prize for Biography, the product of seven years and over 500 interviews, and still, fifty years later, the standard reference work on how urban and municipal power actually operates, cited routinely by politicians, journalists, and planners alike.", aka: ["The Power Broker: Robert Moses and the Fall of New York"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
