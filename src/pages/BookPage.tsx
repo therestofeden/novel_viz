@@ -16,13 +16,31 @@ import {
   isNonFiction,
   normalizeAnalysis,
 } from "@/lib/novel-types";
-import { TimelineView } from "@/components/TimelineView";
-import { CharacterNetwork } from "@/components/CharacterNetwork";
-import { BookDNA } from "@/components/BookDNA";
-import { ConceptMap } from "@/components/ConceptMap";
-import { IdeasTab } from "@/components/IdeasTab";
-import { ChapterBreakdown } from "@/components/ChapterBreakdown";
-import { TakeawaysTab } from "@/components/TakeawaysTab";
+// The 7 tab views below are the actual "visualize any book" feature, but only
+// ONE of them is ever visible at a time (gated by `view === ...` — the default
+// is set the instant an analysis loads, see setView() in loadAnalysis below).
+// All 7 were previously statically imported, so all ~4,700 lines of their
+// combined code shipped in BookPage's critical-path bundle on every visit —
+// six-sevenths of it guaranteed dead weight on first paint. Same fix already
+// applied to RatingDistribution/ReactMarkdown below: lazy() + Suspense per
+// tab, so only the one tab the reader actually lands on is fetched/parsed
+// before the page can render, and switching tabs fetches the rest on demand.
+const TimelineView = lazy(() => import("@/components/TimelineView").then((m) => ({ default: m.TimelineView })));
+const CharacterNetwork = lazy(() => import("@/components/CharacterNetwork").then((m) => ({ default: m.CharacterNetwork })));
+const BookDNA = lazy(() => import("@/components/BookDNA").then((m) => ({ default: m.BookDNA })));
+const ConceptMap = lazy(() => import("@/components/ConceptMap").then((m) => ({ default: m.ConceptMap })));
+const IdeasTab = lazy(() => import("@/components/IdeasTab").then((m) => ({ default: m.IdeasTab })));
+const ChapterBreakdown = lazy(() => import("@/components/ChapterBreakdown").then((m) => ({ default: m.ChapterBreakdown })));
+const TakeawaysTab = lazy(() => import("@/components/TakeawaysTab").then((m) => ({ default: m.TakeawaysTab })));
+// Lightweight, generic fallback — shown only for the split-second a tab
+// chunk is fetching (instant on repeat visits/tab-switches, since the chunk
+// is cached after first load). Intentionally minimal, not a full skeleton,
+// since this is now off the critical path rather than blocking first paint.
+const TabFallback = () => (
+  <div className="flex min-h-[240px] items-center justify-center">
+    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+  </div>
+);
 import { ReaderNotes } from "@/components/ReaderNotes";
 import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
@@ -592,60 +610,74 @@ const BookPage = () => {
         >
           {/* Fiction views */}
           {view === "timeline" && isFiction(analysis) && (
-            <TimelineView
-              analysis={analysis as FictionAnalysis}
-              progress={effectiveProgress}
-              selectedEventId={selectedEventId}
-              onSelectEvent={handleSelectEvent}
-              selectedCharacterId={selectedCharacterId}
-              onSelectCharacter={setSelectedCharacterId}
-            />
+            <Suspense fallback={<TabFallback />}>
+              <TimelineView
+                analysis={analysis as FictionAnalysis}
+                progress={effectiveProgress}
+                selectedEventId={selectedEventId}
+                onSelectEvent={handleSelectEvent}
+                selectedCharacterId={selectedCharacterId}
+                onSelectCharacter={setSelectedCharacterId}
+              />
+            </Suspense>
           )}
           {view === "network" && isFiction(analysis) && (
-            <CharacterNetwork
-              analysis={analysis as FictionAnalysis}
-              progress={effectiveProgress}
-              onProgressChange={(next) => {
-                setShowSpoilers(false);
-                setProgress(next);
-              }}
-              cacheKey={cacheKey}
-              selectedCharacterId={selectedCharacterId}
-              onSelectCharacter={(id) => {
-                setSelectedCharacterId(id);
-                if (id) setView("network");
-              }}
-              highlightedCharacterIds={highlightedCharacterIds}
-              onSelectEventId={(eventId) => {
-                setSelectedEventId(eventId);
-                setView("timeline");
-              }}
-            />
+            <Suspense fallback={<TabFallback />}>
+              <CharacterNetwork
+                analysis={analysis as FictionAnalysis}
+                progress={effectiveProgress}
+                onProgressChange={(next) => {
+                  setShowSpoilers(false);
+                  setProgress(next);
+                }}
+                cacheKey={cacheKey}
+                selectedCharacterId={selectedCharacterId}
+                onSelectCharacter={(id) => {
+                  setSelectedCharacterId(id);
+                  if (id) setView("network");
+                }}
+                highlightedCharacterIds={highlightedCharacterIds}
+                onSelectEventId={(eventId) => {
+                  setSelectedEventId(eventId);
+                  setView("timeline");
+                }}
+              />
+            </Suspense>
           )}
           {/* Non-fiction views */}
           {view === "ideas" && isNonFiction(analysis) && (
-            <IdeasTab
-              analysis={analysis as NonFictionAnalysis}
-              cacheKey={cacheKey}
-              onReanalyze={() => {
-                // BookPage is read-only — re-analyze is not available here.
-                // Redirect user to the home page with the book pre-filled.
-                window.location.href = `/?book=${encodeURIComponent(analysis.title)}`;
-              }}
-            />
+            <Suspense fallback={<TabFallback />}>
+              <IdeasTab
+                analysis={analysis as NonFictionAnalysis}
+                cacheKey={cacheKey}
+                onReanalyze={() => {
+                  // BookPage is read-only — re-analyze is not available here.
+                  // Redirect user to the home page with the book pre-filled.
+                  window.location.href = `/?book=${encodeURIComponent(analysis.title)}`;
+                }}
+              />
+            </Suspense>
           )}
           {view === "concepts" && isNonFiction(analysis) && (
-            <ConceptMap analysis={analysis as NonFictionAnalysis} />
+            <Suspense fallback={<TabFallback />}>
+              <ConceptMap analysis={analysis as NonFictionAnalysis} />
+            </Suspense>
           )}
           {view === "chapters" && isNonFiction(analysis) && (
-            <ChapterBreakdown analysis={analysis as NonFictionAnalysis} />
+            <Suspense fallback={<TabFallback />}>
+              <ChapterBreakdown analysis={analysis as NonFictionAnalysis} />
+            </Suspense>
           )}
           {/* Shared views */}
           {view === "dna" && (
-            <BookDNA analysis={analysis} cacheKey={cacheKey} />
+            <Suspense fallback={<TabFallback />}>
+              <BookDNA analysis={analysis} cacheKey={cacheKey} />
+            </Suspense>
           )}
           {view === "takeaways" && (
-            <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />
+            <Suspense fallback={<TabFallback />}>
+              <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />
+            </Suspense>
           )}
         </section>
 

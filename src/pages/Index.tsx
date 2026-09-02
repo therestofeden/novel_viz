@@ -24,13 +24,28 @@ import {
   isNonFiction,
   normalizeAnalysis,
 } from "@/lib/novel-types";
-import { TimelineView } from "@/components/TimelineView";
-import { CharacterNetwork } from "@/components/CharacterNetwork";
-import { BookDNA } from "@/components/BookDNA";
-import { ConceptMap } from "@/components/ConceptMap";
-import { IdeasTab } from "@/components/IdeasTab";
-import { ChapterBreakdown } from "@/components/ChapterBreakdown";
-import { TakeawaysTab } from "@/components/TakeawaysTab";
+// Same fix as react-markdown above, applied to a much bigger offender: these
+// 7 tab-view components are the actual "visualize any book" feature, but
+// only ONE is ever visible at a time (gated by `view === ...` below), and
+// Index.tsx is the search bar / landing page itself — the very first bundle
+// every visitor downloads, before they've typed a single character. Static
+// imports here put ~4,700 lines of combined tab code (the same components
+// also just lazy-split on BookPage.tsx) on the critical path of every single
+// visit, search or no search. lazy() + Suspense per tab (mirrored below at
+// each view === "..." render site) means only the one tab a reader actually
+// lands on is fetched, and none of it blocks the initial page paint.
+const TimelineView = lazy(() => import("@/components/TimelineView").then((m) => ({ default: m.TimelineView })));
+const CharacterNetwork = lazy(() => import("@/components/CharacterNetwork").then((m) => ({ default: m.CharacterNetwork })));
+const BookDNA = lazy(() => import("@/components/BookDNA").then((m) => ({ default: m.BookDNA })));
+const ConceptMap = lazy(() => import("@/components/ConceptMap").then((m) => ({ default: m.ConceptMap })));
+const IdeasTab = lazy(() => import("@/components/IdeasTab").then((m) => ({ default: m.IdeasTab })));
+const ChapterBreakdown = lazy(() => import("@/components/ChapterBreakdown").then((m) => ({ default: m.ChapterBreakdown })));
+const TakeawaysTab = lazy(() => import("@/components/TakeawaysTab").then((m) => ({ default: m.TakeawaysTab })));
+const TabFallback = () => (
+  <div className="flex min-h-[240px] items-center justify-center">
+    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+  </div>
+);
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ReaderNotes } from "@/components/ReaderNotes";
@@ -1710,56 +1725,70 @@ const Index = () => {
               <ErrorBoundary key={view}>
                 {/* ── Fiction views ── */}
                 {view === "timeline" && isFiction(analysis) && (
-                  <TimelineView
-                    analysis={analysis as FictionAnalysis}
-                    progress={effectiveProgress}
-                    selectedEventId={selectedEventId}
-                    onSelectEvent={handleSelectEvent}
-                    selectedCharacterId={selectedCharacterId}
-                    onSelectCharacter={setSelectedCharacterId}
-                  />
+                  <Suspense fallback={<TabFallback />}>
+                    <TimelineView
+                      analysis={analysis as FictionAnalysis}
+                      progress={effectiveProgress}
+                      selectedEventId={selectedEventId}
+                      onSelectEvent={handleSelectEvent}
+                      selectedCharacterId={selectedCharacterId}
+                      onSelectCharacter={setSelectedCharacterId}
+                    />
+                  </Suspense>
                 )}
                 {view === "network" && isFiction(analysis) && (
-                  <CharacterNetwork
-                    analysis={analysis as FictionAnalysis}
-                    progress={effectiveProgress}
-                    onProgressChange={(next) => {
-                      setShowSpoilers(false);
-                      setProgress(next);
-                    }}
-                    cacheKey={cacheKey}
-                    selectedCharacterId={selectedCharacterId}
-                    onSelectCharacter={(id) => {
-                      setSelectedCharacterId(id);
-                      if (id) setView("network");
-                    }}
-                    highlightedCharacterIds={highlightedCharacterIds}
-                    onSelectEventId={(eventId) => {
-                      setSelectedEventId(eventId);
-                      setView("timeline");
-                    }}
-                  />
+                  <Suspense fallback={<TabFallback />}>
+                    <CharacterNetwork
+                      analysis={analysis as FictionAnalysis}
+                      progress={effectiveProgress}
+                      onProgressChange={(next) => {
+                        setShowSpoilers(false);
+                        setProgress(next);
+                      }}
+                      cacheKey={cacheKey}
+                      selectedCharacterId={selectedCharacterId}
+                      onSelectCharacter={(id) => {
+                        setSelectedCharacterId(id);
+                        if (id) setView("network");
+                      }}
+                      highlightedCharacterIds={highlightedCharacterIds}
+                      onSelectEventId={(eventId) => {
+                        setSelectedEventId(eventId);
+                        setView("timeline");
+                      }}
+                    />
+                  </Suspense>
                 )}
                 {/* ── Non-fiction views ── */}
                 {view === "ideas" && isNonFiction(analysis) && (
-                  <IdeasTab
-                    analysis={analysis as NonFictionAnalysis}
-                    cacheKey={cacheKey}
-                    onReanalyze={() => fetchAnalysis(analysis.title, undefined, { reanalyze: true })}
-                  />
+                  <Suspense fallback={<TabFallback />}>
+                    <IdeasTab
+                      analysis={analysis as NonFictionAnalysis}
+                      cacheKey={cacheKey}
+                      onReanalyze={() => fetchAnalysis(analysis.title, undefined, { reanalyze: true })}
+                    />
+                  </Suspense>
                 )}
                 {view === "concepts" && isNonFiction(analysis) && (
-                  <ConceptMap analysis={analysis as NonFictionAnalysis} />
+                  <Suspense fallback={<TabFallback />}>
+                    <ConceptMap analysis={analysis as NonFictionAnalysis} />
+                  </Suspense>
                 )}
                 {view === "chapters" && isNonFiction(analysis) && (
-                  <ChapterBreakdown analysis={analysis as NonFictionAnalysis} />
+                  <Suspense fallback={<TabFallback />}>
+                    <ChapterBreakdown analysis={analysis as NonFictionAnalysis} />
+                  </Suspense>
                 )}
                 {/* ── Shared views ── */}
                 {view === "dna" && (
-                  <BookDNA analysis={analysis} cacheKey={cacheKey} />
+                  <Suspense fallback={<TabFallback />}>
+                    <BookDNA analysis={analysis} cacheKey={cacheKey} />
+                  </Suspense>
                 )}
                 {view === "takeaways" && (
-                  <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />
+                  <Suspense fallback={<TabFallback />}>
+                    <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />
+                  </Suspense>
                 )}
               </ErrorBoundary>
             </section>
