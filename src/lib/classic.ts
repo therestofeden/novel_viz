@@ -2918,6 +2918,16 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Wolf Hall", author: "Hilary Mantel", why: "Thomas Cromwell's rise through the court of Henry VIII, told from inside his own calculating head — winner of the 2009 Booker Prize and the National Book Critics Circle Award; its sequel Bring Up the Bodies won the Booker again in 2012, making Mantel the first woman and only the third writer ever to win it twice. Reinvigorated historical fiction as a serious literary form and was adapted into an award-winning BBC series and two RSC stage productions." },
   { title: "Life of Pi", author: "Yann Martel", why: "A boy survives 227 days adrift in a lifeboat with a Bengal tiger, in a story its narrator promises will 'make you believe in God' — winner of the 2002 Booker Prize, over 15 million copies sold worldwide, translated into more than 50 languages, and the basis for Ang Lee's 2012 film, which won four Academy Awards including Best Director." },
   { title: "Schindler's Ark", author: "Thomas Keneally", why: "Oskar Schindler, a war-profiteering German industrialist, saves more than a thousand Jewish workers from the Holocaust by keeping them employed in his factory — winner of the 1982 Booker Prize as a work of documentary fiction, an unusual case for the prize, and the direct basis for Steven Spielberg's Schindler's List (1993), which won seven Academy Awards including Best Picture and is widely regarded as one of the greatest films ever made.", aka: ["Schindler's List"] },
+
+  // ── Round 74 (2026-09-03) ───────────────────────────────────────────────
+  // Closes out round 73's own "for next round" note: the two Booker gaps
+  // deliberately left that round — Possession (Byatt, 1990) and The Sea,
+  // the Sea (Murdoch, 1978) — both confirmed still absent from must-read.ts
+  // and classic.ts (only false-positive "self-possession" hits in unrelated
+  // why-text). Both clear this list's Lindy bar on their own terms rather
+  // than needing a film/mass-culture crossover the way round 73's four did.
+  { title: "Possession", author: "A.S. Byatt", why: "Two young literary scholars, Roland Michell and Maud Bailey, uncover a secret love affair between two Victorian poets while falling into an unwitting echo of it themselves — winner of the 1990 Booker Prize, a landmark of historiographic metafiction that interleaves contemporary academic satire with pastiche Victorian poetry and letters written wholly by Byatt herself. Remains one of the most widely read and taught winners in the prize's history, and was adapted into a 2002 film starring Gwyneth Paltrow.", aka: ["Possession: A Romance"] },
+  { title: "The Sea, the Sea", author: "Iris Murdoch", why: "A celebrated theatre director retires to a remote house on the English coast to write his memoirs, only to be undone by the reappearance of his first love and by increasingly unreliable visions of sea monsters and ghosts — winner of the 1978 Booker Prize and widely considered the finest of Murdoch's twenty-six novels, a study of jealousy, self-delusion, and the philosophical questions of freedom and goodness that ran through her parallel career as an Oxford moral philosopher." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
