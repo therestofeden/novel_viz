@@ -2899,6 +2899,25 @@ export const CLASSIC: ClassicEntry[] = [
   // list's more general-reader Must Read nonfiction.
   { title: "To Kill a Mockingbird", author: "Harper Lee", why: "Atticus Finch defends a Black man falsely accused of rape in Depression-era Alabama, narrated through the eyes of his young daughter Scout — winner of the 1961 Pulitzer Prize for Fiction, one of the best-selling novels ever published (30-40 million copies), and a fixture of American secondary-school curricula for over sixty years running. Its closest calibration neighbors on this list's Must Read side — The Grapes of Wrath, Invisible Man, Beloved — are American novels of comparable moral weight and comparable durability; flagged here for Stefano's own consideration of that same promotion, not auto-promoted, per this scheduled task's standing S-tier-is-Stefano's-call default." },
   { title: "The Power Broker", author: "Robert A. Caro", why: "An 1,100-plus-page biography of Robert Moses, the unelected New York official who built more bridges, parks, and highways than any government body in American history and reshaped the city and state for half a century without ever winning an election for the offices that gave him his power — winner of the 1975 Pulitzer Prize for Biography, the product of seven years and over 500 interviews, and still, fifty years later, the standard reference work on how urban and municipal power actually operates, cited routinely by politicians, journalists, and planners alike.", aka: ["The Power Broker: Robert Moses and the Fall of New York"] },
+
+  // ── Round 73 (2026-09-03) ───────────────────────────────────────────────
+  // Round 71's "for next round" note flagged the Booker Prize as an
+  // under-swept vein relative to Nobel/Pulitzer; round 72 mined one lead
+  // from it (To Kill a Mockingbird/The Power Broker, via Pulitzer) but
+  // explicitly left the Booker itself unchecked. Ran the full winner list
+  // (1969-2025, via thebookerprizes.com/Wikipedia) against both files this
+  // round and found it startlingly under-mined: five completely unrepresented
+  // winner-authors turned up on a single pass — Ondaatje, Mantel, Martel,
+  // Murdoch, Keneally, Byatt. All five clear this list's Lindy bar with room
+  // to spare; picked the four with the strongest mass-culture footprint
+  // (film-driven or otherwise) for this round and left Possession (A.S.
+  // Byatt, 1990) and The Sea, the Sea (Iris Murdoch, 1978) for the next
+  // pass — both genuinely Classic-caliber but slightly more specialist/
+  // literary-prize-driven than these four's crossover reach.
+  { title: "The English Patient", author: "Michael Ondaatje", why: "A burned, unidentified patient in an Italian villa at the end of WWII draws four wounded strangers into his orbit — winner of the 1992 Booker Prize and, in 2018, voted the single best winner of the prize's first fifty years by the Golden Man Booker judging panel (beating out Rushdie's Midnight's Children and Ishiguro's Remains of the Day for its own decade). Anthony Minghella's 1996 film adaptation won nine Academy Awards including Best Picture — one of the most decorated literary adaptations ever made." },
+  { title: "Wolf Hall", author: "Hilary Mantel", why: "Thomas Cromwell's rise through the court of Henry VIII, told from inside his own calculating head — winner of the 2009 Booker Prize and the National Book Critics Circle Award; its sequel Bring Up the Bodies won the Booker again in 2012, making Mantel the first woman and only the third writer ever to win it twice. Reinvigorated historical fiction as a serious literary form and was adapted into an award-winning BBC series and two RSC stage productions." },
+  { title: "Life of Pi", author: "Yann Martel", why: "A boy survives 227 days adrift in a lifeboat with a Bengal tiger, in a story its narrator promises will 'make you believe in God' — winner of the 2002 Booker Prize, over 15 million copies sold worldwide, translated into more than 50 languages, and the basis for Ang Lee's 2012 film, which won four Academy Awards including Best Director." },
+  { title: "Schindler's Ark", author: "Thomas Keneally", why: "Oskar Schindler, a war-profiteering German industrialist, saves more than a thousand Jewish workers from the Holocaust by keeping them employed in his factory — winner of the 1982 Booker Prize as a work of documentary fiction, an unusual case for the prize, and the direct basis for Steven Spielberg's Schindler's List (1993), which won seven Academy Awards including Best Picture and is widely regarded as one of the greatest films ever made.", aka: ["Schindler's List"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
