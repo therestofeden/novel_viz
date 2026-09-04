@@ -2928,6 +2928,49 @@ export const CLASSIC: ClassicEntry[] = [
   // than needing a film/mass-culture crossover the way round 73's four did.
   { title: "Possession", author: "A.S. Byatt", why: "Two young literary scholars, Roland Michell and Maud Bailey, uncover a secret love affair between two Victorian poets while falling into an unwitting echo of it themselves — winner of the 1990 Booker Prize, a landmark of historiographic metafiction that interleaves contemporary academic satire with pastiche Victorian poetry and letters written wholly by Byatt herself. Remains one of the most widely read and taught winners in the prize's history, and was adapted into a 2002 film starring Gwyneth Paltrow.", aka: ["Possession: A Romance"] },
   { title: "The Sea, the Sea", author: "Iris Murdoch", why: "A celebrated theatre director retires to a remote house on the English coast to write his memoirs, only to be undone by the reappearance of his first love and by increasingly unreliable visions of sea monsters and ghosts — winner of the 1978 Booker Prize and widely considered the finest of Murdoch's twenty-six novels, a study of jealousy, self-delusion, and the philosophical questions of freedom and goodness that ran through her parallel career as an Oxford moral philosopher." },
+
+  // ── Round 75 (2026-09-04) ───────────────────────────────────────────────
+  // Round 71's "for next round" note flagged national-literature/discipline
+  // coverage gaps as the oldest unaddressed thread (raised again by round 74
+  // as the priority for this round). Rather than re-run the Booker/Pulitzer
+  // sweeps already mined across rounds 72-74, went back to first principles:
+  // which nations with a strong, Lindy-proven literary tradition still have
+  // zero representation across both files. Grepped a fresh candidate pool —
+  // "Lagerlöf" (already flagged as a genuine zero-hit back on 2026-07-26 but
+  // never added that round), "Sienkiewicz", "Miłosz", "Kadare", "Bernhard",
+  // "Amado", "Flannery"/"O'Connor", "Capote", "Cheever", "Welty" — across
+  // both lists; all confirmed genuine zero-hits (accent-aware regrep, no
+  // false-positive collisions with e.g. Andrić's already-promoted Bridge on
+  // the Drina). Picked the four strongest, closing four independent
+  // national/regional gaps in one pass rather than a single deep vein.
+  // Sweden: Selma Lagerlöf's The Wonderful Adventures of Nils (1906) — this
+  // list has Norway (Ibsen, Hamsun, Undset) but Sweden, the largest Nordic
+  // literary tradition, sat at zero; Lagerlöf's Nobel (1909) is itself a
+  // landmark, the first ever awarded to a woman. American Southern Gothic:
+  // Flannery O'Connor's A Good Man Is Hard to Find (1955) — a real, notable
+  // gap given how thoroughly this list otherwise covers 20th-century
+  // American fiction (Faulkner, Steinbeck, Hemingway, Morrison, McCarthy);
+  // O'Connor's title story is the genre's most anthologized text and still
+  // standard classroom reading seventy years on. Albania: Ismail Kadare's
+  // The General of the Dead Army (1963) — the Balkans had exactly one entry
+  // (Andrić's Bosnia-set Bridge on the Drina, already promoted to Must
+  // Read); Kadare is a distinct national tradition and the first-ever
+  // winner of the Man Booker International Prize (2005). Poland: Henryk
+  // Sienkiewicz's Quo Vadis (1896) — Polish literature sat at zero despite
+  // three Polish Nobel laureates in literature to date; Quo Vadis was an
+  // immense international bestseller in its own time and the book that
+  // secured Sienkiewicz's 1905 Nobel "because of his outstanding merits as
+  // an epic writer." All four facts (publication years, Nobel years,
+  // Kadare's 2005 prize) WebSearch-verified rather than trusted from
+  // recall. All four clear the Lindy/A-tier bar with room to spare; none
+  // were close calls, and none flagged for Must Read promotion — each is a
+  // strong, canonical entry point to its own national tradition rather
+  // than a work with the broader, cross-cultural weight of this list's
+  // existing Must Read roster. Classic count: 423 → 427.
+  { title: "The Wonderful Adventures of Nils", author: "Selma Lagerlöf", why: "A cruel, lazy Swedish farm boy is shrunk to elf-size by an angry tomte and carried the length of the country on the back of a barnacle goose — commissioned as a geography primer for Swedish schoolchildren in 1906 but became a beloved masterpiece of world children's literature in its own right. Its success helped make Lagerlöf, in 1909, both the first woman and the first Swedish writer to win the Nobel Prize in Literature, and in 1914 the first woman elected to the Swedish Academy.", aka: ["Nils Holgerssons underbara resa genom Sverige", "The Wonderful Adventures of Nils Holgersson"] },
+  { title: "A Good Man Is Hard to Find", author: "Flannery O'Connor", why: "A Georgia family's road trip ends in a ditch-side massacre at the hands of an escaped convict called The Misfit — the title story of O'Connor's 1955 debut collection and the single most anthologized work of the American Southern Gothic tradition, fusing sudden violence with the rigorous Catholic moral vision she said let her see 'by the light of Christian orthodoxy.' Still a fixture of American high school and college curricula seven decades after publication." },
+  { title: "The General of the Dead Army", author: "Ismail Kadare", why: "An Italian general returns to Albania two decades after WWII to exhume the bones of his country's fallen soldiers, accompanied by a defeated priest doing the same for his own dead — Kadare's 1963 debut novel and the book that established Albania's greatest modern writer internationally, smuggled abroad for years under Enver Hoxha's dictatorship. In 2005 Kadare won the inaugural Man Booker International Prize for his body of work, the first year the prize existed.", aka: ["Gjenerali i ushtrisë së vdekur"] },
+  { title: "Quo Vadis", author: "Henryk Sienkiewicz", why: "A Roman patrician falls for a Christian woman against the backdrop of Nero's persecutions and the burning of Rome — an immense international bestseller on its 1896 publication that did more than any other novel to popularize the early-Christian historical epic, later filmed multiple times including a 1951 Hollywood version nominated for eight Academy Awards. Its success secured Sienkiewicz the 1905 Nobel Prize in Literature, awarded 'because of his outstanding merits as an epic writer.'" },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
