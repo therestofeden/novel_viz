@@ -45,6 +45,20 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
+        // The service worker precaches index.html plus every content-hashed
+        // chunk of the build that installed it. With registerType
+        // "autoUpdate" a new worker skips waiting and claims open clients
+        // immediately, then cleanupOutdatedCaches() sweeps the previous
+        // precache — while a tab booted from the PREVIOUS shell is still
+        // running. Any chunk that tab has not loaded yet (a book page pulls
+        // in up to seven on demand) is then gone from cache AND renamed on
+        // the server. That is the stale-chunk failure src/lib/chunkReload.ts
+        // recovers from; the denylist below is the other half — it stops the
+        // navigation fallback from ever answering an asset or API request
+        // with the HTML shell, which is what turned a plain 404 into
+        // "'text/html' is not a valid JavaScript MIME type".
+        cleanupOutdatedCaches: true,
+        navigateFallbackDenylist: [/^\/assets\//, /^\/api\//, /^\/og(?:\/|$)/, /^\/sw\.js$/],
         // Cache Google Fonts and app shell; everything else network-first
         runtimeCaching: [
           {

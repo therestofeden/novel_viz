@@ -1,6 +1,22 @@
 {
   "rewrites": [
     { "source": "/og", "destination": "/api/og" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "//": "SPA catch-all — but it must NOT swallow requests for build artefacts. Before this exclusion, a request for a chunk that no longer exists (any tab or PWA shell still running a previous build after a deploy) fell through to this rule and got index.html back with HTTP 200 and Content-Type: text/html. The browser was asking for a module script, so it rejected the response with \"'text/html' is not a valid JavaScript MIME type\" (Safari) / \"Expected a JavaScript module script...\" (Chrome) instead of a plain 404 — an error shape the client-side chunk-reload recovery did not recognise, so book pages dead-ended on the error screen. Excluding assets/, api/ and the service-worker files makes a missing chunk return a real 404, which surfaces as the recoverable \"Failed to fetch dynamically imported module\".",
+      "source": "/((?!assets/|api/|sw\\.js|registerSW\\.js|workbox-).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "//": "Everything under /assets is content-hashed by Vite, so the filename changes whenever the bytes change. Serving it with max-age=0, must-revalidate (the default) made every visitor re-validate every chunk on every load for no benefit.",
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "//": "The shell and the service worker must never be cached — they are how a client discovers the current chunk hashes.",
+      "source": "/(sw.js|registerSW.js|index.html|manifest.webmanifest)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    }
   ]
 }

@@ -1,40 +1,38 @@
 import { useEffect } from "react";
 import { RefreshCw } from "lucide-react";
-
-// Matches the various "the JS chunk this route needs no longer exists"
-// errors thrown by Vite/Rollup dynamic import() across browsers.
-const CHUNK_ERROR_PATTERN =
-  /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed/i;
-
-const RELOAD_FLAG = "novelviz:chunk-reload-attempted";
+import {
+  attemptChunkReload,
+  clearChunkReloadFlag,
+  hasAttemptedChunkReload,
+  isChunkLoadError,
+} from "@/lib/chunkReload";
 
 /**
  * Fallback for the ErrorBoundary wrapping every lazy-loaded route (see
  * App.tsx). Every route past "/" is code-split (`lazy(() => import(...))`),
- * and every Vercel deploy renames those chunk files (content-hashed
- * filenames). A tab that's been open since before a deploy still has the
- * OLD index.html's chunk map in memory — the first time it navigates to a
- * route it hasn't loaded yet (e.g. clicking "My shelf"), the dynamic
- * import() 404s. Nothing caught that before this: no ErrorBoundary wrapped
- * the router's Suspense at all, so React's default behavior silently
- * unmounted the tree — the exact "click Shelf → nothing happens → refresh
- * fixes it" symptom.
+ * and every deploy renames those chunk files (content-hashed filenames). A
+ * tab that's been open since before a deploy — or a PWA shell whose service
+ * worker has just swept the previous precache — still has the OLD chunk map
+ * in memory, so the first dynamic import it hasn't already loaded fails.
  *
- * Fix: detect this specific error shape and do ONE automatic hard reload
- * (which re-fetches the current index.html and its correct chunk hashes).
+ * Fix: detect that specific error shape and do ONE automatic hard reload,
+ * which re-fetches the current index.html and its correct chunk hashes.
  * Guarded by sessionStorage so a genuinely broken deploy can't reload-loop
- * the tab forever — a second failure falls through to a manual retry UI.
+ * the tab forever — a second failure falls through to the manual retry UI.
+ *
+ * The detection itself lives in @/lib/chunkReload because the same match has
+ * to run outside React too (Vite preload errors and import() rejections from
+ * event handlers never reach an error boundary). It previously matched only
+ * Chrome/Firefox wording, which is why Safari and iOS — where the message is
+ * "'text/html' is not a valid JavaScript MIME type." — skipped the reload and
+ * dead-ended on the error screen below on every book page.
  */
 export const ChunkErrorRecovery = ({ error, reset }: { error: Error; reset: () => void }) => {
-  const isChunkError = CHUNK_ERROR_PATTERN.test(error.message);
-  const alreadyTried = isChunkError && sessionStorage.getItem(RELOAD_FLAG) === "1";
+  const isChunkError = isChunkLoadError(error);
+  const alreadyTried = isChunkError && hasAttemptedChunkReload();
 
   useEffect(() => {
-    if (isChunkError && !alreadyTried) {
-      sessionStorage.setItem(RELOAD_FLAG, "1");
-      window.location.reload();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (isChunkError && !alreadyTried) attemptChunkReload();
   }, [isChunkError, alreadyTried]);
 
   if (isChunkError && !alreadyTried) {
@@ -58,7 +56,7 @@ export const ChunkErrorRecovery = ({ error, reset }: { error: Error; reset: () =
       <button
         type="button"
         onClick={() => {
-          sessionStorage.removeItem(RELOAD_FLAG);
+          clearChunkReloadFlag();
           reset();
         }}
         className="meta flex items-center gap-2 border border-foreground px-4 py-2 transition-colors hover:bg-foreground/10"
