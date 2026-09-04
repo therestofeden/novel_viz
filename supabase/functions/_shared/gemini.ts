@@ -97,7 +97,8 @@ export type GeminiFailureReason =
   | "timeout"           // a model TCP-stalled past GEMINI_TIMEOUT_MS
   | "capacity"          // genuine transient Gemini 429/503
   | "model_unavailable" // model ID unknown/retired (404) — that ONE model, not the account
-  | "client_error";     // hard 4xx unrelated to quota (bad request, auth, etc.)
+  | "auth_error"        // API key rejected (invalid/revoked/wrong key type) — NOT transient
+  | "client_error";     // hard 4xx unrelated to quota (bad request, etc.)
 
 // Matches Google's own wording for a depleted prepaid/billing balance
 // ("Your prepayment credits are depleted...RESOURCE_EXHAUSTED") as well as
@@ -105,8 +106,24 @@ export type GeminiFailureReason =
 // limits — both are permanent-until-someone-acts, unlike a capacity 429.
 const QUOTA_EXHAUSTION_PATTERN = /RESOURCE_EXHAUSTED|prepayment credits|quota.*exceed/i;
 
+// Added 2026-09-04, ahead of Google's Sept-2026 "Standard" Gemini API key
+// deprecation (all Standard keys stop authenticating sometime this month —
+// see novelviz-gemini-standard-key-deprecation memory). Matches Google's own
+// wording for a rejected/invalid/wrong-type key across both the native and
+// OpenAI-compat error shapes: "API key not valid", "API_KEY_INVALID",
+// "UNAUTHENTICATED", and PERMISSION_DENIED responses that mention the key
+// itself. Without this, a rejected server key would misclassify as the
+// generic "client_error" bucket — same bucket as a genuinely malformed
+// request — which (a) gives users a confusing "bad request" style message
+// for something that is entirely our fault, and (b) gives whoever is
+// debugging no fast way to grep logs for "the key died" vs. "a request was
+// malformed". A 401 is unambiguous on its own; a 403 needs the pattern match
+// since Gemini also returns 403 for a handful of unrelated permission cases.
+const AUTH_ERROR_PATTERN = /API_KEY_INVALID|UNAUTHENTICATED|API key not valid|API key expired|invalid.{0,20}api.{0,5}key|api.{0,5}key.{0,20}invalid/i;
+
 export function classifyGeminiFailure(status: number, body: string): GeminiFailureReason {
   if (status === 429 && QUOTA_EXHAUSTION_PATTERN.test(body)) return "quota_exhausted";
+  if (status === 401 || (status === 403 && AUTH_ERROR_PATTERN.test(body))) return "auth_error";
   if (status === 429 || status >= 500) return "capacity";
   // Gemini answers 404 NOT_FOUND for a model ID it no longer (or never)
   // serves. Distinguished from other hard 4xxs because the correct reaction
@@ -131,6 +148,8 @@ export function describeGeminiFailure(reason: string | undefined): string | null
   switch (reason as GeminiFailureReason | undefined) {
     case "quota_exhausted":
       return "The AI service's API quota has run out. We've been notified — please try again later, or add your own Gemini API key in settings.";
+    case "auth_error":
+      return "The AI service needs reconfiguration on our end — we've been notified. In the meantime, you can add your own Gemini API key in settings to keep going.";
     case "daily_budget":
       return "Daily AI budget reached — please try again tomorrow, or add your own Gemini API key in settings.";
     case "all_circuits_open":
@@ -363,6 +382,18 @@ async function attemptFallbackPass(
       // users for an unrelated user's personal billing problem) — but it's
       // still correct to stop the chain early for that one BYOK request,
       // since all 3 models share the same BYOK project quota too.
+      if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
+      return last;
+    }
+    if (reason === "auth_error") {
+      // The key itself is rejected — every model in the chain shares one key,
+      // so trying model 2/3 would just be 2 more guaranteed-failing round
+      // trips (same waste this classification already avoids for
+      // quota_exhausted). Distinctive "ALERT" tag on top of the normal error
+      // log so this is grep-able/alertable separately from a routine
+      // malformed-request 4xx — see the type's doc comment for why this
+      // exists now (Sept-2026 Standard-key deprecation).
+      console.error(JSON.stringify({ fn: "geminiFetch", alert: "GEMINI_AUTH_ERROR", detail: "server API key rejected — likely invalid/revoked/wrong key type, needs a human to rotate it in Supabase secrets", model, status: r.status, isServerKey }));
       if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
       return last;
     }
