@@ -55,6 +55,18 @@ name: Keep Edge Functions Warm
 # against small tables, so there's no cost to calling it on every firing
 # instead of gating it. Kept nightly-maintenance.yml as-is — this is
 # additive redundancy, not a replacement.
+#
+# 2026-09-05 (daily backend agent): resolve-buy-link had ZERO warm-keeping,
+# unlike every other public user-facing function here. It backs the
+# "Find at a shop" BuyButton — the app's one monetization CTA (see project
+# memory) — so a cold isolate hit lands on the exact click a reader has
+# already decided to convert on. The function itself has no DB/Gemini
+# dependency (by design, see its own file header — <100ms p50, geo-header
+# routing only), so this was purely a coverage gap, not a deliberate
+# exclusion like seed-cache/health/debug-gemini (internal/secret-gated,
+# never hit by real user traffic, correctly left unwarmed). Added a ping
+# below with a fixed dummy title/author — same free-path pattern as the
+# search-books blank-query ping.
 
 on:
   schedule:
@@ -131,6 +143,16 @@ jobs:
           curl -sf -o /dev/null \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/popular-books
+        continue-on-error: true
+
+      - name: Ping resolve-buy-link
+        run: |
+          curl -sf -o /dev/null \
+            -G \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            --data-urlencode "title=warmup" \
+            --data-urlencode "author=warmup" \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/resolve-buy-link
         continue-on-error: true
 
       - name: Run db-maintenance (redundant backstop for nightly-maintenance.yml)
