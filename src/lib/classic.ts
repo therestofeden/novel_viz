@@ -2971,6 +2971,38 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "A Good Man Is Hard to Find", author: "Flannery O'Connor", why: "A Georgia family's road trip ends in a ditch-side massacre at the hands of an escaped convict called The Misfit — the title story of O'Connor's 1955 debut collection and the single most anthologized work of the American Southern Gothic tradition, fusing sudden violence with the rigorous Catholic moral vision she said let her see 'by the light of Christian orthodoxy.' Still a fixture of American high school and college curricula seven decades after publication." },
   { title: "The General of the Dead Army", author: "Ismail Kadare", why: "An Italian general returns to Albania two decades after WWII to exhume the bones of his country's fallen soldiers, accompanied by a defeated priest doing the same for his own dead — Kadare's 1963 debut novel and the book that established Albania's greatest modern writer internationally, smuggled abroad for years under Enver Hoxha's dictatorship. In 2005 Kadare won the inaugural Man Booker International Prize for his body of work, the first year the prize existed.", aka: ["Gjenerali i ushtrisë së vdekur"] },
   { title: "Quo Vadis", author: "Henryk Sienkiewicz", why: "A Roman patrician falls for a Christian woman against the backdrop of Nero's persecutions and the burning of Rome — an immense international bestseller on its 1896 publication that did more than any other novel to popularize the early-Christian historical epic, later filmed multiple times including a 1951 Hollywood version nominated for eight Academy Awards. Its success secured Sienkiewicz the 1905 Nobel Prize in Literature, awarded 'because of his outstanding merits as an epic writer.'" },
+
+  // Round 76 (2026-09-05, scheduled `daily-must-read-and-classic` task):
+  // continued round 75's national-literature gap scan rather than starting
+  // fresh — checked the specific veins round 75 left unswept (Portugal,
+  // Turkey, sub-Saharan Africa) and confirmed all three are already
+  // adequately covered (Saramago/Pessoa, Pamuk, Achebe/Ngũgĩ/Gordimer/
+  // Coetzee/Adichie all present), so no action needed there. Widened the
+  // scan and found two much larger, genuinely startling zero-coverage
+  // gaps that hadn't been checked before: Denmark and the Netherlands.
+  // Denmark: Hans Christian Andersen was completely absent from both
+  // files despite being, by any reasonable measure, one of the most
+  // translated and widely read authors in world literature — his first
+  // collection of fairy tales (Eventyr, fortalte for børn, 1835) included
+  // "The Emperor's New Clothes," "Thumbelina," and "The Little Mermaid,"
+  // and effectively founded the modern literary fairy tale as a genre
+  // for a Western readership; the tales are now translated into over 125
+  // languages. The Netherlands: Multatuli's Max Havelaar (1860) was also
+  // completely absent — widely credited as the first modern Dutch novel
+  // and Multatuli's (pen name of Eduard Douwes Dekker) blistering exposé
+  // of corruption in the Dutch colonial administration of Java, an
+  // instant bestseller that shifted Dutch colonial policy and is still
+  // required reading in Dutch and Belgian schools; often compared to
+  // Uncle Tom's Cabin for its real-world political impact. Both facts
+  // WebSearch-verified rather than trusted from recall. Both clear the
+  // Lindy bar comfortably (191 and 166 years respectively) and both close
+  // real, previously-unflagged national gaps — placed at Classic, not
+  // flagged for Must Read, consistent with round 75's calibration for
+  // this exact kind of national-entry-point addition (round 72's To Kill
+  // a Mockingbird flag from 2026-09-02 remains the sole open Must Read
+  // candidate, unaffected by this round). Classic count: 427 → 429.
+  { title: "Fairy Tales Told for Children", author: "Hans Christian Andersen", why: "Nine short tales — including \"The Princess and the Pea,\" \"Thumbelina,\" and \"The Little Mermaid\" — published in three thin, cheaply-bound installments starting May 8, 1835, that a struggling Danish writer half-apologized for as trifles beneath serious literature. They became the founding texts of the modern literary fairy tale, translated into more than 125 languages and read to children on every continent for nearly two centuries; \"The Emperor's New Clothes\" alone gave English the phrase for a truth everyone can see but no one will say.", aka: ["Eventyr, fortalte for børn", "Fairy Tales Told for Children. First Collection.", "Andersen's Fairy Tales"] },
+  { title: "Max Havelaar", author: "Multatuli", why: "An idealistic Dutch colonial administrator in Java collides with the corrupt native and colonial officials extracting forced labor from the peasants he's supposed to protect — published in 1860 under a pen name meaning \"I have suffered much,\" it is generally regarded as the first modern Dutch novel and one of literature's rare direct political interventions, a bestseller so damning of Dutch rule in the East Indies that it helped force real colonial reforms and is still invoked as the book that began to unravel the moral case for empire. Required reading in Dutch and Belgian schools to this day.", aka: ["Max Havelaar, of de koffiveilingen der Nederlandsche Handel-Maatschappy", "Max Havelaar; or, The Coffee Auctions of the Dutch Trading Company"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
