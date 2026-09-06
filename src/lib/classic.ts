@@ -3003,6 +3003,69 @@ export const CLASSIC: ClassicEntry[] = [
   // candidate, unaffected by this round). Classic count: 427 → 429.
   { title: "Fairy Tales Told for Children", author: "Hans Christian Andersen", why: "Nine short tales — including \"The Princess and the Pea,\" \"Thumbelina,\" and \"The Little Mermaid\" — published in three thin, cheaply-bound installments starting May 8, 1835, that a struggling Danish writer half-apologized for as trifles beneath serious literature. They became the founding texts of the modern literary fairy tale, translated into more than 125 languages and read to children on every continent for nearly two centuries; \"The Emperor's New Clothes\" alone gave English the phrase for a truth everyone can see but no one will say.", aka: ["Eventyr, fortalte for børn", "Fairy Tales Told for Children. First Collection.", "Andersen's Fairy Tales"] },
   { title: "Max Havelaar", author: "Multatuli", why: "An idealistic Dutch colonial administrator in Java collides with the corrupt native and colonial officials extracting forced labor from the peasants he's supposed to protect — published in 1860 under a pen name meaning \"I have suffered much,\" it is generally regarded as the first modern Dutch novel and one of literature's rare direct political interventions, a bestseller so damning of Dutch rule in the East Indies that it helped force real colonial reforms and is still invoked as the book that began to unravel the moral case for empire. Required reading in Dutch and Belgian schools to this day.", aka: ["Max Havelaar, of de koffiveilingen der Nederlandsche Handel-Maatschappy", "Max Havelaar; or, The Coffee Auctions of the Dutch Trading Company"] },
+
+  // Round 77 (2026-09-06, scheduled `daily-must-read-and-classic` task):
+  // this list's world-epic cluster is now extremely deep (Gilgamesh,
+  // Beowulf, the Shahnameh, the Ramayana, the Kalevala, the Poetic Edda,
+  // Njal's Saga, Sundiata, the Mabinogion, Dede Korkut, the Táin, the
+  // Epic of Manas, the Knight in the Panther's Skin, Kebra Nagast, the
+  // Kumulipo, and more) — checked it region by region rather than assume
+  // it's finished, and found one real, previously-unflagged gap: the
+  // Mongol steppe empire, the largest contiguous land empire in history,
+  // had no primary text of its own. (The Epic of Manas, already here,
+  // covers the neighboring but distinct Kyrgyz oral tradition — a
+  // different people, language, and genre.) The Secret History of the
+  // Mongols closes it: composed 1228-29 for the Mongol royal family
+  // alone (the "secret" in the title once meant exactly that — reading
+  // it required imperial permission), it is the oldest surviving
+  // Mongolian-language text and the only major chronicle of Genghis
+  // Khan's life written from inside the empire rather than by a
+  // conquered or neighboring civilization looking in. Fact
+  // WebSearch-verified rather than trusted from recall. Clears the Lindy
+  // bar by nearly eight centuries; placed at Classic, consistent with
+  // this list's treatment of every other national-founding epic in the
+  // cluster (none of them sit at Must Read — Must Read is reserved for
+  // texts with broader cross-cultural load-bearing weight, not a
+  // civilization's own foundational document). Classic count: 429 → 430.
+  { title: "The Secret History of the Mongols", author: "Anonymous", why: "Composed in 1228 or 1229 for the Mongol royal family's eyes only — the word \"secret\" in the title once meant a Great Assembly convened to elect Genghis Khan's successor could read it, almost no one else could — this is the oldest surviving text in the Mongolian language and the sole full chronicle of Genghis Khan's rise written from inside the empire he built rather than by a neighbor or conquest it swallowed. Blends verse and prose history across his life and his son Ögedei's early reign, preserving oral genealogy, law, and steppe custom that exists nowhere else on paper. Closes the Mongol steppe empire's total absence from this list's world-epic cluster — distinct from the neighboring but separate Kyrgyz tradition already here in the Epic of Manas.", aka: ["Secret History of the Mongols", "The Secret History of the Mongols: The Origin of Chingis Khan", "Monggol-un Niuca Tobciyan"] },
+
+  // Round 78 (2026-09-06, scheduled `daily_novel_viz_feat` task, run
+  // independently the same day as the round above): author-level scan of
+  // canon_books against major national/founder traditions already deep on
+  // this list, found four more independent gaps. Non-fiction: Averroes's
+  // The Incoherence of the Incoherence (Tahafut al-Tahafut, written after
+  // 1180) — the direct point-by-point rebuttal of Al-Ghazali's The
+  // Incoherence of the Philosophers, already present; the two works are
+  // literally in dialogue (Ghazali attacking Aristotelian philosophy as
+  // heretical, Averroes defending it clause by clause), the same kind of
+  // founder/successor gap closed for Bohr/Heisenberg and Confucius/Xunzi
+  // in earlier rounds — Averroes's rebuttal reached medieval Europe in
+  // Latin translation and shaped centuries of Scholastic philosophy.
+  // Fiction: Amos Oz's A Tale of Love and Darkness (2002) — Israeli
+  // literature had Agnon (Hebrew-language Nobel laureate) but nothing
+  // from the modern secular Israeli voice; Oz's memoir of his mother's
+  // suicide and the birth of the state, translated into 28 languages and
+  // sold over a million copies, is the standard entry point to his work.
+  // Bohumil Hrabal's Too Loud a Solitude (written 1976, samizdat; legally
+  // published Czechoslovakia 1989) — Czech literature already has Kafka
+  // and Kundera but not Hrabal, whom Milan Kundera himself called the
+  // best writer of his generation; a Prague wastepaper compactor operator
+  // who has spent 35 years secretly rescuing books from the pulping
+  // machine is as Lindy as this list's other single-sitting masterworks.
+  // Poetry: Tomas Tranströmer's The Great Enigma: New Collected Poems —
+  // Sweden had Lagerlöf (prose, added round 75) but no representation on
+  // the poetry side; Tranströmer is Sweden's most important poet since
+  // WWII, translated into 60+ languages, and won the 2011 Nobel Prize in
+  // Literature "because, through his condensed, translucent images, he
+  // gives us fresh access to reality" — written the way he kept writing
+  // after a 1990 stroke left him half-paralyzed and unable to speak. All
+  // four facts WebSearch-verified rather than trusted from recall. All
+  // four clear the Lindy/A-tier bar with room to spare; none were close
+  // calls or flagged for Must Read. Classic count: 430 → 434.
+  { title: "The Incoherence of the Incoherence", author: "Averroes", why: "A clause-by-clause rebuttal of Al-Ghazali's The Incoherence of the Philosophers, written by the 12th-century Cordoban judge and physician the Latin West would come to call simply \"The Commentator\" — Averroes defends Aristotelian reason against Ghazali's charge that philosophy leads to heresy, arguing point for point rather than dismissing the challenge. Reached medieval Europe in Latin translation and helped ignite the Scholastic debates that ran through Aquinas and beyond; the other half of an argument this list already has one side of.", aka: ["Tahafut al-Tahafut", "The Incoherence of Incoherence"] },
+  { title: "A Tale of Love and Darkness", author: "Amos Oz", why: "A boy grows up in a book-crammed Jerusalem apartment in the last years of the British Mandate, watching his mother slide toward the depression that will end in her suicide when he is twelve — Oz's 2002 memoir of family, language, and the birth of Israel, translated into 28 languages and the standard entry point to the country's most internationally read secular literary voice.", aka: ["Sipur al ahava ve-hoshekh"] },
+  { title: "Too Loud a Solitude", author: "Bohumil Hrabal", why: "For thirty-five years a Prague wastepaper compactor operator has been quietly rescuing rare books from the pulping machine, reading them by the light of the crushing press before the hydraulics take them — written in 1976 and circulated in samizdat for over a decade before its 1989 Czechoslovak publication, a single unbroken shout of a novella that Milan Kundera called the best work of the finest writer of his generation." },
+  { title: "The Great Enigma: New Collected Poems", author: "Tomas Tranströmer", why: "Six decades of a psychologist-poet's spare, image-dense lyrics — Sweden's most important poet since the Second World War, and still writing and publishing after a 1990 stroke left him half-paralyzed and unable to speak. Won the 2011 Nobel Prize in Literature \"because, through his condensed, translucent images, he gives us fresh access to reality\"; translated into more than sixty languages.", aka: ["The Great Enigma"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
