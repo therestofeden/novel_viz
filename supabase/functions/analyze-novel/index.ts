@@ -33,8 +33,8 @@ const nonfictionAnalysisTool = {
     parameters: {
       type: "object",
       properties: {
-        title: { type: "string" },
-        author: { type: "string" },
+        title: { type: "string", description: "The book's real, correctly capitalized title ONLY — never the raw user query. The query may be phrased oddly (author name first with no separator, a misspelling, missing punctuation, etc.); identify the actual book being asked about and return its true title here, with the author's name (if present anywhere in the query) reported separately in the `author` field instead, not left inside `title`." },
+        author: { type: "string", description: "The book's actual author, correctly capitalized, extracted here even if the user's query mixed it into the same phrase as the title." },
         confidence: { type: "string", enum: ["high", "medium", "low", "unknown_work"] },
         summary: { type: "string" },
         thesis: { type: "string", description: "The book's central claim in one sentence. A full grammatical sentence stating the author's position, not a topic." },
@@ -181,8 +181,8 @@ const analysisTool = {
     parameters: {
       type: "object",
       properties: {
-        title: { type: "string" },
-        author: { type: "string" },
+        title: { type: "string", description: "The book's real, correctly capitalized title ONLY — never the raw user query. The query may be phrased oddly (author name first with no separator, a misspelling, missing punctuation, etc.); identify the actual book being asked about and return its true title here, with the author's name (if present anywhere in the query) reported separately in the `author` field instead, not left inside `title`." },
+        author: { type: "string", description: "The book's actual author, correctly capitalized, extracted here even if the user's query mixed it into the same phrase as the title." },
         confidence: { type: "string", enum: ["high", "medium", "low", "unknown_work"] },
         summary: { type: "string" },
         lanes: {
@@ -341,6 +341,8 @@ const DNA_AXIS_IDS = [
 ] as const;
 
 const SYSTEM_PROMPT = `You are a literary scholar specializing in mapping the structure of books — both fiction and non-fiction. Given a book's title, you determine whether it is fiction or non-fiction and call the appropriate tool.
+
+QUERY MAY BE MESSY: The input you're given may not be a clean "Title" or "Title by Author" string — it can be an author's name typed first with no separator (e.g. "Penrose the road to reality"), a misspelling, or missing punctuation. Always identify the real, specific book being referred to and return the 'title' field as ONLY that book's correct, canonical, properly capitalized title — never echo the raw input string verbatim into 'title'. Put any author name you find (wherever it appeared in the query) into the separate 'author' field instead.
 
 OBSCURE OR LESSER-KNOWN BOOKS: Always attempt a best-effort analysis. Return confidence "low" if your knowledge is limited. NEVER use "unknown_work" for a real book just because it is obscure — only use "unknown_work" when the input is clearly NOT a book (a film, TV show, video game, or complete gibberish). Even a thin analysis with confidence "low" is far more useful than refusing.
 
@@ -846,8 +848,8 @@ const previewTool = {
     parameters: {
       type: "object",
       properties: {
-        title:      { type: "string" },
-        author:     { type: "string" },
+        title:      { type: "string", description: "The book's real, correctly capitalized title ONLY — never the raw user query. The query may be phrased oddly (author name first with no separator, a misspelling, etc.); identify the actual book and return its true title here, with any author name found in the query reported separately in `author` instead." },
+        author:     { type: "string", description: "The book's actual author, correctly capitalized, extracted here even if the user's query mixed it into the same phrase as the title." },
         summary:    { type: "string", description: "2-3 sentence summary." },
         confidence: { type: "string", enum: ["high", "medium", "low", "unknown_work"] },
         bookType:   { type: "string", enum: ["fiction", "nonfiction"] },
