@@ -31,6 +31,8 @@ import { cn } from "@/lib/utils";
  * meaning; the number is a footnote.
  */
 
+const COLLAPSED_ROWS = 3;
+
 export interface DnaNeighbour {
   cache_key: string;
   title: string;
@@ -62,6 +64,9 @@ export function DnaNeighbourhood({
 }) {
   const [rows, setRows] = useState<DnaNeighbour[] | null>(null);
   const [loading, setLoading] = useState(false);
+  // Fetch the full set but show a short list: six rows is a screen on its own,
+  // and this sits directly under an already-dense DNA band.
+  const [showAll, setShowAll] = useState(false);
   const reqId = useRef(0);
 
   const AXIS_META = nonFiction
@@ -145,7 +150,7 @@ export function DnaNeighbourhood({
         </div>
       ) : (
         <ol className="grid">
-          {rows.map((n, i) => (
+          {(showAll ? rows : rows.slice(0, COLLAPSED_ROWS)).map((n, i) => (
             <li key={n.cache_key} className="border-b border-foreground/20 last:border-b-0">
               <Link
                 to={`/book/${n.slug}`}
@@ -182,6 +187,22 @@ export function DnaNeighbourhood({
             </li>
           ))}
         </ol>
+      )}
+
+      {rows !== null && rows.length > COLLAPSED_ROWS && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          aria-expanded={showAll}
+          className="meta flex w-full items-center justify-between border-t border-foreground/20 px-4 py-3 text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:px-8"
+        >
+          <span>
+            {showAll
+              ? "Show fewer"
+              : `Show all ${rows.length} neighbours`}
+          </span>
+          <span aria-hidden="true">{showAll ? "\u2191" : "\u2193"}</span>
+        </button>
       )}
     </section>
   );

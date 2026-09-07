@@ -385,7 +385,7 @@ const Index = () => {
   const [analysisPreview, setAnalysisPreview] = useState<{ title: string; author: string; summary: string; thesis?: string; bookType?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [refining, setRefining] = useState(false);
-  const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "ideas" | "chapters" | "takeaways">("timeline");
+  const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "ideas" | "chapters" | "takeaways">("network");
   const [activeRefinement, setActiveRefinement] = useState<string | null>(null);
 
   // Random sample of seed titles, fixed for the lifetime of this mount.
@@ -919,7 +919,7 @@ const Index = () => {
       setAnalysis(result);
       // Reset to the first meaningful view for this book type
       if (!isRefine) {
-        setView(result.bookType === "nonfiction" ? "ideas" : "timeline");
+        setView(result.bookType === "nonfiction" ? "ideas" : "network");
       }
       setActiveRefinement(refinement || null);
     } catch (e) {
@@ -1691,7 +1691,7 @@ const Index = () => {
               <div className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex w-max items-stretch border border-foreground">
                 {isFiction(analysis) ? (
-                  (["timeline", "network", "takeaways"] as const).map((v, i) => (
+                  (["network", "timeline", "takeaways"] as const).map((v, i) => (
                     <button
                       key={v}
                       onClick={() => setView(v)}
@@ -1703,10 +1703,10 @@ const Index = () => {
                           : "bg-card hover:bg-primary/10",
                       )}
                     >
-                      {v === "timeline"
-                        ? "01 · Timeline"
-                        : v === "network"
-                          ? "02 · Network"
+                      {v === "network"
+                        ? "01 · Network"
+                        : v === "timeline"
+                          ? "02 · Timeline"
                           : "03 · Takeaways"}
                     </button>
                   ))

@@ -132,6 +132,15 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   // is precisely why this panel's sole action used to be a shop link. When
   // there IS a page we link inward; when there isn't, the CTA becomes
   // "Map this book" — the miss turns into the corpus's own growth loop.
+  // 2026-09-07: promoting DNA out of the tabs made the page open at full
+  // volume — twelve interactive rows plus an evidence panel plus two
+  // recommendation tiers, roughly two screens before the reader reaches
+  // anything else. The strand now opens showing only the axes where this book
+  // is most distinctive and expands on request. Nothing is hidden that the
+  // header sparkline doesn't already convey: it carries the whole twelve-bar
+  // silhouette at a glance, so the collapsed strand is a caption for a shape
+  // the reader has already seen.
+  const [strandExpanded, setStrandExpanded] = useState(false);
   const [kindredSlug, setKindredSlug] = useState<string | null>(null);
   const [kindredChecked, setKindredChecked] = useState(false);
 
@@ -301,6 +310,31 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     return () => { cancelled = true; };
   }, [activeRecForPage?.title, activeRecForPage?.author]);
 
+  // "Defining" = furthest from the neutral midpoint, i.e. where this book
+  // actually commits to something. For One Hundred Years of Solitude that
+  // surfaces Ending openness 0, Scale 95, Time linearity 10 — far more telling
+  // than twelve mostly mid-range bars. Ties break on canonical axis order so
+  // the set is stable between renders and between books.
+  const DEFINING_COUNT = 4;
+  const definingAxes = useMemo(() => {
+    const ranked = AXIS_IDS
+      .map((id, idx) => ({ id, idx, dist: Math.abs((axesById.get(id)?.score ?? 50) - 50) }))
+      .sort((a, b) => (b.dist - a.dist) || (a.idx - b.idx))
+      .slice(0, DEFINING_COUNT)
+      .map((a) => a.id);
+    return new Set(ranked);
+  }, [AXIS_IDS, axesById]);
+
+  // A pinned or hovered axis must stay visible even when collapsed, otherwise
+  // clicking a "Shared"/"Differs" chip in the recommendation would scroll to a
+  // row that isn't rendered.
+  const visibleAxisIds = useMemo(() => {
+    if (strandExpanded) return AXIS_IDS as readonly DnaAxisId[];
+    return AXIS_IDS.filter(
+      (id) => definingAxes.has(id) || id === pinnedAxis || id === hoveredAxis,
+    ) as readonly DnaAxisId[];
+  }, [strandExpanded, AXIS_IDS, definingAxes, pinnedAxis, hoveredAxis]);
+
   const focusAxis = activeAxis ?? rec?.shared_axes?.[0] ?? AXIS_IDS[0];
   const focusAxisMeta = AXIS_META[focusAxis] ?? DNA_AXIS_META[focusAxis as DnaAxisId];
   const focusAxisData = axesById.get(focusAxis);
@@ -458,7 +492,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
 
         {/* The strand */}
         <div className="md:pl-8">
-          {AXIS_IDS.map((id, idx) => {
+          {visibleAxisIds.map((id, idx) => {
             const meta = AXIS_META[id] ?? DNA_AXIS_META[id as DnaAxisId];
             const score = effectiveScore(id);
             const isPinned = pinnedAxis === id;
@@ -632,6 +666,23 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
               </div>
             );
           })}
+
+          {/* Expand / collapse the rest of the strand. Deliberately a full-width
+              rule-bounded row rather than a small link: at 4 of 12 rows the
+              reader needs to know the other eight exist. */}
+          <button
+            type="button"
+            onClick={() => setStrandExpanded((v) => !v)}
+            aria-expanded={strandExpanded}
+            className="meta flex w-full items-center justify-between border-t border-foreground/20 px-4 py-3 text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span>
+              {strandExpanded
+                ? "Show only the defining axes"
+                : `Open the full strand · all ${AXIS_IDS.length} axes`}
+            </span>
+            <span aria-hidden="true">{strandExpanded ? "\u2191" : "\u2193"}</span>
+          </button>
         </div>
 
         {(totalDrift > 0 || saveState !== "idle") && (

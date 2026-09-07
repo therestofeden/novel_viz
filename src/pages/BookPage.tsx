@@ -98,7 +98,7 @@ const BookPage = () => {
   const [ratingStats, setRatingStats] = useState<{ counts: number[]; total: number; avg: number | null } | null>(null);
 
   // View / spoiler state (mirrors Index)
-  const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "ideas" | "chapters" | "takeaways">("timeline");
+  const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "ideas" | "chapters" | "takeaways">("network");
   const [showSpoilers, setShowSpoilers] = useState(true);
   const [progress, setProgress] = useState(100);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -143,7 +143,7 @@ const BookPage = () => {
         const normalized = normalizeAnalysis(data.analysis as Record<string, unknown>);
         setAnalysis(normalized);
         setCacheKey(data.cache_key ?? null);
-        setView(normalized.bookType === "nonfiction" ? "ideas" : "timeline");
+        setView(normalized.bookType === "nonfiction" ? "ideas" : "network");
         setLoadState("found");
 
         // Bump hit_count + last_accessed_at asynchronously — never block render.
@@ -473,7 +473,7 @@ const BookPage = () => {
             </div>
             <div className="border-l border-foreground p-4 md:border-b">
               <div className="meta text-muted-foreground">
-                {isFiction(analysis) ? "Lanes" : "Type"}
+                {isFiction(analysis) ? "Threads" : "Type"}
               </div>
               <div className="display-num mt-1 text-3xl md:text-4xl">
                 {isFiction(analysis)
@@ -482,8 +482,12 @@ const BookPage = () => {
               </div>
             </div>
             <div className="border-t border-foreground p-4">
-              <div className="meta text-muted-foreground">Mode</div>
-              <div className="mt-1 font-sans text-sm font-semibold capitalize">{view}</div>
+              <div className="meta text-muted-foreground">Confidence</div>
+              <div className="mt-1 font-sans text-sm font-semibold capitalize">
+                {analysis.confidence === "unknown_work"
+                  ? "Unverified"
+                  : analysis.confidence ?? "—"}
+              </div>
             </div>
             <div className="border-l border-t border-foreground p-4">
               <div className="meta text-muted-foreground">
@@ -596,7 +600,7 @@ const BookPage = () => {
           <div className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex w-max items-stretch border border-foreground">
               {isFiction(analysis) ? (
-                (["timeline", "network", "takeaways"] as const).map((v, i) => (
+                (["network", "timeline", "takeaways"] as const).map((v, i) => (
                   <button
                     key={v}
                     onClick={() => setView(v)}
@@ -608,10 +612,10 @@ const BookPage = () => {
                         : "bg-card hover:bg-primary/10",
                     )}
                   >
-                    {v === "timeline"
-                      ? "01 · Timeline"
-                      : v === "network"
-                        ? "02 · Network"
+                    {v === "network"
+                      ? "01 · Network"
+                      : v === "timeline"
+                        ? "02 · Timeline"
                         : "03 · Takeaways"}
                   </button>
                 ))
