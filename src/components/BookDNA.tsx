@@ -768,14 +768,23 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             )}
           </motion.div>
         </div>
+      </div>
+      </div>
 
-        <Reveal className="bg-foreground text-background">
+      {/* 2026-09-07: the recommendation used to sit inside the right-hand
+          column. Once the strand collapsed to four rows that column became the
+          tallest thing in a height-matched grid, opening a ~225px void beside
+          the strand — shortening one column bought nothing. It runs full width
+          now, which removes the void and gives the pick the presence it should
+          have had anyway: the evidence panel belongs next to the strand
+          (it tracks the pinned axis), the recommendation never did. */}
+      <Reveal className="bg-foreground text-background">
           {(() => {
             const activeRec = dynamicRec ?? rec;
             const isDynamic = !!dynamicRec;
             return (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-background/30 px-5 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-background/30 px-4 py-3 md:px-8">
                   <div className="meta flex min-w-0 items-center gap-2 text-background/70">
                     {recLoading
                       ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
@@ -808,7 +817,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                 </div>
 
                 {recLoading ? (
-                  <div className="flex items-center justify-center px-5 py-12">
+                  <div className="flex items-center justify-center px-4 py-12 md:px-8">
                     <Loader2 className="h-5 w-5 animate-spin text-background/40" />
                   </div>
                 ) : (
@@ -817,12 +826,12 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, ease: ease.out }}
-                    className="px-5 py-5"
+                    className="px-4 py-6 md:px-8"
                   >
                     <div className="meta text-background/60">Our pick · reasoned, not measured</div>
                     <div className="mt-2 font-serif text-2xl italic leading-tight md:text-3xl">{activeRec.title}</div>
                     <div className="meta mt-2 text-background/70">By {activeRec.author}</div>
-                    <p className="mt-4 font-serif text-sm leading-relaxed text-background/90">{activeRec.why}</p>
+                    <p className="mt-4 max-w-[62ch] font-serif text-base leading-relaxed text-background/90">{activeRec.why}</p>
 
                     <div className="mt-5 grid gap-1.5">
                       {activeRec.shared_axes.length > 0 && (
@@ -900,9 +909,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
               </>
             );
           })()}
-          </Reveal>
-        </div>
-      </div>
+      </Reveal>
 
       {/* The measured half of the answer. Free (no Gemini call), instant, and
           every row is guaranteed to have a page — which is what lets the
