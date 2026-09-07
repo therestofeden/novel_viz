@@ -42,6 +42,7 @@ const TabFallback = () => (
   </div>
 );
 import { ReaderNotes } from "@/components/ReaderNotes";
+import { DnaSignature } from "@/components/DnaSignature";
 import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
@@ -417,6 +418,34 @@ const BookPage = () => {
                 "{(analysis as NonFictionAnalysis).thesis}"
               </p>
             )}
+            {/* 2026-09-07: the DNA signature moves above the fold. It is the
+                one thing here a ratings-and-reviews site structurally cannot
+                produce, and it used to live behind tab 03 where a bouncing
+                visitor never saw it. Twelve bars read as a fingerprint before
+                anyone knows what the axes are — which is the invitation to
+                look. `dna.signature` was likewise generated for every book and
+                rendered nowhere a first-time reader would find it. */}
+            {analysis.dna?.axes?.length ? (
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("dna-anchor")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                className="group mt-4 flex flex-wrap items-end gap-x-4 gap-y-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <DnaSignature analysis={analysis} height={38} barWidth={8} />
+                <span className="flex flex-col gap-0.5">
+                  <span className="meta text-muted-foreground">DNA signature</span>
+                  {analysis.dna?.signature && (
+                    <span className="font-serif text-sm italic leading-snug group-hover:underline md:text-base">
+                      {analysis.dna.signature}
+                    </span>
+                  )}
+                </span>
+              </button>
+            ) : null}
             <p className="mt-3 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
               {analysis.summary}
             </p>
@@ -481,6 +510,20 @@ const BookPage = () => {
             </Suspense>
           </section>
         )}
+
+        {/* ===================== DNA — no longer a tab =====================
+            Lifted out of the tab strip on 2026-09-07. DNA is the book's
+            identity; Timeline/Network/Chapters are views of its content, so
+            making them compete for one slot buried the only genuinely
+            un-copyable thing on the page. It now runs full width directly
+            under the header, carrying both halves of the recommendation. */}
+        {analysis.dna?.axes?.length ? (
+          <section id="dna-anchor" className="ink-border-b scroll-mt-20 bg-card">
+            <Suspense fallback={<TabFallback />}>
+              <BookDNA analysis={analysis} cacheKey={cacheKey} />
+            </Suspense>
+          </section>
+        ) : null}
 
         {/* ===================== SPOILER STRIP — fiction only ===================== */}
         {isFiction(analysis) && (
@@ -553,7 +596,7 @@ const BookPage = () => {
           <div className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex w-max items-stretch border border-foreground">
               {isFiction(analysis) ? (
-                (["timeline", "network", "dna", "takeaways"] as const).map((v, i) => (
+                (["timeline", "network", "takeaways"] as const).map((v, i) => (
                   <button
                     key={v}
                     onClick={() => setView(v)}
@@ -569,13 +612,11 @@ const BookPage = () => {
                       ? "01 · Timeline"
                       : v === "network"
                         ? "02 · Network"
-                        : v === "dna"
-                          ? "03 · DNA"
-                          : "04 · Takeaways"}
+                        : "03 · Takeaways"}
                   </button>
                 ))
               ) : (
-                (["ideas", "chapters", "dna", "takeaways"] as const).map((v, i) => (
+                (["ideas", "chapters", "takeaways"] as const).map((v, i) => (
                   <button
                     key={v}
                     onClick={() => setView(v)}
@@ -591,9 +632,7 @@ const BookPage = () => {
                       ? "01 · Ideas"
                       : v === "chapters"
                         ? "02 · Chapters"
-                        : v === "dna"
-                          ? "03 · DNA"
-                          : "04 · Takeaways"}
+                        : "03 · Takeaways"}
                   </button>
                 ))
               )}
@@ -669,11 +708,6 @@ const BookPage = () => {
             </Suspense>
           )}
           {/* Shared views */}
-          {view === "dna" && (
-            <Suspense fallback={<TabFallback />}>
-              <BookDNA analysis={analysis} cacheKey={cacheKey} />
-            </Suspense>
-          )}
           {view === "takeaways" && (
             <Suspense fallback={<TabFallback />}>
               <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />

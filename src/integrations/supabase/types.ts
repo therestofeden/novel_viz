@@ -803,6 +803,23 @@ export type Database = {
           title: string
         }[]
       }
+      get_dna_neighbours: {
+        Args: {
+          p_axes?: Json
+          p_book_type?: string
+          p_cache_key: string
+          p_limit?: number
+        }
+        Returns: {
+          author: string
+          cache_key: string
+          distance: number
+          match_pct: number
+          shared_axes: string[]
+          slug: string
+          title: string
+        }[]
+      }
       purge_cold_dna_recommendation_cache: { Args: never; Returns: number }
       purge_cold_novel_analyses: { Args: never; Returns: number }
       purge_cold_shelf_recommendations: { Args: never; Returns: number }
@@ -812,6 +829,14 @@ export type Database = {
       refresh_book_rating_stats: {
         Args: { p_cache_key: string }
         Returns: undefined
+      }
+      resolve_book_page: {
+        Args: { p_author?: string; p_title: string }
+        Returns: {
+          author: string
+          slug: string
+          title: string
+        }[]
       }
       search_canon: {
         Args: { p_q: string }

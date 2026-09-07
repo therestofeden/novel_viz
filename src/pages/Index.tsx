@@ -49,6 +49,7 @@ const TabFallback = () => (
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ReaderNotes } from "@/components/ReaderNotes";
+import { DnaSignature } from "@/components/DnaSignature";
 import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
@@ -1529,6 +1530,29 @@ const Index = () => {
                     "{(analysis as NonFictionAnalysis).thesis}"
                   </p>
                 )}
+                {/* DNA signature above the fold — see the matching note in
+                    BookPage.tsx (2026-09-07). */}
+                {analysis.dna?.axes?.length ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      document
+                        .getElementById("dna-anchor")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                    className="group mt-4 flex flex-wrap items-end gap-x-4 gap-y-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <DnaSignature analysis={analysis} height={38} barWidth={8} />
+                    <span className="flex flex-col gap-0.5">
+                      <span className="meta text-muted-foreground">DNA signature</span>
+                      {analysis.dna?.signature && (
+                        <span className="font-serif text-sm italic leading-snug group-hover:underline md:text-base">
+                          {analysis.dna.signature}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                ) : null}
                 <p className="mt-3 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
                   {analysis.summary}
                 </p>
@@ -1585,6 +1609,18 @@ const Index = () => {
                 </div>
               </div>
             </section>
+
+            {/* ===================== DNA — no longer a tab =====================
+                See the matching note in BookPage.tsx (2026-09-07): DNA is the
+                book's identity, not one view among four, so it runs full width
+                under the header instead of competing for a tab slot. */}
+            {analysis.dna?.axes?.length ? (
+              <section id="dna-anchor" className="ink-border-b scroll-mt-20 bg-card">
+                <Suspense fallback={<TabFallback />}>
+                  <BookDNA analysis={analysis} cacheKey={cacheKey} />
+                </Suspense>
+              </section>
+            ) : null}
 
             {/* ===================== SPOILER STRIP — fiction only ===================== */}
             {isFiction(analysis) && <section className="ink-border-b grid grid-cols-12 items-stretch">
@@ -1655,7 +1691,7 @@ const Index = () => {
               <div className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex w-max items-stretch border border-foreground">
                 {isFiction(analysis) ? (
-                  (["timeline", "network", "dna", "takeaways"] as const).map((v, i) => (
+                  (["timeline", "network", "takeaways"] as const).map((v, i) => (
                     <button
                       key={v}
                       onClick={() => setView(v)}
@@ -1671,13 +1707,11 @@ const Index = () => {
                         ? "01 · Timeline"
                         : v === "network"
                           ? "02 · Network"
-                          : v === "dna"
-                            ? "03 · DNA"
-                            : "04 · Takeaways"}
+                          : "03 · Takeaways"}
                     </button>
                   ))
                 ) : (
-                  (["ideas", "chapters", "dna", "takeaways"] as const).map((v, i) => (
+                  (["ideas", "chapters", "takeaways"] as const).map((v, i) => (
                     <button
                       key={v}
                       onClick={() => setView(v)}
@@ -1693,9 +1727,7 @@ const Index = () => {
                         ? "01 · Ideas"
                         : v === "chapters"
                           ? "02 · Chapters"
-                          : v === "dna"
-                            ? "03 · DNA"
-                            : "04 · Takeaways"}
+                          : "03 · Takeaways"}
                     </button>
                   ))
                 )}
@@ -1780,11 +1812,6 @@ const Index = () => {
                   </Suspense>
                 )}
                 {/* ── Shared views ── */}
-                {view === "dna" && (
-                  <Suspense fallback={<TabFallback />}>
-                    <BookDNA analysis={analysis} cacheKey={cacheKey} />
-                  </Suspense>
-                )}
                 {view === "takeaways" && (
                   <Suspense fallback={<TabFallback />}>
                     <TakeawaysTab analysis={analysis} cacheKey={cacheKey} />

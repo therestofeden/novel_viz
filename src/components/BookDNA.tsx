@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Check, Loader2, Pin, RefreshCw, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -17,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { BuyButton } from "@/components/BuyButton";
+import { DnaNeighbourhood } from "@/components/DnaNeighbourhood";
 import { Reveal, ease, useReducedMotion } from "@/lib/motion";
 
 interface BookDNAProps {
@@ -125,6 +127,14 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimer = useRef<number | null>(null);
 
+  // Does Gemini's pick actually exist in NovelViz? An audit on 2026-09-07
+  // found only 26% of stored recommendations name a book with a page, which
+  // is precisely why this panel's sole action used to be a shop link. When
+  // there IS a page we link inward; when there isn't, the CTA becomes
+  // "Map this book" — the miss turns into the corpus's own growth loop.
+  const [kindredSlug, setKindredSlug] = useState<string | null>(null);
+  const [kindredChecked, setKindredChecked] = useState(false);
+
   // Dynamic recommendation — re-fetched from recommend-by-dna whenever the
   // user adjusts DNA sliders. Null means "use the original inline rec".
   const [dynamicRec, setDynamicRec] = useState<Recommendation | null>(null);
@@ -209,15 +219,34 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     }
   }, [hydrated, consensusData, perturbations]);
 
+  // The reader's current point in DNA space: personal perturbation wins
+  // per-axis if present, else the crowd-consensus point, else Gemini's
+  // original. Lifted out of fetchDynamicRec (2026-09-07) because the DNA
+  // neighbourhood needs the identical vector — the whole point of the two
+  // tiers is that they describe the *same* point, one by judgement and one
+  // by measurement, so they must never drift apart.
+  const effectiveAxes = useMemo(
+    () =>
+      AXIS_IDS.map((id) => {
+        const base = axesById.get(id)?.score ?? 50;
+        const hasPersonal = Object.prototype.hasOwnProperty.call(perturbations, id);
+        const delta = hasPersonal ? (perturbations[id] ?? 0) : (consensusPerturbations[id] ?? 0);
+        return { id: id as string, score: Math.max(0, Math.min(100, base + delta)) };
+      }),
+    [AXIS_IDS, axesById, perturbations, consensusPerturbations],
+  );
+
+  // True once the reader (or the crowd) has moved this book off its own
+  // stored DNA — tells the neighbourhood RPC whether to use the passed
+  // vector or fall back to the book's canonical axes.
+  const axesArePerturbed = useMemo(
+    () =>
+      Object.keys(perturbations).length > 0 ||
+      Object.keys(consensusPerturbations).length > 0,
+    [perturbations, consensusPerturbations],
+  );
+
   const fetchDynamicRec = useCallback(async () => {
-    // Build axes with current perturbations applied — personal perturbation
-    // wins per-axis if present, else fall back to the crowd-consensus point.
-    const effectiveAxes = AXIS_IDS.map((id) => {
-      const base = (axesById.get(id)?.score ?? 50);
-      const hasPersonal = Object.prototype.hasOwnProperty.call(perturbations, id);
-      const delta = hasPersonal ? (perturbations[id] ?? 0) : (consensusPerturbations[id] ?? 0);
-      return { id, score: Math.max(0, Math.min(100, base + delta)) };
-    });
     setRecLoading(true);
     try {
       // Retrieve user's BYOK key from auth metadata (same pattern as AntiShelf/Index).
@@ -244,7 +273,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     } finally {
       setRecLoading(false);
     }
-  }, [analysis, perturbations, consensusPerturbations, AXIS_IDS, axesById, cacheKey]);
+  }, [analysis, effectiveAxes, cacheKey]);
 
   // Debounced recommendation refresh whenever DNA sliders change.
   // Works for all users (logged-in or not) as long as the server has a Gemini key.
@@ -255,6 +284,22 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     return () => { if (recTimer.current) window.clearTimeout(recTimer.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perturbations]);
+
+  const activeRecForPage = dynamicRec ?? rec;
+  useEffect(() => {
+    const t = activeRecForPage?.title;
+    if (!t) { setKindredSlug(null); setKindredChecked(true); return; }
+    let cancelled = false;
+    setKindredChecked(false);
+    supabase
+      .rpc("resolve_book_page", { p_title: t, p_author: activeRecForPage?.author ?? undefined })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        setKindredSlug(!error && data && data.length > 0 ? data[0].slug : null);
+        setKindredChecked(true);
+      });
+    return () => { cancelled = true; };
+  }, [activeRecForPage?.title, activeRecForPage?.author]);
 
   const focusAxis = activeAxis ?? rec?.shared_axes?.[0] ?? AXIS_IDS[0];
   const focusAxisMeta = AXIS_META[focusAxis] ?? DNA_AXIS_META[focusAxis as DnaAxisId];
@@ -370,7 +415,8 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-0">
+    <div>
+      <div className="grid grid-cols-12 gap-0 px-4 py-6 md:px-8 md:py-10">
       {/* ============== LEFT — THE STRAND ============== */}
       <div className="relative col-span-12 ink-border md:col-span-7">
         <KineticSpine activeIdx={focusIdx} />
@@ -721,7 +767,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                     transition={{ duration: 0.35, ease: ease.out }}
                     className="px-5 py-5"
                   >
-                    <div className="meta text-background/60">You'll likely also love</div>
+                    <div className="meta text-background/60">Our pick · reasoned, not measured</div>
                     <div className="mt-2 font-serif text-2xl italic leading-tight md:text-3xl">{activeRec.title}</div>
                     <div className="meta mt-2 text-background/70">By {activeRec.author}</div>
                     <p className="mt-4 font-serif text-sm leading-relaxed text-background/90">{activeRec.why}</p>
@@ -763,11 +809,38 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                       )}
                     </div>
 
-                    <div className="mt-5">
+                    {/* 2026-09-07: this used to be a lone BuyButton, which
+                        sent the reader off-site at the highest-intent moment
+                        in the product. Now the primary action always keeps
+                        them inside — opening the book if we have it, or
+                        offering to map it if we don't (which is how the
+                        corpus grows). The shop link stays, demoted. */}
+                    <div className="mt-5 flex flex-wrap items-center gap-3">
+                      {kindredSlug ? (
+                        <Link
+                          to={`/book/${kindredSlug}`}
+                          className="meta inline-flex items-center gap-2 border border-primary bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white"
+                        >
+                          Open its map →
+                        </Link>
+                      ) : kindredChecked ? (
+                        <Link
+                          to={`/?book=${encodeURIComponent(activeRec.title)}`}
+                          className="meta inline-flex items-center gap-2 border border-primary bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          Map this book
+                        </Link>
+                      ) : (
+                        <span className="meta inline-flex items-center gap-2 border border-background/30 px-4 py-2 text-background/50">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Checking…
+                        </span>
+                      )}
                       <BuyButton
                         title={activeRec.title}
                         author={activeRec.author}
-                        size="md"
+                        size="sm"
                       />
                     </div>
                   </motion.div>
@@ -775,8 +848,24 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
               </>
             );
           })()}
-        </Reveal>
+          </Reveal>
+        </div>
       </div>
+
+      {/* The measured half of the answer. Free (no Gemini call), instant, and
+          every row is guaranteed to have a page — which is what lets the
+          recommendation finally point back into the app instead of out of it.
+          Re-ranks as the reader drags an axis, so the cheap layer gives
+          immediate feedback while the Gemini pick above catches up on its
+          own 1s debounce. */}
+      <DnaNeighbourhood
+        cacheKey={cacheKey}
+        bookType={analysis.bookType}
+        axes={effectiveAxes}
+        isPerturbed={axesArePerturbed}
+        nonFiction={nf}
+        limit={6}
+      />
     </div>
   );
 }
