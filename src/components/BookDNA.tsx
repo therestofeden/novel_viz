@@ -429,13 +429,14 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             <div className="meta mt-1 text-muted-foreground">Axes</div>
           </div>
           <div className="col-span-9 p-4">
-            <div className="meta text-muted-foreground">Signature</div>
-            <div className="mt-2 font-serif text-lg italic leading-tight md:text-2xl">
-              {dna.signature || "—"}
+            <div className="meta text-muted-foreground">How to read this</div>
+            <div className="mt-2 font-serif text-base leading-snug md:text-lg">
+              Click an axis to pin its evidence.{" "}
+              <span className="italic">Drag any marker to register your take</span> — the
+              neighbourhood below re-ranks as you move.
             </div>
             <div className="meta mt-3 text-muted-foreground">
-              Click or tap an axis to pin its evidence · drag any marker to register your take
-              {user && cacheKey ? " — saved to your reading fingerprint" : ""}
+              {user && cacheKey ? "Saved to your reading fingerprint" : "Your changes stay on this page"}
               {maxVoteCount > 0 ? ` · shaped by ${maxVoteCount} reader${maxVoteCount === 1 ? "" : "s"}` : ""}
             </div>
           </div>
