@@ -3066,6 +3066,45 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "A Tale of Love and Darkness", author: "Amos Oz", why: "A boy grows up in a book-crammed Jerusalem apartment in the last years of the British Mandate, watching his mother slide toward the depression that will end in her suicide when he is twelve — Oz's 2002 memoir of family, language, and the birth of Israel, translated into 28 languages and the standard entry point to the country's most internationally read secular literary voice.", aka: ["Sipur al ahava ve-hoshekh"] },
   { title: "Too Loud a Solitude", author: "Bohumil Hrabal", why: "For thirty-five years a Prague wastepaper compactor operator has been quietly rescuing rare books from the pulping machine, reading them by the light of the crushing press before the hydraulics take them — written in 1976 and circulated in samizdat for over a decade before its 1989 Czechoslovak publication, a single unbroken shout of a novella that Milan Kundera called the best work of the finest writer of his generation." },
   { title: "The Great Enigma: New Collected Poems", author: "Tomas Tranströmer", why: "Six decades of a psychologist-poet's spare, image-dense lyrics — Sweden's most important poet since the Second World War, and still writing and publishing after a 1990 stroke left him half-paralyzed and unable to speak. Won the 2011 Nobel Prize in Literature \"because, through his condensed, translucent images, he gives us fresh access to reality\"; translated into more than sixty languages.", aka: ["The Great Enigma"] },
+
+  // Round 79 (2026-09-07, scheduled `daily-must-read-and-classic` task):
+  // author-level scan across both lists found four more independent
+  // founder/tradition gaps, all WebSearch-verified rather than trusted
+  // from recall. Non-fiction: Auguste Comte's Course of Positive
+  // Philosophy (Cours de philosophie positive, six volumes, 1830-1842) —
+  // Durkheim, Weber, Marx, and Tocqueville are all already on this list,
+  // but sociology's actual founder was missing; Comte coined the word
+  // "sociology" itself, invented positivism, and laid out the "law of
+  // three stages" the whole discipline grew out of. Cited here by its
+  // standard English point of entry, Harriet Martineau's contemporary
+  // condensed translation, the form in which most of the anglophone world
+  // has actually read it since 1853. Edmund Husserl's Ideas: General
+  // Introduction to Pure Phenomenology (Ideen, 1913) closes a founder gap
+  // one level up from where this list already stood — Heidegger and
+  // Sartre are both present, but phenomenology's own founder, whose
+  // concepts of intentionality and the epoché both of them built directly
+  // on top of, was not; same founder/successor pattern as Ghazali/Averroes
+  // and Confucius/Xunzi in earlier rounds. James Clerk Maxwell's A
+  // Treatise on Electricity and Magnetism (1873) closes the biggest
+  // remaining gap in this list's physics cluster: Newton (mechanics),
+  // Einstein (relativity), and Bohr/Heisenberg/Dirac/Schrödinger (quantum
+  // mechanics) were all here, but electromagnetism — the field whose
+  // equations Einstein himself said special relativity grew directly out
+  // of, and which first showed light itself to be an electromagnetic
+  // wave — had no founding text. Poetry: Wisława Szymborska's View with a
+  // Grain of Sand: Selected Poems (the standard 1995 English translation,
+  // by Stanisław Barańczak and Clare Cavanagh) closes the same kind of
+  // gap Tranströmer's Sweden closed last round — Poland already had
+  // Sienkiewicz (historical epic) and Lem (science fiction) but no poet,
+  // despite Szymborska winning the 1996 Nobel "for poetry that with
+  // ironic precision allows the historical and biological context to
+  // come to light in fragments of human reality." All four clear the
+  // Lindy/A-tier bar with room to spare; none were close calls or flagged
+  // for Must Read promotion. Classic count: 434 → 438.
+  { title: "The Positive Philosophy of Auguste Comte", author: "Auguste Comte", why: "The book that coined the word \"sociology\" and gave the nineteenth century the word \"positivism\" to go with it — six volumes (1830-1842) arguing that human thought passes through theological, metaphysical, and finally scientific stages, and that society itself could be studied with the same rigor as physics or chemistry. Read in English almost entirely through Harriet Martineau's own 1853 condensed translation, the edition that actually carried Comte's ideas into the anglophone world. The uncredited founder standing behind Durkheim, Weber, and Marx, all already on this list.", aka: ["Course of Positive Philosophy", "Cours de philosophie positive"] },
+  { title: "Ideas: General Introduction to Pure Phenomenology", author: "Edmund Husserl", why: "The 1913 text that gave philosophy the tools — intentionality, the phenomenological reduction, \"bracketing\" the natural world to examine consciousness on its own terms — that Heidegger and Sartre would each build an entire body of work on top of. Husserl meant it as the first of three volumes; it was the only one he lived to publish. Phenomenology's actual founding document, standing behind two philosophers already on this list who are unreadable without it.", aka: ["Ideen", "Ideas"] },
+  { title: "A Treatise on Electricity and Magnetism", author: "James Clerk Maxwell", why: "The 1873 work that unified electricity, magnetism, and light into a single electromagnetic field, and gave physics Maxwell's equations in their first fully worked-out form — the four relations that predicted radio waves before anyone had built a receiver to catch them. Einstein called Maxwell's work \"the most profound and the most fruitful\" of any since Newton, and said special relativity grew directly out of it. The founding text of a field this list's other physics — Newton, Einstein, Bohr, Heisenberg, Dirac, Schrödinger — had left conspicuously unclaimed." },
+  { title: "View with a Grain of Sand: Selected Poems", author: "Wisława Szymborska", why: "A hundred poems chosen from across four decades, translated by Stanisław Barańczak and Clare Cavanagh in 1995 — small, exact, ironic meditations on ants, onions, a photograph from September 11th, the end of the world (which, she notes, keeps not happening on schedule). Won the 1996 Nobel Prize in Literature \"for poetry that with ironic precision allows the historical and biological context to come to light in fragments of human reality.\" Poland's poetic counterpart to Sienkiewicz's prose epic and Lem's science fiction, both already here." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
