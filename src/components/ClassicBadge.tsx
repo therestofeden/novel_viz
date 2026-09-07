@@ -1,4 +1,5 @@
-import { getClassic } from "@/lib/classic";
+import { useEffect, useState } from "react";
+import type { ClassicEntry } from "@/lib/classic";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -16,9 +17,30 @@ interface Props {
  * version of the same color — gold seal, silver marker. Border stays ink
  * per house style. Renders nothing when the book isn't on the list, or
  * when it's already a Must Read (the two stamps are mutually exclusive).
+ *
+ * `lib/classic.ts` is a hand-curated, daily-growing data file (3100+ lines,
+ * ~260KB pre-minify as of 2026-09-07) — it was being statically imported
+ * here, which pulled the whole thing into the eager entry bundle (this
+ * component is used on Index.tsx, the home/search page that ships on
+ * every single visit). Loading it via dynamic import() instead means
+ * Rollup splits it into its own chunk that's only fetched the first time a
+ * badge actually needs to render (after a real search result exists), not
+ * on cold page load. The module is cached after the first fetch, so every
+ * subsequent badge on the page (or a later page) resolves instantly.
  */
 export const ClassicBadge = ({ title, author, size = "sm", className }: Props) => {
-  const entry = getClassic(title, author);
+  const [entry, setEntry] = useState<ClassicEntry | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    import("@/lib/classic").then(({ getClassic }) => {
+      if (active) setEntry(getClassic(title, author));
+    });
+    return () => {
+      active = false;
+    };
+  }, [title, author]);
+
   if (!entry) return null;
 
   if (size === "sm") {

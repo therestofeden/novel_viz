@@ -1,4 +1,5 @@
-import { getMustRead } from "@/lib/must-read";
+import { useEffect, useState } from "react";
+import type { MustReadEntry } from "@/lib/must-read";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -13,9 +14,25 @@ interface Props {
  * Editorial MUST READ stamp — NovelViz's curated verdict (see lib/must-read.ts).
  * Renders nothing when the book isn't on the list, so it can be dropped
  * anywhere a title/author pair exists.
+ *
+ * Loaded via dynamic import() rather than a static one for the same reason
+ * as ClassicBadge (see that file's comment) — this component is used on
+ * Index.tsx, so a static import of the data file pulls it into the eager
+ * entry bundle on every visit instead of only when a badge actually renders.
  */
 export const MustReadBadge = ({ title, author, size = "sm", className }: Props) => {
-  const entry = getMustRead(title, author);
+  const [entry, setEntry] = useState<MustReadEntry | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    import("@/lib/must-read").then(({ getMustRead }) => {
+      if (active) setEntry(getMustRead(title, author));
+    });
+    return () => {
+      active = false;
+    };
+  }, [title, author]);
+
   if (!entry) return null;
 
   if (size === "sm") {

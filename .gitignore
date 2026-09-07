@@ -37,6 +37,7 @@ dist-ssr
 # the config uses ESM — these are build noise, never source.
 vite.config.ts.timestamp-*.mjs
 vitest.config.ts.timestamp-*.mjs
+vite.config.*.ts.timestamp-*.mjs
 
 # Scratch/verification files agents sometimes leave behind when diffing a
 # local file against the live deployed source before pushing.
