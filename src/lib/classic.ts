@@ -3105,6 +3105,42 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Ideas: General Introduction to Pure Phenomenology", author: "Edmund Husserl", why: "The 1913 text that gave philosophy the tools — intentionality, the phenomenological reduction, \"bracketing\" the natural world to examine consciousness on its own terms — that Heidegger and Sartre would each build an entire body of work on top of. Husserl meant it as the first of three volumes; it was the only one he lived to publish. Phenomenology's actual founding document, standing behind two philosophers already on this list who are unreadable without it.", aka: ["Ideen", "Ideas"] },
   { title: "A Treatise on Electricity and Magnetism", author: "James Clerk Maxwell", why: "The 1873 work that unified electricity, magnetism, and light into a single electromagnetic field, and gave physics Maxwell's equations in their first fully worked-out form — the four relations that predicted radio waves before anyone had built a receiver to catch them. Einstein called Maxwell's work \"the most profound and the most fruitful\" of any since Newton, and said special relativity grew directly out of it. The founding text of a field this list's other physics — Newton, Einstein, Bohr, Heisenberg, Dirac, Schrödinger — had left conspicuously unclaimed." },
   { title: "View with a Grain of Sand: Selected Poems", author: "Wisława Szymborska", why: "A hundred poems chosen from across four decades, translated by Stanisław Barańczak and Clare Cavanagh in 1995 — small, exact, ironic meditations on ants, onions, a photograph from September 11th, the end of the world (which, she notes, keeps not happening on schedule). Won the 1996 Nobel Prize in Literature \"for poetry that with ironic precision allows the historical and biological context to come to light in fragments of human reality.\" Poland's poetic counterpart to Sienkiewicz's prose epic and Lem's science fiction, both already here." },
+
+  // Round 80 (2026-09-08, scheduled `daily-must-read-and-classic` task):
+  // author-level scan across both lists surfaced four more founder gaps —
+  // the same founder/successor and founding-discipline pattern rounds 66,
+  // 78, and 79 have been closing — all WebSearch-verified rather than
+  // trusted from recall. Charles Sanders Peirce's "How to Make Our Ideas
+  // Clear" (1878, Popular Science Monthly) closes the biggest one:
+  // pragmatism's actual founder was missing even though both his direct
+  // successors, William James and John Dewey, are already here — James
+  // himself credited this essay by name as the paper that first stated
+  // the pragmatic maxim, and named Peirce the founder of the tradition
+  // James went on to make famous. Kurt Gödel's On Formally Undecidable
+  // Propositions of Principia Mathematica and Related Systems (1931,
+  // cited by the standard Dover edition, B. Meltzer's translation) closes
+  // a parallel founder gap one level up in logic: Alan Turing is already
+  // on this list, and his own founding paper on computability builds
+  // directly on Gödel's incompleteness result. Franz Boas's The Mind of
+  // Primitive Man (1911) does the same for American anthropology —
+  // Malinowski, Lévi-Strauss, and Geertz are all present, but the
+  // "Father of American Anthropology," who coined the modern
+  // anthropological sense of "culture" and personally trained the
+  // discipline's next generation (Mead, Benedict, Sapir, and Zora Neale
+  // Hurston, already here as a novelist), was not. Jean Piaget's The
+  // Origins of Intelligence in Children (1936) closes a psychology gap
+  // distinct from the Freud/Jung psychoanalytic cluster already here:
+  // developmental psychology had no founder at all, and Piaget's
+  // four-stage model of how a child's reasoning builds itself is still
+  // the reference point every later theory of cognitive development
+  // argues with, not around — the same framing this list already gives
+  // Clausewitz. All four clear the Lindy/A-tier bar with room to spare;
+  // none were close calls or flagged for Must Read. Classic count:
+  // 438 → 442.
+  { title: "How to Make Our Ideas Clear", author: "Charles Sanders Peirce", why: "The 1878 Popular Science Monthly essay that first stated the pragmatic maxim — \"consider what effects, which might conceivably have practical bearings, we conceive the object of our conception to have\" — which William James, who made pragmatism famous, credited by name as the paper where it began, naming Peirce the tradition's founder. Both of Peirce's own direct successors, James and Dewey, are already on this list; the founder who set the maxim they each built a career on top of was not." },
+  { title: "On Formally Undecidable Propositions of Principia Mathematica and Related Systems", author: "Kurt Gödel", why: "The 1931 proof that any formal system powerful enough to do arithmetic contains true statements it cannot prove from within itself — the incompleteness theorem, cited here by the standard Dover edition (B. Meltzer's translation, R.B. Braithwaite's introduction). Alan Turing's own founding paper on computability, already on this list, builds directly on this result; the founder standing behind him was not.", aka: ["On Formally Undecidable Propositions"] },
+  { title: "The Mind of Primitive Man", author: "Franz Boas", why: "The 1911 book, developed from a lecture course, that took on the scientific racism of its era head-on and laid the groundwork for cultural relativism — the text that gave anthropology its modern sense of the word \"culture.\" Boas trained the next generation of American anthropologists almost personally (Margaret Mead, Ruth Benedict, Edward Sapir, and the novelist Zora Neale Hurston, already here, were all his students); the \"Father of American Anthropology\" standing behind Malinowski, Lévi-Strauss, and Geertz, all already on this list." },
+  { title: "The Origins of Intelligence in Children", author: "Jean Piaget", why: "The 1936 study — built from painstaking observation of his own three children — that founded developmental psychology as a discipline: a four-stage account of how a child's reasoning about the world constructs itself, sensorimotor to formal operations, still the reference point every later theory of cognitive development argues with, not around. A different founding tradition from this list's existing psychoanalytic pair, Freud and Jung — psychology's other major founder, previously unrepresented.", aka: ["The Origin of Intelligence in the Child", "Origin of Intelligence in the Child"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
