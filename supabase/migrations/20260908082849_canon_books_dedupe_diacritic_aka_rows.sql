@@ -1,0 +1,22 @@
+-- 2026-09-08: fallout from the unaccent fix above. Several curation rounds
+-- (Sappho onward, at least) inserted BOTH a canon work's canonical title AND
+-- its diacritic-only "aka" variant as separate canon_books rows (classic.ts/
+-- must-read.ts already encode the variant correctly via each entry's own
+-- `aka` array — a second canon_books row was never needed for these, since
+-- search_canon does fuzzy/trigram matching, not exact lookup). Before this
+-- session's unaccent fix these pairs mostly didn't both surface for the same
+-- query, so the duplication was largely invisible; after unaccent folding
+-- they now BOTH score sim=1 on the same query (verified live: 'godel' -> two
+-- "On Formally Undecidable..." rows), which would show the same book twice
+-- in search results. Removing the redundant row in each pair, keeping
+-- whichever title classic.ts/must-read.ts records as canonical:
+--   Pascal "Pensées" (keep) / "Pensees" (aka, drop)
+--   Zeami "Fūshikaden" (keep) / "Fushikaden" (aka, drop)
+--   Rizal "Noli Me Tángere" (keep) / "Noli Me Tangere" (aka, drop)
+--   Krasznahorkai "Satantango" (keep) / "Sátántangó" (aka, drop)
+--   Gödel "On Formally Undecidable Propositions of Principia Mathematica
+--     and Related Systems" (keep) / "On Formally Undecidable Propositions"
+--     (aka, drop) -- round 80's own pair
+--   Piaget "The Origins of Intelligence in Children" (keep) / "The Origin
+--     of Intelligence in the Child" (aka, drop) -- round 80's own pair
+delete from public.canon_books where id in (917, 908, 730, 1022, 1071, 1073);
