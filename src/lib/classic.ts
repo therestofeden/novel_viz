@@ -3142,9 +3142,18 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Mind of Primitive Man", author: "Franz Boas", why: "The 1911 book, developed from a lecture course, that took on the scientific racism of its era head-on and laid the groundwork for cultural relativism — the text that gave anthropology its modern sense of the word \"culture.\" Boas trained the next generation of American anthropologists almost personally (Margaret Mead, Ruth Benedict, Edward Sapir, and the novelist Zora Neale Hurston, already here, were all his students); the \"Father of American Anthropology\" standing behind Malinowski, Lévi-Strauss, and Geertz, all already on this list." },
   { title: "The Origins of Intelligence in Children", author: "Jean Piaget", why: "The 1936 study — built from painstaking observation of his own three children — that founded developmental psychology as a discipline: a four-stage account of how a child's reasoning about the world constructs itself, sensorimotor to formal operations, still the reference point every later theory of cognitive development argues with, not around. A different founding tradition from this list's existing psychoanalytic pair, Freud and Jung — psychology's other major founder, previously unrepresented.", aka: ["The Origin of Intelligence in the Child", "Origin of Intelligence in the Child"] },
 
-  // Round 81 (2026-09-09, scheduled `daily-must-read-and-classic` task):
-  // continued the founder/successor gap scan rounds 66, 78, 79, and 80 have
-  // been running, all four WebSearch-verified before writing. B.F.
+  // Round 81 (2026-09-09, scheduled `daily-must-read-and-classic` task —
+  // a concurrent session of a different scheduled task, `daily_novel_viz_feat`,
+  // was independently running a data-quality/canon pass at the same time
+  // and, writing after this block landed, correctly picked up the
+  // sequence as "Round 82" below — see that block for Frost/Wiener/
+  // Poincaré/Sacks; its own canon_books migration file happens to say
+  // "round81" in its filename from before it saw this block, which is why
+  // this round's canon_books/seed_book_list rows use a "_v2" source
+  // suffix rather than the bare round81 string, to keep the two disjoint
+  // batches distinguishable): continued the founder/successor gap
+  // scan rounds 66, 78, 79, and 80 have been running, all four
+  // WebSearch-verified before writing. B.F.
   // Skinner's Science and Human Behavior (1953, developed from his Harvard
   // lecture notes) closes a third psychology-founder gap alongside Piaget
   // (added last round) and the existing Freud/Jung pair: behaviorism was
