@@ -50,6 +50,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ReaderNotes } from "@/components/ReaderNotes";
 import { DnaSignature } from "@/components/DnaSignature";
+import { CoverPlate } from "@/components/CoverPlate";
+import { fetchCoverUrl } from "@/lib/covers";
 import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
 import { ClassicBadge } from "@/components/ClassicBadge";
@@ -350,34 +352,6 @@ type BookSuggestion = {
   cached?: boolean;
   shelfBoost?: boolean;
 };
-
-// ── Cover image fetching ─────────────────────────────────────────────────────
-const coverCache = new Map<string, string | null>();
-
-async function fetchCoverUrl(title: string, author: string): Promise<string | null> {
-  const cacheKey = `${title.toLowerCase()}|${(author ?? "").toLowerCase()}`;
-  if (coverCache.has(cacheKey)) return coverCache.get(cacheKey)!;
-  try {
-    const q = author && author !== "Unknown"
-      ? `intitle:${encodeURIComponent(title)}+inauthor:${encodeURIComponent(author)}`
-      : `intitle:${encodeURIComponent(title)}`;
-    const r = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&printType=books`,
-    );
-    if (!r.ok) { coverCache.set(cacheKey, null); return null; }
-    const json = await r.json();
-    const raw = json?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail as string | undefined;
-    const url = raw
-      ? raw.replace("http://", "https://").replace("&edge=curl", "") + "&fife=w300"
-      : null;
-    coverCache.set(cacheKey, url);
-    return url;
-  } catch {
-    coverCache.set(cacheKey, null);
-    return null;
-  }
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 const Index = () => {
   const [title, setTitle] = useState("");
@@ -1440,14 +1414,12 @@ const Index = () => {
             <section className="grid grid-cols-12 gap-0 ink-border-b">
               <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
                 <div className="flex items-start gap-4 md:flex-col md:gap-0">
-                  {coverUrl && (
-                    <img
-                      src={coverUrl}
-                      alt=""
-                      className="w-14 flex-shrink-0 rounded shadow-lg ring-1 ring-foreground/10 md:mb-4 md:w-full md:max-w-[108px]"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  )}
+                  <CoverPlate
+                    coverUrl={coverUrl}
+                    title={analysisPreview.title}
+                    author={analysisPreview.author}
+                    className="w-14 md:mb-4 md:w-full md:max-w-[108px]"
+                  />
                   <div>
                     <div className="meta text-muted-foreground">Subject</div>
                     <div className="display-num mt-2 text-4xl text-muted-foreground/40 md:text-6xl">—</div>
@@ -1493,14 +1465,12 @@ const Index = () => {
             <section id="analysis-anchor" className="grid grid-cols-12 gap-0 ink-border-b scroll-mt-20">
               <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
                 <div className="flex items-start gap-4 md:flex-col md:gap-0">
-                  {coverUrl && (
-                    <img
-                      src={coverUrl}
-                      alt={`${analysis.title} cover`}
-                      className="w-14 flex-shrink-0 rounded shadow-lg ring-1 ring-foreground/10 md:mb-4 md:w-full md:max-w-[108px]"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  )}
+                  <CoverPlate
+                    coverUrl={coverUrl}
+                    title={analysis.title}
+                    author={analysis.author}
+                    className="w-14 md:mb-4 md:w-full md:max-w-[108px]"
+                  />
                   <div>
                     <div className="meta text-muted-foreground">Subject</div>
                     <div className="display-num mt-2 text-4xl md:text-6xl">

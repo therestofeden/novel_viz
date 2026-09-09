@@ -55,36 +55,10 @@ import { RatingDistributionSkeleton } from "@/components/RatingDistributionSkele
 const RatingDistribution = lazy(() => import("@/components/RatingDistribution"));
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
+import { CoverPlate } from "@/components/CoverPlate";
+import { fetchCoverUrl } from "@/lib/covers";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-
-// ── Cover image fetching (same as Index) ─────────────────────────────────────
-const coverCache = new Map<string, string | null>();
-
-async function fetchCoverUrl(title: string, author: string): Promise<string | null> {
-  const key = `${title.toLowerCase()}|${(author ?? "").toLowerCase()}`;
-  if (coverCache.has(key)) return coverCache.get(key)!;
-  try {
-    const q = author && author !== "Unknown"
-      ? `intitle:${encodeURIComponent(title)}+inauthor:${encodeURIComponent(author)}`
-      : `intitle:${encodeURIComponent(title)}`;
-    const r = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&printType=books`,
-    );
-    if (!r.ok) { coverCache.set(key, null); return null; }
-    const json = await r.json();
-    const raw = json?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail as string | undefined;
-    const url = raw
-      ? raw.replace("http://", "https://").replace("&edge=curl", "") + "&fife=w300"
-      : null;
-    coverCache.set(key, url);
-    return url;
-  } catch {
-    coverCache.set(key, null);
-    return null;
-  }
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 type LoadState = "loading" | "found" | "not-found";
 
@@ -381,14 +355,12 @@ const BookPage = () => {
         <section id="analysis-anchor" className="grid grid-cols-12 gap-0 ink-border-b scroll-mt-20">
           <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
             <div className="flex items-start gap-4 md:flex-col md:gap-0">
-              {coverUrl && (
-                <img
-                  src={coverUrl}
-                  alt={`${analysis.title} cover`}
-                  className="w-14 flex-shrink-0 rounded shadow-lg ring-1 ring-foreground/10 md:mb-4 md:w-full md:max-w-[108px]"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-              )}
+              <CoverPlate
+                coverUrl={coverUrl}
+                title={analysis.title}
+                author={analysis.author}
+                className="w-14 md:mb-4 md:w-full md:max-w-[108px]"
+              />
               <div>
                 <div className="meta text-muted-foreground">Subject</div>
                 <div className="display-num mt-2 text-4xl md:text-6xl">
