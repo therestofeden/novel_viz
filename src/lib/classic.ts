@@ -3141,6 +3141,87 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "On Formally Undecidable Propositions of Principia Mathematica and Related Systems", author: "Kurt Gödel", why: "The 1931 proof that any formal system powerful enough to do arithmetic contains true statements it cannot prove from within itself — the incompleteness theorem, cited here by the standard Dover edition (B. Meltzer's translation, R.B. Braithwaite's introduction). Alan Turing's own founding paper on computability, already on this list, builds directly on this result; the founder standing behind him was not.", aka: ["On Formally Undecidable Propositions"] },
   { title: "The Mind of Primitive Man", author: "Franz Boas", why: "The 1911 book, developed from a lecture course, that took on the scientific racism of its era head-on and laid the groundwork for cultural relativism — the text that gave anthropology its modern sense of the word \"culture.\" Boas trained the next generation of American anthropologists almost personally (Margaret Mead, Ruth Benedict, Edward Sapir, and the novelist Zora Neale Hurston, already here, were all his students); the \"Father of American Anthropology\" standing behind Malinowski, Lévi-Strauss, and Geertz, all already on this list." },
   { title: "The Origins of Intelligence in Children", author: "Jean Piaget", why: "The 1936 study — built from painstaking observation of his own three children — that founded developmental psychology as a discipline: a four-stage account of how a child's reasoning about the world constructs itself, sensorimotor to formal operations, still the reference point every later theory of cognitive development argues with, not around. A different founding tradition from this list's existing psychoanalytic pair, Freud and Jung — psychology's other major founder, previously unrepresented.", aka: ["The Origin of Intelligence in the Child", "Origin of Intelligence in the Child"] },
+
+  // Round 81 (2026-09-09, scheduled `daily-must-read-and-classic` task):
+  // continued the founder/successor gap scan rounds 66, 78, 79, and 80 have
+  // been running, all four WebSearch-verified before writing. B.F.
+  // Skinner's Science and Human Behavior (1953, developed from his Harvard
+  // lecture notes) closes a third psychology-founder gap alongside Piaget
+  // (added last round) and the existing Freud/Jung pair: behaviorism was
+  // psychology's other dominant twentieth-century tradition and had no
+  // founder here at all. Carl Friedrich Gauss's Disquisitiones Arithmeticae
+  // (1801, cited here by Arthur A. Clarke's standard English translation)
+  // closes a gap that had nothing to do with a successor already being
+  // present — one of history's most consequential mathematicians, the
+  // book that organized number theory into a rigorous field of its own
+  // and reconciled Fermat, Euler, Lagrange, and Legendre's scattered
+  // results into one system, sat unrepresented on a list that already has
+  // Euclid, Newton, Fibonacci, Gödel, and Turing. Léon Walras's Elements
+  // of Pure Economics (1874) is the closest-textual-match gap of the four:
+  // Carl Menger's own entry on this list already names Walras directly —
+  // "alongside Jevons and Walras working independently in England and
+  // France the same years, launched the marginal revolution" — as one of
+  // the marginal revolution's three independent co-discoverers, but only
+  // Menger himself had an entry; Walras went further than either,
+  // building the first multi-equational general-equilibrium model of an
+  // entire economy. (Alfred Marshall, the more obvious "missing
+  // neoclassical founder" candidate and Keynes's own teacher at
+  // Cambridge, was considered and rejected this round: his Principles of
+  // Economics shares an exact English title with Menger's own entry
+  // already on this list, and the lookup table keys strictly on
+  // normalized title, so adding it would have silently overwritten
+  // Menger's entry rather than coexisted with it — flagged here rather
+  // than solved with a workaround, in case Stefano wants Marshall added
+  // under a disambiguated title in a future round.) Georg Simmel's The
+  // Philosophy of Money (1900) closes a sociology gap one level
+  // upstream of an author already here the same way Comte stood behind
+  // Durkheim/Weber/Marx and Husserl behind Heidegger/Sartre: Erving
+  // Goffman's dramaturgical sociology, already on this list, draws
+  // directly on Simmel's "formal sociology" and its study of the
+  // fine-grained rituals of everyday interaction (Goffman's own "civil
+  // inattention" traces straight back to Simmel), but the founder
+  // standing behind him was absent. All four clear the Lindy/A-tier bar
+  // with room to spare; none were close calls or flagged for Must Read.
+  // Classic count: 442 → 446.
+  { title: "Science and Human Behavior", author: "B.F. Skinner", why: "Developed from Skinner's Harvard lecture notes and published in 1953, the book that made the case for a science of behavior grounded in operant conditioning — reinforcement, punishment, and the shaping of conduct through consequence — rather than introspection or the unconscious. Recasts behavior as continuous with the rest of biology, drawing an explicit parallel between operant selection and Darwinian natural selection. Psychology's other major twentieth-century founding tradition, distinct from the Freud/Jung psychoanalytic cluster and last round's Piaget, previously unrepresented here." },
+  { title: "Disquisitiones Arithmeticae", author: "Carl Friedrich Gauss", why: "Written when Gauss was twenty-one and published in 1801 (cited here by Arthur A. Clarke's standard English translation), the book that took the scattered number-theory results of Fermat, Euler, Lagrange, and Legendre and organized them into a single rigorous field with its own methods and objects, including the theory of congruences. One of the handful of books that can fairly be called the founding text of an entire branch of mathematics — on a list that already runs Euclid to Fibonacci to Gödel and Turing, this was the gap." },
+  { title: "Elements of Pure Economics", author: "Léon Walras", why: "Published in 1874, three years after Jevons and Menger independently arrived at marginal utility, Walras went a step further than either: the first multi-equational model of general equilibrium, describing an entire economy — every market, every price — as one interlocking mathematical system. Carl Menger's own entry on this list names Walras directly as one of the marginal revolution's three independent co-discoverers; this closes the gap of naming him without including him.", aka: ["Éléments d'économie politique pure"] },
+  { title: "The Philosophy of Money", author: "Georg Simmel", why: "A 1900 treatment of money as a cultural and psychological phenomenon, not just an economic one — how a pure medium of exchange reshapes value, freedom, alienation, and the texture of modern life. Founded what Simmel called \"formal sociology,\" the close study of the recurring shapes social interaction takes regardless of its content, which Erving Goffman's dramaturgical sociology, already on this list, builds on directly — Goffman's own concept of \"civil inattention\" descends straight from Simmel. The founder standing behind an already-present successor, same pattern as Comte behind Durkheim and Husserl behind Heidegger." },
+
+  // Round 82 (2026-09-09, scheduled `daily_novel_viz_feat` task): this
+  // round's scan started from a data-quality pass on the canon_books table
+  // (a legacy 2026-07-17 bulk import had several rows with wrong authors —
+  // film/stage adapters credited instead of the book's actual author, e.g.
+  // "1984" attributed to "Michael Dean" and "The Master and Margarita" to
+  // its stage adapter — corrupting search_canon's ranked results; fixed in
+  // migration canon_books_fix_wrong_authors_and_dedupe, 8 rows deleted/5
+  // corrected, canon_books 871 → 863 net of the cleanup). The same pass
+  // then surfaced four more founder/major-author gaps, all WebSearch-
+  // verified. Robert Frost's North of Boston (1914, his breakthrough
+  // collection, published the same London trip that produced "The Road Not
+  // Taken") closes a gap in American poetry: Whitman and Dickinson are
+  // already here, but the twentieth century's other foundational American
+  // poetic voice was missing. Norbert Wiener's Cybernetics: Or Control and
+  // Communication in the Animal and the Machine (1948) closes an
+  // information-theory/computing-founders gap the same way Round 80 closed
+  // Turing's: Claude Shannon and von Neumann/Morgenstern are already on
+  // this list, but cybernetics — the field that gave computing and biology
+  // a shared vocabulary of feedback and control, and named the discipline
+  // itself — had no founder here. Henri Poincaré's Science and Hypothesis
+  // (1902) closes a philosophy-of-science/math-physics gap: the last major
+  // bridge figure between Gauss's number theory (added last round) and
+  // Einstein's relativity (already here), whose work on the three-body
+  // problem anticipated chaos theory decades early. Oliver Sacks's The Man
+  // Who Mistook His Wife for a Hat (1985) closes a gap in narrative
+  // medicine one tier below this list's existing Frankl/Kalanithi
+  // medical-memoir cluster: neurological case histories written for a
+  // general reader, the book that made Sacks himself a household name. All
+  // four clear the Lindy/A-tier bar with room to spare; none were close
+  // calls or flagged for Must Read. Classic count: 446 → 450.
+  { title: "North of Boston", author: "Robert Frost", why: "Frost's second collection, published in 1914 while he was living in England — the book that made his reputation, opening with \"Mending Wall\" and its \"good fences make good neighbors,\" and including \"Home Burial\" and \"After Apple-Picking.\" Blank-verse narrative and dramatic monologue rooted in New England speech and farm life, the register Frost would work in for the rest of his career. American poetry's other twentieth-century founding voice, alongside Whitman and Dickinson, both already here." },
+  { title: "Cybernetics: Or Control and Communication in the Animal and the Machine", author: "Norbert Wiener", why: "The 1948 book that named the field and gave it its founding claim: that feedback and control could be studied as one mathematical subject whether the system in question was a thermostat, a nervous system, or a machine. Directly shaped the vocabulary information theory and computer science still use — Claude Shannon and von Neumann/Morgenstern, both already on this list, worked the adjacent and overlapping ground Wiener staked out here, but the founder who named it was previously unrepresented.", aka: ["Cybernetics"] },
+  { title: "Science and Hypothesis", author: "Henri Poincaré", why: "A 1902 collection of essays on the philosophy of mathematics and physics — arguing that geometric axioms are conventions rather than empirical facts, and that scientific theories are chosen for convenience and fruitfulness, not proven true outright. Poincaré's own work on the three-body problem anticipated chaos theory by half a century, and Einstein read this book closely before 1905. The last major bridge figure between Gauss's number theory (added last round) and Einstein's relativity, already here, previously missing.", aka: ["La Science et l'Hypothèse"] },
+  { title: "The Man Who Mistook His Wife for a Hat", author: "Oliver Sacks", why: "A 1985 collection of case histories from Sacks's neurology practice — agnosia, Tourette's, amnesia, phantom limbs — written for a general reader with a novelist's patience for the person behind the diagnosis, not just the syndrome. The book that made narrative medicine a genre general readers would seek out, and made Sacks himself a household name. Closes a gap one tier below this list's existing Frankl/Kalanithi medical-memoir cluster: clinical case histories rather than a single first-person illness narrative." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
