@@ -40,6 +40,7 @@
 // nightly-maintenance.yml can send it).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { secretsMatch } from "../_shared/secret-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,10 +51,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   // Require a shared secret to prevent randoms from triggering DB deletes.
-  // Same pattern as seed-cache's x-seed-secret.
+  // Same pattern as seed-cache's x-seed-secret. Constant-time compare — see
+  // _shared/secret-auth.ts for why plain === is a timing side-channel here.
   const secret = req.headers.get("x-maintenance-secret") ?? "";
   const expectedSecret = Deno.env.get("MAINTENANCE_SECRET") ?? "";
-  const authorized = expectedSecret.length > 0 && secret === expectedSecret;
+  const authorized = secretsMatch(secret, expectedSecret);
   if (!authorized) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -15,6 +15,7 @@
 //   dry_run   — true → only report what would be seeded, no Gemini calls
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { secretsMatch } from "../_shared/secret-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,11 +51,12 @@ function buildCacheKey(title: string, author: string): string {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Require the seed secret to prevent abuse.
+  // Require the seed secret to prevent abuse. Constant-time compare — see
+  // _shared/secret-auth.ts for why plain === is a timing side-channel here.
   // Set SEED_SECRET in Supabase Dashboard → Project Settings → Edge Functions → Secrets.
   const secret = req.headers.get("x-seed-secret") ?? "";
   const expectedSecret = Deno.env.get("SEED_SECRET") ?? "";
-  const authorized = expectedSecret.length > 0 && secret === expectedSecret;
+  const authorized = secretsMatch(secret, expectedSecret);
   if (!authorized) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
