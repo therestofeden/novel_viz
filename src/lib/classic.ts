@@ -3260,6 +3260,56 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Principles of Geology", author: "Charles Lyell", why: "A three-volume work published 1830–33 arguing that the Earth's surface was shaped by slow, continuous processes still observable today — uniformitarianism — rather than sudden catastrophe. Darwin carried the first volume aboard the Beagle, read it closely during the voyage, and called himself Lyell's disciple in geology; the vast, gradual timescale and the freedom from catastrophic change that Lyell argued for are the ground Darwin's own case for gradual evolution in On the Origin of Species, already here, stands on. The founder standing behind an already-present successor, same pattern as Gauss behind Poincaré and Simmel behind Goffman." },
   { title: "Notes on the Analytical Engine", author: "Ada Lovelace", why: "Appended in 1843 to Lovelace's translation of Luigi Menabrea's memoir on Charles Babbage's unbuilt Analytical Engine, her own notes — three times the length of the original text — include what is now recognized as the first published algorithm intended to run on a machine, and the insight that such a machine could manipulate any symbols, not just numbers. The paper stood alone as the only extended discussion of programming a computer for the next hundred years, a century before Turing, already on this list, formalized computability itself. The first woman among this list's recent run of STEM founders — Skinner, Gauss, Walras, Simmel, Frost, Wiener, Poincaré, and Sacks were all men.", aka: ["Sketch of the Analytical Engine"] },
   { title: "The Design of Experiments", author: "R.A. Fisher", why: "Published in 1935, the book that founded modern experimental statistics: randomization, replication, blocking, and Fisher's null-hypothesis test, illustrated with the now-famous \"lady tasting tea\" experiment. Fisher's insistence that randomly assigning treatments was the only way to license a valid test of significance became, in the decades after, the methodological baseline for agriculture, psychology, and medicine alike. A discipline — statistics itself — with no representation on this list at all despite underpinning every empirical field it already touches." },
+
+  // Round 84 (2026-09-10, scheduled `daily-must-read-and-classic` task): a
+  // fiction/non-fiction sweep this round found the fiction side essentially
+  // saturated (world-literature and national-canon checks against Cervantes,
+  // the Chinese Four Great Classical Novels, Genji-era Japan, Icelandic and
+  // Latin American Nobel voices all came back already covered), so the round
+  // stayed in non-fiction and closed four founder gaps in law, economics, and
+  // economic sociology — a cluster this list had built up piecemeal (Hobbes,
+  // Locke, Montesquieu, Rousseau, Beccaria for law/political theory; Smith,
+  // Ricardo, Marx, Veblen, Schumpeter, Keynes, Hayek, Friedman, Menger,
+  // Walras, von Neumann/Morgenstern for economics; Comte, Durkheim, Weber,
+  // Simmel for sociology) without ever filling the seams between them. All
+  // four WebSearch-verified before writing. William Blackstone's
+  // Commentaries on the Laws of England (1765-69) is the gap this list's
+  // political-theory and criminal-law shelf had been built around without
+  // ever naming: the first attempt to state the entire body of English
+  // common law as one rational system, the book American courts (including
+  // the Supreme Court) still cite as the definitive pre-Revolutionary source
+  // of common law, and the direct education of the same Founders whose
+  // political philosophy (Locke's Two Treatises, already here) it sat beside
+  // on every eighteenth-century American lawyer's shelf. Ronald Coase's The
+  // Firm, the Market, and the Law (1988, collecting his 1937 "The Nature of
+  // the Firm" and 1960 "The Problem of Social Cost") founded law-and-
+  // economics and transaction-cost economics — Coase's own 1991 Nobel citation
+  // is for exactly this — and sits at the same kind of unfilled intersection
+  // von Neumann/Morgenstern's entry, already here, describes filling for
+  // mathematics and economics: this list's law bench and its economics bench
+  // had each stopped just short of the seam between them. Karl Polanyi's The
+  // Great Transformation (1944) closes an economic-sociology gap one register
+  // below Weber's Protestant Ethic and Veblen's Leisure Class, both already
+  // here: Polanyi's argument that a "self-regulating market" is a historical
+  // invention, not a natural state, and that treating land, labor, and money
+  // as commodities inevitably triggers a social "double movement" of
+  // self-protection, is the major twentieth-century counter-tradition to the
+  // market-optimism running through this list's Smith-to-Friedman economics
+  // shelf. Kenneth Arrow's Social Choice and Individual Values (1951) founded
+  // social choice theory outright with Arrow's Impossibility Theorem — no
+  // voting or preference-aggregation rule can satisfy even a modest set of
+  // fairness conditions at once — the mathematical result Rawls's own
+  // Must-Read-listed theory of justice has to reckon with when it tries to
+  // aggregate individual preferences into a single social ranking, and the
+  // rigorous, axiomatic counterpart to von Neumann/Morgenstern's game theory,
+  // already here, applied to collective rather than strategic choice. None
+  // were close calls or flagged for Must Read — all four are dense founding
+  // texts read mainly by specialists, same tier as Gauss, Walras, and Simmel.
+  // Classic count: 454 → 458.
+  { title: "Commentaries on the Laws of England", author: "William Blackstone", why: "Printed in four volumes between 1765 and 1769, the first attempt to state the entire body of English common law as one coherent, rational system rather than a scattered pile of precedent. It shaped legal education on both sides of the Atlantic for over a century, and American courts — including the U.S. Supreme Court, in historical discussions to this day — still cite it as the definitive pre-Revolutionary statement of the common law the Founders inherited. John Locke's Two Treatises of Government, already on this list, gave the Founders their political philosophy; this was the legal textbook sitting next to it on the same shelf.", aka: ["Blackstone's Commentaries"] },
+  { title: "The Firm, the Market, and the Law", author: "Ronald H. Coase", why: "A 1988 collection built around two papers that alone justified Coase's 1991 Nobel: \"The Nature of the Firm\" (1937), which asked why firms exist at all when markets could in principle coordinate everything, and answered with the cost of using the price mechanism itself — transaction costs; and \"The Problem of Social Cost\" (1960), which showed that when those costs are zero, it doesn't matter in efficiency terms who holds a given legal right, only that it's clearly assigned (what economists now call the Coase theorem). Founded law-and-economics as a field. This list's law bench (Blackstone, Beccaria, Locke, Montesquieu) and its economics bench (Smith through Friedman, von Neumann/Morgenstern) had each stopped just short of the seam between them; this closes it from the economics side." },
+  { title: "The Great Transformation", author: "Karl Polanyi", why: "Published in 1944, the argument that a \"self-regulating market\" is not a natural state of affairs but a specific, historically recent invention — and a violent one, since it requires treating land, labor, and money as if they were commodities produced for sale, which they were never. Polanyi's \"double movement\" — market expansion provoking a social backlash that tries to protect itself from the market's own damage — became a standard lens for reading everything from the New Deal to the welfare state. The major twentieth-century counter-tradition to the market optimism running through this list's Smith-to-Friedman economics shelf, and the natural sociological neighbor to Weber's Protestant Ethic and Veblen's Leisure Class, both already here." },
+  { title: "Social Choice and Individual Values", author: "Kenneth J. Arrow", why: "Published in 1951, the book that founded social choice theory with a single, devastating result now known as Arrow's Impossibility Theorem: no method of aggregating individual preferences into a collective ranking can simultaneously satisfy even a modest, seemingly uncontroversial set of fairness conditions — not for any voting system, not for any social welfare function. Recast an entire category of political and economic questions ('what does society as a whole prefer?') as a precise mathematical problem, one Rawls's own theory of justice, already on this list, has to work around when it tries to aggregate individual interests into a single principle of fairness. The axiomatic, collective-choice counterpart to von Neumann and Morgenstern's game theory, already here, which formalizes individual strategic choice instead." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
