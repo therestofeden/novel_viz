@@ -90,13 +90,33 @@ interface OLDoc {
   cover_i?: number;
 }
 
+// Every cross-origin call here is unbounded by default — the browser will
+// wait as long as Open Library or Google Books takes. That's the same
+// unguarded-fetch shape that's bitten this app seven separate times on the
+// backend (rate-limit RPC, canon RPC, fuzzy escalation, search_cache, badge
+// lookup, seed-cache→analyze-novel — see project memory), just never fixed
+// here because this client-side cover path is new. A hung cover lookup
+// shouldn't stall the book masthead: CoverPlate's designed fallback is only
+// reachable once fetchCoverUrl resolves, so each network call gets its own
+// short budget and a per-attempt catch, rather than one slow attempt
+// blocking the whole waterfall (or hanging indefinitely on a bad network).
+const COVER_FETCH_TIMEOUT_MS = 3500;
+
 async function searchOpenLibrary(params: Record<string, string | null>): Promise<OLDoc[]> {
   const entries = Object.entries(params).filter((e): e is [string, string] => !!e[1]);
   const qs = new URLSearchParams({ ...Object.fromEntries(entries), limit: "8", fields: "title,author_name,cover_i" });
-  const r = await fetch(`https://openlibrary.org/search.json?${qs.toString()}`);
-  if (!r.ok) return [];
-  const json = await r.json();
-  return Array.isArray(json?.docs) ? json.docs : [];
+  try {
+    const r = await fetch(`https://openlibrary.org/search.json?${qs.toString()}`, {
+      signal: AbortSignal.timeout(COVER_FETCH_TIMEOUT_MS),
+    });
+    if (!r.ok) return [];
+    const json = await r.json();
+    return Array.isArray(json?.docs) ? json.docs : [];
+  } catch {
+    // Timeout or network failure on this attempt — treat as "no results"
+    // so the waterfall can still try its remaining, cheaper attempts.
+    return [];
+  }
 }
 
 function pickCover(docs: OLDoc[], title: string, author: string | null): number | null {
@@ -148,6 +168,7 @@ async function fetchFromGoogleBooks(title: string, author: string | null): Promi
       : `intitle:${encodeURIComponent(title)}`;
     const r = await fetch(
       `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&printType=books&key=${key}`,
+      { signal: AbortSignal.timeout(COVER_FETCH_TIMEOUT_MS) },
     );
     if (!r.ok) return null;
     const json = await r.json();

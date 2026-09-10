@@ -3231,6 +3231,35 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Cybernetics: Or Control and Communication in the Animal and the Machine", author: "Norbert Wiener", why: "The 1948 book that named the field and gave it its founding claim: that feedback and control could be studied as one mathematical subject whether the system in question was a thermostat, a nervous system, or a machine. Directly shaped the vocabulary information theory and computer science still use — Claude Shannon and von Neumann/Morgenstern, both already on this list, worked the adjacent and overlapping ground Wiener staked out here, but the founder who named it was previously unrepresented.", aka: ["Cybernetics"] },
   { title: "Science and Hypothesis", author: "Henri Poincaré", why: "A 1902 collection of essays on the philosophy of mathematics and physics — arguing that geometric axioms are conventions rather than empirical facts, and that scientific theories are chosen for convenience and fruitfulness, not proven true outright. Poincaré's own work on the three-body problem anticipated chaos theory by half a century, and Einstein read this book closely before 1905. The last major bridge figure between Gauss's number theory (added last round) and Einstein's relativity, already here, previously missing.", aka: ["La Science et l'Hypothèse"] },
   { title: "The Man Who Mistook His Wife for a Hat", author: "Oliver Sacks", why: "A 1985 collection of case histories from Sacks's neurology practice — agnosia, Tourette's, amnesia, phantom limbs — written for a general reader with a novelist's patience for the person behind the diagnosis, not just the syndrome. The book that made narrative medicine a genre general readers would seek out, and made Sacks himself a household name. Closes a gap one tier below this list's existing Frankl/Kalanithi medical-memoir cluster: clinical case histories rather than a single first-person illness narrative." },
+
+  // Round 83 (2026-09-10, scheduled `daily_novel_viz_feat` task): continued the
+  // founder/founding-text gap scan rounds 66, 78, 79, 80, 81, and 82 have been running,
+  // this time targeting the physical sciences and computing specifically. Newton,
+  // Einstein, Maxwell, Gödel, Turing, Wiener, Shannon, and von Neumann were all already
+  // here, but thermodynamics, geology, and the first published computer program had no
+  // founder at all. Sadi Carnot's Reflections on the Motive Power of Fire (1824) is the
+  // founding text of thermodynamics outright — the reversible cycle, Carnot efficiency,
+  // the seed of the second law — a full physics tradition missing alongside Newton,
+  // Maxwell, and Einstein. Charles Lyell's Principles of Geology (1830–33) closes a
+  // founder-behind-successor gap the same shape as Gauss/Wiener/Poincaré the last two
+  // rounds: Darwin's On the Origin of Species is already on this list, Darwin carried
+  // Lyell's first volume aboard the Beagle and called himself Lyell's disciple in
+  // geology, and uniformitarianism — slow, continuous change over vast time — is the
+  // ground Darwin's own argument for gradual evolution stands on. Ada Lovelace's 1843
+  // Notes on the Analytical Engine (appended to her translation of Menabrea's memoir on
+  // Babbage's unbuilt machine) contains the first published algorithm written for a
+  // computer, a century before Turing — already here — formalized computability itself;
+  // also the first woman added in this list's recent run of STEM founders (Skinner,
+  // Gauss, Walras, Simmel, Frost, Wiener, Poincaré, and Sacks were all men). R.A.
+  // Fisher's The Design of Experiments (1935) founded modern experimental statistics —
+  // randomization, the null hypothesis, the "lady tasting tea" — a discipline with zero
+  // representation here despite underpinning every empirical field this list already
+  // touches. All four WebSearch-verified this session; none were close calls or flagged
+  // for Must Read. Classic count: 450 → 454.
+  { title: "Reflections on the Motive Power of Fire", author: "Sadi Carnot", why: "Published in Paris in 1824 and largely ignored in its own time, the book that founded thermodynamics as a field: Carnot asked how efficient a heat engine could ever be, and in answering introduced the reversible cycle, thermodynamic efficiency, and the seed of what would become the second law. Clapeyron's analytical restatement a decade later, and Clausius and Kelvin after him, all build on ground Carnot staked out first. A full physics tradition previously unrepresented alongside Newton, Maxwell, and Einstein, already on this list.", aka: ["Réflexions sur la puissance motrice du feu"] },
+  { title: "Principles of Geology", author: "Charles Lyell", why: "A three-volume work published 1830–33 arguing that the Earth's surface was shaped by slow, continuous processes still observable today — uniformitarianism — rather than sudden catastrophe. Darwin carried the first volume aboard the Beagle, read it closely during the voyage, and called himself Lyell's disciple in geology; the vast, gradual timescale and the freedom from catastrophic change that Lyell argued for are the ground Darwin's own case for gradual evolution in On the Origin of Species, already here, stands on. The founder standing behind an already-present successor, same pattern as Gauss behind Poincaré and Simmel behind Goffman." },
+  { title: "Notes on the Analytical Engine", author: "Ada Lovelace", why: "Appended in 1843 to Lovelace's translation of Luigi Menabrea's memoir on Charles Babbage's unbuilt Analytical Engine, her own notes — three times the length of the original text — include what is now recognized as the first published algorithm intended to run on a machine, and the insight that such a machine could manipulate any symbols, not just numbers. The paper stood alone as the only extended discussion of programming a computer for the next hundred years, a century before Turing, already on this list, formalized computability itself. The first woman among this list's recent run of STEM founders — Skinner, Gauss, Walras, Simmel, Frost, Wiener, Poincaré, and Sacks were all men.", aka: ["Sketch of the Analytical Engine"] },
+  { title: "The Design of Experiments", author: "R.A. Fisher", why: "Published in 1935, the book that founded modern experimental statistics: randomization, replication, blocking, and Fisher's null-hypothesis test, illustrated with the now-famous \"lady tasting tea\" experiment. Fisher's insistence that randomly assigning treatments was the only way to license a valid test of significance became, in the decades after, the methodological baseline for agriculture, psychology, and medicine alike. A discipline — statistics itself — with no representation on this list at all despite underpinning every empirical field it already touches." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
