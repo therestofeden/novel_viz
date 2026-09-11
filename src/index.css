@@ -307,7 +307,9 @@
     color: hsl(var(--foreground));
   }
 
-  /* Marquee strip at the very top, like a press dateline */
+  /* Marquee strip at the very top, like a press dateline. Display is left to
+     the caller (hidden md:flex etc.) rather than fixed here, so routes that
+     want it hidden on mobile aren't fighting this rule's specificity. */
   .dateline-strip {
     background: hsl(var(--foreground));
     color: hsl(var(--background));
@@ -317,10 +319,24 @@
     text-transform: uppercase;
     text-align: center;
     padding: 6px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 2em;
+  }
+
+  /* Home hero only: confines the sitewide paper-grid texture (see `body`
+     above) to a small patch in one corner instead of tiling full-bleed
+     behind the whole page — feedback was that the full-bleed grid read as
+     an unfinished Miro board. Toggled via a body class from the home page's
+     effect only; every other route keeps the untouched full grid. */
+  body.home-bg-confined {
+    background-image: none;
+  }
+  .home-corner-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--foreground) / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, black, transparent 70%);
+    mask-image: radial-gradient(circle at 100% 0%, black, transparent 70%);
   }
 }
 
