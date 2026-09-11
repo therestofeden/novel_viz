@@ -3310,6 +3310,42 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Firm, the Market, and the Law", author: "Ronald H. Coase", why: "A 1988 collection built around two papers that alone justified Coase's 1991 Nobel: \"The Nature of the Firm\" (1937), which asked why firms exist at all when markets could in principle coordinate everything, and answered with the cost of using the price mechanism itself — transaction costs; and \"The Problem of Social Cost\" (1960), which showed that when those costs are zero, it doesn't matter in efficiency terms who holds a given legal right, only that it's clearly assigned (what economists now call the Coase theorem). Founded law-and-economics as a field. This list's law bench (Blackstone, Beccaria, Locke, Montesquieu) and its economics bench (Smith through Friedman, von Neumann/Morgenstern) had each stopped just short of the seam between them; this closes it from the economics side." },
   { title: "The Great Transformation", author: "Karl Polanyi", why: "Published in 1944, the argument that a \"self-regulating market\" is not a natural state of affairs but a specific, historically recent invention — and a violent one, since it requires treating land, labor, and money as if they were commodities produced for sale, which they were never. Polanyi's \"double movement\" — market expansion provoking a social backlash that tries to protect itself from the market's own damage — became a standard lens for reading everything from the New Deal to the welfare state. The major twentieth-century counter-tradition to the market optimism running through this list's Smith-to-Friedman economics shelf, and the natural sociological neighbor to Weber's Protestant Ethic and Veblen's Leisure Class, both already here." },
   { title: "Social Choice and Individual Values", author: "Kenneth J. Arrow", why: "Published in 1951, the book that founded social choice theory with a single, devastating result now known as Arrow's Impossibility Theorem: no method of aggregating individual preferences into a collective ranking can simultaneously satisfy even a modest, seemingly uncontroversial set of fairness conditions — not for any voting system, not for any social welfare function. Recast an entire category of political and economic questions ('what does society as a whole prefer?') as a precise mathematical problem, one Rawls's own theory of justice, already on this list, has to work around when it tries to aggregate individual interests into a single principle of fairness. The axiomatic, collective-choice counterpart to von Neumann and Morgenstern's game theory, already here, which formalizes individual strategic choice instead." },
+
+  // Round 85 (2026-09-11, scheduled `daily-must-read-and-classic` task): a
+  // fresh fiction sweep (Mahfouz, Mishima, Pamuk, Vargas Llosa, Neruda,
+  // Tagore, Soyinka, Adichie, Geertz, Gramsci, Kipling, Le Guin, Han Kang,
+  // Ferrante, Knausgaard, Narayan) came back with every real candidate
+  // already present on one list or the other — the last two rounds' read
+  // that fiction is essentially saturated holds again, three rounds
+  // running now. Stayed in non-fiction and found three more founder-tier
+  // gaps, all WebSearch-verified before writing, none close calls or
+  // flagged for Must Read (same tier as Coase/Polanyi/Arrow/Blackstone
+  // last round — dense founding texts read mainly by specialists).
+  // Fernand Braudel's The Mediterranean and the Mediterranean World in the
+  // Age of Philip II (1949) closes a historiography-methodology gap this
+  // list's deep bench of historians (Herodotus, Thucydides, Tacitus, Sima
+  // Qian, Plutarch, Gibbon, Tuchman, Shirer) had never actually filled:
+  // the Annales School and its founding method, the longue durée — history
+  // written from geography and slow structural time downward, not from
+  // kings and battles. Elinor Ostrom's Governing the Commons (1990) closes
+  // the institutional-economics gap directly beside Coase's entry, added
+  // last round: where Coase asks why firms exist instead of markets,
+  // Ostrom asks how shared resources — forests, fisheries, irrigation
+  // systems — get governed successfully without either the state or
+  // privatization, overturning Garrett Hardin's "tragedy of the commons"
+  // with case-by-case empirical fieldwork; she remains the only woman ever
+  // to win the Nobel in Economic Sciences (2009). Thomas Schelling's The
+  // Strategy of Conflict (1960) supplies the strategic layer this list's
+  // game-theory bench was missing: von Neumann and Morgenstern, already
+  // here, built the mathematical foundations of game theory, and Arrow,
+  // added last round, applied its axiomatic rigor to collective choice —
+  // Schelling is the one who turned it loose on real-world conflict and
+  // deterrence (credible commitment, the value of limiting your own
+  // options) against the backdrop of the nuclear arms race, work the 2005
+  // Nobel committee cited directly. Classic count: 458 → 461.
+  { title: "The Mediterranean and the Mediterranean World in the Age of Philip II", author: "Fernand Braudel", why: "Submitted to the Sorbonne in 1947 and published in two volumes in 1949, the book that founded the Annales School's signature method: history written in layers of time, from the near-motionless \"structures\" of geography and climate, through slow-moving social and economic cycles, down to the fast, individual events (battles, treaties, the reign of Philip II) that traditional history had always treated as the whole story. The longue durée — Braudel's term for that slowest layer — reshaped how historians in every field since have framed what actually causes change. This list's deep historiography bench (Herodotus, Thucydides, Tacitus, Sima Qian, Plutarch, Gibbon, Tuchman, Shirer) had chroniclers and analysts of events but no one arguing that events themselves are the least important thing to study.", aka: ["The Mediterranean", "La Méditerranée et le monde méditerranéen à l'époque de Philippe II"] },
+  { title: "Governing the Commons", author: "Elinor Ostrom", why: "Published in 1990, a systematic, field-by-field rebuttal — Swiss alpine pastures, Japanese forests, Spanish irrigation communities, Maine lobster fisheries — of the assumption, formalized as Garrett Hardin's \"tragedy of the commons,\" that shared resources can only be saved by government regulation or private ownership. Ostrom showed communities repeatedly govern themselves successfully instead, and derived design principles (clear boundaries, monitoring, graduated sanctions, low-cost conflict resolution) for when that self-governance holds. Won her the 2009 Nobel Memorial Prize in Economic Sciences, the only woman to date to receive it, and sits directly beside Coase's entry, added last round, as institutional economics' other founding question: not just why firms exist instead of markets, but how commons survive without either.", aka: ["Governing the Commons: The Evolution of Institutions for Collective Action"] },
+  { title: "The Strategy of Conflict", author: "Thomas C. Schelling", why: "Published in 1960 against the backdrop of the nuclear arms race, the book that turned game theory from von Neumann and Morgenstern's mathematical foundations, already on this list, into a working theory of real-world strategy: credible commitment, the paradoxical value of limiting your own options, and why uncertain retaliation can deter more effectively than certain retaliation. Schelling's own 2005 Nobel citation, shared with Robert Aumann, was \"for having enhanced our understanding of conflict and cooperation through game-theory analysis\" — this book, named directly. The applied, strategic counterpart to Arrow's axiomatic Social Choice and Individual Values, added last round: one formalizes how a group should choose, the other how adversaries actually do." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
