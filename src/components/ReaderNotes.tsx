@@ -138,18 +138,27 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
 
   return (
     <div ref={containerRef} className="ink-border-b scroll-mt-20">
-      {/* ── Mobile FAB: thumb-reachable entry point, visible from anywhere ─── */}
+      {/* ── Mobile FAB: thumb-reachable entry point, visible from anywhere ───
+          Icon-only circle (was a wider pill with a "Notes" label) — the pill's
+          footprint was wide enough to permanently blot out a word or two of
+          whatever text happened to scroll underneath it in the bottom-right
+          corner (most visibly the reading essay below). Still `fixed`, still
+          reachable from anywhere by design, but the smaller footprint means
+          it now sits in the corner the way a standard FAB does rather than
+          eclipsing multi-word chunks of body copy. */}
       {isMobile && !open && (
         <button
           onClick={jumpToNotes}
           aria-label="Open my notes"
-          className="fixed bottom-5 right-4 z-50 flex items-center gap-2 rounded-full border border-foreground bg-foreground px-4 py-3 text-background shadow-lg transition-transform active:scale-95"
+          className="fixed bottom-5 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-foreground bg-foreground text-background shadow-lg transition-transform active:scale-95"
           style={{ bottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
         >
           <PenLine className="h-4 w-4" />
-          <span className="meta">Notes</span>
           {note && (
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" title="Note saved" />
+            <span
+              className="absolute right-0.5 top-0.5 inline-block h-2 w-2 rounded-full bg-primary ring-2 ring-foreground"
+              title="Note saved"
+            />
           )}
         </button>
       )}
