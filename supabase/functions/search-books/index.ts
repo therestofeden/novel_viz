@@ -846,60 +846,64 @@ Deno.serve(async (req) => {
 
     const ip = getClientIp(req);
     const ipHash = await hashIp(ip);
-    // 2026-08-06 daily backend audit: this RPC runs sequentially BEFORE the
-    // OL/GB/canon Promise.allSettled even starts, on every single cache-miss
-    // request — so unlike the 2026-08-05 canon-RPC fix (which only bounded a
-    // call already racing inside a shared budget), this one had no timeout
-    // AND sat fully outside any parallel/bounded budget, meaning a slow
-    // count_recent_events call (DB load spike, lock contention) added its
+    // 2026-08-06 daily backend audit: this RPC used to run sequentially BEFORE
+    // the OL/GB/canon Promise.allSettled even started, on every single
+    // cache-miss request — so unlike the 2026-08-05 canon-RPC fix (which only
+    // bounded a call already racing inside a shared budget), this one had no
+    // timeout AND sat fully outside any parallel/bounded budget, meaning a
+    // slow count_recent_events call (DB load spike, lock contention) added its
     // full delay on top of everything else, unconditionally, for every
-    // request. The existing try/catch only fails open on an RPC *error*, not
-    // a hang — same gap shape as every prior entry in this file's timeout
-    // lineage, just on a call upstream of where previous passes were looking.
-    // Bounded with the same Promise.race-timeout-to-safe-default pattern;
-    // fails open (treats as "under limit") on both error and timeout, since
-    // false negatives here just mean a very rare skipped rate-limit check,
-    // not a correctness bug.
+    // request. Bounded first (below) with the same Promise.race-timeout-to
+    // -safe-default pattern as cache_read/canon; fails open (treats as "under
+    // limit") on both error and timeout, since false negatives here just mean
+    // a very rare skipped rate-limit check, not a correctness bug.
+    //
+    // 2026-09-11 daily perf pass: bounding the timeout (above fix) capped the
+    // worst case at 800ms, but the check still blocked BEFORE the OL/GB/canon
+    // fan-out started, on every cache-miss request — the exact same
+    // single-point-of-failure shape the 2026-08-05 canon-RPC fix eliminated
+    // for the canon lookup, just left unfixed here because the rate-limit
+    // check *looks* like a gate that has to run first. It doesn't: whether the
+    // request is over its rate limit is independent of whether OL/GB/canon
+    // need fetching (we already know this is a cache miss), so the check can
+    // race the fan-out instead of preceding it. Moved into the same
+    // Promise.allSettled as OL/GB/canon; the 429 decision is made after that
+    // settles, before any of the fetched results are used, so a rate-limited
+    // request still gets rejected — it just no longer pays the RPC latency
+    // twice (once blocking, once for nothing once rejected). Trade-off: a
+    // request that turns out to be over-limit will have already fired one OL
+    // and one GB call in the background; at RATE_LIMIT's threshold that's a
+    // rare, cheap price for cutting up to ~800ms off every legitimate
+    // cache-miss request's latency floor.
     const RATE_LIMIT_RPC_TIMEOUT_MS = 800;
-    try {
-      // 2026-08-19: same uncleared-timer telemetry bug as cache_read above —
-      // fixed the same way (.finally() clears the timer once the real RPC
-      // settles, so rate_limit_check_timed_out only fires when genuinely won).
-      let rateLimitTimer: ReturnType<typeof setTimeout> | undefined;
-      const countPromise = adminClient
-        .rpc("count_recent_events", {
-          p_ip_hash: ipHash,
-          p_route: ROUTE,
-          p_window_seconds: 3600,
-          p_prefetch_only: false,
-        })
-        .then(({ data, error }: { data: number | null; error: unknown }) => {
-          if (error) throw error;
-          return data;
-        })
-        .finally(() => {
-          if (rateLimitTimer) clearTimeout(rateLimitTimer);
-        });
-      const count = await Promise.race([
-        countPromise,
-        new Promise<null>((resolve) => {
-          rateLimitTimer = setTimeout(() => {
-            timings.rate_limit_check_timed_out = 1;
-            resolve(null);
-          }, RATE_LIMIT_RPC_TIMEOUT_MS);
-          // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
-          if (rateLimitTimer?.unref) rateLimitTimer.unref();
-        }),
-      ]);
-      if (typeof count === "number" && count >= RATE_LIMIT) {
-        timings.total = Math.round(performance.now() - t0);
-        console.log(JSON.stringify({ fn: "search-books", cache: "rate_limited", q: queryKey, timings }));
-        return new Response(JSON.stringify({ results: [], error: "rate_limited" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
-        });
-      }
-    } catch { /* fail open */ }
+    let rateLimitTimer: ReturnType<typeof setTimeout> | undefined;
+    const countPromise = adminClient
+      .rpc("count_recent_events", {
+        p_ip_hash: ipHash,
+        p_route: ROUTE,
+        p_window_seconds: 3600,
+        p_prefetch_only: false,
+      })
+      .then(({ data, error }: { data: number | null; error: unknown }) => {
+        if (error) throw error;
+        return data;
+      })
+      .finally(() => {
+        if (rateLimitTimer) clearTimeout(rateLimitTimer);
+      });
+    // Prevent an unhandled-rejection warning if this loses the race below.
+    countPromise.catch(() => {});
+    const rateLimitPromise: Promise<number | null> = Promise.race([
+      countPromise,
+      new Promise<null>((resolve) => {
+        rateLimitTimer = setTimeout(() => {
+          timings.rate_limit_check_timed_out = 1;
+          resolve(null);
+        }, RATE_LIMIT_RPC_TIMEOUT_MS);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (rateLimitTimer?.unref) rateLimitTimer.unref();
+      }),
+    ]);
 
     adminClient
       .from("rate_limit_events")
@@ -1005,11 +1009,29 @@ Deno.serve(async (req) => {
       }),
     ]);
 
-    const [olResult, gbResult, canonResult] = await Promise.allSettled([
+    const [olResult, gbResult, canonResult, rateLimitResult] = await Promise.allSettled([
       olFetchPromise,
       fetchGoogleBooks(q),
       canonPromise,
+      rateLimitPromise,
     ]);
+
+    // Rate-limit decision first, before touching any of the OL/GB/canon
+    // results — see 2026-09-11 comment above on why this now races the
+    // fan-out instead of gating it.
+    if (rateLimitResult.status === "fulfilled") {
+      const count = rateLimitResult.value;
+      if (typeof count === "number" && count >= RATE_LIMIT) {
+        timings.total = Math.round(performance.now() - t0);
+        console.log(JSON.stringify({ fn: "search-books", cache: "rate_limited", q: queryKey, timings }));
+        return new Response(JSON.stringify({ results: [], error: "rate_limited" }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
+        });
+      }
+    }
+    // rejected rateLimitResult fails open (same as the old try/catch) — an
+    // RPC error just means a skipped rate-limit check, not a correctness bug.
 
     const canonRows: CanonRow[] = canonResult.status === "fulfilled" ? canonResult.value : [];
     if (canonResult.status === "rejected") {
