@@ -3346,6 +3346,43 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Mediterranean and the Mediterranean World in the Age of Philip II", author: "Fernand Braudel", why: "Submitted to the Sorbonne in 1947 and published in two volumes in 1949, the book that founded the Annales School's signature method: history written in layers of time, from the near-motionless \"structures\" of geography and climate, through slow-moving social and economic cycles, down to the fast, individual events (battles, treaties, the reign of Philip II) that traditional history had always treated as the whole story. The longue durée — Braudel's term for that slowest layer — reshaped how historians in every field since have framed what actually causes change. This list's deep historiography bench (Herodotus, Thucydides, Tacitus, Sima Qian, Plutarch, Gibbon, Tuchman, Shirer) had chroniclers and analysts of events but no one arguing that events themselves are the least important thing to study.", aka: ["The Mediterranean", "La Méditerranée et le monde méditerranéen à l'époque de Philippe II"] },
   { title: "Governing the Commons", author: "Elinor Ostrom", why: "Published in 1990, a systematic, field-by-field rebuttal — Swiss alpine pastures, Japanese forests, Spanish irrigation communities, Maine lobster fisheries — of the assumption, formalized as Garrett Hardin's \"tragedy of the commons,\" that shared resources can only be saved by government regulation or private ownership. Ostrom showed communities repeatedly govern themselves successfully instead, and derived design principles (clear boundaries, monitoring, graduated sanctions, low-cost conflict resolution) for when that self-governance holds. Won her the 2009 Nobel Memorial Prize in Economic Sciences, the only woman to date to receive it, and sits directly beside Coase's entry, added last round, as institutional economics' other founding question: not just why firms exist instead of markets, but how commons survive without either.", aka: ["Governing the Commons: The Evolution of Institutions for Collective Action"] },
   { title: "The Strategy of Conflict", author: "Thomas C. Schelling", why: "Published in 1960 against the backdrop of the nuclear arms race, the book that turned game theory from von Neumann and Morgenstern's mathematical foundations, already on this list, into a working theory of real-world strategy: credible commitment, the paradoxical value of limiting your own options, and why uncertain retaliation can deter more effectively than certain retaliation. Schelling's own 2005 Nobel citation, shared with Robert Aumann, was \"for having enhanced our understanding of conflict and cooperation through game-theory analysis\" — this book, named directly. The applied, strategic counterpart to Arrow's axiomatic Social Choice and Individual Values, added last round: one formalizes how a group should choose, the other how adversaries actually do." },
+
+  // Round 86 (2026-09-13, scheduled `daily-must-read-and-classic` task): a
+  // fresh fiction sweep (Halldór Laxness, Imre Kertész, José Saramago,
+  // Doris Lessing, Alice Munro, Nadine Gordimer) confirmed saturation a
+  // fourth consecutive round — every candidate checked was already present.
+  // Stayed in non-fiction and, rather than continuing to fill seams inside
+  // the law/economics/sociology/historiography clusters the last two
+  // rounds worked (Blackstone/Coase/Polanyi/Arrow, Braudel/Ostrom/
+  // Schelling), found three disciplines with literally zero representation
+  // anywhere on either list and closed each with its founding text. All
+  // three WebSearch-verified and collision-checked (normalized title+aka
+  // match against both files) before writing; none were close calls.
+  // Marshall McLuhan's Understanding Media (1964) founded media studies
+  // outright — a list that studies how ideas spread and persuade (Paine's
+  // Common Sense, Bourdieu's Distinction, both already here) had never
+  // once asked what the channel itself does to the message. Jane Jacobs's
+  // The Death and Life of Great American Cities (1961) founded modern
+  // urbanism as a critique of mid-century "urban renewal" orthodoxy — the
+  // New York Times called it "perhaps the most influential single work in
+  // the history of town planning" — closing a gap next to this list's
+  // deep economics/sociology/political-theory bench that had never
+  // actually included the discipline of city planning itself. John Snow's
+  // On the Mode of Communication of Cholera (1855) is credited as the
+  // founding act of epidemiology: tracing the 1854 Soho cholera outbreak
+  // to a single contaminated pump by map and count, against a medical
+  // establishment still blaming "bad air," at a time this list already had
+  // anatomy (Vesalius) and physiology (Harvey) but no population-level
+  // science of disease at all. McLuhan and Jacobs, unlike Blackstone/
+  // Coase/Braudel-tier specialist founders, are both broadly read and
+  // still actively cited outside their home disciplines — closer in
+  // register to Silent Spring, The Souls of Black Folk, and The Feminine
+  // Mystique, all Must Read — flagged here for Stefano's own review as
+  // possible Must Read promotions rather than self-promoted, per the
+  // standing default that S-tier calls remain his. Classic count: 461 → 464.
+  { title: "Understanding Media: The Extensions of Man", author: "Marshall McLuhan", why: "Published in 1964 around the line that outlived the book itself — \"the medium is the message\" — the work that founded media studies as a discipline by arguing the channel a message travels through reshapes a society more than the content it carries; McLuhan's insistence that print, radio, and television are active forces, not neutral pipes, anticipated the internet decades before it existed. A discipline with zero representation on a list that already studies how ideas spread and persuade (Paine's Common Sense, Bourdieu's Distinction) but had never asked what the medium itself does.", aka: ["Understanding Media"] },
+  { title: "The Death and Life of Great American Cities", author: "Jane Jacobs", why: "Published in 1961 by a writer with no formal training in city planning or economics, a direct assault on the mid-century urban-renewal orthodoxy that was bulldozing dense, mixed-use neighborhoods in the name of progress; Jacobs argued a city's safety and vitality come from sidewalks, short blocks, and constant eyes on the street, not superblocks and towers-in-a-park. The New York Times called it \"perhaps the most influential single work in the history of town planning,\" and it helped end Robert Moses's decades-long reign over New York's built environment. Urban planning as a discipline had zero representation on this list despite economics, sociology, and political theory all being deeply covered." },
+  { title: "On the Mode of Communication of Cholera", author: "John Snow", why: "A London physician's 1855 monograph (expanding a slimmer 1849 pamphlet), tracing the 1854 Soho cholera outbreak street by street to a single contaminated water pump on Broad Street, at a time when the medical establishment still blamed disease on foul air (\"miasma\") rather than contaminated water. Snow's map-and-count method — settled on evidence, not theory, down to having the pump handle removed — is credited as the founding act of epidemiology, a population-level science of disease distinct from Vesalius's anatomy and Harvey's physiology, both already on this list, and with no representation of its own until now." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
