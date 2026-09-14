@@ -14,6 +14,12 @@ import {
 
 const ReactMarkdown = lazy(() => import("react-markdown"));
 
+// The "questions" phase call is a single bounded JSON response (server-side
+// Gemini call is hard-capped at 90s — see MAX_TOTAL_MS in
+// supabase/functions/_shared/gemini.ts), unlike the "synthesize" phase's
+// intentionally open-ended SSE stream. 100s gives headroom over that ceiling.
+const QUESTIONS_FETCH_TIMEOUT_MS = 100_000;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Phase =
@@ -131,6 +137,17 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
 
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/takeaways`;
+      // The edge function's own Gemini call is hard-capped at 90s
+      // (MAX_TOTAL_MS in supabase/functions/_shared/gemini.ts), so this is
+      // never legitimately open-ended like the analyze/synthesize streams
+      // are — it's a single bounded JSON response. Without a client-side
+      // ceiling, a network-level stall (dropped response, hung connection
+      // between browser and edge — the one class of failure the server's
+      // own AbortSignal can't see) leaves the user staring at "Preparing
+      // your questions…" with no recourse but a hard page reload.
+      // QUESTIONS_FETCH_TIMEOUT_MS gives a bit of headroom over the
+      // server's own ceiling so we don't race a legitimately-slow-but-
+      // still-in-flight server response.
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -148,6 +165,7 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
           cacheKey,
           ...(geminiKey ? { gemini_key: geminiKey } : {}),
         }),
+        signal: AbortSignal.timeout(QUESTIONS_FETCH_TIMEOUT_MS),
       });
 
       if (!res.ok) {
@@ -173,7 +191,8 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
       setCurrentAnswer("");
       setPhase("answering");
     } catch (e: any) {
-      toast.error(e.message ?? "Failed to start session");
+      const timedOut = e?.name === "TimeoutError" || e?.name === "AbortError";
+      toast.error(timedOut ? "This is taking longer than expected. Please try again." : (e.message ?? "Failed to start session"));
       setPhase("idle");
     }
   }, [analysis, cacheKey, thesis]);
