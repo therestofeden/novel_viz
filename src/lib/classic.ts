@@ -3383,6 +3383,41 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Understanding Media: The Extensions of Man", author: "Marshall McLuhan", why: "Published in 1964 around the line that outlived the book itself — \"the medium is the message\" — the work that founded media studies as a discipline by arguing the channel a message travels through reshapes a society more than the content it carries; McLuhan's insistence that print, radio, and television are active forces, not neutral pipes, anticipated the internet decades before it existed. A discipline with zero representation on a list that already studies how ideas spread and persuade (Paine's Common Sense, Bourdieu's Distinction) but had never asked what the medium itself does.", aka: ["Understanding Media"] },
   { title: "The Death and Life of Great American Cities", author: "Jane Jacobs", why: "Published in 1961 by a writer with no formal training in city planning or economics, a direct assault on the mid-century urban-renewal orthodoxy that was bulldozing dense, mixed-use neighborhoods in the name of progress; Jacobs argued a city's safety and vitality come from sidewalks, short blocks, and constant eyes on the street, not superblocks and towers-in-a-park. The New York Times called it \"perhaps the most influential single work in the history of town planning,\" and it helped end Robert Moses's decades-long reign over New York's built environment. Urban planning as a discipline had zero representation on this list despite economics, sociology, and political theory all being deeply covered." },
   { title: "On the Mode of Communication of Cholera", author: "John Snow", why: "A London physician's 1855 monograph (expanding a slimmer 1849 pamphlet), tracing the 1854 Soho cholera outbreak street by street to a single contaminated water pump on Broad Street, at a time when the medical establishment still blamed disease on foul air (\"miasma\") rather than contaminated water. Snow's map-and-count method — settled on evidence, not theory, down to having the pump handle removed — is credited as the founding act of epidemiology, a population-level science of disease distinct from Vesalius's anatomy and Harvey's physiology, both already on this list, and with no representation of its own until now." },
+
+  // Round 87 (2026-09-14, scheduled `daily_novel_viz_feat` task): last round
+  // closed three total-discipline gaps (media studies, urban planning,
+  // epidemiology); this round found three more in the same vein — visual
+  // art and the built environment had no representation at all despite
+  // this list's deep coverage of literary/cultural criticism (Sontag,
+  // Benjamin, Said, Bourdieu). All three WebSearch-verified and
+  // collision-checked (grep across both classic.ts and must-read.ts, title
+  // + author) before writing; none were close calls. E.H. Gombrich's The
+  // Story of Art (1950) is art history's own founding survey text — over
+  // eight million copies sold, still in print in a 16th edition, the book
+  // most art historians name as their own point of entry into the
+  // discipline — and this list had literary criticism and aesthetics
+  // (Sontag, Benjamin) but never a history of art itself. Christopher
+  // Alexander's A Pattern Language (1977) founded a whole methodology —
+  // cataloging the built environment, town to bedroom, as 253 reusable
+  // "patterns" — whose influence jumped straight out of architecture into
+  // software (Ward Cunningham has said it directly inspired the first
+  // wiki, and it's the acknowledged root of the "design patterns"
+  // vocabulary every working programmer now uses); architecture as a
+  // discipline had zero representation next to this list's deep urbanism/
+  // economics/sociology bench (Jacobs, added last round, critiques city
+  // planning from the street level, but nothing here addressed design
+  // methodology itself). John Berger's Ways of Seeing (1972, adapted from
+  // his own BBC series) is the rare case of a second entry in a
+  // Benjamin-adjacent cluster earning its place independently: it opens by
+  // restating Benjamin's own argument on-camera, then takes it somewhere
+  // Benjamin never did — advertising, oil painting as property, and the
+  // essay that gave "the male gaze" its name — and is now the more widely
+  // assigned and read of the two in visual-culture courses; kept distinct
+  // from Benjamin by design, same precedent as this list's existing
+  // Ramayana/Mahabharata and Bhagavad Gita split. Classic count: 464 → 467.
+  { title: "The Story of Art", author: "E.H. Gombrich", why: "First published in 1950 by Phaidon and now in its 16th edition with over eight million copies sold in more than thirty languages, the survey that made art history legible to a general reader for the first time — chronological, illustrated, and deliberately free of academic jargon, originally written with a teenage reader in mind. Still the book most working art historians name as the one that first opened the discipline to them. This list runs deep on criticism and aesthetics (Sontag, Benjamin, Bourdieu) but had never once covered the history of art itself." },
+  { title: "A Pattern Language: Towns, Buildings, Construction", author: "Christopher Alexander", why: "Published in 1977 with Sara Ishikawa and Murray Silverstein, an attempt to catalog the entire built environment, from the layout of a town down to the placement of a bedroom window, as 253 discrete, reusable design \"patterns.\" Architects were ambivalent about seeing their craft reduced to a formula, but the book's influence jumped straight out of architecture: Ward Cunningham has said it directly inspired the first wiki (the technology behind Wikipedia), and it's the acknowledged root of the \"design patterns\" vocabulary in software engineering. Architecture as a discipline had zero representation on a list with deep urbanism, economics, and sociology coverage.", aka: ["A Pattern Language"] },
+  { title: "Ways of Seeing", author: "John Berger", why: "Adapted from Berger's own 1972 BBC series, a set of concise essays arguing that how we look at images — paintings, advertisements, the nude female body — is never neutral but shaped by history, ownership, and power; the essay that gave \"the male gaze\" its name. It opens by restating Walter Benjamin's argument on mechanical reproduction, already on this list, then extends it somewhere Benjamin never went — property, advertising, and gender — and fifty years on remains the more widely assigned entry point into visual-culture studies of the two." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
