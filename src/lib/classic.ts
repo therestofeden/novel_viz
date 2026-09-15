@@ -3418,6 +3418,43 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Story of Art", author: "E.H. Gombrich", why: "First published in 1950 by Phaidon and now in its 16th edition with over eight million copies sold in more than thirty languages, the survey that made art history legible to a general reader for the first time — chronological, illustrated, and deliberately free of academic jargon, originally written with a teenage reader in mind. Still the book most working art historians name as the one that first opened the discipline to them. This list runs deep on criticism and aesthetics (Sontag, Benjamin, Bourdieu) but had never once covered the history of art itself." },
   { title: "A Pattern Language: Towns, Buildings, Construction", author: "Christopher Alexander", why: "Published in 1977 with Sara Ishikawa and Murray Silverstein, an attempt to catalog the entire built environment, from the layout of a town down to the placement of a bedroom window, as 253 discrete, reusable design \"patterns.\" Architects were ambivalent about seeing their craft reduced to a formula, but the book's influence jumped straight out of architecture: Ward Cunningham has said it directly inspired the first wiki (the technology behind Wikipedia), and it's the acknowledged root of the \"design patterns\" vocabulary in software engineering. Architecture as a discipline had zero representation on a list with deep urbanism, economics, and sociology coverage.", aka: ["A Pattern Language"] },
   { title: "Ways of Seeing", author: "John Berger", why: "Adapted from Berger's own 1972 BBC series, a set of concise essays arguing that how we look at images — paintings, advertisements, the nude female body — is never neutral but shaped by history, ownership, and power; the essay that gave \"the male gaze\" its name. It opens by restating Walter Benjamin's argument on mechanical reproduction, already on this list, then extends it somewhere Benjamin never went — property, advertising, and gender — and fifty years on remains the more widely assigned entry point into visual-culture studies of the two." },
+
+  // Round 88 (2026-09-15, scheduled `daily_novel_viz_feat` task): the last
+  // three rounds closed five total-discipline gaps in a row (media studies,
+  // urban planning, epidemiology, art history, architecture) by working
+  // outward from this list's existing criticism/aesthetics cluster (Sontag,
+  // Benjamin, Bourdieu, Berger, Gombrich). This round closes three more,
+  // none adjacent to that cluster. All three WebSearch-verified and
+  // collision-checked (grep across both classic.ts and must-read.ts, title
+  // + author) before writing; none were close calls or flagged for Must
+  // Read — same specialist-founder register as the Blackstone/Coase/
+  // Braudel/McLuhan run, not the broader-audience Silent Spring/Feminine
+  // Mystique tier. André Bazin's What Is Cinema? (essays written 1943–58,
+  // collected in French 1958–62, translated to English 1967/71) founded
+  // film theory and directly trained the French New Wave — its critics
+  // (Truffaut, Godard, Rohmer, Rivette) all wrote for Bazin's own Cahiers
+  // du Cinéma before ever picking up a camera. Cinema, arguably the
+  // twentieth century's dominant art form, had zero representation despite
+  // this list's deep literary and visual-art criticism bench, and despite
+  // three entries already here (Schindler's Ark, Life of Pi, The English
+  // Patient) being partly defined by their own Oscar-winning adaptations.
+  // Frederick Winslow Taylor's The Principles of Scientific Management
+  // (1911) founded management as a discipline of systematic study —
+  // "Taylorism" reorganized factory floors within a decade and fathered
+  // Fordist assembly-line production — closing a gap next to this list's
+  // deep economics bench (Smith through Friedman, Coase, Ostrom, added two
+  // rounds ago), which had the firm's external market behavior covered but
+  // never its internal organization of work. Halford Mackinder's
+  // Democratic Ideals and Reality (1919), expanding his 1904 Royal
+  // Geographical Society paper, founded geopolitics as a discipline
+  // distinct from Braudel's historical geography and Humboldt's
+  // exploration narrative, both already here — the Heartland Theory it
+  // introduced is still the reference point Kissinger, Brzezinski, and
+  // Mearsheimer all argue with or from a century later. Classic count:
+  // 467 → 470.
+  { title: "What Is Cinema?", author: "André Bazin", why: "A posthumous four-volume French collection (Qu'est-ce que le cinéma?, 1958–1962) of essays Bazin wrote between 1943 and his death in 1958 as co-founder of the magazine Cahiers du Cinéma, condensed into two English volumes translated by Hugh Gray in 1967 and 1971. Argued for cinema's realism — deep focus and the long take preserving the ambiguity of real space and time, against Soviet montage's manipulation of it — and trained the critics-turned-directors of the French New Wave directly, since Truffaut, Godard, Rohmer, and Rivette all wrote for him at Cahiers before ever picking up a camera. This list runs deep on literary and visual-art criticism (Sontag, Benjamin, Berger, Gombrich) and now media theory (McLuhan), but had never once addressed cinema itself.", aka: ["Qu'est-ce que le cinéma?"] },
+  { title: "The Principles of Scientific Management", author: "Frederick Winslow Taylor", why: "Published in 1911 by a mechanical engineer turned efficiency consultant, the book that founded management as a subject of systematic study rather than inherited shop-floor custom: break a job into its component motions, time each one, replace rule-of-thumb with measurement, then redesign the task before asking the worker to do it faster. \"Taylorism\" reorganized factory floors worldwide within a decade and became the direct ancestor of Fordist assembly-line production and every subsequent management-science and industrial-engineering discipline — as well as the target of decades of labor criticism for reducing workers to interchangeable parts, a tension the book itself never resolves. This list's deep economics bench (Smith through Friedman, Coase, Ostrom) had the firm's external market behavior covered but never its internal organization of work." },
+  { title: "Democratic Ideals and Reality", author: "Halford J. Mackinder", why: "Published in 1919 as Mackinder's expansion of his 1904 Royal Geographical Society paper \"The Geographical Pivot of History,\" written to press the Paris Peace Conference delegates to weigh geography as seriously as Woodrow Wilson's idealism; introduced the Heartland Theory and its own three-line dictum — whoever rules East Europe commands the Heartland, whoever rules the Heartland commands the World-Island, whoever rules the World-Island commands the world. The founding text of geopolitics as a discipline distinct from historical geography (Braudel, already here) or exploration narrative (Humboldt, already here): a systematic argument that physical geography sets the board international power is played on, still the reference point Kissinger, Brzezinski, and Mearsheimer all argue with or from a century later.", aka: ["Democratic Ideals and Reality: A Study in the Politics of Reconstruction"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
