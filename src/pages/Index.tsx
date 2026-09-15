@@ -63,6 +63,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn, normalizeForSearch } from "@/lib/utils";
 
+// Bounded timeouts for this page's background/autocomplete fetches — none of
+// these had a client-side ceiling before 2026-09-15 (unlike covers.ts and
+// TakeawaysTab.tsx, which both learned this lesson earlier). A network-level
+// stall (not a clean error/rejection — the class AbortSignal.timeout catches
+// that a plain `await fetch()` cannot) previously meant these just hung:
+//  - PREFETCH_TIMEOUT_MS: prefetchAnalysis() below hits analyze-novel with
+//    prefetch:true. On a cache hit this resolves in well under a second, but
+//    a cache MISS falls through to a real Gemini generation, so this needs
+//    the same headroom as TakeawaysTab's QUESTIONS_FETCH_TIMEOUT_MS — server
+//    hard-caps at MAX_TOTAL_MS=90_000 (supabase/functions/_shared/gemini.ts),
+//    so 100_000 gives the same margin. Without this, a stalled prefetch left
+//    its title permanently marked "prefetched" in prefetchedRef (the .catch
+//    that clears it on failure never fires on a hang, only on a real
+//    rejection) — silently disabling prefetch for that title for the rest of
+//    the session, plus tying up a keepalive connection indefinitely.
+//  - LOCAL_INDEX_TIMEOUT_MS / SEARCH_SUGGEST_TIMEOUT_MS: popular-books and
+//    search-books are both plain DB-backed reads with no Gemini dependency —
+//    search-books' own worst-case server budget is OL_TOTAL_BUDGET_MS=3500ms
+//    (plus smaller parallel GB/canon stages), so 8s gives ~2x headroom over
+//    that plus a cold-start margin, same ratio as this file's other timeouts.
+//    The search-books case is the more user-visible of the two: unlike the
+//    popular-books mount fetch (silent background load, no UI tied to it), a
+//    hang there left setSuggestLoading(true) permanently stuck — the
+//    autocomplete dropdown's own `finally` that clears it never runs because
+//    a hung fetch never resolves OR rejects, so the spinner just never stops.
+const PREFETCH_TIMEOUT_MS = 100_000;
+const LOCAL_INDEX_TIMEOUT_MS = 8_000;
+const SEARCH_SUGGEST_TIMEOUT_MS = 8_000;
+
 // Curated pool of literary titles. We sample 6 per page-load for variety.
 // Mix of canon, contemporary, world lit, and structurally interesting works.
 const SUGGESTION_POOL = [
@@ -382,6 +411,7 @@ const Index = () => {
       },
       body: JSON.stringify({ title: bookTitle, prefetch: true, ...(geminiKey ? { gemini_key: geminiKey } : {}) }),
       keepalive: true,
+      signal: AbortSignal.timeout(PREFETCH_TIMEOUT_MS),
     }).catch(() => {
       // Silent — prefetch is best-effort.
       prefetchedRef.current.delete(key);
@@ -429,6 +459,7 @@ const Index = () => {
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
+      signal: AbortSignal.timeout(LOCAL_INDEX_TIMEOUT_MS),
     })
       .then((r) => r.json())
       .then((j) => {
@@ -564,6 +595,14 @@ const Index = () => {
       const ctrl = new AbortController();
       abortRef.current = ctrl;
       const seq = ++searchSeqRef.current;
+      // Upper bound on top of the supersede-on-new-keystroke abort above:
+      // that only fires when a *newer* query comes in, so a genuine network
+      // stall on the last keystroke the user types was previously unbounded
+      // — see SEARCH_SUGGEST_TIMEOUT_MS comment near the top of this file.
+      // Plain setTimeout+abort (not AbortSignal.any) to match this file's
+      // existing minimum-browser-support bar and search-books' own
+      // server-side timeout style.
+      const timeoutId = setTimeout(() => ctrl.abort(), SEARCH_SUGGEST_TIMEOUT_MS);
       try {
         const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-books?q=${encodeURIComponent(q)}&limit=8`;
         const token = tokenRef.current ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -600,6 +639,7 @@ const Index = () => {
           console.error("autocomplete error:", err);
         }
       } finally {
+        clearTimeout(timeoutId);
         if (seq === searchSeqRef.current) setSuggestLoading(false);
       }
     }, 150);
