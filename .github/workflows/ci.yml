@@ -31,3 +31,26 @@ jobs:
           VITE_SUPABASE_PROJECT_ID: ci-placeholder
           VITE_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
           VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+
+  edge-functions-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Only supabase/functions/_shared/ has test coverage so far (2026-09-16)
+      # — cors.ts, secret-auth.ts, rate-limit.ts, gemini.ts's pure
+      # classification/pricing helpers. These are consolidated modules used
+      # by all 10 edge functions, previously verified only by hand (prod
+      # logs / manual curl) after every change. --no-check skips
+      # type-checking: gemini.ts's jsr:@supabase/supabase-js@2 import
+      # resolves to a newer minor version here than whatever Supabase's own
+      # deploy pipeline uses, which trips an unrelated pre-existing type
+      # mismatch (PromiseLike vs Promise on the RPC builder) that doesn't
+      # reflect a real runtime bug — Supabase's deploy step doesn't
+      # type-check either, so this matches how the code actually ships.
+      - name: Test shared edge function modules
+        run: deno test --no-check --allow-net --allow-env supabase/functions/_shared
