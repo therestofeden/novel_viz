@@ -91,6 +91,25 @@ import { cn, normalizeForSearch } from "@/lib/utils";
 const PREFETCH_TIMEOUT_MS = 100_000;
 const LOCAL_INDEX_TIMEOUT_MS = 8_000;
 const SEARCH_SUGGEST_TIMEOUT_MS = 8_000;
+// ANALYSIS_IDLE_TIMEOUT_MS: the main fetchAnalysis() SSE call below — the
+// actual search-bar-to-visualization request every one of these other
+// timeouts exists to protect the *surrounding* UI for — had no ceiling at
+// all until 2026-09-16, despite being the highest-stakes fetch in the file.
+// It's an SSE stream, so a blanket AbortSignal.timeout() on the whole
+// request would be wrong (a legitimate generation can legitimately run
+// close to the server's own MAX_TOTAL_MS=90_000 cap while still emitting
+// "status"/"preamble" progress events the whole way). Instead this is an
+// *idle* timeout, re-armed on the initial fetch() call and again on every
+// `reader.read()` — so a request that's actively streaming progress is
+// never killed, but a connection that goes silent (dead TCP connection,
+// Supabase edge function cold-start that never completes, a proxy that
+// swallowed the stream) for ANALYSIS_IDLE_TIMEOUT_MS is aborted rather than
+// hanging forever. 100_000 matches PREFETCH_TIMEOUT_MS's margin above the
+// server's 90s hard cap for the same reason. Without this, a stalled
+// connection left `loading`/`refining` stuck true permanently — no spinner
+// timeout, no error, no retry — since neither the fetch() promise nor the
+// reader.read() promise would ever settle on their own.
+const ANALYSIS_IDLE_TIMEOUT_MS = 100_000;
 
 // Curated pool of literary titles. We sample 6 per page-load for variety.
 // Mix of canon, contemporary, world lit, and structurally interesting works.
@@ -887,24 +906,49 @@ const Index = () => {
     //     transient as a pre-stream 503. TransientStreamError marks that case
     //     so the outer loop retries it too instead of giving up immediately.
     class TransientStreamError extends Error {}
+    // Thrown when ANALYSIS_IDLE_TIMEOUT_MS fires — see its definition above.
+    // Deliberately its own class rather than reusing TransientStreamError:
+    // it's detected by AbortError identity below (both the initial fetch()
+    // and reader.read() reject with one when ctrl.abort() fires), not by a
+    // response status, so it needs its own catch branch.
+    class IdleTimeoutError extends Error {}
 
     async function attemptOnce(): Promise<NovelAnalysis> {
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          title: bookTitle,
-          refinement: isRefine ? refinement : undefined,
-          previousAnalysis: isRefine ? analysis : undefined,
-          reanalyze: isReanalyze || undefined,
-          ...(geminiKey ? { gemini_key: geminiKey } : {}),
-        }),
-      });
+      const ctrl = new AbortController();
+      let idleTimer: ReturnType<typeof setTimeout> | undefined;
+      const armIdleTimer = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => ctrl.abort(), ANALYSIS_IDLE_TIMEOUT_MS);
+      };
+
+      let resp: Response;
+      armIdleTimer();
+      try {
+        resp = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            title: bookTitle,
+            refinement: isRefine ? refinement : undefined,
+            previousAnalysis: isRefine ? analysis : undefined,
+            reanalyze: isReanalyze || undefined,
+            ...(geminiKey ? { gemini_key: geminiKey } : {}),
+          }),
+          signal: ctrl.signal,
+        });
+      } catch (e) {
+        clearTimeout(idleTimer);
+        if (e instanceof DOMException && e.name === "AbortError") {
+          throw new IdleTimeoutError("The connection stalled before the server responded.");
+        }
+        throw e;
+      }
 
       if (!resp.ok || !resp.body) {
+        clearTimeout(idleTimer);
         let msg = "Something went wrong";
         try {
           const j = await resp.json();
@@ -919,6 +963,9 @@ const Index = () => {
         }
         throw new Error(msg);
       }
+
+      // Headers arrived — reset the idle window for the streaming phase below.
+      armIdleTimer();
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -953,28 +1000,38 @@ const Index = () => {
       };
 
       // Parse SSE: events delimited by blank line, fields are "event: x" / "data: y"
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let sepIdx: number;
-        while ((sepIdx = buf.indexOf("\n\n")) !== -1) {
-          const block = buf.slice(0, sepIdx);
-          buf = buf.slice(sepIdx + 2);
-          let event = "message";
-          let dataStr = "";
-          for (const rawLine of block.split("\n")) {
-            const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
-            if (line.startsWith("event: ")) event = line.slice(7).trim();
-            else if (line.startsWith("data: ")) dataStr += line.slice(6);
-          }
-          if (!dataStr) continue;
-          try {
-            handleEvent(event, JSON.parse(dataStr));
-          } catch (e) {
-            console.error("SSE parse error:", e, dataStr);
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          armIdleTimer(); // got a chunk — connection is alive, reset the idle window
+          buf += decoder.decode(value, { stream: true });
+          let sepIdx: number;
+          while ((sepIdx = buf.indexOf("\n\n")) !== -1) {
+            const block = buf.slice(0, sepIdx);
+            buf = buf.slice(sepIdx + 2);
+            let event = "message";
+            let dataStr = "";
+            for (const rawLine of block.split("\n")) {
+              const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+              if (line.startsWith("event: ")) event = line.slice(7).trim();
+              else if (line.startsWith("data: ")) dataStr += line.slice(6);
+            }
+            if (!dataStr) continue;
+            try {
+              handleEvent(event, JSON.parse(dataStr));
+            } catch (e) {
+              console.error("SSE parse error:", e, dataStr);
+            }
           }
         }
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          throw new IdleTimeoutError("The connection stalled while the server was responding.");
+        }
+        throw e;
+      } finally {
+        clearTimeout(idleTimer);
       }
 
       if (errorMsg) {
@@ -1002,8 +1059,16 @@ const Index = () => {
           break;
         } catch (err) {
           lastErr = err;
+          // IdleTimeoutError (ANALYSIS_IDLE_TIMEOUT_MS fired — see its definition
+          // near the top of this file) is retried same as a transient 5xx: a fresh
+          // request is a fresh shot at a healthy connection. Note TypeError here
+          // only ever catches offline/DNS-style fetch()-level failures, NOT an
+          // abort — AbortError is a DOMException, not a TypeError, which is why
+          // IdleTimeoutError has to be listed explicitly rather than folding into
+          // this branch.
           const isTransient = err instanceof TransientStreamError ||
-            (err instanceof TypeError); // fetch()-level network failure (offline, DNS, aborted)
+            err instanceof IdleTimeoutError ||
+            (err instanceof TypeError); // fetch()-level network failure (offline, DNS)
           if (!isTransient || attempt >= MAX_ATTEMPTS) throw err;
         }
         const backoff = 400 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 200);

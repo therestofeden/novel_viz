@@ -3455,6 +3455,44 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "What Is Cinema?", author: "André Bazin", why: "A posthumous four-volume French collection (Qu'est-ce que le cinéma?, 1958–1962) of essays Bazin wrote between 1943 and his death in 1958 as co-founder of the magazine Cahiers du Cinéma, condensed into two English volumes translated by Hugh Gray in 1967 and 1971. Argued for cinema's realism — deep focus and the long take preserving the ambiguity of real space and time, against Soviet montage's manipulation of it — and trained the critics-turned-directors of the French New Wave directly, since Truffaut, Godard, Rohmer, and Rivette all wrote for him at Cahiers before ever picking up a camera. This list runs deep on literary and visual-art criticism (Sontag, Benjamin, Berger, Gombrich) and now media theory (McLuhan), but had never once addressed cinema itself.", aka: ["Qu'est-ce que le cinéma?"] },
   { title: "The Principles of Scientific Management", author: "Frederick Winslow Taylor", why: "Published in 1911 by a mechanical engineer turned efficiency consultant, the book that founded management as a subject of systematic study rather than inherited shop-floor custom: break a job into its component motions, time each one, replace rule-of-thumb with measurement, then redesign the task before asking the worker to do it faster. \"Taylorism\" reorganized factory floors worldwide within a decade and became the direct ancestor of Fordist assembly-line production and every subsequent management-science and industrial-engineering discipline — as well as the target of decades of labor criticism for reducing workers to interchangeable parts, a tension the book itself never resolves. This list's deep economics bench (Smith through Friedman, Coase, Ostrom) had the firm's external market behavior covered but never its internal organization of work." },
   { title: "Democratic Ideals and Reality", author: "Halford J. Mackinder", why: "Published in 1919 as Mackinder's expansion of his 1904 Royal Geographical Society paper \"The Geographical Pivot of History,\" written to press the Paris Peace Conference delegates to weigh geography as seriously as Woodrow Wilson's idealism; introduced the Heartland Theory and its own three-line dictum — whoever rules East Europe commands the Heartland, whoever rules the Heartland commands the World-Island, whoever rules the World-Island commands the world. The founding text of geopolitics as a discipline distinct from historical geography (Braudel, already here) or exploration narrative (Humboldt, already here): a systematic argument that physical geography sets the board international power is played on, still the reference point Kissinger, Brzezinski, and Mearsheimer all argue with or from a century later.", aka: ["Democratic Ideals and Reality: A Study in the Politics of Reconstruction"] },
+
+  // Round 89 (2026-09-16, scheduled `daily_novel_viz_feat` task): this
+  // list's art-history bench had grown deep by round 88 — Vasari
+  // (biographical/anecdotal, round 48), Gombrich (survey/general-reader,
+  // round 87), Berger (ideology critique, round 87), Bazin (cinema, round
+  // 88) — but every one of those approaches the object from outside its
+  // form or through a single author's synthesis. It never had iconology:
+  // the method of reading a painting's symbolic content layer by layer,
+  // which is what most art-history undergraduates are actually taught
+  // first. Erwin Panofsky's Studies in Iconology (1939) is that method's
+  // founding text — the tripartite scheme (pre-iconographic description,
+  // iconographic analysis, iconological interpretation) that every later
+  // art-historical reading of symbolism, from Panofsky's own Warburg
+  // Institute circle onward, still starts from. Separately, this list's
+  // economics bench (Smith through Friedman, Coase, Ostrom, Taylor added
+  // last round) is entirely secular and either classical/neoclassical or
+  // institutionalist — it had no representative of economics argued from
+  // moral or aesthetic conviction against industrial capitalism itself.
+  // John Ruskin's Unto This Last closes that gap from a completely
+  // different angle than Marx (already here): four essays serialized in
+  // Cornhill Magazine in 1860, cut short after four issues by the
+  // backlash, then collected as a book by Smith, Elder & Co. in 1862,
+  // arguing wealth divorced from justice and human welfare isn't wealth
+  // at all. Its afterlife outran its reception: Gandhi read it on a train
+  // from Johannesburg to Durban in 1904, called it the book that most
+  // transformed his life, paraphrased it into Gujarati as Sarvodaya
+  // ("the welfare of all"), and built an ashram on its principles the
+  // same year — a direct chain from a single Victorian essay collection
+  // to twentieth-century nonviolent political economy. Both WebSearch-
+  // verified (Panofsky's publication year and tripartite method; Ruskin's
+  // serialization/book dates and the Gandhi chain, independently
+  // corroborated across sources) and collision-checked (grep across both
+  // classic.ts and must-read.ts, title + author) before writing; neither
+  // was a close call or flagged for Must Read — specialist-founder
+  // register, same as Bazin/Taylor/Mackinder last round rather than the
+  // broader-audience tier. Classic count: 470 → 472.
+  { title: "Studies in Iconology", author: "Erwin Panofsky", why: "Published in 1939 by Oxford University Press after Panofsky fled Nazi Germany for Princeton, the book that founded iconology as art-historical method: a three-step reading of a work first as pure form (pre-iconographic description), then as recognizable subject matter drawing on literary sources (iconographic analysis), and finally as a symptom of the underlying beliefs, philosophy, or worldview that produced it (iconological interpretation). Grew out of Panofsky's training under Aby Warburg in Hamburg, and became the method every subsequent symbolic reading of a painting — what does this fruit, this gesture, this particular shade of blue actually mean — still works from, whether it cites Panofsky by name or not. This list's art-history bench already runs biography (Vasari), general survey (Gombrich), ideology critique (Berger), and cinema (Bazin), but had never once addressed the actual method of reading a picture's symbolic content.", aka: ["Studies in Iconology: Humanistic Themes in the Art of the Renaissance"] },
+  { title: "Unto This Last", author: "John Ruskin", why: "Four essays serialized in Cornhill Magazine starting August 1860, cut short after the fourth issue by a backlash fierce enough that Ruskin's own father begged him to stop, then collected as a book by Smith, Elder & Co. in 1862 — a direct attack on classical political economy's premise that a market of purely self-interested actors produces the general good, arguing instead that \"there is no wealth but life\" and that value divorced from justice and human welfare isn't value at all. Widely considered a commercial and critical failure in its own time; its real influence arrived decades later when Gandhi read it on an overnight train from Johannesburg to Durban in 1904, called it the single book that most transformed his life, and paraphrased it into Gujarati as Sarvodaya (\"the welfare of all\") the same year — the direct intellectual root of Gandhian economics. This list's deep economics bench (Smith through Friedman, Coase, Ostrom, Taylor) runs classical, neoclassical, and institutionalist; Ruskin is its only entry arguing from moral and aesthetic conviction against industrial capitalism itself, a different axis entirely from Marx's revolutionary critique, already here.", aka: ["Unto This Last: Four Essays on the First Principles of Political Economy"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
