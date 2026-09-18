@@ -23,6 +23,10 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
+import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+
+// Body is just {cacheKey, gemini_key} — generous but tight.
+const MAX_BODY_BYTES = 8_000;
 
 // ---------- Tunables ----------
 const PRIOR_WEIGHT = 5; // original Gemini score counts as this many "votes"
@@ -104,8 +108,13 @@ Deno.serve(async (req) => {
   try {
     let body: any;
     try {
-      body = await req.json();
-    } catch {
+      body = await readJsonBodyBounded(req, MAX_BODY_BYTES);
+    } catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ error: "Invalid JSON" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

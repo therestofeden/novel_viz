@@ -39,6 +39,11 @@
 const MAX_FIELD_LEN = 300;
 
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+
+// title/author cap at 300 chars each (MAX_FIELD_LEN below) plus an optional
+// 2-char country override — small.
+const MAX_BODY_BYTES = 4_000;
 
 type Vendor = {
   key: string;            // stable id (used for affiliate tag lookup later)
@@ -352,7 +357,17 @@ Deno.serve(async (req) => {
       author = url.searchParams.get("author") || "";
       countryOverride = url.searchParams.get("country");
     } else {
-      const body = await req.json().catch(() => ({}));
+      let body: any;
+      try {
+        body = await readJsonBodyBounded(req, MAX_BODY_BYTES);
+      } catch (e) {
+        if (e instanceof PayloadTooLargeError) {
+          return new Response(JSON.stringify({ error: e.message }), {
+            status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        body = {};
+      }
       title = String(body?.title || "");
       author = String(body?.author || "");
       countryOverride = body?.country ? String(body.country) : null;

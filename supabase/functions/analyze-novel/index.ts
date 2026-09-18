@@ -2,6 +2,12 @@ import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL, GEMINI_BASE, MODEL_FALLBACKS, recordGeminiSpend, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
+import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+
+// previousAnalysis alone is capped at 200KB (MAX_PREV_ANALYSIS_LEN below);
+// this is the ceiling on the whole request body before that field-level
+// check ever runs — see _shared/body-limit.ts for why that ordering matters.
+const MAX_BODY_BYTES = 300_000;
 
 // The raw preamble fetch and callPreview both bypass the shared
 // geminiFetchWithFallback — they're best-effort, short-timeout, no-retry
@@ -1113,8 +1119,13 @@ Deno.serve(async (req) => {
   try {
   let body: any;
   try {
-    body = await req.json();
-  } catch {
+    body = await readJsonBodyBounded(req, MAX_BODY_BYTES);
+  } catch (e) {
+    if (e instanceof PayloadTooLargeError) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

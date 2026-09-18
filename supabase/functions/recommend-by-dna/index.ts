@@ -7,6 +7,10 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
+import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+
+// title/author/bookType (<=300/200/100 chars) + up to 30 axes — small.
+const MAX_BODY_BYTES = 20_000;
 
 // ---------- Rate limiting ----------
 const ROUTE = "recommend-by-dna";
@@ -122,8 +126,14 @@ Deno.serve(async (req) => {
 
   let body: any;
   try {
-    body = await req.json();
-  } catch {
+    body = await readJsonBodyBounded(req, MAX_BODY_BYTES);
+  } catch (e) {
+    if (e instanceof PayloadTooLargeError) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     return new Response(JSON.stringify({ error: "Invalid JSON" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

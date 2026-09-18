@@ -16,6 +16,13 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { secretsMatch } from "../_shared/secret-auth.ts";
+import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+
+// batch/delay_ms/dry_run/offset are all small scalars — generous but tight.
+// (Gated behind x-seed-secret already, so this is defense-in-depth/
+// consistency with the other 6 body-parsing functions rather than a live
+// unauthenticated attack surface.)
+const MAX_BODY_BYTES = 4_000;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,7 +70,17 @@ Deno.serve(async (req) => {
     });
   }
 
-  const body = await req.json().catch(() => ({}));
+  let body: any;
+  try {
+    body = await readJsonBodyBounded(req, MAX_BODY_BYTES);
+  } catch (e) {
+    if (e instanceof PayloadTooLargeError) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    body = {};
+  }
   const batchSize = Math.min(Number(body?.batch ?? 10), 50);
   const delayMs = Math.max(Number(body?.delay_ms ?? 3000), 1000);
   const dryRun = !!body?.dry_run;

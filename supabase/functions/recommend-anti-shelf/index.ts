@@ -8,6 +8,11 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeGeminiFailure } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
+import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+
+// liked/disliked (100*300) + blocked_authors (100*200) + blocked_tags
+// (100*100) legitimately tops out ~90KB; rounded up for JSON overhead.
+const MAX_BODY_BYTES = 150_000;
 
 const ROUTE = "recommend-anti-shelf";
 
@@ -122,7 +127,17 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // Parse body first so we can read the user-supplied Gemini key (BYOK).
-    const body = await req.json().catch(() => ({}));
+    let body: any;
+    try {
+      body = await readJsonBodyBounded(req, MAX_BODY_BYTES);
+    } catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      body = {};
+    }
 
     // Keep-warm ping: return immediately before touching DB or Gemini.
     if (body?.is_warmup) return new Response("ok", { status: 200, headers: corsHeaders });
