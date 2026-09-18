@@ -26,6 +26,20 @@ interface BookDNAProps {
   cacheKey?: string | null;
 }
 
+// 2026-09-18 (daily backend audit): recommend-by-dna calls Gemini
+// (geminiFetchWithFallback), bound server-side by gemini.ts's
+// MAX_TOTAL_MS=90_000 hard ceiling — same class of call as analyze-novel's
+// ANALYSIS_IDLE_TIMEOUT_MS and TakeawaysTab's SYNTHESIZE_IDLE_TIMEOUT_MS,
+// both 100_000 to give 10s of headroom over that same 90s server cap. This
+// call site (and AntiShelf's/BuyButton's) was the one remaining
+// `supabase.functions.invoke()` gap: every raw `fetch()` in the app has
+// carried a `signal` since 09-14/09-15/09-16, but `.invoke()` calls didn't.
+// A wedged connection here left `recLoading` stuck `true` forever with no
+// error and no retry — this fetch drives the live-updating recommendation
+// as a reader drags DNA-axis sliders, debounced 1s apart, so a stuck
+// `recLoading` silently freezes that whole interaction.
+const RECOMMEND_TIMEOUT_MS = 100_000;
+
 /* -------------------------------------------------------------
  * Kinetic spine — a thin decorative double-helix that animates
  * in the left gutter. Pure ornament; the data lives in the rows.
@@ -272,6 +286,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           cacheKey,
           ...(geminiKey ? { gemini_key: geminiKey } : {}),
         },
+        signal: AbortSignal.timeout(RECOMMEND_TIMEOUT_MS),
       });
       if (!res.error && res.data?.recommendation) {
         setDynamicRec(res.data.recommendation as Recommendation);

@@ -21,6 +21,24 @@ type Resolved = {
 const memo = new Map<string, Resolved>();
 const inflight = new Map<string, Promise<Resolved>>();
 
+// 2026-09-18 (daily backend audit): resolve-buy-link's own design goal is
+// <100ms p50 with zero DB round-trips and zero upstream calls (see that
+// function's header comment) — but this call site, like every other
+// `supabase.functions.invoke()` in the app until today, had no `signal` at
+// all, unlike every raw `fetch()` here which has carried an
+// `AbortSignal.timeout()` since 09-14/09-15/09-16. A wedged connection
+// (dropped wifi mid-request, a stalled edge-runtime cold start) left
+// `resolve()`'s promise unsettled forever: `onClick`'s `loading` state never
+// clears, the hover/touch prewarm never populates `memo`, and there's no
+// path back to the Amazon fallback short of a page reload. 8s matches
+// LOCAL_INDEX_TIMEOUT_MS/SEARCH_SUGGEST_TIMEOUT_MS in Index.tsx — the
+// established client-side ceiling for "network round trip, no AI call"
+// edge functions in this codebase — generous headroom over the <100ms
+// server-side budget for mobile/high-latency networks, still short enough
+// that a stall degrades to the existing Amazon-fallback branch below well
+// within a user's patience for a single tap.
+const RESOLVE_TIMEOUT_MS = 8_000;
+
 const cacheKey = (title: string, author: string) =>
   `${(title || "").toLowerCase().trim()}|${(author || "").toLowerCase().trim()}`;
 
@@ -92,6 +110,7 @@ async function resolve(title: string, author: string): Promise<Resolved> {
     const country = guessCountryFromTimezone();
     const { data, error } = await supabase.functions.invoke("resolve-buy-link", {
       body: { title, author, ...(country ? { country } : {}) },
+      signal: AbortSignal.timeout(RESOLVE_TIMEOUT_MS),
     });
     if (error || !data?.primary?.url) {
       const fallback: Resolved = {

@@ -13,6 +13,16 @@ import { BuyButton, prewarmBuyLinks } from "@/components/BuyButton";
 const recKeyOf = (title: string, author: string) =>
   `${(title || "").toLowerCase().trim()}|${(author || "").toLowerCase().trim()}`;
 
+// 2026-09-18 (daily backend audit): recommend-anti-shelf calls Gemini
+// (geminiFetchWithFallback), bound server-side by gemini.ts's
+// MAX_TOTAL_MS=90_000 hard ceiling. 100_000 matches the same margin used
+// for every other Gemini-backed call in this app (analyze-novel's
+// ANALYSIS_IDLE_TIMEOUT_MS, TakeawaysTab's SYNTHESIZE_IDLE_TIMEOUT_MS,
+// BookDNA's RECOMMEND_TIMEOUT_MS). This call site had no `signal` at all —
+// a wedged connection left the active tab's `loading` stuck `true` forever,
+// with no error surfaced and no retry short of navigating away and back.
+const RECOMMEND_TIMEOUT_MS = 100_000;
+
 type Mode = "similar" | "stretch";
 
 type Recommendation = {
@@ -168,6 +178,7 @@ const AntiShelf = () => {
           blocked_tags: Array.from(blockedTags),
           ...(geminiKey ? { gemini_key: geminiKey } : {}),
         },
+        signal: AbortSignal.timeout(RECOMMEND_TIMEOUT_MS),
       });
       if (error) {
         // supabase-js wraps non-2xx responses in a FunctionsHttpError whose
@@ -178,14 +189,25 @@ const AntiShelf = () => {
         // body properly via `.context.json()` to get the real server message
         // (e.g. rate-limit / Gemini-overload text).
         let msg = error.message || "Request failed";
-        try {
-          const ctx = (error as any)?.context;
-          if (ctx && typeof ctx.json === "function") {
-            const body = await ctx.json();
-            if (body?.error) msg = body.error;
+        // A RECOMMEND_TIMEOUT_MS abort surfaces as a FunctionsFetchError
+        // whose `.context` is the raw AbortError/TimeoutError DOMException
+        // (not a Response — `.context.json` won't exist), so the try above
+        // never runs for this case. Give it the same friendly copy every
+        // other idle/abort timeout in this app already uses instead of
+        // "Failed to send a request to the Edge Function".
+        const ctxName = (error as { context?: { name?: string } })?.context?.name;
+        if (ctxName === "TimeoutError" || ctxName === "AbortError") {
+          msg = "The connection stalled. Please try again.";
+        } else {
+          try {
+            const ctx = (error as any)?.context;
+            if (ctx && typeof ctx.json === "function") {
+              const body = await ctx.json();
+              if (body?.error) msg = body.error;
+            }
+          } catch {
+            // body already consumed or not JSON — keep the fallback message
           }
-        } catch {
-          // body already consumed or not JSON — keep the fallback message
         }
         throw new Error(msg);
       }
