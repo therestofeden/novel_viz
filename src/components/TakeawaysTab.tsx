@@ -19,6 +19,22 @@ const ReactMarkdown = lazy(() => import("react-markdown"));
 // supabase/functions/_shared/gemini.ts), unlike the "synthesize" phase's
 // intentionally open-ended SSE stream. 100s gives headroom over that ceiling.
 const QUESTIONS_FETCH_TIMEOUT_MS = 100_000;
+// 2026-09-18 daily perf pass: synthesize()'s SSE fetch below had NO client-side
+// ceiling at all — neither on the initial fetch() nor on the reader.read() loop
+// that consumes the stream — despite this being the exact same "intentionally
+// open-ended SSE stream" shape that Index.tsx's analyze-novel fetch had until
+// its own idle-timeout fix (2026-09-16). A stalled connection (dead TCP, a
+// Supabase cold-start that never completes, a proxy swallowing the stream)
+// left `phase` stuck at "synthesizing" forever — no spinner timeout, no error
+// toast, no retry, since neither the fetch() promise nor reader.read() would
+// ever settle on their own. Same *idle* (not blanket) timeout as Index.tsx's
+// ANALYSIS_IDLE_TIMEOUT_MS: a legitimate synthesis can run close to the
+// server's own 90s MAX_TOTAL_MS cap while still streaming real text chunks
+// the whole way, so a fixed overall cap would kill valid slow-but-progressing
+// requests. Re-armed on every successful reader.read(), so only a connection
+// that's actually gone silent for SYNTHESIZE_IDLE_TIMEOUT_MS gets aborted.
+// 100s matches QUESTIONS_FETCH_TIMEOUT_MS's margin over the same server cap.
+const SYNTHESIZE_IDLE_TIMEOUT_MS = 100_000;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -226,8 +242,19 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
       return;
     }
 
+    // See SYNTHESIZE_IDLE_TIMEOUT_MS comment above: re-armed on every chunk so
+    // an actively-streaming synthesis is never killed, only a connection
+    // that's actually gone silent.
+    const ctrl = new AbortController();
+    let idleTimer: ReturnType<typeof setTimeout> | undefined;
+    const armIdleTimer = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => ctrl.abort(), SYNTHESIZE_IDLE_TIMEOUT_MS);
+    };
+
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/takeaways`;
+      armIdleTimer();
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -248,9 +275,13 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
           cacheKey,
           ...(geminiKey ? { gemini_key: geminiKey } : {}),
         }),
+        signal: ctrl.signal,
       });
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+
+      // Headers arrived — reset the idle window for the streaming phase below.
+      armIdleTimer();
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -260,6 +291,7 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
       while (streamRef.current) {
         const { done, value } = await reader.read();
         if (done) break;
+        armIdleTimer(); // got a chunk — connection is alive, reset the idle window
         buf += decoder.decode(value, { stream: true });
         let idx;
         while ((idx = buf.indexOf("\n")) !== -1) {
@@ -285,8 +317,11 @@ export function TakeawaysTab({ analysis, cacheKey }: Props) {
       setTakewaysText(fullText);
       setPhase("done");
     } catch (e: any) {
-      toast.error(e.message ?? "Synthesis failed");
+      const timedOut = e?.name === "TimeoutError" || e?.name === "AbortError";
+      toast.error(timedOut ? "The connection stalled. Please try again." : (e.message ?? "Synthesis failed"));
       setPhase("answering");
+    } finally {
+      clearTimeout(idleTimer);
     }
   }, [analysis, questions, answers, freeNotes, cacheKey, thesis]);
 

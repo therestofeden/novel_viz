@@ -137,6 +137,42 @@ async function fetchAllRows<T>(
   return out;
 }
 
+// 2026-09-18 daily perf pass: the four-way Promise.all below (this endpoint's
+// entire scan — novel_analyses + search_cache selects, plus the paginated
+// canon_books/seed_book_list fetchAllRows loops) had NO timeout on any of its
+// members, unlike every equivalent DB call in search-books/index.ts (its own
+// gold-standard pattern, cited by name in that file's comments — cache read,
+// rate-limit RPC, canon RPC, and analysis lookup are each individually raced
+// against a bounded fallback). A stall on any one of these four — plain
+// Postgres load spike or lock contention, no Gemini/external API involved —
+// would hang the whole in-process memo indefinitely: the 5-minute MEMO_TTL_MS
+// means this only runs once per warm window, so a single hung scan doesn't
+// just slow one request, it leaves the module-scope memo unpopulated and every
+// concurrent request during that window (each already paying up to
+// LOCAL_INDEX_TIMEOUT_MS=8s client-side in Index.tsx) falling through to the
+// slower Tier-2 network search — exactly the gap this endpoint exists to
+// avoid, per its own 2026-08-30 curated-coverage rationale above. Same
+// fail-open degrade-to-partial shape as search-books: on timeout, that one
+// source's contribution is dropped for this response (dedupe/scoring below
+// already treats "shorter list" as normal input), not the whole request.
+const DB_SCAN_TIMEOUT_MS = 5000;
+
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = DB_SCAN_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -205,21 +241,33 @@ Deno.serve(async (req) => {
     // comment above) rather than a plain .limit(), since both are large
     // enough to hit PostgREST's silent per-query row ceiling.
     const [analysesRes, cacheRes, canonRows, seedRows] = await Promise.all([
-      supabase
-        .from("novel_analyses")
-        .select("title, author, hit_count")
-        .order("hit_count", { ascending: false })
-        .limit(6000),
-      supabase
-        .from("search_cache")
-        .select("results, hit_count")
-        .order("hit_count", { ascending: false })
-        .limit(3000),
-      fetchAllRows<{ title: string; author: string }>((from, to) =>
-        supabase.from("canon_books").select("title, author").range(from, to)
+      withTimeout(
+        supabase
+          .from("novel_analyses")
+          .select("title, author, hit_count")
+          .order("hit_count", { ascending: false })
+          .limit(6000),
+        { data: [], error: null } as { data: { title: string; author: string; hit_count: number }[] | null; error: unknown },
       ),
-      fetchAllRows<{ entry: string }>((from, to) =>
-        supabase.from("seed_book_list").select("entry").range(from, to)
+      withTimeout(
+        supabase
+          .from("search_cache")
+          .select("results, hit_count")
+          .order("hit_count", { ascending: false })
+          .limit(3000),
+        { data: [], error: null } as { data: { results: unknown; hit_count: number }[] | null; error: unknown },
+      ),
+      withTimeout(
+        fetchAllRows<{ title: string; author: string }>((from, to) =>
+          supabase.from("canon_books").select("title, author").range(from, to)
+        ),
+        [] as { title: string; author: string }[],
+      ),
+      withTimeout(
+        fetchAllRows<{ entry: string }>((from, to) =>
+          supabase.from("seed_book_list").select("entry").range(from, to)
+        ),
+        [] as { entry: string }[],
       ),
     ]);
 

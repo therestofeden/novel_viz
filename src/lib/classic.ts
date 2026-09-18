@@ -3493,6 +3493,40 @@ export const CLASSIC: ClassicEntry[] = [
   // broader-audience tier. Classic count: 470 → 472.
   { title: "Studies in Iconology", author: "Erwin Panofsky", why: "Published in 1939 by Oxford University Press after Panofsky fled Nazi Germany for Princeton, the book that founded iconology as art-historical method: a three-step reading of a work first as pure form (pre-iconographic description), then as recognizable subject matter drawing on literary sources (iconographic analysis), and finally as a symptom of the underlying beliefs, philosophy, or worldview that produced it (iconological interpretation). Grew out of Panofsky's training under Aby Warburg in Hamburg, and became the method every subsequent symbolic reading of a painting — what does this fruit, this gesture, this particular shade of blue actually mean — still works from, whether it cites Panofsky by name or not. This list's art-history bench already runs biography (Vasari), general survey (Gombrich), ideology critique (Berger), and cinema (Bazin), but had never once addressed the actual method of reading a picture's symbolic content.", aka: ["Studies in Iconology: Humanistic Themes in the Art of the Renaissance"] },
   { title: "Unto This Last", author: "John Ruskin", why: "Four essays serialized in Cornhill Magazine starting August 1860, cut short after the fourth issue by a backlash fierce enough that Ruskin's own father begged him to stop, then collected as a book by Smith, Elder & Co. in 1862 — a direct attack on classical political economy's premise that a market of purely self-interested actors produces the general good, arguing instead that \"there is no wealth but life\" and that value divorced from justice and human welfare isn't value at all. Widely considered a commercial and critical failure in its own time; its real influence arrived decades later when Gandhi read it on an overnight train from Johannesburg to Durban in 1904, called it the single book that most transformed his life, and paraphrased it into Gujarati as Sarvodaya (\"the welfare of all\") the same year — the direct intellectual root of Gandhian economics. This list's deep economics bench (Smith through Friedman, Coase, Ostrom, Taylor) runs classical, neoclassical, and institutionalist; Ruskin is its only entry arguing from moral and aesthetic conviction against industrial capitalism itself, a different axis entirely from Marx's revolutionary critique, already here.", aka: ["Unto This Last: Four Essays on the First Principles of Political Economy"] },
+
+  // Round 90 (2026-09-18, scheduled `daily_novel_viz_feat` task): two more
+  // founder-of-a-sub-discipline gaps, both verified against a list already
+  // 472 entries deep. Music theory looked closed by round 87's Guido of
+  // Arezzo comment ("closes music theory's total absence from this list"),
+  // but Guido's Micrologus (c. 1025-26) is notation and pedagogy — how pitch
+  // gets written down and taught to choirboys — not harmonic theory. Nothing
+  // here addressed the theory of chords and keys itself. Jean-Philippe
+  // Rameau's Traité de l'harmonie réduite à ses principes naturels (1722)
+  // is that theory's founding text: the first systematic argument that a
+  // chord's identity reduces to its root regardless of inversion, and that
+  // the tonic-subdominant-dominant cadence is the physical consequence of
+  // the overtone series rather than a stylistic convention — the basis of
+  // "functional harmony" that dominated Western composition for the next
+  // three centuries and still underlies how harmony is taught today. A full
+  // 700 years and a different axis from Guido, the same relationship
+  // Panofsky (method) has to Vasari (biography) within art history two
+  // rounds ago. Separately, probability had exactly one entry (R.A. Fisher,
+  // 20th-century statistical inference) and no representative of its
+  // classical, pre-statistical founding — Pierre-Simon Laplace's Essai
+  // philosophique sur les probabilités (1814), the accessible essay he
+  // wrote as the introduction to his own technical Théorie analytique des
+  // probabilités (1812), gave probability its classical definition
+  // (favorable cases over total possible cases) and argued it was reasoned
+  // uncertainty rather than a property of the world — the tradition Fisher's
+  // frequentist statistics later broke from, not extended. Both WebSearch-
+  // verified (Rameau's publication date and functional-harmony legacy;
+  // Laplace's 1814 date, its relationship to the 1812 technical treatise,
+  // and its classical-probability definition, independently corroborated
+  // across sources) and collision-checked (grepped both classic.ts and
+  // must-read.ts for title and author before writing) — neither present,
+  // neither a close call for Must Read. Classic count: 472 → 474.
+  { title: "Treatise on Harmony", author: "Jean-Philippe Rameau", why: "Published in Paris in 1722 as Traité de l'harmonie réduite à ses principes naturels, the book that founded functional harmony: Rameau's central claim is that a chord's identity is fixed by its root regardless of which note sits on the bottom (an inversion is still the same chord), and that the tonic-subdominant-dominant cadence isn't a stylistic habit but a consequence of the overtone series itself — the first attempt to ground music theory in acoustic science rather than inherited counterpoint rules. Codified the principles of tonality that governed Western composition for the next three centuries and remains the starting point for how harmony is taught today. A different axis from this list's only prior music-theory entry, Guido of Arezzo's Micrologus (notation and pedagogy, c. 1025) — 700 years apart and addressing entirely different questions.", aka: ["Traité de l'harmonie réduite à ses principes naturels", "Treatise on Harmony Reduced to Its Natural Principles"] },
+  { title: "A Philosophical Essay on Probabilities", author: "Pierre-Simon Laplace", why: "Published in 1814 as the accessible introduction to Laplace's own technical Théorie analytique des probabilités (1812), distilling decades of work into the classical definition of probability still taught first in every introductory course: the ratio of favorable cases to all equally possible cases. Argued that probability is not a property of the world but a measure of human ignorance — \"the theory of probabilities is, at bottom, nothing more than common sense reduced to calculation\" — the classical, pre-statistical tradition that R.A. Fisher's frequentist statistics (already on this list) later broke from rather than extended. Closes probability theory's near-total absence from this list's hard-science and mathematics cluster, which otherwise runs Euclid through Gauss, Poincaré, and Gödel.", aka: ["Essai philosophique sur les probabilités", "A Philosophical Essay on Probability"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
