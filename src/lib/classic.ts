@@ -3527,6 +3527,40 @@ export const CLASSIC: ClassicEntry[] = [
   // neither a close call for Must Read. Classic count: 472 → 474.
   { title: "Treatise on Harmony", author: "Jean-Philippe Rameau", why: "Published in Paris in 1722 as Traité de l'harmonie réduite à ses principes naturels, the book that founded functional harmony: Rameau's central claim is that a chord's identity is fixed by its root regardless of which note sits on the bottom (an inversion is still the same chord), and that the tonic-subdominant-dominant cadence isn't a stylistic habit but a consequence of the overtone series itself — the first attempt to ground music theory in acoustic science rather than inherited counterpoint rules. Codified the principles of tonality that governed Western composition for the next three centuries and remains the starting point for how harmony is taught today. A different axis from this list's only prior music-theory entry, Guido of Arezzo's Micrologus (notation and pedagogy, c. 1025) — 700 years apart and addressing entirely different questions.", aka: ["Traité de l'harmonie réduite à ses principes naturels", "Treatise on Harmony Reduced to Its Natural Principles"] },
   { title: "A Philosophical Essay on Probabilities", author: "Pierre-Simon Laplace", why: "Published in 1814 as the accessible introduction to Laplace's own technical Théorie analytique des probabilités (1812), distilling decades of work into the classical definition of probability still taught first in every introductory course: the ratio of favorable cases to all equally possible cases. Argued that probability is not a property of the world but a measure of human ignorance — \"the theory of probabilities is, at bottom, nothing more than common sense reduced to calculation\" — the classical, pre-statistical tradition that R.A. Fisher's frequentist statistics (already on this list) later broke from rather than extended. Closes probability theory's near-total absence from this list's hard-science and mathematics cluster, which otherwise runs Euclid through Gauss, Poincaré, and Gödel.", aka: ["Essai philosophique sur les probabilités", "A Philosophical Essay on Probability"] },
+
+  // Round 91 (2026-09-18, scheduled `daily-must-read-and-classic` task): two
+  // more total-absence founding-text gaps, both distinct from this list's
+  // adjacent normative-philosophy and medicine shelves. Jurisprudence — the
+  // analytic question of what a legal rule actually IS — had zero
+  // representation, even though normative political philosophy (what power
+  // ought to look like) is thick here: Two Treatises, The Social Contract,
+  // On Liberty, The Federalist Papers. H.L.A. Hart's The Concept of Law
+  // (Oxford, 1961) is the founding text of modern legal positivism's
+  // dominant form, replacing Austin's command theory with the primary/
+  // secondary-rules framework and the "rule of recognition" — still the
+  // shared reference point every subsequent jurisprudence debate (Dworkin's
+  // rights thesis, Raz's authority thesis, the natural-law revival) argues
+  // with or against. Separately, this list's deep medicine bench —
+  // Hippocrates' clinical observation, Vesalius's anatomy, Harvey's
+  // physiology, Snow's epidemiology — had never once addressed immunology
+  // or vaccination. Edward Jenner's An Inquiry into the Causes and Effects
+  // of the Variolae Vaccinae (1798, published at his own expense after the
+  // Royal Society balked at the underlying paper) is that founding text:
+  // twenty-three case studies establishing that cowpox exposure confers
+  // smallpox immunity, founding vaccination as a practice and immunology as
+  // a field in one stroke — the word "vaccine" itself derives from vacca,
+  // Latin for cow, in direct tribute — and the root of the campaign that
+  // ended with smallpox declared eradicated worldwide in 1980, still the
+  // only human disease ever eliminated this way. Both WebSearch-verified
+  // (Hart's 1961 date and primary/secondary-rules framework; Jenner's 1798
+  // date, case count, and the immunology/vaccinology founding claim,
+  // independently corroborated across sources) and collision-checked
+  // (grepped both classic.ts and must-read.ts for both titles and both
+  // authors — zero hits before writing). Neither a close call for Must
+  // Read — specialist-founder register, same as Rameau/Laplace last round.
+  // Classic count: 474 → 476.
+  { title: "The Concept of Law", author: "H.L.A. Hart", why: "Published by Oxford University Press in 1961, the book that replaced John Austin's command theory of law — rules as the sovereign's threats backed by force — with a framework built on rules of two kinds: primary rules that impose obligations, and secondary rules (of recognition, change, and adjudication) that let a legal system identify, update, and enforce its own primary rules. The resulting \"rule of recognition\" became the shared starting point every later jurisprudence debate — Dworkin's rights-based challenge, Raz's authority thesis, the natural-law revival — argues with or against. This list's political philosophy is thick with the normative question of how power ought to be organized (Two Treatises, The Social Contract, On Liberty, The Federalist Papers), but had nothing addressing the analytic question underneath all of them: what a legal rule actually is." },
+  { title: "An Inquiry into the Causes and Effects of the Variolae Vaccinae", author: "Edward Jenner", why: "Published at Jenner's own expense in 1798, after the Royal Society had declined to print the underlying paper as too remarkable to credit without further evidence: twenty-three case studies documenting that deliberate infection with cowpox (variolae vaccinae) reliably protected against subsequent smallpox exposure. Founded vaccination as a medical practice and immunology as a field of study in a single stroke — the word \"vaccine\" itself derives from vacca, Latin for cow, in direct tribute to this work — and set in motion the two-century campaign that ended with the World Health Organization declaring smallpox eradicated worldwide in 1980, the only human disease ever eliminated this way. This list's medicine shelf runs anatomy (Vesalius), physiology (Harvey), and epidemiology (Snow); nothing until now addressed how the body can be made to defend itself against a disease before it strikes.", aka: ["An Inquiry into the Causes and Effects of the Variolae Vaccinae, a Disease Discovered in Some of the Western Counties of England, Particularly Gloucestershire, and Known by the Name of the Cow Pox", "Inquiry into the Causes and Effects of the Variolae Vaccinae"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
