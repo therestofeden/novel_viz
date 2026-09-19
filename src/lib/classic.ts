@@ -3647,6 +3647,47 @@ export const CLASSIC: ClassicEntry[] = [
   // round. Classic count: 478 → 480.
   { title: "An Essay towards Solving a Problem in the Doctrine of Chances", author: "Thomas Bayes", why: "Read to the Royal Society on 23 December 1763 and published in Philosophical Transactions that same year, two years after Bayes's own death — his friend Richard Price edited the manuscript for publication and added his own introduction and appendix. Contains the theorem, now bearing Bayes's name, for updating the probability of a hypothesis as new evidence arrives, rather than treating probability as a fixed ratio of favorable-to-total cases (Laplace, already on this list) or a basis for rejecting a null hypothesis in repeated trials (Fisher, already on this list). A third, genuinely distinct school of probability sharing this list's shelf with the other two, and the direct ancestor of Bayesian statistics and the probabilistic reasoning behind modern spam filters and machine-learning classifiers." },
   { title: "Systema Naturae", author: "Carl Linnaeus", why: "First published in 1735 as an eleven-page folio and expanded across ten editions over Linnaeus's lifetime, the work that founded modern biological taxonomy: a hierarchical classification of nature into kingdoms, classes, orders, genera, and species, and the source of the two-part \"Genus species\" naming convention (binomial nomenclature) used for every living thing named since. The 10th edition (1758) specifically is the one the International Commission on Zoological Nomenclature still recognizes as zoological nomenclature's official starting date. This list's biology shelf runs evolution (Darwin) and genetics (Mendel) but had never once addressed the prior, more basic question both of those disciplines assume an answer to: what a species is and how it gets named.", aka: ["Systema Naturae per Regna Tria Naturae"] },
+
+  // Round 94 (2026-09-19, scheduled `daily_novel_viz_feat` task): two more
+  // total-absence gaps, both hiding in plain sight next to a superficially
+  // similar entry already here. Claude Shannon's own A Mathematical Theory
+  // of Communication (1948, above) covers information theory — the bit,
+  // channel capacity, redundancy — but this list had nothing on the
+  // separate field Shannon also founded: cryptography as a mathematical
+  // discipline rather than an art of ad hoc ciphers. Communication Theory
+  // of Secrecy Systems began life as a classified 1945 Bell Labs memo ("A
+  // Mathematical Theory of Cryptography"), was declassified, and reached
+  // print in the Bell System Technical Journal in October 1949 — proving,
+  // among other results, that only a key as long and random as the message
+  // itself (the one-time pad) can be truly unbreakable, and giving
+  // cryptanalysis a mathematical foundation for the first time. Historians
+  // of the field treat 1949 as the hinge between "classical" cryptography
+  // (substitution, transposition, hand ciphers) and the modern discipline
+  // every subsequent public-key and computational-security result builds
+  // on. A second entry by an author already on this list, but judged
+  // independently per this list's own merit-not-quota standard: a distinct
+  // paper, a distinct founding claim, four years apart in origin from the
+  // 1948 paper it sits beside. Separately, this list's substantial media-
+  // theory and art-criticism shelf (Benjamin, McLuhan, Berger, Bazin,
+  // Gombrich) had never once included the founding text of photography
+  // itself as a medium — only Benjamin's essay about what mechanical
+  // reproduction (photography included) does to art's aura. William Henry
+  // Fox Talbot's The Pencil of Nature, issued in six fascicles between 1844
+  // and 1846, was the first commercially published book illustrated with
+  // photographs — 24 hand-pasted calotype prints alongside Talbot's own
+  // account of inventing the process, historically compared in significance
+  // to the Gutenberg Bible for extending mechanical reproduction from text
+  // to image. Both WebSearch-verified (Shannon's 1945 classified memo, 1949
+  // BSTJ publication, and one-time-pad/perfect-secrecy result; Talbot's
+  // 1844–46 serial publication, calotype process, and status as the first
+  // commercially published photographically illustrated book, independently
+  // corroborated across sources) and collision-checked (grepped both
+  // classic.ts and must-read.ts for both titles, both authors, and
+  // "secrecy"/"Talbot" bare — zero hits before writing). Neither a close
+  // call for Must Read — specialist-founder register, same as Bayes/
+  // Linnaeus last round. Classic count: 480 → 482.
+  { title: "Communication Theory of Secrecy Systems", author: "Claude Shannon", why: "Begun as a classified Bell Labs memorandum in 1945 (\"A Mathematical Theory of Cryptography\"), declassified and published in the Bell System Technical Journal in October 1949. Proves, among other results, that a cipher can only be truly unbreakable if its key is as long and as random as the message itself — the one-time pad — putting cryptanalysis on a mathematical footing for the first time and marking the hinge historians of the field point to between classical, ad hoc cipher-craft and modern cryptography. A distinct paper and a distinct founding claim from Shannon's own A Mathematical Theory of Communication, already on this list — that one founded information theory; this one founded cryptography as a mathematical discipline, judged independently on its own merit rather than excluded for sharing an author." },
+  { title: "The Pencil of Nature", author: "William Henry Fox Talbot", why: "Issued in six fascicles between 1844 and 1846, the first commercially published book illustrated with photographs — 24 calotype prints, each pasted in by hand, accompanying Talbot's own account of inventing the process and his case for what it could be used for. Historians of printing have compared its significance to the Gutenberg Bible for doing to the image what movable type had done to text three centuries earlier. This list's media-theory and art-criticism shelf (Benjamin, McLuhan, Berger, Bazin, Gombrich) runs deep on what photography and mechanical reproduction mean, but had never once included the founding text of photography as a medium itself." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
