@@ -473,7 +473,20 @@ export async function geminiFetchWithFallback(
   maxTotalMs: number = MAX_TOTAL_MS,
 ): Promise<Response> {
   const work = (async (): Promise<Response> => {
-    const budgetExceeded = isServerKey && await admin.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD })
+    // 2026-09-19 (daily backend audit): wrapped in Promise.resolve() before
+    // .then/.catch — `admin.rpc(...)` is only a PromiseLike (implements
+    // `.then`, not a real Promise), so chaining `.catch()` straight off it
+    // doesn't type-check. This was a real, previously-uncaught `deno check`
+    // error (found running `deno check`/`deno test` against this repo's
+    // edge functions for what looks like the first time — tsc --noEmit only
+    // ever covered tsconfig.app.json's `"include": ["src"]`, never
+    // supabase/functions/). Harmless at runtime (the .catch still ran; V8
+    // doesn't enforce TS's structural types), but worth fixing rather than
+    // leaving a function this cost-sensitive (the daily Gemini spend guard)
+    // outside type-check coverage.
+    const budgetExceeded = isServerKey && await Promise.resolve(
+      admin.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD }),
+    )
       .then(({ data, error }) => {
         if (error) {
           console.warn(JSON.stringify({ spend: "budget_check_error_fail_open", error: error.message }));

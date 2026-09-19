@@ -1205,12 +1205,15 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (cached?.analysis && isAdequate(cached.analysis as Analysis)) {
-      // Bump stats async — never block the response on it.
-      supabase
-        .from("novel_analyses")
-        .update({ hit_count: (cached.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
-        .eq("id", cached.id)
-        .then(() => {}).catch((e: any) => console.error("hit bump error:", e));
+      // Bump stats async — never block the response on it. Promise.resolve()-
+      // wrapped — see health/index.ts's 2026-09-19 note for why the bare
+      // builder's .catch() is a deno-check-only type error.
+      Promise.resolve(
+        supabase
+          .from("novel_analyses")
+          .update({ hit_count: (cached.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
+          .eq("id", cached.id),
+      ).then(() => {}).catch((e: unknown) => console.error("hit bump error:", e));
 
       // If slug is missing on this row (alias row), compute it from the title.
       const cachedSlug = cached.slug ?? (cached.title ? slugify(cached.title) : null);
@@ -1247,11 +1250,13 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (cached?.analysis && isAdequate(cached.analysis as Analysis)) {
-      supabase
-        .from("novel_analyses")
-        .update({ hit_count: (cached.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
-        .eq("id", cached.id)
-        .then(() => {}).catch(() => {});
+      // Promise.resolve()-wrapped — see health/index.ts's 2026-09-19 note.
+      Promise.resolve(
+        supabase
+          .from("novel_analyses")
+          .update({ hit_count: (cached.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
+          .eq("id", cached.id),
+      ).then(() => {}).catch(() => {});
 
       const cachedSlug = cached.slug ?? (cached.title ? slugify(cached.title) : null);
       const sseBody = [
@@ -1570,18 +1575,21 @@ Deno.serve(async (req) => {
           // Alias rows intentionally omit slug so the unique index is only
           // set on the canonical row.
           if (canonicalCacheKey !== cacheKey) {
-            await supabase
-              .from("novel_analyses")
-              .upsert({
-                cache_key: cacheKey,
-                title: analysis.title || cleanTitle,
-                author: analysis.author || cleanAuthor || "",
-                analysis,
-                model: MODEL,
-                is_validated: true,
-              }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze })
+            // Promise.resolve()-wrapped — see health/index.ts's 2026-09-19 note.
+            await Promise.resolve(
+              supabase
+                .from("novel_analyses")
+                .upsert({
+                  cache_key: cacheKey,
+                  title: analysis.title || cleanTitle,
+                  author: analysis.author || cleanAuthor || "",
+                  analysis,
+                  model: MODEL,
+                  is_validated: true,
+                }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze }),
+            )
               .then(() => {})
-              .catch((e: any) => console.error("alias write error:", e));
+              .catch((e: unknown) => console.error("alias write error:", e));
           }
         }
 

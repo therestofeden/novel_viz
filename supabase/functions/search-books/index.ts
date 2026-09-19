@@ -784,11 +784,17 @@ Deno.serve(async (req) => {
     const CACHE_READ_TIMEOUT_MS = 1000;
     const cacheT0 = performance.now();
     let cacheReadTimer: ReturnType<typeof setTimeout> | undefined;
-    const cacheReadPromise = adminClient
-      .from("search_cache")
-      .select("results, last_accessed_at")
-      .eq("query_key", queryKey)
-      .maybeSingle()
+    // 2026-09-19 (daily backend audit): Promise.resolve()-wrapped before
+    // .then/.finally — the query builder is only a PromiseLike, so chaining
+    // real-Promise-only methods off it is a deno-check-only type error (see
+    // health/index.ts's 2026-09-19 note; harmless at runtime either way).
+    const cacheReadPromise = Promise.resolve(
+      adminClient
+        .from("search_cache")
+        .select("results, last_accessed_at")
+        .eq("query_key", queryKey)
+        .maybeSingle(),
+    )
       .then(({ data, error }: { data: { results: unknown; last_accessed_at: string } | null; error: unknown }) => {
         if (error) throw error;
         return data;
@@ -818,16 +824,19 @@ Deno.serve(async (req) => {
       setMemoryCache(queryKey, results);
 
       if (Math.random() < 0.1) {
-        const bump = adminClient
-          .from("search_cache")
-          .update({ last_accessed_at: new Date().toISOString() })
-          .eq("query_key", queryKey);
+        // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
+        const bump = Promise.resolve(
+          adminClient
+            .from("search_cache")
+            .update({ last_accessed_at: new Date().toISOString() })
+            .eq("query_key", queryKey),
+        );
         // @ts-ignore — Deno EdgeRuntime
         if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
           // @ts-ignore
-          EdgeRuntime.waitUntil(bump.then(() => {}).catch((e) => console.error("cache bump:", e)));
+          EdgeRuntime.waitUntil(bump.then(() => {}).catch((e: unknown) => console.error("cache bump:", e)));
         } else {
-          bump.then(() => {}).catch((e) => console.error("cache bump:", e));
+          bump.then(() => {}).catch((e: unknown) => console.error("cache bump:", e));
         }
       }
 
@@ -877,13 +886,16 @@ Deno.serve(async (req) => {
     // cache-miss request's latency floor.
     const RATE_LIMIT_RPC_TIMEOUT_MS = 800;
     let rateLimitTimer: ReturnType<typeof setTimeout> | undefined;
-    const countPromise = adminClient
-      .rpc("count_recent_events", {
-        p_ip_hash: ipHash,
-        p_route: ROUTE,
-        p_window_seconds: 3600,
-        p_prefetch_only: false,
-      })
+    // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
+    const countPromise = Promise.resolve(
+      adminClient
+        .rpc("count_recent_events", {
+          p_ip_hash: ipHash,
+          p_route: ROUTE,
+          p_window_seconds: 3600,
+          p_prefetch_only: false,
+        }),
+    )
       .then(({ data, error }: { data: number | null; error: unknown }) => {
         if (error) throw error;
         return data;
@@ -905,10 +917,10 @@ Deno.serve(async (req) => {
       }),
     ]);
 
-    adminClient
-      .from("rate_limit_events")
-      .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
-      .then(() => {}).catch(() => {});
+    // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
+    Promise.resolve(
+      adminClient.from("rate_limit_events").insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false }),
+    ).then(() => {}).catch(() => {});
 
     const olT0 = performance.now();
     const baseUrl =
@@ -985,8 +997,10 @@ Deno.serve(async (req) => {
     // 2026-08-19: same uncleared-timer telemetry bug as cache_read/rate-limit
     // above — fixed the same way.
     let canonTimer: ReturnType<typeof setTimeout> | undefined;
-    const canonRpcPromise: Promise<CanonRow[]> = adminClient
-      .rpc("search_canon", { p_q: buildSearchCacheKey(q) })
+    // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
+    const canonRpcPromise: Promise<CanonRow[]> = Promise.resolve(
+      adminClient.rpc("search_canon", { p_q: buildSearchCacheKey(q) }),
+    )
       .then(({ data, error }: { data: CanonRow[] | null; error: unknown }) => {
         if (error) throw error;
         return data ?? [];
@@ -1494,25 +1508,29 @@ Deno.serve(async (req) => {
     setMemoryCache(queryKey, baseResults);
 
     if (baseResults.length > 0) {
-      const writeCache = adminClient
-        .from("search_cache")
-        .upsert(
-          { query_key: queryKey, results: baseResults, hit_count: 0, last_accessed_at: new Date().toISOString() },
-          { onConflict: "query_key" },
-        );
+      // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
+      const writeCache = Promise.resolve(
+        adminClient
+          .from("search_cache")
+          .upsert(
+            { query_key: queryKey, results: baseResults, hit_count: 0, last_accessed_at: new Date().toISOString() },
+            { onConflict: "query_key" },
+          ),
+      );
       // @ts-ignore — Deno EdgeRuntime
       if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
         // @ts-ignore
-        EdgeRuntime.waitUntil(writeCache.then(() => {}).catch((e) => console.error("cache write:", e)));
+        EdgeRuntime.waitUntil(writeCache.then(() => {}).catch((e: unknown) => console.error("cache write:", e)));
       } else {
-        writeCache.then(() => {}).catch((e) => console.error("cache write:", e));
+        writeCache.then(() => {}).catch((e: unknown) => console.error("cache write:", e));
       }
     }
 
     const finalResults = baseResults.slice(0, limit);
 
     if (Math.random() < 0.01) {
-      adminClient.rpc("purge_old_search_cache").then(() => {}).catch(() => {});
+      // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
+      Promise.resolve(adminClient.rpc("purge_old_search_cache")).then(() => {}).catch(() => {});
     }
 
     timings.total = Math.round(performance.now() - t0);

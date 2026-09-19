@@ -367,14 +367,15 @@ Deno.serve(async (req) => {
     } catch { /* fail open — don't block legitimate users if the rate DB is unavailable */ }
 
     // Log both events fire-and-forget; counters are eventually consistent.
-    supabase
-      .from("rate_limit_events")
-      .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
-      .then(() => {}).catch(() => {});
-    supabase
-      .from("rate_limit_events")
-      .insert({ ip_hash: userIdHash, route: `${ROUTE}:user`, is_prefetch: false })
-      .then(() => {}).catch(() => {});
+    // Wrapped in Promise.resolve() before .then/.catch — see health/
+    // index.ts's 2026-09-19 note for why the bare builder's .catch() is a
+    // deno-check-only type error (harmless at runtime either way).
+    Promise.resolve(
+      supabase.from("rate_limit_events").insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false }),
+    ).then(() => {}).catch(() => {});
+    Promise.resolve(
+      supabase.from("rate_limit_events").insert({ ip_hash: userIdHash, route: `${ROUTE}:user`, is_prefetch: false }),
+    ).then(() => {}).catch(() => {});
   }
 
   // ── Phase: questions ───────────────────────────────────────────────────────

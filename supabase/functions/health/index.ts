@@ -16,7 +16,45 @@
 // doesn't take analysis down — so `status` only flips to "degraded" when
 // EVERY fallback model is open at once (no AI capacity left at all) or the
 // daily spend cap has been hit.
-
+//
+// 2026-09-19 (daily backend audit): every one of this file's three Supabase
+// calls (the `novel_analyses` ping, the `gemini_model_circuit` select, the
+// `gemini_daily_budget_exceeded` RPC) was a bare `await` with no ceiling —
+// the one gap left in an app where literally every other DB/RPC call site
+// has carried a timeout since 2026-08-07 (`raceRateLimitCount`) and
+// 2026-08-30 (`popular-books`' `withTimeout`). It's a bigger miss here than
+// anywhere else it was already fixed: this endpoint's entire job is to be a
+// fast, trustworthy signal for keep-warm.yml (every 5 min) and any future
+// uptime monitor, and a monitoring endpoint that can itself hang forever on
+// a stalled DB connection is worse than one that fails fast — it turns a
+// real "is the DB slow?" incident into total monitoring blackout instead of
+// a clean, prompt 503. Added a local `withTimeout` (not imported from
+// _shared, per this file's own stated design goal above of staying
+// dependency-light) at 4000ms per call — well above the ~700ms baseline
+// latency seen in normal operation (09-18's health check logged
+// db_latency_ms: 691), but tight enough that the whole response still comes
+// back fast to any caller. A timeout on the DB ping now correctly reports
+// db: "error" (same as a real query error) rather than hanging; a timeout on
+// either Gemini-state check now correctly reports its own *_check_ok: false
+// (same as the existing catch-block behavior for a real RPC/query failure).
+//
+// Each Supabase call is `.then()`-normalized into a plain `{ data, error }`
+// shape before racing it against the timeout, rather than passing the raw
+// PostgrestFilterBuilder/RPC thenable straight into withTimeout<T> the way
+// popular-books/index.ts's otherwise-identical helper does. Running `deno
+// check` (installed fresh this session — not previously run against this
+// repo's edge functions; tsc --noEmit only covers tsconfig.app.json's
+// `"include": ["src"]`, so it silently never type-checks supabase/functions/
+// at all) surfaced that popular-books' own version of this exact pattern has
+// a latent type error: its fallback object literal (`{ data: [], error:
+// null } as {...}`) doesn't structurally satisfy PostgrestResponse (which
+// also requires `count`/`status`/`statusText`/`success`), so the `as` cast
+// papers over a real mismatch. Harmless at runtime today (only `.data`/
+// `.error` are ever read off the result), but worth not reproducing in new
+// code — normalizing to a plain object first sidesteps the mismatch
+// entirely instead of fighting it with a wider cast. Flagged, not fixed, in
+// popular-books itself this session (pre-existing, still harmless, a
+// separate file's problem from a different day) — see standing open items.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -25,6 +63,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+const HEALTH_CHECK_TIMEOUT_MS = 4000;
+
+// Races `promise` against a timeout; on timeout, resolves to `fallback`
+// instead of leaving the caller hanging. Mirrors the established pattern in
+// _shared/rate-limit.ts (`raceRateLimitCount`) and popular-books/index.ts
+// (`withTimeout`) — kept local here rather than imported, deliberately,
+// since this file's whole point is staying independent of the rest of the
+// app's shared modules so a bug there can never take health down too.
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = HEALTH_CHECK_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } catch {
+    return fallback;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 // Mirrors _shared/gemini.ts's MODEL_FALLBACKS + DAILY_GEMINI_BUDGET_USD.
 // Deliberately duplicated as local constants rather than importing the
@@ -41,12 +105,19 @@ serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // DB ping — cheapest possible read.
+  // DB ping — cheapest possible read. Timed out rather than bare-awaited (see
+  // 2026-09-19 header note) so a stalled connection reports "error" promptly
+  // instead of hanging this whole endpoint.
   let db: "ok" | "error" = "ok";
   let dbLatencyMs: number | null = null;
   try {
     const t0 = Date.now();
-    const { error } = await supabase.from("novel_analyses").select("id").limit(1);
+    const { error } = await withTimeout<{ data: unknown; error: unknown }>(
+      Promise.resolve(supabase.from("novel_analyses").select("id").limit(1)).then(
+        ({ data, error }) => ({ data, error }),
+      ),
+      { data: null, error: new Error("health db ping timed out") },
+    );
     dbLatencyMs = Date.now() - t0;
     if (error) db = "error";
   } catch {
@@ -61,10 +132,15 @@ serve(async (req) => {
   let geminiModelsOpen: string[] = [];
   let circuitCheckOk = true;
   try {
-    const { data, error } = await supabase
-      .from("gemini_model_circuit")
-      .select("model, open_until")
-      .gt("open_until", new Date().toISOString());
+    const { data, error } = await withTimeout<{ data: { model: string }[] | null; error: unknown }>(
+      Promise.resolve(
+        supabase
+          .from("gemini_model_circuit")
+          .select("model, open_until")
+          .gt("open_until", new Date().toISOString()),
+      ).then(({ data, error }) => ({ data, error })),
+      { data: null, error: new Error("health circuit check timed out") },
+    );
     if (error) circuitCheckOk = false;
     else geminiModelsOpen = (data ?? []).map((r: { model: string }) => r.model);
   } catch {
@@ -78,7 +154,12 @@ serve(async (req) => {
   let geminiBudgetExceeded = false;
   let budgetCheckOk = true;
   try {
-    const { data, error } = await supabase.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD });
+    const { data, error } = await withTimeout<{ data: boolean | null; error: unknown }>(
+      Promise.resolve(supabase.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD })).then(
+        ({ data, error }) => ({ data, error }),
+      ),
+      { data: null, error: new Error("health budget check timed out") },
+    );
     if (error) budgetCheckOk = false;
     else geminiBudgetExceeded = !!data;
   } catch {

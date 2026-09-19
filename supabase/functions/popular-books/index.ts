@@ -228,10 +228,14 @@ Deno.serve(async (req) => {
       }
     } catch { /* fail open — don't block legitimate traffic if the rate DB is unavailable */ }
 
-    supabase
-      .from("rate_limit_events")
-      .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
-      .then(() => {}).catch(() => {});
+    // 2026-09-19 (daily backend audit): wrapped in Promise.resolve() before
+    // .then/.catch — the insert() builder is only a PromiseLike (implements
+    // `.then`, not a real Promise), so chaining `.catch()` straight off it
+    // is a `deno check` type error (harmless at runtime, but a real gap —
+    // see health/index.ts's 2026-09-19 header note for how this was found).
+    Promise.resolve(
+      supabase.from("rate_limit_events").insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false }),
+    ).then(() => {}).catch(() => {});
 
     // Pull analyzed books (strong signal) + cached search results + the two
     // curated coverage tables in parallel. canon_books/seed_book_list are
@@ -240,22 +244,36 @@ Deno.serve(async (req) => {
     // needed. The curated tables are paginated via fetchAllRows (see its
     // comment above) rather than a plain .limit(), since both are large
     // enough to hit PostgREST's silent per-query row ceiling.
+    // 2026-09-19 (daily backend audit): both withTimeout<T> calls below now
+    // pass an explicit generic + a `.then()`-normalized plain `{data, error}`
+    // promise, instead of the raw PostgrestFilterBuilder + a same-shaped `as`
+    // cast. The old cast didn't structurally satisfy PostgrestResponse
+    // (missing count/status/statusText/success) — a real `deno check` error,
+    // never caught because this repo's edge functions had apparently never
+    // actually been run through `deno check`/`deno test` before today (see
+    // health/index.ts's 2026-09-19 note). Harmless at runtime either way —
+    // only `.data`/`.error` are ever read off the result — fixed for type-
+    // check hygiene, not a behavior change.
     const [analysesRes, cacheRes, canonRows, seedRows] = await Promise.all([
-      withTimeout(
-        supabase
-          .from("novel_analyses")
-          .select("title, author, hit_count")
-          .order("hit_count", { ascending: false })
-          .limit(6000),
-        { data: [], error: null } as { data: { title: string; author: string; hit_count: number }[] | null; error: unknown },
+      withTimeout<{ data: { title: string; author: string; hit_count: number }[] | null; error: unknown }>(
+        Promise.resolve(
+          supabase
+            .from("novel_analyses")
+            .select("title, author, hit_count")
+            .order("hit_count", { ascending: false })
+            .limit(6000),
+        ).then(({ data, error }) => ({ data, error })),
+        { data: [], error: null },
       ),
-      withTimeout(
-        supabase
-          .from("search_cache")
-          .select("results, hit_count")
-          .order("hit_count", { ascending: false })
-          .limit(3000),
-        { data: [], error: null } as { data: { results: unknown; hit_count: number }[] | null; error: unknown },
+      withTimeout<{ data: { results: unknown; hit_count: number }[] | null; error: unknown }>(
+        Promise.resolve(
+          supabase
+            .from("search_cache")
+            .select("results, hit_count")
+            .order("hit_count", { ascending: false })
+            .limit(3000),
+        ).then(({ data, error }) => ({ data, error })),
+        { data: [], error: null },
       ),
       withTimeout(
         fetchAllRows<{ title: string; author: string }>((from, to) =>
