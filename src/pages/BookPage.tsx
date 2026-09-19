@@ -475,15 +475,20 @@ const BookPage = () => {
         </section>
 
         {ratingStats && (
-          <section className="ink-border-b px-4 py-6 md:px-8">
-            <Suspense fallback={<RatingDistributionSkeleton />}>
-              <RatingDistribution
-                counts={ratingStats.counts}
-                total={ratingStats.total}
-                avg={ratingStats.avg}
-                label="Reader ratings"
-              />
-            </Suspense>
+          <section className="ink-border-b">
+            <div className="meta bg-foreground px-4 py-2 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))] md:px-8">
+              02 · Reader Ratings
+            </div>
+            <div className="px-4 py-6 md:px-8">
+              <Suspense fallback={<RatingDistributionSkeleton />}>
+                <RatingDistribution
+                  counts={ratingStats.counts}
+                  total={ratingStats.total}
+                  avg={ratingStats.avg}
+                  label="Reader ratings"
+                />
+              </Suspense>
+            </div>
           </section>
         )}
 
@@ -492,14 +497,37 @@ const BookPage = () => {
             identity; Timeline/Network/Chapters are views of its content, so
             making them compete for one slot buried the only genuinely
             un-copyable thing on the page. It now runs full width directly
-            under the header, carrying both halves of the recommendation. */}
+            under the header, carrying both halves of the recommendation.
+            2026-09-19: gets its own chapter-divider header instead of the
+            same thin ink-border-b every other section uses — it's the one
+            thing here a ratings-and-reviews site structurally cannot build,
+            so it should read as the star of the page, not one more item in
+            an undifferentiated list of sections. */}
         {analysis.dna?.axes?.length ? (
           <section id="dna-anchor" className="ink-border-b scroll-mt-20 bg-card">
+            <div className="bg-foreground px-4 py-5 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))] md:px-8 md:py-6">
+              <div className="meta text-primary">Feature 01</div>
+              <div className="mt-1 font-sans text-2xl font-bold md:text-3xl">Book DNA</div>
+              <div className="mt-1 max-w-md font-serif text-sm italic text-background/70">
+                Twelve axes, measured. Tap any bar — drag to make it yours.
+              </div>
+            </div>
             <Suspense fallback={<TabFallback />}>
               <BookDNA analysis={analysis} cacheKey={cacheKey} />
             </Suspense>
           </section>
         ) : null}
+
+        {/* ===================== EXPLORE THE STORY =====================
+            2026-09-19: the spoiler control, the view toggle and the active
+            visualization used to be three separate top-level sections with
+            no shared label — on mobile they read as three more undifferentiated
+            rows in the same long list as everything else. Grouping them under
+            one eyebrow says plainly "these three controls are one feature." */}
+        <section className="ink-border-b bg-card">
+          <div className="meta bg-foreground px-4 py-2 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))] md:px-8">
+            03 · Explore the Story
+          </div>
 
         {/* ===================== SPOILER STRIP — fiction only ===================== */}
         {isFiction(analysis) && (
@@ -690,19 +718,31 @@ const BookPage = () => {
             </Suspense>
           )}
         </section>
+        </section>
 
-        {/* ===================== READING NOTES ===================== */}
-        <ReaderNotes cacheKey={cacheKey} bookTitle={analysis.title} bookAuthor={analysis.author} />
+        {/* ===================== MY NOTES ===================== */}
+        <section className="ink-border-b">
+          <div className="meta bg-foreground px-4 py-2 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))] md:px-8">
+            04 · My Notes
+          </div>
+          <ReaderNotes cacheKey={cacheKey} bookTitle={analysis.title} bookAuthor={analysis.author} />
+        </section>
 
-        {/* ===================== ESSAY ===================== */}
+        {/* ===================== THE READING =====================
+            2026-09-19: renamed from "Essay" / "Reader's Notes" — the rail
+            label used to say "Reader's Notes" here even though this is the
+            AI-generated essay, not the reader's own notes (those are the
+            My Notes section above). Same naming collision flagged in the
+            09-07 and 09-10 design reviews; fixed here. Always the very last
+            section on the page — the long-form read, after every feature. */}
         <section className="grid grid-cols-12 gap-0">
           <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-10">
-            <div className="meta text-muted-foreground">Essay</div>
-            <div className="display-num mt-2 text-4xl md:text-6xl">02</div>
-            <div className="meta mt-2 text-muted-foreground">
-              {isFiction(analysis) ? "Reader's Notes" : "Critical Essay"}
+            <div className="meta text-muted-foreground">05 · The Reading</div>
+            <div className="display-num mt-2 text-4xl md:text-6xl">05</div>
+            <div className="meta mt-2 text-primary">AI Read</div>
+            <div className="mt-1 font-serif text-xs italic text-muted-foreground">
+              {isFiction(analysis) ? "A critical reading" : "A critical essay"}
             </div>
-            <div className="mt-1 font-serif text-xs italic text-muted-foreground">An essay</div>
           </div>
           <div className="col-span-12 px-4 py-6 md:col-span-10 md:px-10 md:py-10">
             <div className="prose prose-sm max-w-3xl font-serif text-foreground prose-headings:font-sans prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline md:prose-base">

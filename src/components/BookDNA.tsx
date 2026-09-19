@@ -146,15 +146,13 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   // is precisely why this panel's sole action used to be a shop link. When
   // there IS a page we link inward; when there isn't, the CTA becomes
   // "Map this book" — the miss turns into the corpus's own growth loop.
-  // 2026-09-07: promoting DNA out of the tabs made the page open at full
-  // volume — twelve interactive rows plus an evidence panel plus two
-  // recommendation tiers, roughly two screens before the reader reaches
-  // anything else. The strand now opens showing only the axes where this book
-  // is most distinctive and expands on request. Nothing is hidden that the
-  // header sparkline doesn't already convey: it carries the whole twelve-bar
-  // silhouette at a glance, so the collapsed strand is a caption for a shape
-  // the reader has already seen.
-  const [strandExpanded, setStrandExpanded] = useState(false);
+  // 2026-09-19: replaced the expand/collapse gate with always-visible rows
+  // at two sizes instead. All twelve axes stay on the page — the four where
+  // this book is most distinctive (`definingAxes`, below) render full-size
+  // and draggable; the rest render as a quiet compact strip so they're still
+  // legible and clickable (which promotes them to full-size) without
+  // fighting the defining four for attention or costing an extra tap to
+  // reveal at all.
   const [kindredSlug, setKindredSlug] = useState<string | null>(null);
   const [kindredChecked, setKindredChecked] = useState(false);
 
@@ -340,15 +338,17 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     return new Set(ranked);
   }, [AXIS_IDS, axesById]);
 
-  // A pinned or hovered axis must stay visible even when collapsed, otherwise
-  // clicking a "Shared"/"Differs" chip in the recommendation would scroll to a
-  // row that isn't rendered.
-  const visibleAxisIds = useMemo(() => {
-    if (strandExpanded) return AXIS_IDS as readonly DnaAxisId[];
-    return AXIS_IDS.filter(
-      (id) => definingAxes.has(id) || id === pinnedAxis || id === hoveredAxis,
-    ) as readonly DnaAxisId[];
-  }, [strandExpanded, AXIS_IDS, definingAxes, pinnedAxis, hoveredAxis]);
+  // Which axes render full-size right now: the four defining ones, plus
+  // whichever axis is pinned or hovered — clicking a quiet row (or a
+  // "Shared"/"Differs" chip in the recommendation) promotes it to full-size
+  // so its drag handle and evidence are reachable, the same as the old
+  // expand-then-drag flow did, just without an extra tap to expand first.
+  const promotedIds = useMemo(() => {
+    const s = new Set<DnaAxisId>(definingAxes);
+    if (pinnedAxis) s.add(pinnedAxis);
+    if (hoveredAxis) s.add(hoveredAxis);
+    return s;
+  }, [definingAxes, pinnedAxis, hoveredAxis]);
 
   const focusAxis = activeAxis ?? rec?.shared_axes?.[0] ?? AXIS_IDS[0];
   const focusAxisMeta = AXIS_META[focusAxis] ?? DNA_AXIS_META[focusAxis as DnaAxisId];
@@ -452,6 +452,168 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     };
   }, [perturbations, hydrated, user, cacheKey, axesById]);
 
+  // Renders one axis at either the full-size, draggable "defining" treatment
+  // or the quiet compact strip — identical click-to-pin/hover-to-preview
+  // logic either way, so a quiet row promotes itself (via promotedIds,
+  // above) the moment it's clicked rather than needing its own drag handle.
+  // Same track + fill bar language at both sizes: a light background track,
+  // a solid --primary fill, width alone encoding the score — no center
+  // tick, no 25/75 gridlines, which is what made the old strand read as a
+  // dashboard instead of a fingerprint.
+  const renderAxisRow = (id: DnaAxisId, size: "lg" | "sm") => {
+    const meta = AXIS_META[id] ?? DNA_AXIS_META[id as DnaAxisId];
+    const score = effectiveScore(id);
+    const isPinned = pinnedAxis === id;
+    const isHover = activeAxis === id;
+    const isShared = sharedSet.has(id);
+    const isDivergent = divergentSet.has(id);
+    const idx = AXIS_IDS.indexOf(id);
+    const fillColor = "hsl(var(--primary))";
+    const lg = size === "lg";
+
+    return (
+      <div
+        key={id}
+        onMouseEnter={() => setHoveredAxis(id)}
+        onMouseLeave={() => setHoveredAxis((h) => (h === id ? null : h))}
+        onClick={() => setPinnedAxis((p) => (p === id ? null : id))}
+        className={cn(
+          "cursor-pointer transition-colors",
+          lg ? "border-b border-foreground/30 px-4 py-3 md:px-8" : "px-4 py-1 md:px-8",
+          isHover && lg && "bg-[hsl(var(--ink-blue))] text-background",
+        )}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span
+            className={cn(
+              "flex min-w-0 items-center gap-1.5 font-sans font-semibold",
+              lg ? "text-sm md:text-base" : "text-[11px] font-medium text-muted-foreground",
+              isHover && lg && "text-background",
+            )}
+          >
+            <span className={cn("meta shrink-0", isHover && lg ? "text-background/60" : "text-muted-foreground")}>
+              {String(idx + 1).padStart(2, "0")}
+            </span>
+            <span className="truncate">{meta.name}</span>
+            {isPinned && (
+              <Pin
+                className={cn("h-3 w-3 shrink-0", isHover && lg ? "text-background" : "text-primary")}
+                aria-label="Pinned"
+              />
+            )}
+            {isShared && !isHover && (
+              <span title="Shared with recommendation" className="h-1.5 w-1.5 shrink-0 bg-primary" />
+            )}
+            {isDivergent && !isHover && (
+              <span title="Divergent" className="h-1.5 w-1.5 shrink-0 bg-accent" />
+            )}
+          </span>
+          <span
+            className={cn(
+              "shrink-0 font-mono",
+              lg ? "text-sm font-bold" : "text-[10px] text-muted-foreground",
+              isHover && lg && "text-background/80",
+            )}
+          >
+            {Math.round(score)}
+          </span>
+        </div>
+
+        <div
+          data-row
+          className={cn(
+            "relative mt-1.5 select-none",
+            lg ? "h-4" : "h-1.5",
+            isHover && lg ? "bg-background/15" : "bg-foreground/10",
+          )}
+        >
+          <div
+            className={cn("absolute inset-y-0 left-0", isDivergent && "outline outline-1 outline-accent")}
+            style={{
+              width: `calc(0.75rem + ((100% - 1.5rem) * ${score / 100}))`,
+              backgroundColor: fillColor,
+            }}
+          />
+          {lg && (
+            <div
+              aria-label={`${meta.name}: ${Math.round(score)}`}
+              role="slider"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(score)}
+              tabIndex={0}
+              className={cn(
+                "absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 border touch-none cursor-grab transition-transform active:scale-110 active:cursor-grabbing hover:scale-110",
+                isHover && "scale-110",
+              )}
+              style={{
+                left: `calc(0.75rem + ((100% - 1.5rem) * ${score / 100}))`,
+                backgroundColor: fillColor,
+                borderColor: "hsl(var(--background))",
+              }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                const handle = e.currentTarget as HTMLDivElement;
+                const row = handle.closest("[data-row]") as HTMLDivElement | null;
+                if (!row) return;
+                const baseScore = axesById.get(id)?.score ?? 50;
+                const startX = e.clientX;
+                const startScore = effectiveScore(id);
+                // Mouse input is precise; touch/pen input has natural thumb/finger
+                // jitter, so use a larger engagement threshold for non-mouse pointers
+                // to avoid premature/twitchy engagement on touch devices.
+                const THRESHOLD = e.pointerType === "mouse" ? 4 : 9;
+                let engaged = false;
+                setHoveredAxis(id);
+                try { handle.setPointerCapture(e.pointerId); } catch { /* noop */ }
+                const onMove = (ev: PointerEvent) => {
+                  if (!engaged && Math.abs(ev.clientX - startX) < THRESHOLD) return;
+                  if (!engaged) {
+                    console.log({ ui: "book_dna_slider", event: "drag_engaged", pointerType: ev.pointerType });
+                  }
+                  engaged = true;
+                  const rect = row.getBoundingClientRect();
+                  const inner = rect.width - 24;
+                  const deltaPct = ((ev.clientX - startX) / inner) * 100;
+                  const next = Math.max(0, Math.min(100, startScore + deltaPct));
+                  setPerturbations((p) => ({ ...p, [id]: next - baseScore }));
+                };
+                const onUp = (ev: PointerEvent) => {
+                  handle.removeEventListener("pointermove", onMove);
+                  handle.removeEventListener("pointerup", onUp);
+                  handle.removeEventListener("pointercancel", onUp);
+                  try { handle.releasePointerCapture(ev.pointerId); } catch { /* noop */ }
+                };
+                handle.addEventListener("pointermove", onMove);
+                handle.addEventListener("pointerup", onUp);
+                handle.addEventListener("pointercancel", onUp);
+              }}
+              onKeyDown={(e) => {
+                const step = e.shiftKey ? 5 : 1;
+                const baseScore = axesById.get(id)?.score ?? 50;
+                const cur = effectiveScore(id);
+                if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setPerturbations((p) => ({ ...p, [id]: Math.max(0, cur - step) - baseScore }));
+                } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setPerturbations((p) => ({ ...p, [id]: Math.min(100, cur + step) - baseScore }));
+                }
+              }}
+            />
+          )}
+        </div>
+
+        {lg && isHover && (
+          <div className="mt-2 flex items-center justify-between border-t border-background/20 pt-1.5">
+            <span className="meta text-background/70">← {meta.low}</span>
+            <span className="meta text-background/70">{meta.high} →</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (!dna || !rec || !dna.axes || dna.axes.length === 0) {
     return (
       <div className="ink-border bg-card p-8">
@@ -491,213 +653,14 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           </div>
         </div>
 
-        {/* Top axis ruler */}
-        <div className="relative grid grid-cols-12 border-b border-foreground/30 bg-background/40 px-3 py-2 md:pl-11">
-          <div className="col-span-4 meta text-muted-foreground md:col-span-3">Axis</div>
-          <div className="col-span-8 md:col-span-9">
-            <div className="flex justify-between meta text-muted-foreground">
-              <span>0</span>
-              <span className="hidden sm:inline">25</span>
-              <span>50</span>
-              <span className="hidden sm:inline">75</span>
-              <span>100</span>
-            </div>
-          </div>
-        </div>
-
-        {/* The strand */}
+        {/* The strand — the defining axes render full-size and draggable;
+            the rest sit underneath as a quiet, still-clickable strip instead
+            of being hidden behind an expand toggle. */}
         <div className="md:pl-8">
-          {visibleAxisIds.map((id, idx) => {
-            const meta = AXIS_META[id] ?? DNA_AXIS_META[id as DnaAxisId];
-            const score = effectiveScore(id);
-            const isPinned = pinnedAxis === id;
-            // Drives the row highlight + evidence panel — true for whichever
-            // axis is pinned (click/tap), or hovered if nothing is pinned.
-            const isHover = activeAxis === id;
-            const isShared = sharedSet.has(id);
-            const isDivergent = divergentSet.has(id);
-            const isOdd = idx % 2 === 1;
-            // 2026-07-16 redesign: bars used to diverge from a center tick
-            // (fill grew left or right of 50, colored per-axis from the
-            // 12-step --lane rainbow ramp). Simplified per design critique
-            // 3i — one color (--primary), one track, width alone encodes
-            // the score as a plain 0-100 left-anchored fill. The marker's
-            // absolute position (below) was already 0-100-based and is
-            // unchanged; only the fill segment's math/color changed.
-            const widthPct = score;
-            const fillColor = "hsl(var(--primary))";
-
-            return (
-              <div
-                key={id}
-                onMouseEnter={() => setHoveredAxis(id)}
-                onMouseLeave={() => setHoveredAxis((h) => (h === id ? null : h))}
-                onClick={() => setPinnedAxis((p) => (p === id ? null : id))}
-                className={cn(
-                  "group relative grid grid-cols-12 border-b border-foreground/30 transition-colors cursor-pointer",
-                  isOdd && "bg-background/30",
-                  isHover && "bg-[hsl(var(--ink-blue))] text-background",
-                )}
-              >
-                {/* Axis label */}
-                <div className="col-span-4 flex items-center gap-2 border-r border-foreground/30 px-3 py-2.5 md:col-span-3">
-                  <span className={cn("meta w-5 shrink-0", isHover ? "text-background/60" : "text-muted-foreground")}>
-                    {String(idx + 1).padStart(2, "0")}
-                  </span>
-                  <span className="font-sans text-xs font-semibold leading-tight md:text-sm">
-                    {meta.name}
-                  </span>
-                  {isPinned && (
-                    <Pin
-                      className={cn("h-3 w-3 shrink-0", isHover ? "text-background" : "text-primary")}
-                      aria-label="Pinned"
-                    />
-                  )}
-                  {isShared && !isHover && (
-                    <span title="Shared with recommendation" className="ml-auto h-1.5 w-1.5 shrink-0 bg-primary" />
-                  )}
-                  {isDivergent && !isHover && (
-                    <span title="Divergent" className="ml-auto h-1.5 w-1.5 shrink-0 bg-accent" />
-                  )}
-                </div>
-
-                {/* Bar track */}
-                <div data-row className="col-span-8 relative h-12 px-3 select-none md:col-span-9">
-                  <div className="absolute inset-x-3 top-1/2 h-px -translate-y-1/2 bg-foreground/20 pointer-events-none" />
-                  <div
-                    className={cn(
-                      "absolute top-1 bottom-1 w-px pointer-events-none",
-                      isHover ? "bg-background/60" : "bg-foreground/40",
-                    )}
-                    style={{ left: `calc(0.75rem + ((100% - 1.5rem) * 0.5))` }}
-                  />
-                  {[25, 75].map((t) => (
-                    <div
-                      key={t}
-                      className={cn(
-                        "absolute top-1 bottom-1 w-px pointer-events-none",
-                        isHover ? "bg-background/20" : "bg-foreground/10",
-                      )}
-                      style={{ left: `calc(0.75rem + ((100% - 1.5rem) * ${t / 100}))` }}
-                    />
-                  ))}
-                  <div
-                    className={cn(
-                      "absolute top-1/2 h-3 -translate-y-1/2 transition-all duration-300 pointer-events-none",
-                      isHover && "h-5",
-                      isDivergent && "outline outline-1 outline-accent",
-                    )}
-                    style={{
-                      left: "0.75rem",
-                      width: `calc((100% - 1.5rem) * ${widthPct / 100})`,
-                      backgroundColor: fillColor,
-                    }}
-                  />
-                  <div
-                    aria-label={`${meta.name}: ${Math.round(score)}`}
-                    role="slider"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Math.round(score)}
-                    tabIndex={0}
-                    className={cn(
-                      "absolute top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 border touch-none cursor-grab transition-transform active:scale-110 active:cursor-grabbing hover:scale-110 md:h-7 md:w-7",
-                      isHover && "scale-110",
-                    )}
-                    style={{
-                      left: `calc(0.75rem + ((100% - 1.5rem) * ${score / 100}))`,
-                      backgroundColor: fillColor,
-                      borderColor: fillColor,
-                    }}
-                    onPointerDown={(e) => {
-                      e.stopPropagation();
-                      const handle = e.currentTarget as HTMLDivElement;
-                      const row = handle.closest("[data-row]") as HTMLDivElement | null;
-                      if (!row) return;
-                      const baseScore = axesById.get(id)?.score ?? 50;
-                      const startX = e.clientX;
-                      const startScore = effectiveScore(id);
-                      // Mouse input is precise; touch/pen input has natural thumb/finger
-                      // jitter, so use a larger engagement threshold for non-mouse pointers
-                      // to avoid premature/twitchy engagement on touch devices.
-                      const THRESHOLD = e.pointerType === "mouse" ? 4 : 9;
-                      let engaged = false;
-                      setHoveredAxis(id);
-                      try { handle.setPointerCapture(e.pointerId); } catch { /* noop */ }
-                      const onMove = (ev: PointerEvent) => {
-                        if (!engaged && Math.abs(ev.clientX - startX) < THRESHOLD) return;
-                        if (!engaged) {
-                          console.log({ ui: "book_dna_slider", event: "drag_engaged", pointerType: ev.pointerType });
-                        }
-                        engaged = true;
-                        const rect = row.getBoundingClientRect();
-                        const inner = rect.width - 24;
-                        const deltaPct = ((ev.clientX - startX) / inner) * 100;
-                        const next = Math.max(0, Math.min(100, startScore + deltaPct));
-                        setPerturbations((p) => ({ ...p, [id]: next - baseScore }));
-                      };
-                      const onUp = (ev: PointerEvent) => {
-                        handle.removeEventListener("pointermove", onMove);
-                        handle.removeEventListener("pointerup", onUp);
-                        handle.removeEventListener("pointercancel", onUp);
-                        try { handle.releasePointerCapture(ev.pointerId); } catch { /* noop */ }
-                      };
-                      handle.addEventListener("pointermove", onMove);
-                      handle.addEventListener("pointerup", onUp);
-                      handle.addEventListener("pointercancel", onUp);
-                    }}
-                    onKeyDown={(e) => {
-                      const step = e.shiftKey ? 5 : 1;
-                      const baseScore = axesById.get(id)?.score ?? 50;
-                      const cur = effectiveScore(id);
-                      if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-                        e.preventDefault();
-                        setPerturbations((p) => ({ ...p, [id]: Math.max(0, cur - step) - baseScore }));
-                      } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-                        e.preventDefault();
-                        setPerturbations((p) => ({ ...p, [id]: Math.min(100, cur + step) - baseScore }));
-                      }
-                    }}
-                  />
-                  <span
-                    className={cn(
-                      "absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[11px] pointer-events-none",
-                      isHover ? "text-background/70" : "text-muted-foreground",
-                    )}
-                  >
-                    {String(Math.round(score)).padStart(3, " ")}
-                  </span>
-                </div>
-
-                {isHover && (
-                  <div className="col-span-12 col-start-1 grid grid-cols-12 border-t border-background/20 bg-[hsl(var(--ink-blue))] text-background">
-                    <div className="col-span-4 md:col-span-3" />
-                    <div className="col-span-8 flex items-center justify-between px-3 py-1.5 md:col-span-9">
-                      <span className="meta text-background/70">← {meta.low}</span>
-                      <span className="meta text-background/70">{meta.high} →</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Expand / collapse the rest of the strand. Deliberately a full-width
-              rule-bounded row rather than a small link: at 4 of 12 rows the
-              reader needs to know the other eight exist. */}
-          <button
-            type="button"
-            onClick={() => setStrandExpanded((v) => !v)}
-            aria-expanded={strandExpanded}
-            className="meta flex w-full items-center justify-between border-t border-foreground/20 px-4 py-3 text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <span>
-              {strandExpanded
-                ? "Show only the defining axes"
-                : `Open the full strand · all ${AXIS_IDS.length} axes`}
-            </span>
-            <span aria-hidden="true">{strandExpanded ? "\u2191" : "\u2193"}</span>
-          </button>
+          {AXIS_IDS.filter((id) => promotedIds.has(id)).map((id) => renderAxisRow(id, "lg"))}
+          <div className="border-t border-foreground/20 px-4 pb-3 pt-2 md:px-8">
+            {AXIS_IDS.filter((id) => !promotedIds.has(id)).map((id) => renderAxisRow(id, "sm"))}
+          </div>
         </div>
 
         {(totalDrift > 0 || saveState !== "idle") && (

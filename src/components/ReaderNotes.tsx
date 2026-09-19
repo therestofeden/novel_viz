@@ -24,7 +24,11 @@ interface Props {
 export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [open, setOpen] = useState(false);
+  // 2026-09-19: defaults to open — reader notes are the app's own
+  // "note taking" feature and used to lose the default-open slot to the
+  // AI-generated essay below, which taught readers to consume someone
+  // else's take instead of recording their own.
+  const [open, setOpen] = useState(true);
   const [note, setNote] = useState("");
   const [shelfId, setShelfId] = useState<string | null>(null);   // shelf_books.id
   const [loading, setLoading] = useState(false);
