@@ -468,7 +468,20 @@ const Index = () => {
   // Loaded once on mount, filtered in-memory on every keystroke.
   // Covers ~80% of searches without any backend call.
   // ============================================================
-  type IndexedBook = { title: string; author: string; popularity: number; haystack: string; normTitle: string; normAuthor: string; normHaystack: string };
+  // 2026-09-18 daily perf pass: IndexedBook used to also carry a `haystack`
+  // field (`${title} ${author}`.toLowerCase()), built for every row in this
+  // mapping step. searchLocalIndex below (the only reader of this index)
+  // only ever matches against normTitle/normAuthor/normHaystack — grepped
+  // the whole src/ tree and confirmed `.haystack` has zero read sites, on
+  // this type or anywhere else. It was dead weight on the one place in the
+  // app that's genuinely hot: this map() runs once per page load over the
+  // full popular-books payload (novel_analyses + search_cache + canon_books
+  // + seed_book_list, deduped — hundreds to low thousands of rows and
+  // growing with every daily canon round), directly gating when the Tier-1
+  // instant index becomes usable. Removed the unused field and its
+  // string-concat + toLowerCase() computation; normHaystack (the field
+  // actually used for scoring) is unaffected.
+  type IndexedBook = { title: string; author: string; popularity: number; normTitle: string; normAuthor: string; normHaystack: string };
   const popularIndexRef = useRef<IndexedBook[]>([]);
 
   useEffect(() => {
@@ -490,7 +503,6 @@ const Index = () => {
             title: b.title,
             author: b.author ?? "",
             popularity: b.popularity ?? 0,
-            haystack: `${b.title} ${b.author ?? ""}`.toLowerCase(),
             normTitle,
             normAuthor,
             normHaystack: `${normTitle} ${normAuthor}`,

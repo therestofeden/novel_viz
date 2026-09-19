@@ -3561,6 +3561,92 @@ export const CLASSIC: ClassicEntry[] = [
   // Classic count: 474 → 476.
   { title: "The Concept of Law", author: "H.L.A. Hart", why: "Published by Oxford University Press in 1961, the book that replaced John Austin's command theory of law — rules as the sovereign's threats backed by force — with a framework built on rules of two kinds: primary rules that impose obligations, and secondary rules (of recognition, change, and adjudication) that let a legal system identify, update, and enforce its own primary rules. The resulting \"rule of recognition\" became the shared starting point every later jurisprudence debate — Dworkin's rights-based challenge, Raz's authority thesis, the natural-law revival — argues with or against. This list's political philosophy is thick with the normative question of how power ought to be organized (Two Treatises, The Social Contract, On Liberty, The Federalist Papers), but had nothing addressing the analytic question underneath all of them: what a legal rule actually is." },
   { title: "An Inquiry into the Causes and Effects of the Variolae Vaccinae", author: "Edward Jenner", why: "Published at Jenner's own expense in 1798, after the Royal Society had declined to print the underlying paper as too remarkable to credit without further evidence: twenty-three case studies documenting that deliberate infection with cowpox (variolae vaccinae) reliably protected against subsequent smallpox exposure. Founded vaccination as a medical practice and immunology as a field of study in a single stroke — the word \"vaccine\" itself derives from vacca, Latin for cow, in direct tribute to this work — and set in motion the two-century campaign that ended with the World Health Organization declaring smallpox eradicated worldwide in 1980, the only human disease ever eliminated this way. This list's medicine shelf runs anatomy (Vesalius), physiology (Harvey), and epidemiology (Snow); nothing until now addressed how the body can be made to defend itself against a disease before it strikes.", aka: ["An Inquiry into the Causes and Effects of the Variolae Vaccinae, a Disease Discovered in Some of the Western Counties of England, Particularly Gloucestershire, and Known by the Name of the Cow Pox", "Inquiry into the Causes and Effects of the Variolae Vaccinae"] },
+
+  // Round 92 (2026-09-18, scheduled `daily_novel_viz_feat` task): two more
+  // total-absence founding-text gaps, in fields adjacent to but distinct
+  // from ones already thick on this list. Geology's only entry, Lyell's
+  // Principles of Geology (round 55), is Charles Lyell's uniformitarianism —
+  // the Earth shaped by slow, continuous processes over vast time, the
+  // ground Darwin's gradualism stands on. Nothing here represented the
+  // 20th century's actual tectonic revolution: how and why the continents
+  // themselves move. Alfred Wegener's Die Entstehung der Kontinente und
+  // Ozeane (1915) is that founding text — noticing that South America's and
+  // Africa's coastlines fit together like torn paper, and building a full
+  // case (matching fossils, rock strata, and mountain ranges across now-
+  // separated continents) for a single ancient supercontinent, Pangaea,
+  // that broke apart and drifted. Wegener's mechanism was wrong (he
+  // proposed tidal and centrifugal forces too weak to move continents, the
+  // objection that got his theory rejected by most geologists by 1930) and
+  // the book sat discredited for three decades until 1960s seafloor-
+  // spreading evidence vindicated the observation, if not the mechanism, as
+  // plate tectonics — a different axis entirely from Lyell's gradualism,
+  // and closer kin to Copernicus (right conclusion, contested for
+  // generations before the evidence caught up) than to a gap this list's
+  // existing hard-science founder-text pattern already covers. Separately,
+  // archaeology as a discipline — not history (textual/documentary) or
+  // anthropology (cultural/social), both deep here, but the practice of
+  // reading the buried material past itself — had zero representation.
+  // Flinders Petrie's Methods and Aims in Archaeology (1904) is that
+  // founding methodological text: written by the excavator who, working
+  // predynastic Egyptian cemetery sites at Naqada and Diospolis Parva in the
+  // 1890s, worked out that ordering pottery styles by gradual stylistic
+  // change (sequence dating, the direct ancestor of modern seriation) let a
+  // site be dated relative to others even with no written records at all —
+  // then wrote this book to formalize careful stratigraphic recording and
+  // systematic method for the whole field, in an era when most contemporary
+  // digs were still closer to treasure-hunting. Widely credited as the
+  // father of Egyptian archaeology and, through this book specifically, as
+  // the figure who turned excavation from antiquarian looting into a
+  // repeatable scientific method. Both WebSearch-verified (Wegener's 1915
+  // date, the Pangaea/continental-fit case, the mechanism-rejection-then-
+  // 1960s-vindication arc; Petrie's 1904 date, the sequence-dating/seriation
+  // method, and his standing as Egyptian archaeology's founding
+  // methodologist, independently corroborated across sources) and
+  // collision-checked (grepped both classic.ts and must-read.ts for both
+  // titles and both authors — zero hits before writing). Neither a close
+  // call for Must Read — specialist-founder register, same as Hart/Jenner
+  // last round. Classic count: 476 → 478.
+  { title: "The Origin of Continents and Oceans", author: "Alfred Wegener", why: "Published in 1915 as Die Entstehung der Kontinente und Ozeane, the book that first argued South America and Africa were once joined — their coastlines fit like torn paper, and matching fossils, rock strata, and mountain ranges cross what is now open ocean — because all the continents once sat together in a single landmass, Pangaea, that broke apart and drifted to its present configuration. Wegener's proposed mechanism (tidal and centrifugal forces) was too weak to actually move continents, the objection that got the theory rejected by most geologists within fifteen years; the book sat discredited until 1960s seafloor-spreading evidence vindicated the observation as plate tectonics, decades after Wegener's own death on a Greenland ice sheet expedition in 1930. This list's only prior geology entry, Lyell's Principles of Geology, argues that slow uniform processes shape the Earth over time; this is a different question entirely — why the continents themselves are not fixed.", aka: ["Die Entstehung der Kontinente und Ozeane", "The Origin of Continents and Oceans: Four Revised Editions"] },
+  { title: "Methods and Aims in Archaeology", author: "W.M. Flinders Petrie", why: "Published in 1904, the book in which the excavator who spent the 1890s digging predynastic Egyptian cemeteries at Naqada and Diospolis Parva formalized what he had worked out in the field: that ordering thousands of pottery fragments by gradual stylistic change — sequence dating, the direct ancestor of modern seriation — let a site's relative chronology be reconstructed even with no written records at all. This book turns that field technique into a general statement of method: systematic stratigraphic recording, controlled excavation, and treating artifacts as dateable evidence rather than curiosities to be pulled from the ground, at a time when most contemporary digs were closer to organized treasure-hunting. Petrie is widely credited as the father of Egyptian archaeology on the strength of this shift; closes archaeology's total absence from a list that already runs deep on history (Herodotus, Thucydides, Gibbon, Braudel) and anthropology (Boas, Lévi-Strauss, Geertz) without ever once covering the discipline of reading the buried past itself.", aka: ["Methods & Aims in Archaeology"] },
+
+  // Round 93 (2026-09-19, scheduled `daily_novel_viz_feat` task): two more
+  // total-absence gaps, both surprising given how deep this list's adjacent
+  // shelves already run. Probability had grown a real bench this year —
+  // Laplace's classical definition (round 90), Fisher's frequentist
+  // statistics (round 83) — but zero representation of the third major
+  // school: Bayesian inference, updating a prior belief in light of new
+  // evidence rather than counting favorable-over-total cases (Laplace) or
+  // rejecting a null hypothesis (Fisher). Thomas Bayes's An Essay towards
+  // Solving a Problem in the Doctrine of Chances, read to the Royal Society
+  // on 23 December 1763 and published in Philosophical Transactions that
+  // same year — two years after Bayes's own death, edited for publication by
+  // his friend Richard Price — contains the theorem that gives the whole
+  // school its name. A genuinely different axis from both existing
+  // probability entries, not a refinement of either: Laplace's 1814 essay
+  // and Fisher's 1935 Design of Experiments both treat probability as a
+  // property of repeated trials or possible-outcome counting; Bayes/Price
+  // treat it as a degree of belief that gets revised by evidence, the
+  // premise every modern Bayesian statistics, machine-learning classifier,
+  // and spam filter still runs on. Separately, biology's taxonomy — the
+  // actual discipline of naming and classifying life, not evolution
+  // (Darwin, already here) or genetics (Mendel, already here) — had zero
+  // representation. Carl Linnaeus's Systema Naturae, first published in
+  // 1735 as an 11-page folio and expanded across ten editions, is that
+  // founding text; the 10th edition (1758) specifically is the one the
+  // International Commission on Zoological Nomenclature still recognizes as
+  // the official starting point of zoological binomial nomenclature — every
+  // species name written as "Genus species" today (Homo sapiens included)
+  // descends directly from the naming convention Linnaeus fixed there. Both
+  // WebSearch-verified (Bayes/Price's 1763 date and Royal Society reading;
+  // Linnaeus's 1735 first edition and the 10th edition's 1758 status as
+  // zoological nomenclature's formal starting point, independently
+  // corroborated across sources) and collision-checked (grepped both
+  // classic.ts and must-read.ts for both titles, both authors, and "Bayes"/
+  // "Linnaeus" bare — zero hits before writing). Neither a close call for
+  // Must Read — specialist-founder register, same as Wegener/Petrie last
+  // round. Classic count: 478 → 480.
+  { title: "An Essay towards Solving a Problem in the Doctrine of Chances", author: "Thomas Bayes", why: "Read to the Royal Society on 23 December 1763 and published in Philosophical Transactions that same year, two years after Bayes's own death — his friend Richard Price edited the manuscript for publication and added his own introduction and appendix. Contains the theorem, now bearing Bayes's name, for updating the probability of a hypothesis as new evidence arrives, rather than treating probability as a fixed ratio of favorable-to-total cases (Laplace, already on this list) or a basis for rejecting a null hypothesis in repeated trials (Fisher, already on this list). A third, genuinely distinct school of probability sharing this list's shelf with the other two, and the direct ancestor of Bayesian statistics and the probabilistic reasoning behind modern spam filters and machine-learning classifiers." },
+  { title: "Systema Naturae", author: "Carl Linnaeus", why: "First published in 1735 as an eleven-page folio and expanded across ten editions over Linnaeus's lifetime, the work that founded modern biological taxonomy: a hierarchical classification of nature into kingdoms, classes, orders, genera, and species, and the source of the two-part \"Genus species\" naming convention (binomial nomenclature) used for every living thing named since. The 10th edition (1758) specifically is the one the International Commission on Zoological Nomenclature still recognizes as zoological nomenclature's official starting date. This list's biology shelf runs evolution (Darwin) and genetics (Mendel) but had never once addressed the prior, more basic question both of those disciplines assume an answer to: what a species is and how it gets named.", aka: ["Systema Naturae per Regna Tria Naturae"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
