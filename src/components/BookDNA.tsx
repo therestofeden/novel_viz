@@ -146,13 +146,10 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   // is precisely why this panel's sole action used to be a shop link. When
   // there IS a page we link inward; when there isn't, the CTA becomes
   // "Map this book" — the miss turns into the corpus's own growth loop.
-  // 2026-09-19: replaced the expand/collapse gate with always-visible rows
-  // at two sizes instead. All twelve axes stay on the page — the four where
-  // this book is most distinctive (`definingAxes`, below) render full-size
-  // and draggable; the rest render as a quiet compact strip so they're still
-  // legible and clickable (which promotes them to full-size) without
-  // fighting the defining four for attention or costing an extra tap to
-  // reveal at all.
+  // 2026-09-19: replaced the expand/collapse gate with always-visible rows.
+  // 2026-09-20: dropped the two-size (defining vs. quiet) treatment those
+  // rows started with — see renderAxisRow, below — in favor of one uniform
+  // bar size for all twelve axes, with evidence surfaced on hover/click.
   const [kindredSlug, setKindredSlug] = useState<string | null>(null);
   const [kindredChecked, setKindredChecked] = useState(false);
 
@@ -323,32 +320,12 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     return () => { cancelled = true; };
   }, [activeRecForPage?.title, activeRecForPage?.author]);
 
-  // "Defining" = furthest from the neutral midpoint, i.e. where this book
-  // actually commits to something. For One Hundred Years of Solitude that
-  // surfaces Ending openness 0, Scale 95, Time linearity 10 — far more telling
-  // than twelve mostly mid-range bars. Ties break on canonical axis order so
-  // the set is stable between renders and between books.
-  const DEFINING_COUNT = 4;
-  const definingAxes = useMemo(() => {
-    const ranked = AXIS_IDS
-      .map((id, idx) => ({ id, idx, dist: Math.abs((axesById.get(id)?.score ?? 50) - 50) }))
-      .sort((a, b) => (b.dist - a.dist) || (a.idx - b.idx))
-      .slice(0, DEFINING_COUNT)
-      .map((a) => a.id);
-    return new Set(ranked);
-  }, [AXIS_IDS, axesById]);
-
-  // Which axes render full-size right now: the four defining ones, plus
-  // whichever axis is pinned or hovered — clicking a quiet row (or a
-  // "Shared"/"Differs" chip in the recommendation) promotes it to full-size
-  // so its drag handle and evidence are reachable, the same as the old
-  // expand-then-drag flow did, just without an extra tap to expand first.
-  const promotedIds = useMemo(() => {
-    const s = new Set<DnaAxisId>(definingAxes);
-    if (pinnedAxis) s.add(pinnedAxis);
-    if (hoveredAxis) s.add(hoveredAxis);
-    return s;
-  }, [definingAxes, pinnedAxis, hoveredAxis]);
+  // 2026-09-20: dropped the "defining axes render bigger" idea — Stefano's
+  // feedback was that two bar sizes made a reader decode a hierarchy before
+  // they'd read a single label. All twelve axes now render identically, in
+  // canonical axis order. The "why" for any axis still lives in the
+  // evidence panel on the right, driven by the existing pinnedAxis/
+  // hoveredAxis hover-and-click state below — that part already worked.
 
   const focusAxis = activeAxis ?? rec?.shared_axes?.[0] ?? AXIS_IDS[0];
   const focusAxisMeta = AXIS_META[focusAxis] ?? DNA_AXIS_META[focusAxis as DnaAxisId];
@@ -452,15 +429,12 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     };
   }, [perturbations, hydrated, user, cacheKey, axesById]);
 
-  // Renders one axis at either the full-size, draggable "defining" treatment
-  // or the quiet compact strip — identical click-to-pin/hover-to-preview
-  // logic either way, so a quiet row promotes itself (via promotedIds,
-  // above) the moment it's clicked rather than needing its own drag handle.
-  // Same track + fill bar language at both sizes: a light background track,
-  // a solid --primary fill, width alone encoding the score — no center
-  // tick, no 25/75 gridlines, which is what made the old strand read as a
-  // dashboard instead of a fingerprint.
-  const renderAxisRow = (id: DnaAxisId, size: "lg" | "sm") => {
+  // Renders one axis, always at the same size — full track+fill bar and
+  // draggable marker for every one of the twelve. Hover (or tap on touch)
+  // sets hoveredAxis, click sets pinnedAxis; both already drove the
+  // evidence panel on the right before this fix, so the only change here
+  // is dropping the old "lg vs sm" size branch entirely.
+  const renderAxisRow = (id: DnaAxisId) => {
     const meta = AXIS_META[id] ?? DNA_AXIS_META[id as DnaAxisId];
     const score = effectiveScore(id);
     const isPinned = pinnedAxis === id;
@@ -469,7 +443,6 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     const isDivergent = divergentSet.has(id);
     const idx = AXIS_IDS.indexOf(id);
     const fillColor = "hsl(var(--primary))";
-    const lg = size === "lg";
 
     return (
       <div
@@ -478,26 +451,24 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         onMouseLeave={() => setHoveredAxis((h) => (h === id ? null : h))}
         onClick={() => setPinnedAxis((p) => (p === id ? null : id))}
         className={cn(
-          "cursor-pointer transition-colors",
-          lg ? "border-b border-foreground/30 px-4 py-3 md:px-8" : "px-4 py-1 md:px-8",
-          isHover && lg && "bg-[hsl(var(--ink-blue))] text-background",
+          "cursor-pointer border-b border-foreground/30 px-4 py-3 transition-colors md:px-8",
+          isHover && "bg-[hsl(var(--ink-blue))] text-background",
         )}
       >
         <div className="flex items-center justify-between gap-3">
           <span
             className={cn(
-              "flex min-w-0 items-center gap-1.5 font-sans font-semibold",
-              lg ? "text-sm md:text-base" : "text-[11px] font-medium text-muted-foreground",
-              isHover && lg && "text-background",
+              "flex min-w-0 items-center gap-1.5 font-sans font-semibold text-sm md:text-base",
+              isHover && "text-background",
             )}
           >
-            <span className={cn("meta shrink-0", isHover && lg ? "text-background/60" : "text-muted-foreground")}>
+            <span className={cn("meta shrink-0", isHover ? "text-background/60" : "text-muted-foreground")}>
               {String(idx + 1).padStart(2, "0")}
             </span>
             <span className="truncate">{meta.name}</span>
             {isPinned && (
               <Pin
-                className={cn("h-3 w-3 shrink-0", isHover && lg ? "text-background" : "text-primary")}
+                className={cn("h-3 w-3 shrink-0", isHover ? "text-background" : "text-primary")}
                 aria-label="Pinned"
               />
             )}
@@ -510,9 +481,8 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           </span>
           <span
             className={cn(
-              "shrink-0 font-mono",
-              lg ? "text-sm font-bold" : "text-[10px] text-muted-foreground",
-              isHover && lg && "text-background/80",
+              "shrink-0 font-mono text-sm font-bold",
+              isHover && "text-background/80",
             )}
           >
             {Math.round(score)}
@@ -522,9 +492,8 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         <div
           data-row
           className={cn(
-            "relative mt-1.5 select-none",
-            lg ? "h-4" : "h-1.5",
-            isHover && lg ? "bg-background/15" : "bg-foreground/10",
+            "relative mt-1.5 h-4 select-none",
+            isHover ? "bg-background/15" : "bg-foreground/10",
           )}
         >
           <div
@@ -534,8 +503,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
               backgroundColor: fillColor,
             }}
           />
-          {lg && (
-            <div
+          <div
               aria-label={`${meta.name}: ${Math.round(score)}`}
               role="slider"
               aria-valuemin={0}
@@ -601,10 +569,9 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                 }
               }}
             />
-          )}
         </div>
 
-        {lg && isHover && (
+        {isHover && (
           <div className="mt-2 flex items-center justify-between border-t border-background/20 pt-1.5">
             <span className="meta text-background/70">← {meta.low}</span>
             <span className="meta text-background/70">{meta.high} →</span>
@@ -653,14 +620,10 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           </div>
         </div>
 
-        {/* The strand — the defining axes render full-size and draggable;
-            the rest sit underneath as a quiet, still-clickable strip instead
-            of being hidden behind an expand toggle. */}
+        {/* The strand — all twelve axes, one bar size, canonical order.
+            Hover or tap any row for its evidence in the panel to the right. */}
         <div className="md:pl-8">
-          {AXIS_IDS.filter((id) => promotedIds.has(id)).map((id) => renderAxisRow(id, "lg"))}
-          <div className="border-t border-foreground/20 px-4 pb-3 pt-2 md:px-8">
-            {AXIS_IDS.filter((id) => !promotedIds.has(id)).map((id) => renderAxisRow(id, "sm"))}
-          </div>
+          {AXIS_IDS.map((id) => renderAxisRow(id))}
         </div>
 
         {(totalDrift > 0 || saveState !== "idle") && (
