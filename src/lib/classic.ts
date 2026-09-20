@@ -3688,6 +3688,69 @@ export const CLASSIC: ClassicEntry[] = [
   // Linnaeus last round. Classic count: 480 → 482.
   { title: "Communication Theory of Secrecy Systems", author: "Claude Shannon", why: "Begun as a classified Bell Labs memorandum in 1945 (\"A Mathematical Theory of Cryptography\"), declassified and published in the Bell System Technical Journal in October 1949. Proves, among other results, that a cipher can only be truly unbreakable if its key is as long and as random as the message itself — the one-time pad — putting cryptanalysis on a mathematical footing for the first time and marking the hinge historians of the field point to between classical, ad hoc cipher-craft and modern cryptography. A distinct paper and a distinct founding claim from Shannon's own A Mathematical Theory of Communication, already on this list — that one founded information theory; this one founded cryptography as a mathematical discipline, judged independently on its own merit rather than excluded for sharing an author." },
   { title: "The Pencil of Nature", author: "William Henry Fox Talbot", why: "Issued in six fascicles between 1844 and 1846, the first commercially published book illustrated with photographs — 24 calotype prints, each pasted in by hand, accompanying Talbot's own account of inventing the process and his case for what it could be used for. Historians of printing have compared its significance to the Gutenberg Bible for doing to the image what movable type had done to text three centuries earlier. This list's media-theory and art-criticism shelf (Benjamin, McLuhan, Berger, Bazin, Gombrich) runs deep on what photography and mechanical reproduction mean, but had never once included the founding text of photography as a medium itself." },
+
+  // Round 95 (2026-09-20, scheduled `daily-must-read-and-classic` task):
+  // continued round 94's flagged-but-unpursued candidates (topology,
+  // meteorology/oceanography/cartography) with a keyword sweep across both
+  // files (topology, meteorology, oceanography, cartography, Mercator,
+  // Ptolemy, Mendeleev, periodic, Analysis Situs — all zero hits) before
+  // researching. Four titles, closing four independent total-absence gaps.
+  // Chemistry: this list's shelf ran Boyle's negative critique of the
+  // Aristotelian four-element theory (1661) and Lavoisier's founding of
+  // systematic nomenclature and mass conservation (1789), but had nothing
+  // on the single organizing idea every chemistry class still opens with.
+  // Mendeleev's periodic table first appeared in the March 1869 preface to
+  // Osnovy Khimii (The Principles of Chemistry, published in two parts,
+  // 1869 and 1871) — and unlike earlier groupings of elements, Mendeleev
+  // left deliberate gaps for elements not yet discovered and predicted
+  // their properties in advance; gallium, scandium, and germanium were all
+  // found within his own lifetime matching those predictions closely.
+  // Earth science: oceanography had zero representation despite this
+  // list's geology (Lyell), plate tectonics (Wegener), and archaeology
+  // (Petrie) all being present. Matthew Fontaine Maury's The Physical
+  // Geography of the Sea (1855) is the first systematic account of ocean
+  // circulation, winds, and depth, built from a decade of mining ships'
+  // logbooks — credited with founding oceanography as a discipline, its
+  // pilot charts measurably shortened Atlantic crossings, and its Atlantic
+  // seabed profile first showed a transatlantic telegraph cable was
+  // physically feasible. Cartography: this list's only prior Ptolemy
+  // contact was via Galileo's Dialogue (Ptolemaic astronomy on trial), but
+  // Ptolemy's own Geography (Geographia, c. 150 CE) — the sole cartographic
+  // treatise to survive intact from antiquity — had no representation of
+  // its own. Rather than simply drawing a map, Ptolemy set out a method:
+  // latitude/longitude coordinates for more than 8,000 named places and
+  // three alternative projections for flattening a curved Earth, precise
+  // enough that a reader who had never seen the original map could redraw
+  // it from the text alone; lost to Western Europe for a millennium, then
+  // rediscovered and copied by the hundreds after a Byzantine manuscript
+  // reached Florence around 1400, printed editions shaped Columbus's own
+  // sense of the globe before 1492. Mathematics: closes topology's total
+  // absence from a cluster running Euclid (geometry), Al-Khwarizmi
+  // (algebra), Gauss (number theory), and Gödel (incompleteness). Henri
+  // Poincaré's Analysis Situs (1895) is the paper in which Poincaré set out,
+  // in his own stated words, to found a wholly new branch of mathematics —
+  // introducing the fundamental group and homology as tools for telling
+  // spaces apart by shape rather than measurement, riddled with gaps its
+  // own author had to patch across five supplements over the next decade,
+  // but the program it set (classify spaces by what survives continuous
+  // deformation) still defines algebraic topology. A second entry by an
+  // author already here (Science and Hypothesis, round 79), judged
+  // independently per this list's merit-not-quota standard — the same call
+  // made for Shannon's second entry last round: that book is Poincaré's
+  // philosophy of science, this is the actual mathematics he did, a wholly
+  // distinct contribution under a distinct title. All four WebSearch-
+  // verified (Mendeleev's March 1869 preface and predictive gaps; Maury's
+  // 1855 publication and "father of oceanography" standing; Ptolemy's
+  // >8,000-place coordinate system and c. 150 CE date; Poincaré's 1895
+  // publication and founding role in algebraic topology) and
+  // collision-checked (grepped both files for all four titles, both aka
+  // sets, and all four authors' surnames — zero hits before writing). None
+  // a close call for Must Read — specialist-founder register, same
+  // calibration as every round since 88. Classic count: 482 → 486.
+  { title: "The Principles of Chemistry", author: "Dmitri Mendeleev", why: "Published in two parts (1869, 1871) as Osnovy Khimii, the chemistry textbook whose March 1869 preface contains the first published periodic table — Mendeleev grouped the 63 then-known elements by atomic weight and recurring chemical properties, then went further than any predecessor by leaving deliberate gaps for elements not yet discovered and predicting their properties in advance; gallium, scandium, and germanium were all found within his own lifetime, matching his predictions closely. This list's chemistry shelf already runs Boyle's negative critique of the four-element theory and Lavoisier's founding of systematic nomenclature and mass conservation, but had nothing on the single organizing principle every chemistry class still opens with.", aka: ["Osnovy Khimii", "Osnovy khimii"] },
+  { title: "The Physical Geography of the Sea", author: "Matthew Fontaine Maury", why: "Published in 1855 by a U.S. Navy officer who spent a decade mining thousands of ships' logbooks for wind and current observations, distilled here into the first systematic account of ocean circulation, winds, and depth — the book credited with founding oceanography as a discipline, and with pilot charts that measurably shortened Atlantic crossings by weeks. Maury also mapped the Atlantic seabed profile that first demonstrated a transatlantic telegraph cable was physically feasible. Closes oceanography's total absence from a list whose earth-science shelf runs geology (Lyell), plate tectonics (Wegener), and archaeology (Petrie), but had never once addressed the sea itself as a subject of systematic study." },
+  { title: "Geography", author: "Ptolemy", why: "Composed around 150 CE in Alexandria, the only cartographic treatise to survive intact from antiquity — rather than simply drawing a map, Ptolemy set out a method: latitude and longitude coordinates for more than 8,000 named places, three alternative ways to project a curved Earth onto a flat page, and instructions precise enough that a reader who had never seen the original map could redraw it without ever laying eyes on it. Lost to Western Europe for a thousand years, then rediscovered and copied by the hundreds after a Byzantine Greek manuscript reached Florence around 1400; printed editions shaped Columbus's own sense of the globe's size before his 1492 voyage. This list's only prior contact with Ptolemy runs through Galileo's Dialogue Concerning the Two Chief World Systems, already here (Ptolemaic astronomy on trial) — the founding text of scientific cartography itself had no representation of its own.", aka: ["Geographia", "Cosmographia", "Ptolemy's Geography"] },
+  { title: "Analysis Situs", author: "Henri Poincaré", why: "Published in 1895 in the Journal de l'École Polytechnique, the paper in which Poincaré set out, in his own stated words, to found a wholly new branch of mathematics — introducing the fundamental group and homology as tools for telling spaces apart by their shape rather than their measurements. Riddled with gaps its own author had to patch across five supplements over the following decade, but the program it set — classify spaces by what survives continuous deformation — still defines algebraic topology today. A second entry by an author already on this list (Science and Hypothesis, round 79), judged independently on its own merit rather than excluded for sharing a byline, the same standard applied to Shannon's second entry last round: that book is Poincaré's philosophy of science, this is the actual mathematics he did, a wholly distinct contribution. Closes topology's total absence from this list's mathematics cluster, which otherwise runs Euclid's geometry, Al-Khwarizmi's algebra, Gauss's number theory, and Gödel's incompleteness." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
