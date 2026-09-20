@@ -498,10 +498,21 @@ type NfChapter = {
   id: string; number: number; title: string; position: number;
   summary: string; keyConceptIds: string[]; argumentType: string;
 };
+// Mirrors src/lib/novel-types.ts's ArgumentPillar/IdeaCard exactly (same field
+// names/shapes as the objects repairNonfictionAnalysis() below actually builds).
+// Both optional: rows cached before this feature shipped (CACHE_VERSION v3) have
+// concepts/chapters but no pillars/cards — see isAdequate()'s comment above.
+type NfArgumentPillar = {
+  id: string; claim: string; evidence: string; implication: string; ideaIds: string[];
+};
+type NfIdeaCard = {
+  id: string; claim: string; evidence: string; tag: string; pillarId?: string;
+};
 type NonFictionAnalysis = {
   bookType: "nonfiction";
   title: string; author: string; confidence: string; summary: string;
   thesis: string;
+  argumentPillars?: NfArgumentPillar[]; ideaCards?: NfIdeaCard[];
   concepts: NfConcept[]; conceptRelationships: NfRelationship[]; chapters: NfChapter[];
   explanation: string; dna: Dna; recommendation: Recommendation;
 };
@@ -1597,10 +1608,14 @@ Deno.serve(async (req) => {
         // reference the same slot regardless of how the title was typed.
         send("analysis", { analysis, cached: false, cacheKey: canonicalCacheKey, slug: canonicalSlug });
         send("done", {});
-        metric("fresh", {
-          characters: analysis.characters?.length ?? 0,
-          events: analysis.events?.length ?? 0,
-        });
+        // bookType-branched rather than a blind `analysis.characters`/`.events` read: those
+        // fields don't exist on NonFictionAnalysis (a real deno-check type error, not just
+        // style), and before this fix every nonfiction "fresh" metric silently logged
+        // characters:0, events:0 via optional chaining instead of its own concepts/chapters
+        // counts — a metrics-quality gap, not merely a type-checker complaint.
+        metric("fresh", analysis.bookType === "fiction"
+          ? { characters: analysis.characters?.length ?? 0, events: analysis.events?.length ?? 0 }
+          : { concepts: analysis.concepts?.length ?? 0, chapters: analysis.chapters?.length ?? 0 });
         // Unblock any requests that were waiting on this in-flight call.
         if (resolveInFlight) { resolveInFlight(); inFlight.delete(cacheKey); }
         controller.close();
