@@ -27,8 +27,15 @@ jobs:
     timeout-minutes: 2
     steps:
       - name: Run db-maintenance
+        # --max-time 110: db-maintenance/index.ts (2026-09-21) now bounds each
+        # of its 6 sequential purge RPCs at 15s, so its own worst-case
+        # response time is ~90-100s including cold-start/network overhead.
+        # 110s gives curl its own ceiling with margin, below this job's
+        # 2-minute timeout-minutes, so a hung connection surfaces as a clean
+        # curl timeout in the log instead of relying solely on the external
+        # job-level kill (which logs no request-level diagnostics at all).
         run: |
-          curl -sf \
+          curl -sf --max-time 110 \
             -X POST \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
