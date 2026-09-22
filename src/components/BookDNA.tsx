@@ -410,8 +410,23 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         // server-side (Bayesian blend over the last 100 readers) and cache
         // the resulting recommendation for everyone. Never blocks the UI —
         // this reader's own view is already up to date via their perturbations.
+        // 2026-09-22 (daily_novel_viz_feat): despite the 09-18 header comment
+        // above claiming "the one remaining `supabase.functions.invoke()`
+        // gap" was closed that day across recommend-by-dna/AntiShelf/
+        // BuyButton, this call site — same file, added separately — was
+        // missed: unlike those three it drives no `loading` state a stuck
+        // promise could visibly wedge, so it slipped past that audit's
+        // grep-by-symptom pass. dna-consensus can call Gemini on a cache
+        // miss (server-side MAX_TOTAL_MS=90_000, same class as
+        // recommend-by-dna itself, just steps 1-5 back from wherever the UI
+        // sees it), so it gets the exact same RECOMMEND_TIMEOUT_MS ceiling
+        // rather than BuyButton's shorter no-AI budget. A wedged connection
+        // here no longer leaks an unresolved promise indefinitely.
         supabase.functions
-          .invoke("dna-consensus", { body: { cacheKey } })
+          .invoke("dna-consensus", {
+            body: { cacheKey },
+            signal: AbortSignal.timeout(RECOMMEND_TIMEOUT_MS),
+          })
           .then(({ data, error: consensusError }) => {
             if (consensusError || !data?.consensus) return;
             setConsensusData({
