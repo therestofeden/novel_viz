@@ -389,8 +389,13 @@ Deno.serve(async (req) => {
       },
     });
   } catch (err) {
+    // 2026-09-22 (daily backend audit): was returning String(err) straight to
+    // the client -- an information-disclosure gap this function shared with
+    // search-books (see that file's matching note). Every other sibling
+    // function already returns a fixed generic message on the fatal path;
+    // full detail still goes to console.error for debugging.
     console.error("popular-books error:", err);
-    return new Response(JSON.stringify({ results: [], error: String(err) }), {
+    return new Response(JSON.stringify({ results: [], error: "Unexpected server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

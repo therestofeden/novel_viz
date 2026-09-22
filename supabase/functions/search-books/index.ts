@@ -1545,8 +1545,17 @@ Deno.serve(async (req) => {
       },
     });
   } catch (err) {
+    // 2026-09-22 (daily backend audit): this was returning String(err) to the
+    // client -- every sibling function (recommend-anti-shelf, etc.) already
+    // logs the real error server-side via console.error but returns a fixed,
+    // generic message to the caller. This function and popular-books were the
+    // only two still echoing raw internal error text (which can include
+    // Postgres error messages -- table/column/constraint names -- or Deno
+    // runtime stack fragments) to an unauthenticated, public caller. Full
+    // detail still goes to console.error below for debugging; the client only
+    // gets a fixed string.
     console.error(JSON.stringify({ fn: "search-books", error: "handler", message: String(err) }));
-    return new Response(JSON.stringify({ results: [], error: String(err) }), {
+    return new Response(JSON.stringify({ results: [], error: "Unexpected server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
