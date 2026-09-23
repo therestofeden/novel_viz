@@ -12,6 +12,35 @@ import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit
 // title/author/bookType (<=300/200/100 chars) + up to 30 axes — small.
 const MAX_BODY_BYTES = 20_000;
 
+// ---------- DB call timeout ----------
+// Both direct Supabase reads below (the cache lookup and the dedup re-read)
+// used to be bare `await`s with no ceiling -- unlike search-books/
+// popular-books/health, which each got this fixed in earlier daily-backend
+// audits (2026-09-10, 2026-09-19). This function is "the single
+// highest-frequency request in the app" per the in-flight-dedup comment
+// below (every slider drag, debounced only 1s client-side), so a stalled
+// Postgres connection on either read would hang that entire request path
+// indefinitely instead of failing fast. Both call sites are cache reads the
+// caller already treats as tolerant of a miss (falls through to a fresh
+// Gemini call), so a timeout is safe to treat exactly like a genuine cache
+// miss -- fail-open, same shape as popular-books' withTimeout.
+const DB_READ_TIMEOUT_MS = 3000;
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = DB_READ_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 // ---------- Rate limiting ----------
 const ROUTE = "recommend-by-dna";
 const RATE_LIMIT = 30; // requests per hour per IP
@@ -184,12 +213,15 @@ Deno.serve(async (req) => {
   // Checking the cache before the rate-limit round trip (which analyze-novel
   // already does, but this function didn't) means a cache hit costs exactly
   // one DB read instead of two, and never counts against a user's budget.
-  const { data: cachedRec } = await admin
-    .from("dna_recommendation_cache")
-    .select("id, recommendation, hit_count")
-    .eq("cache_key", cacheKey)
-    .eq("axes_signature", axesSignature)
-    .maybeSingle();
+  const { data: cachedRec } = await withTimeout(
+    admin
+      .from("dna_recommendation_cache")
+      .select("id, recommendation, hit_count")
+      .eq("cache_key", cacheKey)
+      .eq("axes_signature", axesSignature)
+      .maybeSingle(),
+    { data: null, error: null } as any,
+  );
 
   if (cachedRec?.recommendation) {
     admin
@@ -214,12 +246,15 @@ Deno.serve(async (req) => {
   const dedupKey = `${cacheKey}|${axesSignature}`;
   if (inFlight.has(dedupKey)) {
     await inFlight.get(dedupKey);
-    const { data: fresh } = await admin
-      .from("dna_recommendation_cache")
-      .select("recommendation")
-      .eq("cache_key", cacheKey)
-      .eq("axes_signature", axesSignature)
-      .maybeSingle();
+    const { data: fresh } = await withTimeout(
+      admin
+        .from("dna_recommendation_cache")
+        .select("recommendation")
+        .eq("cache_key", cacheKey)
+        .eq("axes_signature", axesSignature)
+        .maybeSingle(),
+      { data: null, error: null } as any,
+    );
     if (fresh?.recommendation) {
       console.log(JSON.stringify({ fn: "recommend-by-dna", outcome: "dedup_hit", cache_key: cacheKey }));
       return new Response(JSON.stringify({ recommendation: fresh.recommendation, cached: true }), {

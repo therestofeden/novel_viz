@@ -28,6 +28,42 @@ import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit
 // Body is just {cacheKey, gemini_key} — generous but tight.
 const MAX_BODY_BYTES = 8_000;
 
+// ---------- DB call timeout ----------
+// This function makes six direct Supabase calls (two dedup/cache reads, the
+// novel_analyses anchor read, the book_overrides window read, the existing-
+// consensus read, and the final upsert) and every one of them used to be a
+// bare `await` with no ceiling -- unlike search-books/popular-books/health,
+// which each got this fixed in earlier daily-backend audits (2026-09-10,
+// 2026-09-19). A stalled Postgres connection on any of these would hang the
+// whole recompute indefinitely. Most of the reads are cache lookups a caller
+// already treats as tolerant of a miss, so timing out is safe to treat like
+// a genuine miss -- fail-open, same shape as popular-books' withTimeout.
+// The one exception is the novel_analyses anchor read: its absence currently
+// means "book not found" (a 404 the client shouldn't retry), so a timeout
+// there must NOT be silently reported the same way -- it uses the DB_TIMED_OUT
+// sentinel below instead, so the handler can tell "genuinely missing" apart
+// from "the DB didn't answer in time" and return a retryable 503.
+const DB_READ_TIMEOUT_MS = 3000;
+const DB_TIMED_OUT = Symbol("db-timed-out");
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = DB_READ_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+async function withTimeoutOrSentinel<T>(promise: PromiseLike<T>, timeoutMs = DB_READ_TIMEOUT_MS): Promise<T | typeof DB_TIMED_OUT> {
+  return withTimeout(promise, DB_TIMED_OUT as unknown as T | typeof DB_TIMED_OUT, timeoutMs) as Promise<T | typeof DB_TIMED_OUT>;
+}
+
 // ---------- Tunables ----------
 const PRIOR_WEIGHT = 5; // original Gemini score counts as this many "votes"
 const MIN_VOTES = 3;    // fewer real votes than this → consensus stays at the original score
@@ -134,11 +170,14 @@ Deno.serve(async (req) => {
     // ---------- Dedup: coalesce concurrent recomputes for the same book ----------
     if (inFlight.has(cacheKey)) {
       await inFlight.get(cacheKey);
-      const { data: fresh } = await admin
-        .from("book_dna_consensus")
-        .select("consensus, recommendation")
-        .eq("cache_key", cacheKey)
-        .maybeSingle();
+      const { data: fresh } = await withTimeout(
+        admin
+          .from("book_dna_consensus")
+          .select("consensus, recommendation")
+          .eq("cache_key", cacheKey)
+          .maybeSingle(),
+        { data: null, error: null } as any,
+      );
       if (fresh?.recommendation) {
         console.log(JSON.stringify({ fn: "dna-consensus", outcome: "dedup_hit", cache_key: cacheKey }));
         return new Response(JSON.stringify({ consensus: fresh.consensus, recommendation: fresh.recommendation }), {
@@ -173,11 +212,21 @@ Deno.serve(async (req) => {
 
     try {
     // ---------- 1. Original (Gemini) axes — the anchor ----------
-    const { data: book, error: bookErr } = await admin
-      .from("novel_analyses")
-      .select("title, author, analysis")
-      .eq("cache_key", cacheKey)
-      .maybeSingle();
+    const bookRes = await withTimeoutOrSentinel(
+      admin
+        .from("novel_analyses")
+        .select("title, author, analysis")
+        .eq("cache_key", cacheKey)
+        .maybeSingle(),
+    );
+    if (bookRes === DB_TIMED_OUT) {
+      // Distinct from "genuinely not found" below — a retryable 503, not a
+      // 404 the client should treat as final.
+      return new Response(JSON.stringify({ error: "Temporary server error." }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: book, error: bookErr } = bookRes as { data: any; error: any };
 
     if (bookErr || !book?.analysis) {
       return new Response(JSON.stringify({ error: "Book not found in cache" }), {
@@ -197,12 +246,15 @@ Deno.serve(async (req) => {
     const bookType = analysis?.bookType === "nonfiction" ? "nonfiction" : "fiction";
 
     // ---------- 2. Last-100-by-recency reader overrides ----------
-    const { data: overrideRows, error: ovErr } = await admin
-      .from("book_overrides")
-      .select("axis_overrides, updated_at")
-      .eq("cache_key", cacheKey)
-      .order("updated_at", { ascending: false })
-      .limit(VOTE_WINDOW);
+    const { data: overrideRows, error: ovErr } = await withTimeout(
+      admin
+        .from("book_overrides")
+        .select("axis_overrides, updated_at")
+        .eq("cache_key", cacheKey)
+        .order("updated_at", { ascending: false })
+        .limit(VOTE_WINDOW),
+      { data: [], error: null } as any,
+    );
 
     if (ovErr) {
       console.error("dna-consensus: book_overrides query error", ovErr);
@@ -229,11 +281,14 @@ Deno.serve(async (req) => {
     const signature = buildAxesSignature(consensusAxesForSignature);
 
     // ---------- 4. Resolve a recommendation for this consensus point ----------
-    const { data: existingConsensus } = await admin
-      .from("book_dna_consensus")
-      .select("recommendation, recommendation_signature")
-      .eq("cache_key", cacheKey)
-      .maybeSingle();
+    const { data: existingConsensus } = await withTimeout(
+      admin
+        .from("book_dna_consensus")
+        .select("recommendation, recommendation_signature")
+        .eq("cache_key", cacheKey)
+        .maybeSingle(),
+      { data: null, error: null } as any,
+    );
 
     let recommendation: unknown = null;
 
@@ -241,12 +296,15 @@ Deno.serve(async (req) => {
       // Consensus hasn't moved into a new quantized bucket since last time — reuse.
       recommendation = existingConsensus.recommendation;
     } else {
-      const { data: cachedRec } = await admin
-        .from("dna_recommendation_cache")
-        .select("id, recommendation, hit_count")
-        .eq("cache_key", cacheKey)
-        .eq("axes_signature", signature)
-        .maybeSingle();
+      const { data: cachedRec } = await withTimeout(
+        admin
+          .from("dna_recommendation_cache")
+          .select("id, recommendation, hit_count")
+          .eq("cache_key", cacheKey)
+          .eq("axes_signature", signature)
+          .maybeSingle(),
+        { data: null, error: null } as any,
+      );
 
       if (cachedRec?.recommendation) {
         recommendation = cachedRec.recommendation;
@@ -313,18 +371,21 @@ Recommend the single best DNA neighbour from the canon.`;
     }
 
     // ---------- 5. Persist ----------
-    const { error: upsertErr } = await admin
-      .from("book_dna_consensus")
-      .upsert(
-        {
-          cache_key: cacheKey,
-          consensus,
-          recommendation,
-          recommendation_signature: signature,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "cache_key" },
-      );
+    const { error: upsertErr } = await withTimeout(
+      admin
+        .from("book_dna_consensus")
+        .upsert(
+          {
+            cache_key: cacheKey,
+            consensus,
+            recommendation,
+            recommendation_signature: signature,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "cache_key" },
+        ),
+      { error: new Error("book_dna_consensus upsert timed out") } as any,
+    );
     if (upsertErr) console.error("dna-consensus: upsert error", upsertErr);
 
     if (usingServerKey) {

@@ -16,6 +16,41 @@ const MAX_BODY_BYTES = 150_000;
 
 const ROUTE = "recommend-anti-shelf";
 
+// ---------- DB call timeout ----------
+// This function makes six direct Supabase reads (shelf_books, feedback,
+// overrides, the cache lookup, the novel_analyses DNA fetch, plus the final
+// upsert) and every one used to be a bare `await` with no ceiling -- unlike
+// search-books/popular-books/health, which each got this fixed in earlier
+// daily-backend audits (2026-09-10, 2026-09-19). A stalled Postgres
+// connection on any of these would hang the whole request indefinitely.
+// Most reads here are best-effort/cache lookups the caller already treats as
+// tolerant of an empty result, so timing out is safe to treat like a
+// genuine empty result -- fail-open, same shape as popular-books'
+// withTimeout. The one exception is the shelf_books read: its absence
+// currently means "add a book to your shelf first" (a 400 that tells the
+// user to take an action that won't actually fix a DB stall), so a timeout
+// there uses the DB_TIMED_OUT sentinel instead, returning a retryable 503.
+const DB_READ_TIMEOUT_MS = 3000;
+const DB_TIMED_OUT = Symbol("db-timed-out");
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = DB_READ_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+async function withTimeoutOrSentinel<T>(promise: PromiseLike<T>, timeoutMs = DB_READ_TIMEOUT_MS): Promise<T | typeof DB_TIMED_OUT> {
+  return withTimeout(promise, DB_TIMED_OUT as unknown as T | typeof DB_TIMED_OUT, timeoutMs) as Promise<T | typeof DB_TIMED_OUT>;
+}
+
 type Mode = "similar" | "stretch";
 
 const recommendationsTool = {
@@ -190,10 +225,20 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceKey);
 
     // Pull the user's shelf
-    const { data: shelfBooks, error: shelfErr } = await admin
-      .from("shelf_books")
-      .select("cache_key, title, author")
-      .eq("user_id", userId);
+    const shelfRes = await withTimeoutOrSentinel(
+      admin
+        .from("shelf_books")
+        .select("cache_key, title, author")
+        .eq("user_id", userId),
+    );
+    if (shelfRes === DB_TIMED_OUT) {
+      // Distinct from "shelf genuinely empty" below — a retryable 503, not a
+      // 400 telling the user to add a book that won't fix a DB stall.
+      return new Response(JSON.stringify({ error: "Temporary server error." }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: shelfBooks, error: shelfErr } = shelfRes as { data: any[] | null; error: any };
 
     if (shelfErr) throw shelfErr;
     if (!shelfBooks || shelfBooks.length === 0) {
@@ -204,18 +249,24 @@ Deno.serve(async (req) => {
     }
 
     // Pull persisted feedback rows so we can resolve rec_keys back to title/author for the prompt
-    const { data: feedbackRows } = await admin
-      .from("recommendation_feedback")
-      .select("rec_key, title, author, signal")
-      .eq("user_id", userId);
+    const { data: feedbackRows } = await withTimeout(
+      admin
+        .from("recommendation_feedback")
+        .select("rec_key, title, author, signal")
+        .eq("user_id", userId),
+      { data: [], error: null } as any,
+    );
 
     // Pull the user's own DNA overrides for shelf books.
     // axis_overrides stores effective scores { [axisId]: number }.
-    const { data: overrideRows } = await admin
-      .from("book_overrides")
-      .select("cache_key, axis_overrides")
-      .eq("user_id", userId)
-      .in("cache_key", shelfBooks.map((b) => b.cache_key));
+    const { data: overrideRows } = await withTimeout(
+      admin
+        .from("book_overrides")
+        .select("cache_key, axis_overrides")
+        .eq("user_id", userId)
+        .in("cache_key", shelfBooks.map((b) => b.cache_key)),
+      { data: [], error: null } as any,
+    );
 
     const overrideByKey = new Map<string, Record<string, number>>();
     for (const row of overrideRows ?? []) {
@@ -245,13 +296,16 @@ Deno.serve(async (req) => {
 
     // Cache lookup
     if (!force) {
-      const { data: cached } = await admin
-        .from("shelf_recommendations")
-        .select("id, recommendations, source_titles, created_at, model")
-        .eq("user_id", userId)
-        .eq("shelf_signature", signature)
-        .eq("mode", mode)
-        .maybeSingle();
+      const { data: cached } = await withTimeout(
+        admin
+          .from("shelf_recommendations")
+          .select("id, recommendations, source_titles, created_at, model")
+          .eq("user_id", userId)
+          .eq("shelf_signature", signature)
+          .eq("mode", mode)
+          .maybeSingle(),
+        { data: null, error: null } as any,
+      );
 
       if (cached) {
         // bump last_accessed_at, fire-and-forget
@@ -315,13 +369,16 @@ Deno.serve(async (req) => {
 
     // Pull cached DNAs for shelf books (best-effort; some may be missing)
     const cacheKeys = shelfBooks.map((b) => b.cache_key);
-    const { data: dnas } = await admin
-      .from("novel_analyses")
-      .select("cache_key, title, author, analysis")
-      .in("cache_key", cacheKeys);
+    const { data: dnas } = await withTimeout(
+      admin
+        .from("novel_analyses")
+        .select("cache_key, title, author, analysis")
+        .in("cache_key", cacheKeys),
+      { data: [], error: null } as any,
+    );
 
     const dnaByKey = new Map<string, any>();
-    (dnas || []).forEach((d) => dnaByKey.set(d.cache_key, d));
+    (dnas || []).forEach((d: any) => dnaByKey.set(d.cache_key, d));
 
     // Build a compact DNA digest for the prompt (cap to keep tokens reasonable).
     // For each book we now include the 12-axis DNA profile, applying the user's
@@ -486,21 +543,24 @@ Return 6–10 recommendations via the render_recommendations tool. For each pick
     }
 
     // Upsert cache
-    const { error: upsertErr } = await admin
-      .from("shelf_recommendations")
-      .upsert(
-        {
-          user_id: userId,
-          shelf_signature: signature,
-          mode,
-          recommendations: parsed,
-          source_titles: sourceList,
-          model: MODEL,
-          last_accessed_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,shelf_signature,mode" },
-      );
+    const { error: upsertErr } = await withTimeout(
+      admin
+        .from("shelf_recommendations")
+        .upsert(
+          {
+            user_id: userId,
+            shelf_signature: signature,
+            mode,
+            recommendations: parsed,
+            source_titles: sourceList,
+            model: MODEL,
+            last_accessed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,shelf_signature,mode" },
+        ),
+      { error: new Error("shelf_recommendations upsert timed out") } as any,
+    );
     if (upsertErr) console.error("Cache upsert failed", upsertErr);
 
     // Log rate events (both IP and per-user buckets) fire-and-forget.
