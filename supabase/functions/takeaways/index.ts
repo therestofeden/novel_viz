@@ -8,6 +8,35 @@ import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit
 // legitimately; rounded up for JSON overhead.
 const MAX_BODY_BYTES = 160_000;
 
+// ---------- DB call timeout ----------
+// The 4 direct Supabase calls below (2 cache reads, 2 session-persist
+// upserts) used to be bare `await`s with no ceiling -- the same gap fixed
+// in recommend-by-dna/dna-consensus/recommend-anti-shelf on 2026-09-23,
+// just never extended to this file. takeaways drives the app's note-taking
+// flow end to end (question generation + synthesis), so a stalled Postgres
+// connection on any of these would hang that request indefinitely instead
+// of failing fast. Both reads are caches the caller already tolerates a
+// miss on (falls through to a per-user re-ask / a fresh Gemini call) and
+// both upserts' results are already discarded by the caller, so a timeout
+// is safe to treat exactly like today's existing miss/log-only behavior --
+// fail-open, same shape as recommend-by-dna's withTimeout.
+const DB_READ_TIMEOUT_MS = 3000;
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = DB_READ_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 // ─── SSE helpers ──────────────────────────────────────────────────────────────
 
 function sseFrame(event: string, data: unknown): Uint8Array {
@@ -382,12 +411,15 @@ Deno.serve(async (req) => {
   if (phase === "questions") {
     // Check if user has an existing session for this book
     if (cacheKey) {
-      const { data: existing } = await supabase
-        .from("book_takeaways")
-        .select("questions, answers, free_notes, takeaways, status")
-        .eq("user_id", user.id)
-        .eq("cache_key", cacheKey)
-        .maybeSingle();
+      const { data: existing } = await withTimeout(
+        supabase
+          .from("book_takeaways")
+          .select("questions, answers, free_notes, takeaways, status")
+          .eq("user_id", user.id)
+          .eq("cache_key", cacheKey)
+          .maybeSingle(),
+        { data: null, error: null } as any,
+      );
 
       if (existing?.questions && Array.isArray(existing.questions) && existing.questions.length > 0) {
         return new Response(
@@ -413,11 +445,14 @@ Deno.serve(async (req) => {
     let generatedQuestions: Array<{ id: string; question: string }> | null = null;
     let questionsFromGlobalCache = false;
     if (cacheKey) {
-      const { data: cachedQuestions } = await supabase
-        .from("takeaway_questions_cache")
-        .select("id, questions, hit_count")
-        .eq("cache_key", cacheKey)
-        .maybeSingle();
+      const { data: cachedQuestions } = await withTimeout(
+        supabase
+          .from("takeaway_questions_cache")
+          .select("id, questions, hit_count")
+          .eq("cache_key", cacheKey)
+          .maybeSingle(),
+        { data: null, error: null } as any,
+      );
 
       if (cachedQuestions?.questions && Array.isArray(cachedQuestions.questions) && cachedQuestions.questions.length > 0) {
         generatedQuestions = cachedQuestions.questions;
@@ -482,21 +517,24 @@ Deno.serve(async (req) => {
 
     // Persist the session stub
     if (cacheKey) {
-      await supabase
-        .from("book_takeaways")
-        .upsert(
-          {
-            user_id: user.id,
-            cache_key: cacheKey,
-            title,
-            author: author ?? "",
-            book_type: bookType ?? "fiction",
-            questions: generatedQuestions,
-            answers: [],
-            status: "draft",
-          },
-          { onConflict: "user_id,cache_key" },
-        );
+      await withTimeout(
+        supabase
+          .from("book_takeaways")
+          .upsert(
+            {
+              user_id: user.id,
+              cache_key: cacheKey,
+              title,
+              author: author ?? "",
+              book_type: bookType ?? "fiction",
+              questions: generatedQuestions,
+              answers: [],
+              status: "draft",
+            },
+            { onConflict: "user_id,cache_key" },
+          ),
+        { data: null, error: null } as any,
+      );
     }
 
     return new Response(
@@ -538,23 +576,26 @@ Deno.serve(async (req) => {
 
           // Persist the final takeaways
           if (cacheKey) {
-            await supabase
-              .from("book_takeaways")
-              .upsert(
-                {
-                  user_id: user.id,
-                  cache_key: cacheKey,
-                  title,
-                  author: author ?? "",
-                  book_type: bookType ?? "fiction",
-                  questions,
-                  answers,
-                  free_notes: freeNotes ?? null,
-                  takeaways: fullTakeaways,
-                  status: "complete",
-                },
-                { onConflict: "user_id,cache_key" },
-              );
+            await withTimeout(
+              supabase
+                .from("book_takeaways")
+                .upsert(
+                  {
+                    user_id: user.id,
+                    cache_key: cacheKey,
+                    title,
+                    author: author ?? "",
+                    book_type: bookType ?? "fiction",
+                    questions,
+                    answers,
+                    free_notes: freeNotes ?? null,
+                    takeaways: fullTakeaways,
+                    status: "complete",
+                  },
+                  { onConflict: "user_id,cache_key" },
+                ),
+              { data: null, error: null } as any,
+            );
           }
 
           send("done", { takeaways: fullTakeaways });
