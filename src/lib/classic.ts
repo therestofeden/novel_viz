@@ -3808,6 +3808,32 @@ export const CLASSIC: ClassicEntry[] = [
   // buildup).
   { title: "De Jure Belli ac Pacis", author: "Hugo Grotius", why: "Begun during Grotius's imprisonment at Loevestein Castle for his role in a Dutch religious-political dispute, finished after his 1621 escape smuggled out in a book chest, and published in Paris in 1625 during his subsequent exile — a systematic attempt to ground the law between sovereign states, war, peace, and treaties alike, in natural law and reason rather than any single nation's authority or religious doctrine. Often called the founding text of international law (a title historians also credit, in part, to earlier figures like Gentili and Suárez, whose own work Grotius drew on), and the direct ancestor of the Geneva and Hague conventions centuries later. This list's law shelf already runs deep on domestic law — Blackstone's common law, Hart's legal philosophy, Beccaria's criminal law — but had nothing on the law that claims to bind nations to each other.", aka: ["On the Law of War and Peace", "De Iure Belli ac Pacis", "The Law of War and Peace"] },
   { title: "The Influence of Sea Power upon History, 1660-1783", author: "Alfred Thayer Mahan", why: "Published in 1890 by Little, Brown and Co. while Mahan was president of the US Naval War College, distilling his own lecture course into the argument that command of the sea, not land armies, had decided the fate of great powers since the age of sail — Britain's global reach was built on it, and any nation with imperial ambitions needed a battle fleet to match. Read closely in Berlin, London, Tokyo, and Washington alike, and credited with directly shaping the pre-WWI naval arms race, above all Wilhelmine Germany's own fleet-building program. This list's geopolitics shelf already runs Mackinder's land-power Heartland Theory (round 88) — the sea-power school Mahan founded is the argument Mackinder's own theory was partly written against, and the two, together, are the discipline's two founding, opposed answers to the same question.", aka: ["The Influence of Sea Power Upon History", "Influence of Sea Power upon History"] },
+
+  // Round 99 (2026-09-24, scheduled `daily-must-read-and-classic` task):
+  // this list's scientific-revolution astronomy arc runs Copernicus
+  // (heliocentrism proposed, 1543), Galileo (heliocentrism tried, 1632),
+  // and Kepler (elliptical orbits, 1609), flanking Newton's Principia
+  // (already here) -- but every one of those four stops at the solar
+  // system, and nothing on this list addresses astronomy past it. Edwin
+  // Hubble's decade of work at Mount Wilson Observatory proved spiral
+  // nebulae were separate galaxies far beyond the Milky Way and
+  // established the velocity-distance relation now called Hubble's Law --
+  // the observation that the universe itself is expanding, and the
+  // empirical bedrock the Big Bang model was later built on. A
+  // total-absence gap (zero hits for "Hubble", "nebulae", "expanding
+  // universe", and "redshift" across both files before writing),
+  // WebSearch-verified (1936 Yale University Press publication as part of
+  // the Silliman Memorial Lectures series; the extragalactic-distance and
+  // velocity-distance findings it synthesizes) and collision-checked
+  // (grepped both files for the title, its author, and all alternate
+  // spellings -- zero hits before writing). Also ran a fresh fiction sweep
+  // (Lispector and Ferrante specifically re-checked against this list's
+  // existing entries and prior rounds' notes) and found the fiction side
+  // still saturated, consistent with every round since 76 -- stayed in
+  // non-fiction. Not a close call for Must Read -- specialist-founder
+  // register, same calibration as every round since 88. Classic count:
+  // 494 → 495.
+  { title: "The Realm of the Nebulae", author: "Edwin Hubble", why: "Published in 1936 by Yale University Press as part of Hubble's Silliman Memorial Lectures, distilling a decade of observational work at Mount Wilson Observatory into a book-length case that the spiral \"nebulae\" long assumed to be nearby gas clouds were in fact separate galaxies far beyond the Milky Way, and that their recession velocities rise with their distance -- the relation now called Hubble's Law, and the first direct observational evidence that the universe itself is expanding. The empirical bedrock the Big Bang model would later be built on. This list's scientific-revolution astronomy arc already runs Copernicus (heliocentrism proposed, 1543), Galileo (heliocentrism tried, 1632), and Kepler (elliptical orbits, 1609), flanking Newton's Principia -- every one of them stops at the solar system; nothing here had ever addressed astronomy past it.", aka: ["Realm of the Nebulae"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
