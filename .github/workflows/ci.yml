@@ -41,6 +41,22 @@ jobs:
         with:
           deno-version: v2.x
 
+      # Added 2026-09-25 (daily_backend audit), acting on the 2026-09-24
+      # audit's closing recommendation. Every prior instance of this bug
+      # class (2026-09-19, 09-23, 09-24 — most recently takeaways/index.ts's
+      # 4 unguarded blocking DB calls, silently untouched by every earlier
+      # "full sweep") was found by a human/agent grepping by hand, a full
+      # audit cycle after it landed. This runs the same check on every push
+      # and PR instead, first (fast, no network) so a reintroduced gap fails
+      # CI the same day it lands. See scripts/check-timeout-guards.ts for
+      # what it checks and its own explicit false-positive/negative escape
+      # hatch (`// timeout-guard-ignore: <reason>`).
+      - name: Check timeout guards on DB call sites
+        run: deno run --allow-read scripts/check-timeout-guards.ts
+
+      - name: Test timeout-guard checker itself
+        run: deno test --allow-read scripts/
+
       # Only supabase/functions/_shared/ has test coverage so far (2026-09-16)
       # — cors.ts, secret-auth.ts, rate-limit.ts, gemini.ts's pure
       # classification/pricing helpers. These are consolidated modules used

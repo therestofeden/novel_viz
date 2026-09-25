@@ -1112,6 +1112,34 @@ const LIMITS = {
 // call instead of N.
 const inFlight = new Map<string, Promise<void>>();
 
+// Local cache-read/alias-write timeout guard -- same fail-open shape as this
+// codebase's other per-file `withTimeout` helpers (not shared by design:
+// recommend-by-dna, db-maintenance, health, popular-books, recommend-anti-
+// shelf, and takeaways each carry their own copy). Added 2026-09-25: this is
+// the app's core "summarize a book" endpoint, and its cache-first read
+// (~90% of requests, per the comment below) had zero timeout coverage on
+// any of its 4 direct Supabase call sites -- the largest single gap this
+// bug class had anywhere in the app, caught by the new
+// scripts/check-timeout-guards.ts CI check. A stalled Postgres connection
+// on any of these would hang the request indefinitely instead of failing
+// fast, exactly the bug fixed elsewhere on 2026-09-19/09-23/09-24.
+const DB_READ_TIMEOUT_MS = 3000;
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = DB_READ_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore -- Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 // ---------- Main handler ----------
 
 Deno.serve(async (req) => {
@@ -1208,12 +1236,15 @@ Deno.serve(async (req) => {
   // ~90% of requests for popular books are cache hits. Checking the cache
   // before rate-limiting saves 2 DB RPC round-trips on every hit.
   if (!isRefine && !isReanalyze) {
-    const { data: cached } = await supabase
-      .from("novel_analyses")
-      .select("analysis, id, hit_count, slug, title")
-      .eq("cache_key", cacheKey)
-      .eq("is_validated", true)
-      .maybeSingle();
+    const { data: cached } = await withTimeout(
+      supabase
+        .from("novel_analyses")
+        .select("analysis, id, hit_count, slug, title")
+        .eq("cache_key", cacheKey)
+        .eq("is_validated", true)
+        .maybeSingle(),
+      { data: null, error: null } as any,
+    );
 
     if (cached?.analysis && isAdequate(cached.analysis as Analysis)) {
       // Bump stats async — never block the response on it. Promise.resolve()-
@@ -1253,12 +1284,15 @@ Deno.serve(async (req) => {
     // Another request is already calling Gemini for this book. Wait for it,
     // then serve from cache — zero extra Gemini calls.
     await inFlight.get(cacheKey);
-    const { data: cached } = await supabase
-      .from("novel_analyses")
-      .select("analysis, id, hit_count, slug, title")
-      .eq("cache_key", cacheKey)
-      .eq("is_validated", true)
-      .maybeSingle();
+    const { data: cached } = await withTimeout(
+      supabase
+        .from("novel_analyses")
+        .select("analysis, id, hit_count, slug, title")
+        .eq("cache_key", cacheKey)
+        .eq("is_validated", true)
+        .maybeSingle(),
+      { data: null, error: null } as any,
+    );
 
     if (cached?.analysis && isAdequate(cached.analysis as Analysis)) {
       // Promise.resolve()-wrapped — see health/index.ts's 2026-09-19 note.
@@ -1567,17 +1601,20 @@ Deno.serve(async (req) => {
         if ((!isRefine || isReanalyze) && analysis.confidence !== "unknown_work" && isAdequate(analysis)) {
           // isReanalyze: ignoreDuplicates:false → overwrites the stale cached entry.
           // Fresh analyses: ignoreDuplicates:true → races between isolates silently no-op.
-          const { error: upsertErr } = await supabase
-            .from("novel_analyses")
-            .upsert({
-              cache_key: canonicalCacheKey,
-              title: analysis.title || cleanTitle,
-              author: analysis.author || cleanAuthor || "",
-              analysis,
-              model: MODEL,
-              is_validated: true,
-              slug: canonicalSlug,
-            }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze });
+          const { error: upsertErr } = await withTimeout(
+            supabase
+              .from("novel_analyses")
+              .upsert({
+                cache_key: canonicalCacheKey,
+                title: analysis.title || cleanTitle,
+                author: analysis.author || cleanAuthor || "",
+                analysis,
+                model: MODEL,
+                is_validated: true,
+                slug: canonicalSlug,
+              }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze }),
+            { data: null, error: null } as any,
+          );
           if (upsertErr) console.error("cache write error:", upsertErr);
 
           // Also write an alias under the raw input key if it differs from
@@ -1587,20 +1624,26 @@ Deno.serve(async (req) => {
           // set on the canonical row.
           if (canonicalCacheKey !== cacheKey) {
             // Promise.resolve()-wrapped — see health/index.ts's 2026-09-19 note.
-            await Promise.resolve(
-              supabase
-                .from("novel_analyses")
-                .upsert({
-                  cache_key: cacheKey,
-                  title: analysis.title || cleanTitle,
-                  author: analysis.author || cleanAuthor || "",
-                  analysis,
-                  model: MODEL,
-                  is_validated: true,
-                }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze }),
-            )
-              .then(() => {})
-              .catch((e: unknown) => console.error("alias write error:", e));
+            // withTimeout-wrapped 2026-09-25: this alias write was awaited
+            // directly, blocking the "done" SSE event on a second upsert
+            // with no ceiling — same bug class as the two cache reads above.
+            await withTimeout(
+              Promise.resolve(
+                supabase
+                  .from("novel_analyses")
+                  .upsert({
+                    cache_key: cacheKey,
+                    title: analysis.title || cleanTitle,
+                    author: analysis.author || cleanAuthor || "",
+                    analysis,
+                    model: MODEL,
+                    is_validated: true,
+                  }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze }),
+              )
+                .then(() => {})
+                .catch((e: unknown) => console.error("alias write error:", e)),
+              undefined,
+            );
           }
         }
 

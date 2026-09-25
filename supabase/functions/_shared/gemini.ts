@@ -183,6 +183,12 @@ export async function recordGeminiSpend(
   }));
   const cost = estimateCostUsd(model, usage.prompt_tokens ?? 0, usage.completion_tokens ?? 0);
   if (cost > 0) {
+    // timeout-guard-ignore: recordGeminiSpend itself is always invoked
+    // fire-and-forget (every call site does `recordGeminiSpend(...).catch(()
+    // => {})`, never awaited -- see the 3 call sites in analyze-novel/index.ts
+    // and this file's own attemptFallbackPass). A hang on this RPC can't
+    // block any response; it only leaves a dangling promise in an isolate
+    // that's already on its way to returning.
     const { error } = await admin.rpc("gemini_record_spend", { p_cost: cost });
     if (error) console.warn(JSON.stringify({ spend: "record_error", error: error.message }));
   }
@@ -254,9 +260,41 @@ const REASONING_EFFORT = "medium";
 // DAILY_GEMINI_BUDGET_USD env secret once real usage data justifies it.
 const DAILY_BUDGET_USD = Number(Deno.env.get("DAILY_GEMINI_BUDGET_USD") ?? "5.00");
 
+// Local DB-RPC timeout guard for this file's circuit-breaker/budget checks
+// -- same fail-open shape as this codebase's other per-file `withTimeout`
+// helpers (not shared by design). Added 2026-09-25: this module backs every
+// AI edge function's Gemini call (analyze-novel, takeaways,
+// recommend-anti-shelf, recommend-by-dna, dna-consensus via
+// attemptFallbackPass/geminiFetchWithFallback), and its 4 awaited circuit-
+// breaker/budget RPCs had only rejection handling (try/catch or .catch()),
+// never a ceiling on a hang -- an RPC that never settles blocks the entire
+// fallback chain for every caller, the same bug class fixed elsewhere on
+// 2026-09-19/09-23/09-24, just with far higher blast radius here since this
+// file is shared by 5 functions instead of 1. Caught by the new
+// scripts/check-timeout-guards.ts CI check.
+const DB_RPC_TIMEOUT_MS = 3000;
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = DB_RPC_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore -- Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function circuitIsOpen(admin: SupabaseClient, model: string): Promise<boolean> {
   try {
-    const { data, error } = await admin.rpc("gemini_circuit_check", { p_model: model });
+    const { data, error } = await withTimeout(
+      admin.rpc("gemini_circuit_check", { p_model: model }),
+      { data: null, error: { message: `circuit check timed out after ${DB_RPC_TIMEOUT_MS}ms` } } as any,
+    );
     if (error) {
       console.warn(JSON.stringify({ circuit: "check_error_fail_open", model, error: error.message }));
       return false;
@@ -280,13 +318,16 @@ async function circuitIsOpen(admin: SupabaseClient, model: string): Promise<bool
 // required.
 async function circuitRecordFail(admin: SupabaseClient, model: string, status?: number, errorBody?: string): Promise<void> {
   try {
-    const { error } = await admin.rpc("gemini_circuit_record_fail", {
-      p_model: model,
-      p_trip_after: CIRCUIT_TRIP_AFTER,
-      p_open_ms: CIRCUIT_OPEN_MS,
-      p_status: status ?? null,
-      p_error: errorBody ?? null,
-    });
+    const { error } = await withTimeout(
+      admin.rpc("gemini_circuit_record_fail", {
+        p_model: model,
+        p_trip_after: CIRCUIT_TRIP_AFTER,
+        p_open_ms: CIRCUIT_OPEN_MS,
+        p_status: status ?? null,
+        p_error: errorBody ?? null,
+      }),
+      { error: { message: `circuit record_fail timed out after ${DB_RPC_TIMEOUT_MS}ms` } } as any,
+    );
     if (error) console.warn(JSON.stringify({ circuit: "record_fail_error", model, error: error.message }));
   } catch (e) {
     console.warn(JSON.stringify({ circuit: "record_fail_exception", model, error: String(e) }));
@@ -295,7 +336,10 @@ async function circuitRecordFail(admin: SupabaseClient, model: string, status?: 
 
 async function circuitRecordSuccess(admin: SupabaseClient, model: string): Promise<void> {
   try {
-    const { error } = await admin.rpc("gemini_circuit_record_success", { p_model: model });
+    const { error } = await withTimeout(
+      admin.rpc("gemini_circuit_record_success", { p_model: model }),
+      { error: { message: `circuit record_success timed out after ${DB_RPC_TIMEOUT_MS}ms` } } as any,
+    );
     if (error) console.warn(JSON.stringify({ circuit: "record_success_error", model, error: error.message }));
   } catch (e) {
     console.warn(JSON.stringify({ circuit: "record_success_exception", model, error: String(e) }));
@@ -484,8 +528,11 @@ export async function geminiFetchWithFallback(
     // doesn't enforce TS's structural types), but worth fixing rather than
     // leaving a function this cost-sensitive (the daily Gemini spend guard)
     // outside type-check coverage.
-    const budgetExceeded = isServerKey && await Promise.resolve(
-      admin.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD }),
+    const budgetExceeded = isServerKey && await withTimeout(
+      Promise.resolve(
+        admin.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD }),
+      ),
+      { data: null, error: { message: `budget check timed out after ${DB_RPC_TIMEOUT_MS}ms` } } as any,
     )
       .then(({ data, error }) => {
         if (error) {

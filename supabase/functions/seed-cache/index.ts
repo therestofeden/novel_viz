@@ -55,6 +55,35 @@ function buildCacheKey(title: string, author: string): string {
   return `${CACHE_VERSION}|${t}||${a}`;
 }
 
+// Local timeout guard -- same fail-open shape as this codebase's other
+// per-file `withTimeout` helpers (not shared by design). Added 2026-09-25:
+// this cron-triggered seeder's 2 direct Supabase reads (the paginated
+// seed_book_list fetch and the already-cached-keys read) had no timeout
+// coverage, so a stalled Postgres connection would hang the whole run
+// instead of failing fast -- same bug class fixed elsewhere on
+// 2026-09-19/09-23/09-24, caught here by the new
+// scripts/check-timeout-guards.ts CI check. Both reads already tolerate a
+// degraded result on failure (the pagination loop returns a clear error;
+// the cached-keys read already discarded its error and just treats an
+// empty result as "nothing cached yet"), so failing open on a timeout
+// changes nothing observable beyond a slow read no longer blocking forever.
+const DB_READ_TIMEOUT_MS = 3000;
+async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = DB_READ_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), timeoutMs);
+        // @ts-ignore -- Deno's setTimeout return type isn't a Node Timer
+        if (timer?.unref) timer.unref();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -103,11 +132,14 @@ Deno.serve(async (req) => {
   {
     const PAGE = 1000;
     for (let from = 0; ; from += PAGE) {
-      const { data: page, error: listErr } = await supabase
-        .from("seed_book_list")
-        .select("entry")
-        .order("id", { ascending: true })
-        .range(from, from + PAGE - 1);
+      const { data: page, error: listErr } = await withTimeout(
+        supabase
+          .from("seed_book_list")
+          .select("entry")
+          .order("id", { ascending: true })
+          .range(from, from + PAGE - 1),
+        { data: null, error: { message: `seed_book_list read timed out after ${DB_READ_TIMEOUT_MS}ms` } } as any,
+      );
       if (listErr) {
         return new Response(JSON.stringify({ error: `seed_book_list read failed: ${listErr.message}` }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -120,10 +152,13 @@ Deno.serve(async (req) => {
   }
 
   // Fetch all already-cached keys in one query.
-  const { data: cached } = await supabase
-    .from("novel_analyses")
-    .select("cache_key")
-    .eq("is_validated", true);
+  const { data: cached } = await withTimeout(
+    supabase
+      .from("novel_analyses")
+      .select("cache_key")
+      .eq("is_validated", true),
+    { data: null, error: null } as any,
+  );
 
   const cachedKeys = new Set((cached ?? []).map((r: any) => r.cache_key));
 
