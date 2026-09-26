@@ -54,7 +54,21 @@ jobs:
       - name: Check timeout guards on DB call sites
         run: deno run --allow-read scripts/check-timeout-guards.ts
 
-      - name: Test timeout-guard checker itself
+      # Added 2026-09-26 (daily_backend audit). Mirrors the timeout-guard
+      # check above for a different repeated bug class: every JSON-body-
+      # accepting edge function reading its body through the shared,
+      # byte-capped readJsonBodyBounded() reader instead of a bare
+      # req.json()/req.text()/req.arrayBuffer()/req.blob()/req.formData()
+      # (fixed by hand across all 7 call sites on 2026-09-18 to close a
+      # compute/memory-exhaustion DoS surface -- see
+      # _shared/body-limit.ts and scripts/check-body-limit-guards.ts for
+      # the full writeup). No live gap exists today; this exists so a
+      # future function, or a future edit to an existing one, can't
+      # silently reopen it a full audit cycle later.
+      - name: Check request-body read guards
+        run: deno run --allow-read scripts/check-body-limit-guards.ts
+
+      - name: Test guard-checker scripts (timeout guards + body-limit guards)
         run: deno test --allow-read scripts/
 
       # Only supabase/functions/_shared/ has test coverage so far (2026-09-16)
