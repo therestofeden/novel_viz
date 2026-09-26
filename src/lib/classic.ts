@@ -3834,6 +3834,31 @@ export const CLASSIC: ClassicEntry[] = [
   // register, same calibration as every round since 88. Classic count:
   // 494 → 495.
   { title: "The Realm of the Nebulae", author: "Edwin Hubble", why: "Published in 1936 by Yale University Press as part of Hubble's Silliman Memorial Lectures, distilling a decade of observational work at Mount Wilson Observatory into a book-length case that the spiral \"nebulae\" long assumed to be nearby gas clouds were in fact separate galaxies far beyond the Milky Way, and that their recession velocities rise with their distance -- the relation now called Hubble's Law, and the first direct observational evidence that the universe itself is expanding. The empirical bedrock the Big Bang model would later be built on. This list's scientific-revolution astronomy arc already runs Copernicus (heliocentrism proposed, 1543), Galileo (heliocentrism tried, 1632), and Kepler (elliptical orbits, 1609), flanking Newton's Principia -- every one of them stops at the solar system; nothing here had ever addressed astronomy past it.", aka: ["Realm of the Nebulae"] },
+
+  // Round 100 (2026-09-26, daily-must-read-and-classic task): this list's
+  // biology/medicine shelf runs anatomy (Vesalius), physiology (Harvey),
+  // evolution (Darwin), and genetics (Mendel) -- four foundational
+  // accounts of living bodies -- but never once addressed the question
+  // underneath all of them: what a living thing is actually built from at
+  // the smallest visible scale. Robert Hooke's Micrographia (1665),
+  // published under the Royal Society's own imprimatur, is where the word
+  // "cell" itself was coined -- Hooke sliced a sheet of cork, examined it
+  // under a compound microscope he built and ground himself, and likened
+  // the box-like compartments he saw to the small rooms ("cells") monks
+  // slept in, two centuries before cell theory made that structure the
+  // basic unit of life. A total-absence gap (zero hits for "Hooke",
+  // "Micrographia", and "cell theory" across both files before writing --
+  // the 14 case-insensitive hits for "Anning" checked first and ruled out
+  // as false-positive substring matches inside ordinary words like
+  // "planning", not Mary Anning, before treating paleontology as a
+  // separate candidate). WebSearch-verified (1665 publication and Royal
+  // Society imprimatur; the cork observation and "cell" coinage; Samuel
+  // Pepys's diary entry calling it the most ingenious book he had ever
+  // read) and collision-checked (grepped both files for the title and its
+  // alternate spellings -- zero hits before writing). Not a close call
+  // for Must Read -- specialist-founder register, same calibration as
+  // every round since 88. Classic count: 495 → 496.
+  { title: "Micrographia", author: "Robert Hooke", why: "Published in 1665 under the Royal Society's own imprimatur, the first major work of microscopy and scientific illustration in English -- oversized fold-out engravings, most famously a foot-long flea, drawn from what Hooke saw through microscopes he built and ground himself. Examining a thin slice of cork, Hooke noticed rows of tiny box-like compartments and likened them to the small rooms, or \"cells,\" that monks slept in -- the first use of the word \"cell\" for a biological structure, two centuries before cell theory made it the basic unit of life. Samuel Pepys bought a copy the day it appeared and stayed up past two in the morning reading it, calling it in his diary the most ingenious book he had ever read. This list's biology/medicine shelf already runs anatomy (Vesalius), physiology (Harvey), evolution (Darwin), and genetics (Mendel) -- four accounts of living bodies that never once addressed what those bodies are actually built from at the smallest visible scale.", aka: ["Micrographia: or some Physiological Descriptions of Minute Bodies made by Magnifying Glasses with Observations and Inquiries thereupon", "Micrographia: Some Physiological Descriptions of Minute Bodies"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
