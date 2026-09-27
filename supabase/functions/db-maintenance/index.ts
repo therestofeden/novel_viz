@@ -125,7 +125,15 @@ Deno.serve(async (req) => {
       );
       results[key] = error ? `error: ${error.message}` : (data ?? 0);
     } catch (e) {
-      results[key] = `error: ${String(e)}`;
+      // 2026-09-27 (daily backend audit): this endpoint is secret-gated
+      // (MAINTENANCE_SECRET, checked above) but its whole `results` map is
+      // spread verbatim into the client response below -- so a raw
+      // String(e) here still hands whoever holds that secret (currently
+      // just the nightly GitHub Actions workflow) full internal exception
+      // text (Postgres error detail, stack fragments) with zero benefit
+      // over a fixed marker. Full detail still goes to console.error.
+      console.error(JSON.stringify({ fn: "db-maintenance", stage: key, error: String(e) }));
+      results[key] = "error";
     }
   };
 

@@ -1664,7 +1664,21 @@ Deno.serve(async (req) => {
         controller.close();
       } catch (e) {
         console.error("handler error:", e);
-        send("error", { error: e instanceof Error ? e.message : "Unknown error", status: 500 });
+        // 2026-09-27 (daily backend audit): only errors tagged with a numeric
+        // .status -- thrown from this file's Gemini-call branches above,
+        // whose .message is always a fixed, curated string ("Gemini API
+        // error <code>" or one of describeGeminiFailure's fixed strings,
+        // never raw internals) -- are safe to stream to the client verbatim.
+        // Anything else reaching this catch-all (a DB error, a JSON-parse
+        // error, etc.) previously leaked e.message straight into the SSE
+        // payload Index.tsx renders. The 2026-09-22 sweep (see search-books /
+        // popular-books) fixed the same info-disclosure class for this
+        // function's two non-streaming siblings but missed this SSE path and
+        // takeaways' matching one -- both closed today. Full detail still
+        // goes to console.error/metric() (server-side only) either way.
+        const isCuratedFailure = typeof (e as { status?: unknown } | undefined)?.status === "number";
+        const errorMessage = isCuratedFailure && e instanceof Error ? e.message : "Unexpected server error";
+        send("error", { error: errorMessage, status: 500 });
         metric("error", { message: e instanceof Error ? e.message : String(e) });
         // Unblock waiters even on failure so they can retry independently.
         if (resolveInFlight) { resolveInFlight(); inFlight.delete(cacheKey); }

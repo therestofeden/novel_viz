@@ -479,8 +479,19 @@ Deno.serve(async (req) => {
           usingServerKey,
         );
       } catch (e: any) {
-        const status = e.status ?? 500;
-        return new Response(JSON.stringify({ error: e.message }), {
+        // 2026-09-27 (daily backend audit): generateQuestions() throws a
+        // curated, client-safe Error (tagged with a numeric .status) only
+        // from its own Gemini-call branch -- describeGeminiFailure's fixed
+        // strings, or the harmless "AI gateway error <code>" fallback. Any
+        // other exception (a JSON.parse failure on a malformed tool-call
+        // payload, a network TypeError, etc.) previously leaked e.message
+        // straight to the client. Full detail now always reaches
+        // console.error; only the curated shape reaches the response body.
+        const isCuratedFailure = typeof e?.status === "number";
+        const status = isCuratedFailure ? e.status : 500;
+        const message = isCuratedFailure ? e.message : "Unexpected server error";
+        if (!isCuratedFailure) console.error("takeaways generateQuestions error:", e);
+        return new Response(JSON.stringify({ error: message }), {
           status, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -600,7 +611,15 @@ Deno.serve(async (req) => {
 
           send("done", { takeaways: fullTakeaways });
         } catch (e: any) {
-          send("error", { error: e.message ?? "Unknown error" });
+          // 2026-09-27 (daily backend audit): same fix as generateQuestions'
+          // catch above and analyze-novel's matching SSE catch -- only a
+          // curated Gemini-failure error (numeric .status) is safe to send
+          // verbatim; anything else previously leaked e.message into the
+          // client-visible SSE stream. Full detail still goes to
+          // console.error.
+          const isCuratedFailure = typeof e?.status === "number";
+          if (!isCuratedFailure) console.error("takeaways synthesis stream error:", e);
+          send("error", { error: isCuratedFailure ? e.message : "Unexpected server error" });
         } finally {
           controller.close();
         }

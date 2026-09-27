@@ -68,7 +68,19 @@ jobs:
       - name: Check request-body read guards
         run: deno run --allow-read scripts/check-body-limit-guards.ts
 
-      - name: Test guard-checker scripts (timeout guards + body-limit guards)
+      # Added 2026-09-27 (daily_backend audit). Mirrors the two guards
+      # above for a third repeated bug class: a caught error's raw
+      # .message/String(...) reaching the client instead of a fixed,
+      # generic message -- fixed by hand on 2026-09-22 for search-books/
+      # popular-books, but that sweep missed the SSE catch blocks in
+      # analyze-novel and takeaways plus a third takeaways catch, all
+      # fixed in this same commit. See scripts/check-error-leak-guards.ts
+      # for what it checks and its escape hatch
+      # (`// error-leak-ignore: <reason>`).
+      - name: Check caught-error message leak guards
+        run: deno run --allow-read scripts/check-error-leak-guards.ts
+
+      - name: Test guard-checker scripts (timeout guards + body-limit guards + error-leak guards)
         run: deno test --allow-read scripts/
 
       # Only supabase/functions/_shared/ has test coverage so far (2026-09-16)

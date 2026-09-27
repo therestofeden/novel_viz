@@ -375,6 +375,11 @@ async function attemptFallbackPass(
       });
     } catch (e) {
       // Network stall or timeout — treat like a transient 503, trip circuit, try next model.
+      // error-leak-ignore: `name` here is e.name/String(e) (a short class-ish
+      // tag like "TimeoutError", never a full message), and it only ever
+      // reaches console.warn and circuitRecordFail's internal DB write
+      // below -- the actual client-facing Response two lines down uses the
+      // fixed string `${model} timed out`, not `name`.
       const name = e instanceof Error ? e.name : String(e);
       console.warn(JSON.stringify({ circuit: "timeout", model, error: name, isServerKey }));
       if (isServerKey) await circuitRecordFail(admin, model, undefined, `timeout: ${name}`);
