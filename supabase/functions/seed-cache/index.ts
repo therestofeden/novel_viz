@@ -87,6 +87,13 @@ async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Safety net (2026-09-28 daily_backend audit): mirrors analyze-novel's /
+  // takeaways's wrap -- this whole handler (secret check onward: DB reads,
+  // the per-book analyze-novel fan-out loop) previously ran with no top-level
+  // catch, so a thrown error (not just a rejected promise -- those are all
+  // individually handled below) skipped corsHeaders entirely.
+  try {
+
   // Require the seed secret to prevent abuse. Constant-time compare — see
   // _shared/secret-auth.ts for why plain === is a timing side-channel here.
   // Set SEED_SECRET in Supabase Dashboard → Project Settings → Edge Functions → Secrets.
@@ -220,4 +227,10 @@ Deno.serve(async (req) => {
     pending_after_run: pending.length - batch.length,
     processed: results,
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch (err) {
+    console.error(JSON.stringify({ fn: "seed-cache", error: err instanceof Error ? err.message : String(err) }));
+    return new Response(JSON.stringify({ error: "Unexpected server error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 });

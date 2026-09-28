@@ -99,6 +99,16 @@ async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Safety net (2026-09-28 daily_backend audit): mirrors analyze-novel's /
+  // takeaways's wrap -- this endpoint had NO top-level try/catch at all
+  // (each runPurge() call is individually guarded, but client creation,
+  // env-var reads, and the final JSON.stringify were not). Lower severity
+  // than the client-facing functions (this endpoint is MAINTENANCE_SECRET-
+  // gated, reachable only by the nightly GitHub Actions workflow), but an
+  // uncaught throw here still surfaces as an opaque, undiagnosable failure
+  // in that workflow's logs instead of a real status code + JSON body.
+  try {
+
   // Require a shared secret to prevent randoms from triggering DB deletes.
   // Same pattern as seed-cache's x-seed-secret. Constant-time compare — see
   // _shared/secret-auth.ts for why plain === is a timing side-channel here.
@@ -149,4 +159,10 @@ Deno.serve(async (req) => {
   return new Response(JSON.stringify({ ok: true, ...results, ranAt: new Date().toISOString() }), {
     status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+  } catch (err) {
+    console.error(JSON.stringify({ fn: "db-maintenance", error: err instanceof Error ? err.message : String(err) }));
+    return new Response(JSON.stringify({ error: "Unexpected server error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 });

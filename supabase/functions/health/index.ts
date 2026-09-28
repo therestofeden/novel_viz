@@ -98,6 +98,15 @@ async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = 
 const GEMINI_FALLBACK_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]; // stable-chain rebuild 2026-08-05
 const DAILY_BUDGET_USD = Number(Deno.env.get("DAILY_GEMINI_BUDGET_USD") ?? "5.00");
 
+// safety-net-ignore (2026-09-28 daily_backend audit): unlike this project's
+// other 9 edge functions, this handler doesn't need one top-level try/catch
+// wrapping its whole body -- each of its three checks (db ping, circuit
+// check, budget check) already has its own try/catch that can't itself
+// throw past its boundary (every await inside is already raced against
+// withTimeout, and the catch blocks only ever assign a plain string/boolean
+// local), and the final return only JSON.stringifies those already-safe
+// primitives. See check-handler-safety-net-guards.ts for what this exempts
+// from.
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 

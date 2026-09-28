@@ -80,7 +80,22 @@ jobs:
       - name: Check caught-error message leak guards
         run: deno run --allow-read scripts/check-error-leak-guards.ts
 
-      - name: Test guard-checker scripts (timeout guards + body-limit guards + error-leak guards)
+      # Added 2026-09-28 (daily_backend audit). Mirrors the three guards
+      # above for a fourth repeated bug class: a request handler's
+      # top-level try/catch narrowed down to just guarding the initial
+      # body-parse step (or missing outright) instead of wrapping the
+      # whole handler -- analyze-novel documents the "why" inline (a
+      # thrown error outside any try/catch gets Deno's default response,
+      # which carries no Access-Control-Allow-Origin header, so the
+      # browser reports an opaque "Failed to fetch" instead of a real,
+      # retryable status code). 7 of 10 functions already had this fix by
+      # hand; takeaways, seed-cache, and db-maintenance didn't. See
+      # scripts/check-handler-safety-net-guards.ts for what it checks and
+      # its escape hatch (`// safety-net-ignore: <reason>`).
+      - name: Check request-handler safety-net guards
+        run: deno run --allow-read scripts/check-handler-safety-net-guards.ts
+
+      - name: Test guard-checker scripts (timeout guards + body-limit guards + error-leak guards + safety-net guards)
         run: deno test --allow-read scripts/
 
       # Only supabase/functions/_shared/ has test coverage so far (2026-09-16)

@@ -279,6 +279,20 @@ Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Safety net: everything below (until the final return) must produce a
+  // Response that carries corsHeaders. If any of it throws instead -- an
+  // auth/DB hiccup, a crypto error in hashIp, a JSON.stringify edge case --
+  // Deno's default error response has NO Access-Control-Allow-Origin header,
+  // so the browser reports a bare "TypeError: Failed to fetch" to client
+  // code: indistinguishable from a real network outage and impossible to
+  // retry intelligently. Mirrors analyze-novel's / recommend-by-dna's /
+  // dna-consensus's / popular-books's / search-books's / recommend-anti-shelf's /
+  // resolve-buy-link's existing wrap -- takeaways was the one function still
+  // missing it (2026-09-28 daily_backend audit): the entire "questions" phase
+  // and most of the "synthesize" phase setup ran fully unguarded, with only
+  // the initial body-parse step covered.
+  try {
+
   let body: any;
   try {
     body = await readJsonBodyBounded(req, MAX_BODY_BYTES);
@@ -639,4 +653,10 @@ Deno.serve(async (req) => {
   return new Response(JSON.stringify({ error: `Unknown phase: ${phase}` }), {
     status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+  } catch (err) {
+    console.error(JSON.stringify({ fn: "takeaways", error: err instanceof Error ? err.message : String(err) }));
+    return new Response(JSON.stringify({ error: "Unexpected server error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 });
