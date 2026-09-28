@@ -3859,6 +3859,32 @@ export const CLASSIC: ClassicEntry[] = [
   // for Must Read -- specialist-founder register, same calibration as
   // every round since 88. Classic count: 495 → 496.
   { title: "Micrographia", author: "Robert Hooke", why: "Published in 1665 under the Royal Society's own imprimatur, the first major work of microscopy and scientific illustration in English -- oversized fold-out engravings, most famously a foot-long flea, drawn from what Hooke saw through microscopes he built and ground himself. Examining a thin slice of cork, Hooke noticed rows of tiny box-like compartments and likened them to the small rooms, or \"cells,\" that monks slept in -- the first use of the word \"cell\" for a biological structure, two centuries before cell theory made it the basic unit of life. Samuel Pepys bought a copy the day it appeared and stayed up past two in the morning reading it, calling it in his diary the most ingenious book he had ever read. This list's biology/medicine shelf already runs anatomy (Vesalius), physiology (Harvey), evolution (Darwin), and genetics (Mendel) -- four accounts of living bodies that never once addressed what those bodies are actually built from at the smallest visible scale.", aka: ["Micrographia: or some Physiological Descriptions of Minute Bodies made by Magnifying Glasses with Observations and Inquiries thereupon", "Micrographia: Some Physiological Descriptions of Minute Bodies"] },
+  // Round 101 (2026-09-28, daily-must-read-and-classic task): round 81's
+  // own header comment (2026-09-09) flagged a specific, unresolved gap --
+  // Alfred Marshall's Principles of Economics, "the more obvious 'missing
+  // neoclassical founder' candidate and Keynes's own teacher at
+  // Cambridge," was considered and rejected that round for a purely
+  // mechanical reason: its title is identical to Carl Menger's own entry,
+  // already here (added round 81 itself), and this list's lookup table
+  // keys strictly on normalized title -- adding Marshall under that exact
+  // title would have silently overwritten Menger's entry rather than
+  // coexisted with it. Re-confirmed the collision still stands (grepped
+  // "Marshall" across both files -- only the round-81 flag and an
+  // unrelated Marshall McLuhan entry came up) and resolved it the way
+  // round 81's own note invited: Marshall's book was published in 1890
+  // under its genuine full title, Principles of Economics: An
+  // Introductory Volume -- not an invented disambiguation, but the actual
+  // title page wording, confirmed against the Internet Archive scan of
+  // the first edition and every subsequent reprint listing. Used here as
+  // the entry's primary title, distinct enough from Menger's bare
+  // "Principles of Economics" to coexist in the lookup table. WebSearch-
+  // verified (1890 first edition, London: Macmillan; the book's eight
+  // editions through a final 1920 revision; Marshall's Cambridge
+  // professorship, 1885-1908, and Keynes as his student there; the
+  // "scissors" metaphor for supply and demand). Not a close call for Must
+  // Read -- foundational-textbook register, the same calibration round 81
+  // used for Menger and Walras. Classic count: 496 -> 497.
+  { title: "Principles of Economics: An Introductory Volume", author: "Alfred Marshall", why: "Published in 1890 by Macmillan under its full original title and revised through eight editions until 1920, the dominant economics textbook in the English-speaking world for a generation and the founding text of what became known as the Cambridge School. Marshall gave supply and demand curves the graphical form still taught today, arguing that asking whether value is governed by utility or cost of production is like asking which blade of a pair of scissors does the cutting -- a synthesis of the classical, cost-side tradition and the marginalist, utility-side one this list's Smith-to-Menger-to-Walras economics bench had each argued from one side of but never reconciled in a single text. Also introduced price elasticity of demand and consumer surplus as working tools of economic analysis. Taught political economy at Cambridge from 1885 to 1908, where John Maynard Keynes, already here via The General Theory, was his student. Flagged as a real gap in round 81's own header comment but held back that round only by a title collision with Carl Menger's entry, already here; resolved using the book's genuine 1890 title rather than an artificial workaround.", aka: ["Marshall's Principles of Economics"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
