@@ -346,6 +346,64 @@ async function circuitRecordSuccess(admin: SupabaseClient, model: string): Promi
   }
 }
 
+// Companion to circuitRecordFail/circuitRecordSuccess above, but tracking an
+// ACCOUNT-level fact instead of a per-model one. Added 2026-09-29 (daily
+// backend audit) -- see this migration's header comment
+// (20260929120000_gemini_account_level_alert.sql) for the full writeup.
+// Short version: attemptFallbackPass deliberately `return`s right after the
+// FIRST model for quota_exhausted/auth_error (trying the other two would
+// just be guaranteed-failing round trips on an account-wide failure), which
+// means those other two models never get a gemini_model_circuit row during
+// exactly these two failure modes. health/index.ts's "are all fallback
+// models' circuits open" signal can therefore never fire for the one
+// incident class it most needs to -- this is the same failure shape as the
+// documented 2026-07-25 billing outage, which ran undetected by any
+// automated signal for ~2.5 days for exactly this reason. This table is a
+// dedicated, accurate signal for health to read directly; it is never
+// consulted by attemptFallbackPass's own circuitIsOpen skip-check, so
+// (unlike force-opening every model's circuit would) it can't block a real
+// recovery retry on the next request.
+async function accountAlertRecord(
+  admin: SupabaseClient,
+  reason: "quota_exhausted" | "auth_error",
+  status?: number,
+  errorBody?: string,
+): Promise<void> {
+  try {
+    const { error } = await withTimeout(
+      admin.rpc("gemini_account_alert_record", {
+        p_reason: reason,
+        p_status: status ?? null,
+        p_error: errorBody ?? null,
+      }),
+      { error: { message: `account alert record timed out after ${DB_RPC_TIMEOUT_MS}ms` } } as any,
+    );
+    if (error) console.warn(JSON.stringify({ circuit: "account_alert_record_error", reason, error: error.message }));
+  } catch (e) {
+    console.warn(JSON.stringify({ circuit: "account_alert_record_exception", reason, error: String(e) }));
+  }
+}
+
+// Cleared the moment ANY server-key call succeeds, on ANY model -- one
+// working call proves the account itself is fine. Deliberately
+// fire-and-forget from every call site (like recordGeminiSpend elsewhere in
+// this file): clearing a table that's already empty the overwhelming
+// majority of the time is pure bookkeeping and must never add a DB
+// round-trip to the hot successful-response path (the same latency concern
+// the 2026-09-29 daily-viz-feat commit right above this one just spent its
+// whole change parallelizing two OTHER RPCs to avoid).
+async function accountAlertClear(admin: SupabaseClient): Promise<void> {
+  try {
+    const { error } = await withTimeout(
+      admin.rpc("gemini_account_alert_clear", {}),
+      { error: { message: `account alert clear timed out after ${DB_RPC_TIMEOUT_MS}ms` } } as any,
+    );
+    if (error) console.warn(JSON.stringify({ circuit: "account_alert_clear_error", error: error.message }));
+  } catch (e) {
+    console.warn(JSON.stringify({ circuit: "account_alert_clear_exception", error: String(e) }));
+  }
+}
+
 async function attemptFallbackPass(
   admin: SupabaseClient,
   apiKey: string,
@@ -412,6 +470,7 @@ async function attemptFallbackPass(
         // Only recorded for server-key calls — a BYOK user's usage is billed
         // to their own Google account, not ours, so it must not count toward
         // our own gemini_daily_spend/DAILY_BUDGET_USD ceiling.
+        accountAlertClear(admin).catch(() => {});
         try {
           const usage = (await r.clone().json())?.usage;
           recordGeminiSpend(admin, model, usage).catch(() => {});
@@ -442,7 +501,10 @@ async function attemptFallbackPass(
       // users for an unrelated user's personal billing problem) — but it's
       // still correct to stop the chain early for that one BYOK request,
       // since all 3 models share the same BYOK project quota too.
-      if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
+      if (isServerKey) {
+        await circuitRecordFail(admin, model, r.status, errBody);
+        await accountAlertRecord(admin, "quota_exhausted", r.status, errBody);
+      }
       return last;
     }
     if (reason === "auth_error") {
@@ -454,7 +516,10 @@ async function attemptFallbackPass(
       // malformed-request 4xx — see the type's doc comment for why this
       // exists now (Sept-2026 Standard-key deprecation).
       console.error(JSON.stringify({ fn: "geminiFetch", alert: "GEMINI_AUTH_ERROR", detail: "server API key rejected — likely invalid/revoked/wrong key type, needs a human to rotate it in Supabase secrets", model, status: r.status, isServerKey }));
-      if (isServerKey) await circuitRecordFail(admin, model, r.status, errBody);
+      if (isServerKey) {
+        await circuitRecordFail(admin, model, r.status, errBody);
+        await accountAlertRecord(admin, "auth_error", r.status, errBody);
+      }
       return last;
     }
     if (reason === "model_unavailable") {

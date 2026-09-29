@@ -67,6 +67,24 @@ name: Keep Edge Functions Warm
 # never hit by real user traffic, correctly left unwarmed). Added a ping
 # below with a fixed dummy title/author — same free-path pattern as the
 # search-books blank-query ping.
+#
+# 2026-09-29 (daily backend audit): despite this file's own opening line
+# ("pings edge functions every 5 minutes") and health/index.ts's own header
+# comment (which says it exists specifically to be "a fast, trustworthy
+# signal ... for keep-warm.yml (every 5 min) and any future uptime
+# monitor"), this workflow never actually called /health -- and every step
+# above has `continue-on-error: true`, so even a real failure couldn't fail
+# this job. The purpose-built monitoring endpoint and the cron meant to
+# drive it were never actually wired together. Added a final "Check health
+# endpoint" step below WITHOUT continue-on-error: a non-2xx /health response
+# now fails this job, and GitHub sends a failure-notification email for a
+# failed SCHEDULED workflow run by default (the repo owner/watchers' Actions
+# notification setting) -- no new secret or third-party service required.
+# Placed last, after every warmup ping and the db-maintenance call, so a
+# health failure never skips those (GitHub Actions stops a job at the first
+# failing step unless later steps set `if: always()`) -- this way every
+# other step's work still happens on a bad run, and only the job's final
+# pass/fail signal (and therefore the notification) is gated on health.
 
 on:
   schedule:
@@ -170,3 +188,20 @@ jobs:
             -H "x-maintenance-secret: ${{ secrets.MAINTENANCE_SECRET }}" \
             https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/db-maintenance
         continue-on-error: true
+
+      - name: Check health endpoint
+        # 2026-09-29 (daily backend audit) — see the top-of-file note. No
+        # continue-on-error here, deliberately: curl -sf exits non-zero on
+        # any non-2xx response (health returns 503 when `status: "degraded"`
+        # — DB unreachable, every fallback model's circuit open, the daily
+        # budget cap hit, or an active gemini_account_alert row), which fails
+        # this step, which fails the job, which is what a scheduled
+        # workflow's failure-notification email is triggered by. This is a
+        # best-effort addition, not a guaranteed page: it depends on the
+        # notified account having GitHub's Actions failure-email setting on
+        # (Settings → Notifications), and it can only ever be as good as
+        # what health itself checks.
+        run: |
+          curl -sf \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/health

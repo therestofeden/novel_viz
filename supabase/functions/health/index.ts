@@ -1,8 +1,10 @@
 // Lightweight health check endpoint.
 // Returns DB reachability, whether the server Gemini key is configured, live
-// AI-capacity state (gemini_model_circuit), and today's Gemini spend-guard
-// state. Responds 200 when healthy, 503 when degraded — safe to use as an
-// uptime monitor target.
+// AI-capacity state (gemini_model_circuit), today's Gemini spend-guard
+// state, and any active account-level Gemini failure alert
+// (gemini_account_alert — added 2026-09-29, see the note further down).
+// Responds 200 when healthy, 503 when degraded — safe to use as an uptime
+// monitor target.
 //
 // 2026-07-22 (daily backend audit): the circuit breaker moved from
 // per-isolate in-memory state to a shared Postgres table
@@ -98,15 +100,16 @@ async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = 
 const GEMINI_FALLBACK_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]; // stable-chain rebuild 2026-08-05
 const DAILY_BUDGET_USD = Number(Deno.env.get("DAILY_GEMINI_BUDGET_USD") ?? "5.00");
 
-// safety-net-ignore (2026-09-28 daily_backend audit): unlike this project's
-// other 9 edge functions, this handler doesn't need one top-level try/catch
-// wrapping its whole body -- each of its three checks (db ping, circuit
-// check, budget check) already has its own try/catch that can't itself
-// throw past its boundary (every await inside is already raced against
-// withTimeout, and the catch blocks only ever assign a plain string/boolean
-// local), and the final return only JSON.stringifies those already-safe
-// primitives. See check-handler-safety-net-guards.ts for what this exempts
-// from.
+// safety-net-ignore (2026-09-28 daily_backend audit; still true after the
+// 2026-09-29 account-alert check was added): unlike this project's other 9
+// edge functions, this handler doesn't need one top-level try/catch
+// wrapping its whole body -- each of its four checks (db ping, circuit
+// check, budget check, account-alert check) already has its own try/catch
+// that can't itself throw past its boundary (every await inside is already
+// raced against withTimeout, and the catch blocks only ever assign a plain
+// string/boolean/array local), and the final return only JSON.stringifies
+// those already-safe primitives. See check-handler-safety-net-guards.ts for
+// what this exempts from.
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -175,7 +178,42 @@ serve(async (req) => {
     budgetCheckOk = false;
   }
 
-  const status = db === "ok" && !allModelsOpen && !geminiBudgetExceeded ? "ok" : "degraded";
+  // Account-level Gemini failure alert (quota_exhausted / auth_error).
+  //
+  // 2026-09-29 (daily backend audit): gemini_model_circuit alone can't
+  // detect these two failure reasons — _shared/gemini.ts's
+  // attemptFallbackPass deliberately returns right after the FIRST fallback
+  // model for both (an account-wide failure fails identically on every
+  // model, so trying the other two would just be guaranteed-failing round
+  // trips), which means the other two models never get a circuit row during
+  // exactly these failure modes. `gemini_all_models_open` above therefore
+  // can never go true for an account-level outage — this is the same
+  // failure shape as the documented 2026-07-25 billing outage, which ran
+  // undetected by any automated signal for ~2.5 days because nothing was
+  // watching for it directly. gemini_account_alert is a small, dedicated
+  // table written by accountAlertRecord/accountAlertClear in
+  // _shared/gemini.ts specifically to close this gap — read directly here,
+  // same style as the gemini_model_circuit read above.
+  let geminiAccountAlerts: { reason: string; status: number | null; error: string | null; fail_count: number; first_seen_at: string; last_seen_at: string }[] = [];
+  let accountAlertCheckOk = true;
+  try {
+    const { data, error } = await withTimeout<{ data: typeof geminiAccountAlerts | null; error: unknown }>(
+      Promise.resolve(
+        supabase
+          .from("gemini_account_alert")
+          .select("reason, status, error, fail_count, first_seen_at, last_seen_at"),
+      ).then(({ data, error }) => ({ data, error })),
+      { data: null, error: new Error("health account alert check timed out") },
+    );
+    if (error) accountAlertCheckOk = false;
+    else geminiAccountAlerts = data ?? [];
+  } catch {
+    accountAlertCheckOk = false;
+  }
+  const geminiAccountAlertActive = geminiAccountAlerts.length > 0;
+
+  const status =
+    db === "ok" && !allModelsOpen && !geminiBudgetExceeded && !geminiAccountAlertActive ? "ok" : "degraded";
 
   return new Response(
     JSON.stringify({
@@ -188,6 +226,8 @@ serve(async (req) => {
       gemini_circuit_check_ok: circuitCheckOk,
       gemini_budget_exceeded: geminiBudgetExceeded,
       gemini_budget_check_ok: budgetCheckOk,
+      gemini_account_alerts: geminiAccountAlerts,
+      gemini_account_alert_check_ok: accountAlertCheckOk,
       ts: new Date().toISOString(),
     }),
     {
