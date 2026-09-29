@@ -3913,6 +3913,43 @@ export const CLASSIC: ClassicEntry[] = [
   // manifesto/treatise register, same calibration as Vitruvius's and
   // Palladio's own Classic placement. Classic count: 497 -> 498.
   { title: "Toward an Architecture", author: "Le Corbusier", why: "Published in Paris in 1923 as Vers une architecture, collecting essays Le Corbusier had first serialized in L'Esprit Nouveau, the journal he co-founded -- modernist architecture's founding manifesto, arguing that grain elevators, factories, and ocean liners, built by engineers with no aesthetic pretension, already achieved the honest functional clarity architecture itself had lost under centuries of applied ornament. Coined the movement's most quoted line, \"a house is a machine for living in\" (une maison est une machine a habiter). Translated into English as Towards a New Architecture in 1927 and reissued in a fresh translation as Toward an Architecture in 2007; directly shaped the Bauhaus and the International Style that followed. This list's architecture shelf already ran Vitruvius (antiquity's theory) and Palladio (the Renaissance pattern-book tradition) but had a 400-year gap running straight through to Christopher Alexander's 1977 Pattern Language -- itself a reaction against the movement this book founded, which had never been represented.", aka: ["Vers une architecture", "Towards a New Architecture", "Vers Une Architecture"] },
+  // Round 103 (2026-09-29, daily_novel_viz_feat / search-bar-to-viz task):
+  // this list's medicine shelf runs anatomy (Vesalius), physiology
+  // (Harvey), evolution (Darwin), genetics (Mendel), cell biology (Hooke),
+  // and germ theory itself (Pasteur, Koch, round 97) -- but the
+  // clinical-practice side of that same story, hand hygiene and the use
+  // of comparative mortality statistics to prove an invisible cause two
+  // decades before anyone could name it, had zero representation.
+  // Separately, this list had no founding text of professional nursing or
+  // of the sanitary/environmental theory of patient care that predates
+  // germ theory's own acceptance. Ignaz Semmelweis's 1861 book and
+  // Florence Nightingale's 1859 book close both gaps as a natural pair --
+  // two mid-19th-century reformers who each forced a skeptical medical
+  // establishment to change practice using statistical evidence alone,
+  // before either one's underlying mechanism (specific pathogens) was
+  // understood or accepted. Both total-absence gaps (zero hits for
+  // "Semmelweis", "childbed fever", and "puerperal" across both files
+  // before writing; the 2 case-insensitive hits for "Nightingale" checked
+  // first and ruled out as Keats's "Ode to a Nightingale," not Florence
+  // Nightingale). Both WebSearch-verified (Semmelweis's 1861 Die
+  // Ätiologie, der Begriff und die Prophylaxis des Kindbettfiebers,
+  // published by C.A. Hartleben's Verlag-Expedition, and the First
+  // Obstetrical Clinic's mortality falling from 18.3% in April 1847 to
+  // 1.2-2.2% within months of the handwashing protocol; Nightingale's
+  // Notes on Nursing, first published 1859 by Harrison of Pall Mall,
+  // London, with a wider second edition in 1860, and the three
+  // "Nightingale schools" it inspired by 1873) and collision-checked
+  // (grepped both files for both titles, all aka spellings, and both
+  // authors' surnames -- zero hits before writing). Neither a close call
+  // for Must Read -- specialist-founder register, same calibration as
+  // every round since 88. Landed as round 103, not 102: this round's own
+  // work finished concurrently with another session's round 102 (Le
+  // Corbusier's Toward an Architecture) against the same pre-101 base and
+  // lost the race to commit first, so it's renumbered here and its count
+  // rebased onto round 102's actual post-merge total (498) rather than
+  // the 497 baseline it was drafted against. Classic count: 498 -> 500.
+  { title: "The Etiology, Concept, and Prophylaxis of Childbed Fever", author: "Ignaz Semmelweis", why: "Published in 1861 as Die Ätiologie, der Begriff und die Prophylaxis des Kindbettfiebers by C.A. Hartleben's Verlag-Expedition, laying out the decade-old case nobody with the power to act on it had accepted: that doctors and students moving straight from autopsies to the delivery ward, without washing their hands, carried invisible \"cadaverous particles\" that killed new mothers with childbed fever, and that a simple chlorinated-lime handwash between the two was enough to cut the First Obstetrical Clinic's own mortality rate from 18.3% in April 1847 to between 1.2% and 2.2% within months. Includes a hundred-page section rebutting his critics point by point -- the medical establishment rejected the finding anyway, in part because it implicated the doctors themselves, and Semmelweis died in an asylum in 1865 without seeing it accepted; vindication came only after Pasteur's and Koch's germ theory, already here (round 97), gave his statistics a mechanism. This list's germ-theory shelf explains what the invisible agent was; this is the earlier, purely statistical case that something invisible was there at all, made and dismissed two decades before anyone could name it.", aka: ["Die Ätiologie, der Begriff und die Prophylaxis des Kindbettfiebers", "The Etiology, Concept and Prophylaxis of Childbed Fever"] },
+  { title: "Notes on Nursing: What It Is, and What It Is Not", author: "Florence Nightingale", why: "Published in 1859 by Harrison of Pall Mall, London, with a wider second edition the following year, Nightingale's short, plain-spoken manual grew out of her own statistical study of the Crimean War's hospital deaths -- most soldiers there died of preventable disease, not their wounds -- into a systematic argument that fresh air, clean water, light, warmth, quiet, and diet, not medicine alone, decide whether a patient recovers, and that observing and managing all of it is a nurse's actual job. Three American training programs modeled directly on it within fifteen years (the New York, Connecticut, and Boston \"Nightingale schools\" of 1873), and it is still cited as the document that turned nursing from unskilled domestic labor into a trained profession with its own body of evidence. This list had no founding text of clinical care itself -- every existing medicine entry addresses cause or cure; this is the first to address the ward.", aka: ["Notes on Nursing", "Notes on Nursing: What it is and What it is Not"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
