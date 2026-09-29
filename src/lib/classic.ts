@@ -3885,6 +3885,34 @@ export const CLASSIC: ClassicEntry[] = [
   // Read -- foundational-textbook register, the same calibration round 81
   // used for Menger and Walras. Classic count: 496 -> 497.
   { title: "Principles of Economics: An Introductory Volume", author: "Alfred Marshall", why: "Published in 1890 by Macmillan under its full original title and revised through eight editions until 1920, the dominant economics textbook in the English-speaking world for a generation and the founding text of what became known as the Cambridge School. Marshall gave supply and demand curves the graphical form still taught today, arguing that asking whether value is governed by utility or cost of production is like asking which blade of a pair of scissors does the cutting -- a synthesis of the classical, cost-side tradition and the marginalist, utility-side one this list's Smith-to-Menger-to-Walras economics bench had each argued from one side of but never reconciled in a single text. Also introduced price elasticity of demand and consumer surplus as working tools of economic analysis. Taught political economy at Cambridge from 1885 to 1908, where John Maynard Keynes, already here via The General Theory, was his student. Flagged as a real gap in round 81's own header comment but held back that round only by a title collision with Carl Menger's entry, already here; resolved using the book's genuine 1890 title rather than an artificial workaround.", aka: ["Marshall's Principles of Economics"] },
+  // Round 102 (2026-09-29, Daily_novel_viz_feat task): architecture on
+  // this list ran Vitruvius (round 49, De Architectura -- antiquity's
+  // theory), Palladio (round 51, I Quattro Libri -- the Renaissance
+  // pattern-book tradition), and Christopher Alexander (A Pattern
+  // Language, 1977) -- but nothing in the 400 years between them, a gap
+  // that skips over the single most consequential architectural movement
+  // of that whole span: 20th-century modernism. Le Corbusier's Vers une
+  // architecture (1923) is that movement's founding manifesto -- essays
+  // first serialized in L'Esprit Nouveau, the journal Le Corbusier
+  // co-founded, then collected into a book published in Paris the same
+  // year. Coined the movement's most quoted line, "a house is a machine
+  // for living in" (une maison est une machine a habiter), and argued
+  // that engineers' grain silos and ocean liners -- built with no
+  // aesthetic pretension -- already embodied the honest functional form
+  // architecture itself had lost under centuries of applied ornament.
+  // Directly shaped the Bauhaus and the International Style that
+  // followed, and Alexander's own 1977 Pattern Language was itself a
+  // reaction against the movement this book founded -- the target of
+  // that reaction was never represented here until now. Zero hits for
+  // "Le Corbusier", "Gropius", "Bauhaus", or "modernis[t/m] architecture"
+  // across both files before writing -- confirmed genuine total-absence
+  // gap. WebSearch-verified (1923 Paris publication under the French
+  // title; L'Esprit Nouveau serialization; the "machine for living in"
+  // line; English translation as Towards a New Architecture, 1927, and
+  // as Toward an Architecture, 2007). Not a Must Read close call --
+  // manifesto/treatise register, same calibration as Vitruvius's and
+  // Palladio's own Classic placement. Classic count: 497 -> 498.
+  { title: "Toward an Architecture", author: "Le Corbusier", why: "Published in Paris in 1923 as Vers une architecture, collecting essays Le Corbusier had first serialized in L'Esprit Nouveau, the journal he co-founded -- modernist architecture's founding manifesto, arguing that grain elevators, factories, and ocean liners, built by engineers with no aesthetic pretension, already achieved the honest functional clarity architecture itself had lost under centuries of applied ornament. Coined the movement's most quoted line, \"a house is a machine for living in\" (une maison est une machine a habiter). Translated into English as Towards a New Architecture in 1927 and reissued in a fresh translation as Toward an Architecture in 2007; directly shaped the Bauhaus and the International Style that followed. This list's architecture shelf already ran Vitruvius (antiquity's theory) and Palladio (the Renaissance pattern-book tradition) but had a 400-year gap running straight through to Christopher Alexander's 1977 Pattern Language -- itself a reaction against the movement this book founded, which had never been represented.", aka: ["Vers une architecture", "Towards a New Architecture", "Vers Une Architecture"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
