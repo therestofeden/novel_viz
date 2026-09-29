@@ -352,16 +352,27 @@ async function attemptFallbackPass(
   payload: Record<string, unknown>,
   fallbackChain: string[],
   isServerKey: boolean,
+  // 2026-09-29 (daily-viz-feat): optional pre-started circuit-check promise
+  // for fallbackChain[0], letting the caller fire it concurrently with the
+  // daily-budget RPC instead of only starting it after that RPC resolves.
+  // Consumed only for the loop's first iteration; every other model still
+  // calls circuitIsOpen the normal way. Omitting it preserves the exact
+  // prior behavior (geminiFetchWithFallback's retry pass does this).
+  firstModelCircuitCheck?: Promise<boolean>,
 ): Promise<Response | null> {
   let last: Response | null = null;
-  for (const model of fallbackChain) {
+  for (let i = 0; i < fallbackChain.length; i++) {
+    const model = fallbackChain[i];
     // The shared circuit table tracks the SERVER key's per-model health. A
     // BYOK caller's key belongs to a completely independent Google Cloud
     // project/quota — checking it against the server's circuit means a
     // server-side billing outage (see 2026-07-25/26/27) silently skips BYOK
     // attempts too, breaking the app's own recommended workaround for that
     // exact incident. So only consult/mutate the circuit for server-key calls.
-    if (isServerKey && await circuitIsOpen(admin, model)) {
+    const circuitOpen = isServerKey
+      ? (i === 0 && firstModelCircuitCheck ? await firstModelCircuitCheck : await circuitIsOpen(admin, model))
+      : false;
+    if (circuitOpen) {
       console.log(JSON.stringify({ circuit: "skipped", model }));
       continue;
     }
@@ -522,6 +533,25 @@ export async function geminiFetchWithFallback(
   maxTotalMs: number = MAX_TOTAL_MS,
 ): Promise<Response> {
   const work = (async (): Promise<Response> => {
+    // 2026-09-29 (daily-viz-feat): fire the first fallback model's circuit
+    // check concurrently with the daily-budget RPC below, instead of only
+    // starting it after the budget check resolves. Both RPCs are
+    // independent read-only checks (budget = today's cumulative estimated
+    // spend, circuit = one model's own failure state) and neither depends
+    // on the other's result, so awaiting them one after another added one
+    // full, avoidable DB round-trip (roughly 20-50ms) to every non-cached
+    // Gemini call across all 5 AI functions this file backs (analyze-novel,
+    // takeaways, recommend-anti-shelf, recommend-by-dna, dna-consensus) --
+    // including analyze-novel, the last hop of the search-bar-to-
+    // visualization path this task exists to keep fast. Safe even when the
+    // result goes unused (budget already exceeded, so attemptFallbackPass
+    // never runs this pass): gemini_circuit_check is read-only with no side
+    // effects, and circuitIsOpen already fails open on its own timeout/
+    // error exactly as before -- this only changes when the RPC starts, not
+    // its failure handling.
+    const firstModel = fallbackChain[0];
+    const firstModelCircuitCheck = isServerKey && firstModel ? circuitIsOpen(admin, firstModel) : undefined;
+
     // 2026-09-19 (daily backend audit): wrapped in Promise.resolve() before
     // .then/.catch — `admin.rpc(...)` is only a PromiseLike (implements
     // `.then`, not a real Promise), so chaining `.catch()` straight off it
@@ -561,7 +591,7 @@ export async function geminiFetchWithFallback(
     }
 
     const start = Date.now();
-    const first = await attemptFallbackPass(admin, apiKey, payload, fallbackChain, isServerKey);
+    const first = await attemptFallbackPass(admin, apiKey, payload, fallbackChain, isServerKey, firstModelCircuitCheck);
     const firstReason = first?.headers.get(GEMINI_FAILURE_REASON_HEADER);
 
     // Don't retry a quota-exhaustion failure — the whole point of that
