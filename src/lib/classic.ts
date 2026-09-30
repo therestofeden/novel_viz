@@ -3950,6 +3950,31 @@ export const CLASSIC: ClassicEntry[] = [
   // the 497 baseline it was drafted against. Classic count: 498 -> 500.
   { title: "The Etiology, Concept, and Prophylaxis of Childbed Fever", author: "Ignaz Semmelweis", why: "Published in 1861 as Die Ätiologie, der Begriff und die Prophylaxis des Kindbettfiebers by C.A. Hartleben's Verlag-Expedition, laying out the decade-old case nobody with the power to act on it had accepted: that doctors and students moving straight from autopsies to the delivery ward, without washing their hands, carried invisible \"cadaverous particles\" that killed new mothers with childbed fever, and that a simple chlorinated-lime handwash between the two was enough to cut the First Obstetrical Clinic's own mortality rate from 18.3% in April 1847 to between 1.2% and 2.2% within months. Includes a hundred-page section rebutting his critics point by point -- the medical establishment rejected the finding anyway, in part because it implicated the doctors themselves, and Semmelweis died in an asylum in 1865 without seeing it accepted; vindication came only after Pasteur's and Koch's germ theory, already here (round 97), gave his statistics a mechanism. This list's germ-theory shelf explains what the invisible agent was; this is the earlier, purely statistical case that something invisible was there at all, made and dismissed two decades before anyone could name it.", aka: ["Die Ätiologie, der Begriff und die Prophylaxis des Kindbettfiebers", "The Etiology, Concept and Prophylaxis of Childbed Fever"] },
   { title: "Notes on Nursing: What It Is, and What It Is Not", author: "Florence Nightingale", why: "Published in 1859 by Harrison of Pall Mall, London, with a wider second edition the following year, Nightingale's short, plain-spoken manual grew out of her own statistical study of the Crimean War's hospital deaths -- most soldiers there died of preventable disease, not their wounds -- into a systematic argument that fresh air, clean water, light, warmth, quiet, and diet, not medicine alone, decide whether a patient recovers, and that observing and managing all of it is a nurse's actual job. Three American training programs modeled directly on it within fifteen years (the New York, Connecticut, and Boston \"Nightingale schools\" of 1873), and it is still cited as the document that turned nursing from unskilled domestic labor into a trained profession with its own body of evidence. This list had no founding text of clinical care itself -- every existing medicine entry addresses cause or cure; this is the first to address the ward.", aka: ["Notes on Nursing", "Notes on Nursing: What it is and What it is Not"] },
+
+  // 2026-09-30 (daily_novel_viz_feat / search-bar-to-viz task): found a
+  // real badge-coverage gap rather than a missing title. Carl Sagan's
+  // Cosmos has been in canon_books (and therefore fully searchable/
+  // typo-tolerant/CANON_BONUS-ranked via search_canon) since the
+  // 2026-07-28 canon backfill round -- but it was never added to this
+  // file, so a reader who finds it through search never sees the Classic
+  // badge ClassicBadge.tsx renders off this list. canon-coverage.test.ts
+  // only checks the other direction (every classic.ts/must-read.ts entry
+  // has a canon_books row), so a canon_books entry with no classic.ts
+  // counterpart is exactly the kind of gap that test can't see -- caught
+  // here by manually diffing this file's ~500 titles against known-major
+  // works, not by any automated check. No new migration needed: the
+  // canon_books row already exists, so this is purely a classic.ts
+  // addition. Same pop-science-cosmology shelf as A Brief History of Time
+  // (Hawking, already above) and The Selfish Gene (Dawkins, already
+  // above) -- Cosmos is the older and, on its own Lindy-relevant record,
+  // the more decorated of the two: 50 weeks on Publishers Weekly's list,
+  // 70 on the New York Times list, ~5 million copies sold worldwide, the
+  // best-selling science book in English until Hawking's own book
+  // overtook it eight years later, and the 1981 Hugo Award for Best
+  // Non-Fiction Book. Classic count: 500 -> 501 (WebSearch-verified;
+  // grepped both classic.ts and must-read.ts for "Sagan" and "Cosmos"
+  // first -- zero title/author collisions).
+  { title: "Cosmos", author: "Carl Sagan", why: "Published in 1980 by Random House as the illustrated companion to the 13-part PBS series Cosmos: A Personal Voyage, co-developed alongside it rather than adapted afterward. Spent 50 weeks on Publishers Weekly's bestseller list and 70 on the New York Times list, sold roughly 5 million copies worldwide, and was the best-selling science book in the English language until Stephen Hawking's A Brief History of Time (already on this list) overtook it in 1988. Won the 1981 Hugo Award for Best Non-Fiction Book and sits on the Library of Congress's list of eighty-eight books that shaped America. Already findable on NovelViz's search since the 2026-07-28 canon backfill; this entry closes the gap between being searchable and being badged." },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
