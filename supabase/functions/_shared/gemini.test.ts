@@ -13,10 +13,13 @@
 // here means the next change to it gets caught before a multi-day incident,
 // not after.
 //
-// Only the pure, DB/network-free exports are covered — geminiFetchWithFallback
-// and geminiFetchWithFallback's circuit-breaker RPC calls need a live
-// SupabaseClient and are exercised via the existing manual/prod-log
-// verification process instead (see this file's own top-of-file history).
+// Only the pure, DB/network-free exports are covered here — classification,
+// copy, and pricing. geminiFetchWithFallback's own fallback-chain / circuit-
+// breaker / account-alert behavior (mocked SupabaseClient + mocked fetch,
+// no live DB or network needed) is covered separately in
+// ./gemini-fallback.test.ts, added 2026-09-30 to close the gap this
+// comment used to describe as permanent — see that file's header for why
+// it was split out rather than appended here.
 //
 // Run: deno test supabase/functions/_shared/
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
