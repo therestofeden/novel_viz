@@ -3,6 +3,7 @@ import { geminiFetchWithFallback, MODEL, GEMINI_BASE, MODEL_FALLBACKS, recordGem
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+import { getClientIp } from "../_shared/client-ip.ts";
 
 // previousAnalysis alone is capped at 200KB (MAX_PREV_ANALYSIS_LEN below);
 // this is the ceiling on the whole request body before that field-level
@@ -1089,12 +1090,6 @@ async function hashIp(ip: string, salt: string): Promise<string> {
     .join("");
 }
 
-function getClientIp(req: Request): string {
-  // Supabase edge runtime sits behind a proxy. Trust the leftmost x-forwarded-for entry.
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || "unknown";
-}
 
 // Budgets — tuned to be invisible to any real reader, lethal to scripted abuse.
 const LIMITS = {

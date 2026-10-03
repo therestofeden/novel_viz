@@ -122,6 +122,7 @@
 // unbounded floor under all that prior tuning. Added a 1000ms timeout that
 // degrades to an empty canon list, same shape as a genuine RPC failure.
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { getClientIp } from "../_shared/client-ip.ts";
 
 const ALLOWED_ORIGINS = new Set([
   // Confirmed by Stefano (2026-07-09) as the actual live production origin.
@@ -647,13 +648,6 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-function getClientIp(req: Request): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 async function hashIp(ip: string): Promise<string> {
   const salt =

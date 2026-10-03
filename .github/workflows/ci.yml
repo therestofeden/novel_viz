@@ -95,7 +95,20 @@ jobs:
       - name: Check request-handler safety-net guards
         run: deno run --allow-read scripts/check-handler-safety-net-guards.ts
 
-      - name: Test guard-checker scripts (timeout guards + body-limit guards + error-leak guards + safety-net guards)
+      # Added 2026-10-03 (daily_backend audit). Mirrors the four guards
+      # above for a fifth repeated bug class: a per-IP rate limit or
+      # Gemini-spend budget keyed on the leftmost (client-controlled)
+      # x-forwarded-for entry instead of the one header this project's
+      # Cloudflare-fronted domain can't let a client spoof
+      # (cf-connecting-ip) -- found live in 6 of 7 call sites and fixed by
+      # hand in this same commit via the new shared
+      # supabase/functions/_shared/client-ip.ts. See
+      # scripts/check-client-ip-trust-guards.ts for what it checks and its
+      # escape hatch (`// client-ip-trust-ignore: <reason>`).
+      - name: Check client-IP trust guards
+        run: deno run --allow-read scripts/check-client-ip-trust-guards.ts
+
+      - name: Test guard-checker scripts (timeout guards + body-limit guards + error-leak guards + safety-net guards + client-ip-trust guards)
         run: deno test --allow-read scripts/
 
       # Only supabase/functions/_shared/ has test coverage so far (2026-09-16)

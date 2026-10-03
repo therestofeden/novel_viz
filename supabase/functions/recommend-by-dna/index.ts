@@ -8,6 +8,7 @@ import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeG
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+import { getClientIp } from "../_shared/client-ip.ts";
 
 // title/author/bookType (<=300/200/100 chars) + up to 30 axes — small.
 const MAX_BODY_BYTES = 20_000;
@@ -53,13 +54,6 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-function getClientIp(req: Request): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 async function hashIp(ip: string): Promise<string> {
   const salt =

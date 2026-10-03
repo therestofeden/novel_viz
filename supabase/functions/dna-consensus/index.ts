@@ -24,6 +24,7 @@ import { geminiFetchWithFallback, MODEL } from "../_shared/gemini.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+import { getClientIp } from "../_shared/client-ip.ts";
 
 // Body is just {cacheKey, gemini_key} — generous but tight.
 const MAX_BODY_BYTES = 8_000;
@@ -95,13 +96,6 @@ async function sha256Hex(input: string): Promise<string> {
   const encoded = new TextEncoder().encode(input);
   const hashBuf = await crypto.subtle.digest("SHA-256", encoded);
   return Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-function getClientIp(req: Request): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
 }
 async function hashIp(ip: string): Promise<string> {
   const salt = Deno.env.get("RATE_LIMIT_SALT") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "fallback-salt";

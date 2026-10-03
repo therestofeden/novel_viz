@@ -30,6 +30,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
+import { getClientIp } from "../_shared/client-ip.ts";
 
 interface PopularBook {
   title: string;
@@ -66,13 +67,6 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-function getClientIp(req: Request): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 async function hashIp(ip: string): Promise<string> {
   const salt =

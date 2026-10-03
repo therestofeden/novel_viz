@@ -9,6 +9,7 @@ import { geminiFetchWithFallback, MODEL, GEMINI_FAILURE_REASON_HEADER, describeG
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
+import { getClientIp } from "../_shared/client-ip.ts";
 
 // liked/disliked (100*300) + blocked_authors (100*200) + blocked_tags
 // (100*100) legitimately tops out ~90KB; rounded up for JSON overhead.
@@ -131,13 +132,6 @@ function shelfSignature(
   return sha256Hex(parts.join("::"));
 }
 
-async function getClientIp(req: Request): Promise<string> {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 async function hashIp(ip: string): Promise<string> {
   const salt = Deno.env.get("GEMINI_API_KEY") || "fallback-salt";
@@ -333,7 +327,7 @@ Deno.serve(async (req) => {
     // is a generic salted-SHA256 helper (name predates this use) — reused
     // here to hash the user's UUID into its own counter bucket under a
     // distinct route key.
-    const ip = await getClientIp(req);
+    const ip = getClientIp(req);
     const ipHash = await hashIp(ip);
     const userIdHash = await hashIp(userId);
     try {
