@@ -3975,6 +3975,29 @@ export const CLASSIC: ClassicEntry[] = [
   // grepped both classic.ts and must-read.ts for "Sagan" and "Cosmos"
   // first -- zero title/author collisions).
   { title: "Cosmos", author: "Carl Sagan", why: "Published in 1980 by Random House as the illustrated companion to the 13-part PBS series Cosmos: A Personal Voyage, co-developed alongside it rather than adapted afterward. Spent 50 weeks on Publishers Weekly's bestseller list and 70 on the New York Times list, sold roughly 5 million copies worldwide, and was the best-selling science book in the English language until Stephen Hawking's A Brief History of Time (already on this list) overtook it in 1988. Won the 1981 Hugo Award for Best Non-Fiction Book and sits on the Library of Congress's list of eighty-eight books that shaped America. Already findable on NovelViz's search since the 2026-07-28 canon backfill; this entry closes the gap between being searchable and being badged." },
+  // 2026-10-03 (daily_novel_viz_feat / search-bar-to-viz task): round 104.
+  // Flatland: A Romance of Many Dimensions (Edwin A. Abbott, 1884) closes a
+  // real gap: this list has no founding text of dimensional/spatial
+  // reasoning itself, despite carrying two authors (Sagan's Cosmos, just
+  // above, and Hawking's A Brief History of Time) who each invoke Flatland
+  // by name when explaining higher dimensions to lay readers. WebSearch-
+  // verified: published 1884 by Seeley & Co. of London under the
+  // pseudonym "A Square"; sold modestly and was mostly forgotten at
+  // release -- not even mentioned in Abbott's own Dictionary of National
+  // Biography entry. Its reputation was made decades later: after
+  // Einstein's general relativity renewed interest in higher-dimensional
+  // geometry, a 1920 letter in Nature credited Abbott with genuine
+  // geometric foresight, and the Oxford DNB was later revised to lead with
+  // Flatland as what Abbott is chiefly remembered for. Still in print in
+  // multiple editions 140+ years on. Grepped classic.ts and must-read.ts
+  // for "Flatland" and "Abbott" first -- zero existing collisions; also
+  // checked all canon_books migrations for "Flatland" -- no existing row,
+  // unlike Cosmos's gap, so this round needs a real canon_books insert, not
+  // just a classic.ts badge. See same-day migration
+  // 20261003120000_canon_books_curation_round104_2026_10_03.sql. Classic
+  // count: 501 -> 502.
+  { title: "Flatland", author: "Edwin A. Abbott", why: "Published in 1884 by Seeley & Co. of London under the pseudonym \"A Square,\" this short satirical novella imagines a two-dimensional world of geometric figures -- its rigid social hierarchy a pointed jab at Victorian class and gender norms -- narrated by a Square who is shown a third dimension he has no way to perceive and struggles to describe back to his own flat world. It sold modestly and was largely forgotten soon after publication; its reputation was made some three decades later, when Einstein's general relativity renewed public interest in higher dimensions and a 1920 letter in Nature credited Abbott with genuine geometric foresight -- the Oxford Dictionary of National Biography was later revised to describe Flatland as what Abbott is chiefly remembered for. Still in print in multiple editions over 140 years later, and cited directly by both Carl Sagan and Stephen Hawking (both already on this list) when explaining higher-dimensional space to general readers -- the plain-geometry counterpart to their own cosmology.", aka: ["Flatland: A Romance of Many Dimensions"] },
+
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
