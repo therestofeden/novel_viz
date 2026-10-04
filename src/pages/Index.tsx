@@ -2093,29 +2093,13 @@ const Index = () => {
                     "{(analysis as NonFictionAnalysis).thesis}"
                   </p>
                 )}
-                {/* DNA signature above the fold — see the matching note in
-                    BookPage.tsx (2026-09-07). */}
-                {analysis.dna?.axes?.length ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      document
-                        .getElementById("dna-anchor")
-                        ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                    }
-                    className="group mt-4 flex flex-wrap items-end gap-x-4 gap-y-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <DnaSignature analysis={analysis} height={38} barWidth={8} />
-                    <span className="flex flex-col gap-0.5">
-                      <span className="meta text-muted-foreground">DNA signature</span>
-                      {analysis.dna?.signature && (
-                        <span className="font-serif text-sm italic leading-snug group-hover:underline md:text-base">
-                          {analysis.dna.signature}
-                        </span>
-                      )}
-                    </span>
-                  </button>
-                ) : null}
+                {/* 2026-10-04: DNA signature teaser relocated into the action
+                    row below as a compact chip, matching BookPage.tsx (see
+                    the matching note there). This mirrors Index.tsx's own
+                    copy of the book masthead — Index.tsx renders results
+                    inline without navigating to BookPage.tsx's dedicated
+                    route, so each surface needs the same fix applied
+                    separately. */}
                 <p className="mt-3 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
                   {analysis.summary}
                 </p>
@@ -2128,6 +2112,27 @@ const Index = () => {
                     signature={analysis.dna?.signature}
                     slug={slug ?? undefined}
                   />
+                  {analysis.dna?.axes?.length ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document
+                          .getElementById("dna-anchor")
+                          ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                      }
+                      className="group meta inline-flex min-h-[44px] items-center gap-2 border border-foreground bg-card px-3 py-2 text-left transition-colors hover:bg-foreground/10"
+                    >
+                      <DnaSignature analysis={analysis} height={20} barWidth={3} />
+                      <span className="flex flex-col gap-0.5">
+                        <span className="meta text-muted-foreground">DNA signature</span>
+                        {analysis.dna?.signature && (
+                          <span className="font-serif text-xs italic leading-snug normal-case group-hover:underline md:text-sm">
+                            {analysis.dna.signature}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  ) : null}
                   {activeRefinement && (
                     <div className="meta inline-flex items-center gap-2 border border-foreground bg-foreground px-3 py-1.5 text-background">
                       <RefreshCw className="h-3 w-3" /> Refined · "{activeRefinement}"
