@@ -390,34 +390,16 @@ const BookPage = () => {
                 "{(analysis as NonFictionAnalysis).thesis}"
               </p>
             )}
-            {/* 2026-09-07: the DNA signature moves above the fold. It is the
-                one thing here a ratings-and-reviews site structurally cannot
-                produce, and it used to live behind tab 03 where a bouncing
-                visitor never saw it. Twelve bars read as a fingerprint before
-                anyone knows what the axes are — which is the invitation to
-                look. `dna.signature` was likewise generated for every book and
-                rendered nowhere a first-time reader would find it. */}
-            {analysis.dna?.axes?.length ? (
-              <button
-                type="button"
-                onClick={() =>
-                  document
-                    .getElementById("dna-anchor")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                }
-                className="group mt-4 flex flex-wrap items-end gap-x-4 gap-y-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <DnaSignature analysis={analysis} height={38} barWidth={8} />
-                <span className="flex flex-col gap-0.5">
-                  <span className="meta text-muted-foreground">DNA signature</span>
-                  {analysis.dna?.signature && (
-                    <span className="font-serif text-sm italic leading-snug group-hover:underline md:text-base">
-                      {analysis.dna.signature}
-                    </span>
-                  )}
-                </span>
-              </button>
-            ) : null}
+            {/* 2026-09-07: the DNA signature moved above the fold so a
+                bouncing first-time visitor would see it at all (it used to
+                live buried behind tab 03). 2026-10-04: it stayed above the
+                fold but moved out of this badge/tagline stack and into the
+                action row below, next to Shelf/Buy/Share -- stacked between
+                the Classic badge and the summary paragraph it read as one
+                more badge fighting for attention, and it pushed the actual
+                "what is this book" copy down past three other UI elements
+                first. It's functionally a nav shortcut (always was -- see
+                the onClick below), so it now looks like one. */}
             <p className="mt-3 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
               {analysis.summary}
             </p>
@@ -430,6 +412,32 @@ const BookPage = () => {
                 signature={analysis.dna?.signature}
                 slug={slug}
               />
+              {/* 2026-10-04: DNA signature teaser, relocated here from the
+                  header's badge/tagline stack (see comment above the summary
+                  paragraph). Same onClick-scrolls-to-dna-anchor shortcut it
+                  always was, now styled to match its action-row siblings
+                  instead of floating as an unstyled caption above the fold. */}
+              {analysis.dna?.axes?.length ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("dna-anchor")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                  className="group meta inline-flex min-h-[44px] items-center gap-2 border border-foreground bg-card px-3 py-2 text-left transition-colors hover:bg-foreground/10"
+                >
+                  <DnaSignature analysis={analysis} height={20} barWidth={3} />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="meta text-muted-foreground">DNA signature</span>
+                    {analysis.dna?.signature && (
+                      <span className="font-serif text-xs italic leading-snug normal-case group-hover:underline md:text-sm">
+                        {analysis.dna.signature}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              ) : null}
             </div>
           </div>
           <div className="col-span-12 grid grid-cols-2 border-foreground md:col-span-3 md:border-l">
