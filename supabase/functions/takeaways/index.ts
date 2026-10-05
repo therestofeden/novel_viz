@@ -267,6 +267,17 @@ async function hashIp(ip: string): Promise<string> {
   return sha256Hex(salt + ip);
 }
 
+// ---------- In-flight deduplication ----------
+// Maps cacheKey -> Promise that resolves when the Gemini call for that
+// book's reflection questions completes. If a second request for the
+// same book arrives while one is already generating, it waits for the
+// first instead of starting its own independent (and Gemini-billing)
+// copy. Fourth instance of this exact pattern in this codebase -- see
+// analyze-novel (2026-07-02), dna-consensus (2026-07-19), and
+// recommend-by-dna (2026-07-20). In-process/per-isolate only -- same
+// accepted limitation as the other three.
+const inFlight = new Map<string, Promise<void>>();
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -475,60 +486,115 @@ Deno.serve(async (req) => {
     }
 
     if (!generatedQuestions) {
-      try {
-        generatedQuestions = await generateQuestions(
-          supabase,
-          GEMINI_API_KEY,
-          title,
-          author ?? "",
-          bookType ?? "fiction",
-          summary ?? "",
-          thesis,
-          usingServerKey,
+      // ---------- Dedup: coalesce concurrent requests for the same book ----------
+      // Reflection questions are a cross-user cache, keyed purely on cacheKey
+      // (see the global-cache read above) -- the exact same "N readers
+      // converge on the same popular book before anyone's cached it yet"
+      // shape analyze-novel (2026-07-02), dna-consensus (2026-07-19), and
+      // recommend-by-dna (2026-07-20) already guard against. This phase
+      // never got it (2026-10-05 daily backend audit -- fourth of five
+      // Gemini-calling functions to carry this pattern; recommend-anti-shelf
+      // fixed in the same pass, see its own file header): a launch spike on
+      // one book burned one Gemini call per concurrent reader instead of one
+      // for all of them put together. Only keyed when cacheKey is present --
+      // the same precondition the global cache read/write above already
+      // requires.
+      if (cacheKey && inFlight.has(cacheKey)) {
+        await inFlight.get(cacheKey);
+        const { data: freshQuestions } = await withTimeout(
+          supabase
+            .from("takeaway_questions_cache")
+            .select("id, questions, hit_count")
+            .eq("cache_key", cacheKey)
+            .maybeSingle(),
+          { data: null, error: null } as any,
         );
-      } catch (e: any) {
-        // 2026-09-27 (daily backend audit): generateQuestions() throws a
-        // curated, client-safe Error (tagged with a numeric .status) only
-        // from its own Gemini-call branch -- describeGeminiFailure's fixed
-        // strings, or the harmless "AI gateway error <code>" fallback. Any
-        // other exception (a JSON.parse failure on a malformed tool-call
-        // payload, a network TypeError, etc.) previously leaked e.message
-        // straight to the client. Full detail now always reaches
-        // console.error; only the curated shape reaches the response body.
-        const isCuratedFailure = typeof e?.status === "number";
-        const status = isCuratedFailure ? e.status : 500;
-        const message = isCuratedFailure ? e.message : "Unexpected server error";
-        if (!isCuratedFailure) console.error("takeaways generateQuestions error:", e);
-        return new Response(JSON.stringify({ error: message }), {
-          status, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        if (freshQuestions?.questions && Array.isArray(freshQuestions.questions) && freshQuestions.questions.length > 0) {
+          generatedQuestions = freshQuestions.questions;
+          questionsFromGlobalCache = true;
+          Promise.resolve(
+            supabase
+              .from("takeaway_questions_cache")
+              .update({ hit_count: (freshQuestions.hit_count ?? 0) + 1, last_accessed_at: new Date().toISOString() })
+              .eq("id", freshQuestions.id),
+          ).then(() => {}, (e: unknown) => console.error("takeaway question cache hit-bump error:", e));
+          console.log(JSON.stringify({ fn: "takeaways", phase: "questions", outcome: "dedup_hit", cache_key: cacheKey }));
+        }
+        // The in-flight call didn't leave a usable result (e.g. Gemini failed
+        // with nothing to fall back on) -- fall through and generate
+        // independently, same as every other instance of this pattern.
       }
+    }
 
-      if (!generatedQuestions || generatedQuestions.length === 0) {
-        return new Response(JSON.stringify({ error: "Could not generate questions" }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Write-through to the global cache so the NEXT reader of this book
-      // skips Gemini entirely. ignoreDuplicates: true — a race between two
-      // first-readers of the same book silently no-ops on the loser, which
-      // is fine since both already have their own generatedQuestions in hand.
+    if (!generatedQuestions) {
+      // Register this request as the in-flight owner for this cache key --
+      // covers the Gemini call + cache write below via try/finally, so every
+      // exit path (success, curated AI-error, empty-result, or an unexpected
+      // throw caught by the outer handler) still releases the slot. Mirrors
+      // recommend-by-dna's version of this same pattern.
+      let resolveInFlight: (() => void) | undefined;
       if (cacheKey) {
-        supabase
-          .from("takeaway_questions_cache")
-          .upsert(
-            {
-              cache_key: cacheKey,
-              title,
-              author: author ?? "",
-              book_type: bookType ?? "fiction",
-              questions: generatedQuestions,
-              model: MODEL,
-            },
-            { onConflict: "cache_key", ignoreDuplicates: true },
-          )
-          .then(() => {}, (e: any) => console.error("takeaway question cache write error:", e));
+        const p = new Promise<void>((res) => { resolveInFlight = res; });
+        inFlight.set(cacheKey, p);
+      }
+      try {
+        try {
+          generatedQuestions = await generateQuestions(
+            supabase,
+            GEMINI_API_KEY,
+            title,
+            author ?? "",
+            bookType ?? "fiction",
+            summary ?? "",
+            thesis,
+            usingServerKey,
+          );
+        } catch (e: any) {
+          // 2026-09-27 (daily backend audit): generateQuestions() throws a
+          // curated, client-safe Error (tagged with a numeric .status) only
+          // from its own Gemini-call branch -- describeGeminiFailure's fixed
+          // strings, or the harmless "AI gateway error <code>" fallback. Any
+          // other exception (a JSON.parse failure on a malformed tool-call
+          // payload, a network TypeError, etc.) previously leaked e.message
+          // straight to the client. Full detail now always reaches
+          // console.error; only the curated shape reaches the response body.
+          const isCuratedFailure = typeof e?.status === "number";
+          const status = isCuratedFailure ? e.status : 500;
+          const message = isCuratedFailure ? e.message : "Unexpected server error";
+          if (!isCuratedFailure) console.error("takeaways generateQuestions error:", e);
+          return new Response(JSON.stringify({ error: message }), {
+            status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        if (!generatedQuestions || generatedQuestions.length === 0) {
+          return new Response(JSON.stringify({ error: "Could not generate questions" }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Write-through to the global cache so the NEXT reader of this book
+        // skips Gemini entirely. ignoreDuplicates: true -- a race between two
+        // first-readers of the same book silently no-ops on the loser, which
+        // is fine since both already have their own generatedQuestions in hand.
+        if (cacheKey) {
+          supabase
+            .from("takeaway_questions_cache")
+            .upsert(
+              {
+                cache_key: cacheKey,
+                title,
+                author: author ?? "",
+                book_type: bookType ?? "fiction",
+                questions: generatedQuestions,
+                model: MODEL,
+              },
+              { onConflict: "cache_key", ignoreDuplicates: true },
+            )
+            .then(() => {}, (e: any) => console.error("takeaway question cache write error:", e));
+        }
+      } finally {
+        if (resolveInFlight) { resolveInFlight(); inFlight.delete(cacheKey); }
       }
     }
 

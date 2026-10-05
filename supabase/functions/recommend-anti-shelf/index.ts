@@ -138,6 +138,15 @@ async function hashIp(ip: string): Promise<string> {
   return sha256Hex(`${salt}::${ip}`);
 }
 
+// ---------- In-flight deduplication ----------
+// Maps dedupKey (user_id|shelf_signature|mode) -> Promise that resolves
+// when the Gemini call for that exact combination completes. Fifth
+// instance of this pattern in this codebase -- see analyze-novel
+// (2026-07-02), dna-consensus (2026-07-19), recommend-by-dna
+// (2026-07-20), and takeaways (2026-10-05, same pass as this file).
+// In-process/per-isolate only -- same accepted limitation as the others.
+const inFlight = new Map<string, Promise<void>>();
+
 Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -320,6 +329,56 @@ Deno.serve(async (req) => {
         );
       }
     }
+
+    // ---------- Dedup: coalesce concurrent requests for the same (user, shelf, mode) ----------
+    // The cache above is keyed on (user_id, shelf_signature, mode), so two
+    // tabs/devices for the same reader -- or a double-click on "Regenerate"
+    // (force=true skips the cache read above entirely) -- can each start an
+    // independent, Gemini-billing copy of the exact same generation. Same
+    // bug class analyze-novel (2026-07-02), dna-consensus (2026-07-19), and
+    // recommend-by-dna (2026-07-20) already guard against; fixed here and in
+    // takeaways (2026-10-05 daily backend audit) in the same pass, closing
+    // the last two of this app's five Gemini-calling functions.
+    const dedupKey = `${userId}|${signature}|${mode}`;
+    if (inFlight.has(dedupKey)) {
+      await inFlight.get(dedupKey);
+      const { data: freshRec } = await withTimeout(
+        admin
+          .from("shelf_recommendations")
+          .select("recommendations, source_titles, created_at")
+          .eq("user_id", userId)
+          .eq("shelf_signature", signature)
+          .eq("mode", mode)
+          .maybeSingle(),
+        { data: null, error: null } as any,
+      );
+      if (freshRec?.recommendations) {
+        console.log(JSON.stringify({ fn: "recommend-anti-shelf", outcome: "dedup_hit", mode }));
+        return new Response(
+          JSON.stringify({
+            cached: true,
+            mode,
+            payload: freshRec.recommendations,
+            source_titles: freshRec.source_titles,
+            generated_at: freshRec.created_at,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      // The in-flight call didn't leave a usable result (e.g. Gemini failed
+      // with nothing to fall back on) -- fall through and generate
+      // independently, same as every other instance of this pattern.
+    }
+
+    // Register this request as the in-flight owner for this exact
+    // (user, shelf, mode) combination -- released in the `finally` below,
+    // which wraps the rate-limit gate through the final response, so every
+    // exit path (success, AI error, or an unexpected throw caught by the
+    // outer handler) still releases the slot.
+    let resolveInFlight!: () => void;
+    inFlight.set(dedupKey, new Promise<void>((res) => { resolveInFlight = res; }));
+
+    try {
 
     // Rate limit: 20 generations / hour / IP, AND 20/hour per authenticated
     // user ID. IP-only limiting lets a signed-in user bypass the cap by
@@ -577,6 +636,11 @@ Return 6–10 recommendations via the render_recommendations tool. For each pick
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+
+    } finally {
+      resolveInFlight();
+      inFlight.delete(dedupKey);
+    }
   } catch (err) {
     console.error("recommend-anti-shelf fatal", err);
     return new Response(JSON.stringify({ error: "Unexpected server error" }), {
