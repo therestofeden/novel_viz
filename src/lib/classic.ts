@@ -3998,6 +3998,53 @@ export const CLASSIC: ClassicEntry[] = [
   // count: 501 -> 502.
   { title: "Flatland", author: "Edwin A. Abbott", why: "Published in 1884 by Seeley & Co. of London under the pseudonym \"A Square,\" this short satirical novella imagines a two-dimensional world of geometric figures -- its rigid social hierarchy a pointed jab at Victorian class and gender norms -- narrated by a Square who is shown a third dimension he has no way to perceive and struggles to describe back to his own flat world. It sold modestly and was largely forgotten soon after publication; its reputation was made some three decades later, when Einstein's general relativity renewed public interest in higher dimensions and a 1920 letter in Nature credited Abbott with genuine geometric foresight -- the Oxford Dictionary of National Biography was later revised to describe Flatland as what Abbott is chiefly remembered for. Still in print in multiple editions over 140 years later, and cited directly by both Carl Sagan and Stephen Hawking (both already on this list) when explaining higher-dimensional space to general readers -- the plain-geometry counterpart to their own cosmology.", aka: ["Flatland: A Romance of Many Dimensions"] },
 
+  // 2026-10-06 (daily_novel_viz_feat / search-bar-to-viz + book-coverage
+  // task): round 105. Four titles, all brand-new authors on both this list
+  // and must-read.ts (checked via grep for each surname -- Alcott [only
+  // false-positive hit was "Walcott"], Montgomery, "du Maurier"/"Daphne",
+  // Leopold -- zero collisions; also checked every canon_books migration
+  // for all four titles -- no existing rows, so all four need a real
+  // canon_books insert, not just a classic.ts badge; see same-day migration
+  // 20261006_canon_books_curation_round105_2026_10_06.sql).
+  //
+  // Fiction (3), closing three separate author/genre gaps:
+  // Little Women (Louisa May Alcott, 1868-69, Roberts Brothers) -- the
+  // American domestic/family-novel genre had zero representation on either
+  // list despite being one of the most continuously read, continuously
+  // adapted (1933/1949/1994/2019 films, the last Oscar-nominated) works in
+  // the language; cited as a direct influence by writers as different as
+  // Simone de Beauvoir and Ursula K. Le Guin. Anne of Green Gables (L.M.
+  // Montgomery, 1908, L.C. Page & Co.) -- neither list had a single
+  // Canadian work; still a cultural touchstone in Canada and, distinctively,
+  // in Japan, where it has been continuously part of the school curriculum
+  // since the 1950s. Rebecca (Daphne du Maurier, 1938, Victor Gollancz) --
+  // the 20th-century Gothic-suspense genre had no entry distinct from the
+  // Victorian Gothic already present (Dracula, The Woman in White); won the
+  // first National Book Award for Favorite Novel (1938) and was adapted by
+  // Hitchcock into his only Best Picture Oscar winner (1940); its opening
+  // line ("Last night I dreamt I went to Manderley again") is among the
+  // most recognized in English fiction.
+  //
+  // Non-fiction (1): A Sand County Almanac (Aldo Leopold, published
+  // posthumously 1949, Oxford University Press) -- this list's only prior
+  // environmental-movement text is Silent Spring (Rachel Carson, 1962);
+  // Leopold's essay collection, and the "land ethic" it introduces, predates
+  // Carson by 13 years and is routinely cited alongside her book as the
+  // other foundational text of 20th-century conservation thought, from a
+  // different register entirely (reflective ecological-ethics essays vs.
+  // investigative exposé) -- a real gap, not a second helping of the same
+  // thing. Over 2 million copies sold, translated into a dozen-plus
+  // languages, never out of print since 1949.
+  //
+  // All four WebSearch-verified (publisher, year, the specific claims
+  // above) before writing their `why` text. None were close calls for Must
+  // Read or flagged as borderline. Classic count: 502 -> 506 (fiction+3,
+  // non-fiction+1 this round -- see each entry).
+  { title: "Little Women", author: "Louisa May Alcott", why: "Published in two parts (1868, 1869) by Roberts Brothers of Boston, drawing heavily on Alcott's own childhood with her three sisters in Concord, Massachusetts. An immediate commercial success that has never gone out of print since, it effectively founded the American domestic/family-novel genre and made Jo March one of the most influential female characters in the language -- a direct model cited by writers as different as Simone de Beauvoir and Ursula K. Le Guin. Adapted for film repeatedly across a century (1933, 1949, 1994, and Greta Gerwig's Oscar-nominated 2019 version), each adaptation finding a new generation of readers." },
+  { title: "Anne of Green Gables", author: "L.M. Montgomery", why: "Published in 1908 by L.C. Page & Co. and set on Prince Edward Island, Canada, where it remains a defining cultural touchstone and major tourist draw. Sold out its first print run within weeks and has stayed continuously in print since, translated into dozens of languages -- most strikingly in Japan, where it has been part of the school curriculum since the 1950s and inspired its own tourism circuit to PEI. Closes a real gap: neither this list nor Must Read had a single Canadian work before it." },
+  { title: "Rebecca", author: "Daphne du Maurier", why: "Published in 1938 by Victor Gollancz and never out of print since. Won the first National Book Award for Favorite Novel, voted by American booksellers that same year, and was adapted by Alfred Hitchcock in 1940 into the only film of his career to win the Academy Award for Best Picture. Its opening line -- \"Last night I dreamt I went to Manderley again\" -- is among the most recognized in English fiction. Redefined the modern Gothic-suspense novel for the 20th century, distinct from this list's Victorian Gothic entries (Dracula, The Woman in White) by a full lifetime and a different register entirely." },
+  { title: "A Sand County Almanac", author: "Aldo Leopold", why: "Published in 1949 by Oxford University Press, a year after Leopold's death, this collection of essays on the Wisconsin farm he restored introduced the concept of the \"land ethic\" -- the idea that ethical consideration should extend to soil, water, plants, and animals, not just people. Routinely cited alongside Silent Spring (already on this list) as one of the two foundational texts of the 20th-century environmental movement, though it predates Carson's book by thirteen years and makes its case through reflective, literary natural-history essays rather than investigative exposé. Over 2 million copies sold, translated into more than a dozen languages, continuously in print since 1949." },
+
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
