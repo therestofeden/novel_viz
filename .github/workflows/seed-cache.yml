@@ -1,0 +1,74 @@
+name: Seed Cache (Classics + Popular Books)
+
+# Pre-warms the novel_analyses cache for every book in seed_book_list (the
+# ~2100+ popular-books warmup list, plus every canon_books/classic curation
+# round -- each round's migration already inserts its new titles into
+# seed_book_list, see e.g. 20261003120000_canon_books_curation_round104) by
+# calling the seed-cache edge function, which in turn calls analyze-novel
+# per book with {prefetch:true}.
+#
+# Until today this list only got consumed when someone manually curled
+# seed-cache (see that function's own header comment: "Trigger manually") --
+# so every classic/canon round this project has shipped (100+ rounds as of
+# 2026-10) sat in seed_book_list un-consumed unless a human remembered to run
+# the curl command by hand. A reader searching for a newly-added classic hit
+# the full live Gemini generation path (several seconds, sometimes a
+# fallback-chain retry) instead of an instant cache hit -- the opposite of
+# "fast" for exactly the books this app is actively trying to have the most
+# of. 2026-10-06 (scheduled search-to-viz speed + book-coverage pass):
+# automated it, same "pg_cron isn't available on this Supabase plan tier, use
+# GitHub Actions cron instead" pattern as nightly-maintenance.yml.
+#
+# Runs once nightly in the same quiet-hours window as nightly-maintenance.yml
+# rather than more frequently during the day: seed-cache's per-book calls go
+# through analyze-novel's normal Gemini path, which shares the same
+# DAILY_GEMINI_BUDGET_USD ceiling and per-model circuit breakers as real user
+# traffic (see _shared/gemini.ts) -- cache-warming should fill gaps in quiet
+# hours, not compete with live readers for a shared, capped daily budget.
+# batch=20 (not the function's own max of 50) bounds a single run's worst
+# case while still being enough to clear a typical day's worth of newly-added
+# canon-round titles (recent rounds have added single digits to low teens of
+# titles/day) well within one run; delay_ms=3000 is the function's own
+# default pacing between Gemini calls.
+#
+# Setup required (one-time), same shape as nightly-maintenance.yml's
+# MAINTENANCE_SECRET:
+#   1. Pick any random string, e.g. `openssl rand -hex 32`.
+#   2. Supabase Dashboard -> Project Settings -> Edge Functions -> Secrets:
+#        add SEED_SECRET = <that string>  (seed-cache/index.ts already reads
+#        this env var; until it's set, every call here 401s and this job
+#        fails loud -- that's the intended signal, same as
+#        MAINTENANCE_SECRET's rollout).
+#   3. GitHub -> repo Settings -> Secrets and variables -> Actions:
+#        add SEED_SECRET = <same string>
+#        (SUPABASE_ANON_KEY should already exist from keep-warm.yml setup)
+
+on:
+  schedule:
+    # 03:30 UTC nightly -- same quiet-hours window as nightly-maintenance.yml
+    # (03:00 UTC), offset by 30 minutes so the two scheduled jobs don't land
+    # in the same GitHub Actions scheduling slot.
+    - cron: "30 3 * * *"
+  workflow_dispatch: # allow manual trigger for testing
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Run seed-cache
+        # --max-time 1400 (~23min), under this job's own 25min timeout-minutes
+        # with margin, same curl-vs-job-timeout gap reasoning as
+        # nightly-maintenance.yml. batch=20 at analyze-novel's own worst-case
+        # ~90s/book (3-model fallback chain, see _shared/gemini.ts) plus the
+        # 3000ms inter-call delay is a ~31min absolute worst case, but that
+        # requires every single book in the batch to miss all 3 fallback
+        # models -- not the common path; most calls resolve in a few seconds.
+        run: |
+          curl -sf --max-time 1400 \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-seed-secret: ${{ secrets.SEED_SECRET }}" \
+            -d '{"batch": 20, "delay_ms": 3000}' \
+            https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/seed-cache
