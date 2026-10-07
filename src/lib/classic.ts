@@ -4045,6 +4045,56 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "Rebecca", author: "Daphne du Maurier", why: "Published in 1938 by Victor Gollancz and never out of print since. Won the first National Book Award for Favorite Novel, voted by American booksellers that same year, and was adapted by Alfred Hitchcock in 1940 into the only film of his career to win the Academy Award for Best Picture. Its opening line -- \"Last night I dreamt I went to Manderley again\" -- is among the most recognized in English fiction. Redefined the modern Gothic-suspense novel for the 20th century, distinct from this list's Victorian Gothic entries (Dracula, The Woman in White) by a full lifetime and a different register entirely." },
   { title: "A Sand County Almanac", author: "Aldo Leopold", why: "Published in 1949 by Oxford University Press, a year after Leopold's death, this collection of essays on the Wisconsin farm he restored introduced the concept of the \"land ethic\" -- the idea that ethical consideration should extend to soil, water, plants, and animals, not just people. Routinely cited alongside Silent Spring (already on this list) as one of the two foundational texts of the 20th-century environmental movement, though it predates Carson's book by thirteen years and makes its case through reflective, literary natural-history essays rather than investigative exposé. Over 2 million copies sold, translated into more than a dozen languages, continuously in print since 1949." },
 
+  // 2026-10-07 (daily_novel_viz_feat / search-bar-to-viz + book-coverage
+  // task): round 106. Three titles, all non-fiction, all brand-new authors
+  // on both this list and must-read.ts (grepped "Archimedes", "Wallace"/
+  // "Russel", and "Drucker" across both files -- zero collisions; also
+  // checked every canon_books migration for all three titles -- no
+  // existing rows, so all three need a real canon_books insert, not just a
+  // classic.ts badge; see same-day migration
+  // 20261007120000_canon_books_curation_round106_2026_10_07.sql).
+  //
+  // The Works of Archimedes (Archimedes, 3rd century BC) -- ancient
+  // mathematics/physics had exactly one entry (Euclid's Elements) despite
+  // Archimedes being the more consequential figure by most historians'
+  // reckoning: On Floating Bodies gives the buoyancy principle, On the
+  // Sphere and Cylinder the 2:3 ratio he considered his best result and
+  // had carved on his own tombstone. Roughly half the surviving corpus --
+  // including the only Greek copy of On Floating Bodies and the sole
+  // source for The Method of Mechanical Theorems -- comes from a single
+  // palimpsest rediscovered in 1906, sold at auction in 1998 for $2.2
+  // million, and only fully read via X-ray/UV imaging years after that.
+  // T.L. Heath's 1897 translation is the standard edition collecting the
+  // corpus -- same collected-edition convention this list already uses for
+  // fragmentary/ancient authors (Sappho, Du Fu, Li Bai).
+  //
+  // The Malay Archipelago (Alfred Russel Wallace, 1869, Macmillan) --
+  // Darwin's On the Origin of Species sits on Must Read, but the co-
+  // discoverer of natural selection, writing from the same expedition that
+  // produced his 1858 letter proposing the theory independently of (and
+  // simultaneously with) Darwin, had zero representation on either list.
+  // Ten editions in the 19th century alone, never out of print since,
+  // directly influenced Joseph Conrad's fiction, and introduced the
+  // "Wallace Line" still used today to divide Asian and Australian fauna
+  // across the archipelago.
+  //
+  // The Practice of Management (Peter Drucker, 1954, Harper & Brothers) --
+  // this list's business/organizational-theory cluster (Taylor's The
+  // Principles of Scientific Management, Brooks' The Mythical Man-Month,
+  // Jacobs' The Death and Life of Great American Cities) had no entry for
+  // the person routinely credited with inventing management as a distinct
+  // discipline; introduced "management by objectives" and the "a business
+  // exists to create a customer" framing still taught seven decades on.
+  //
+  // All three WebSearch-verified (publisher, year, the specific claims
+  // above) before writing their `why` text. None were close calls for Must
+  // Read. Classic count: 506 -> 509 (non-fiction+3 this round, no fiction
+  // -- a function of which gaps were genuinely open, not a change in
+  // curation ratio going forward).
+  { title: "The Works of Archimedes", author: "Archimedes", why: "Ancient mathematics and physics have exactly one prior entry on this list (Euclid's Elements) despite Archimedes being, by most historians' reckoning, the more consequential figure: On Floating Bodies gives the buoyancy principle, and On the Sphere and Cylinder derives the 2:3 sphere-to-cylinder ratio he considered his best result and asked to have carved on his own tombstone. Roughly half of what survives -- including the only known Greek copy of On Floating Bodies and the sole surviving source for The Method of Mechanical Theorems -- comes from a single medieval prayer book whose parchment had been scraped and reused for his treatises centuries earlier; the 'Archimedes Palimpsest' was rediscovered in 1906, sold at auction in 1998 for $2.2 million, and only fully decoded via X-ray and ultraviolet imaging years after that. T.L. Heath's 1897 translation remains the standard edition collecting the surviving corpus." },
+  { title: "The Malay Archipelago", author: "Alfred Russel Wallace", why: "Published in 1869 by Macmillan and dedicated to Charles Darwin, this two-volume travel narrative documents the 14,000 miles and roughly 125,000 specimens Wallace collected across Southeast Asia during the same expedition that produced his 1858 letter proposing natural selection independently of (and simultaneously with) Darwin -- whose On the Origin of Species already sits on Must Read, telling only half of that story. Went through ten editions in the 19th century alone and has never been out of print since; introduced the 'Wallace Line,' the biogeographic boundary still used today to divide Asian and Australian fauna across the archipelago, and influenced Joseph Conrad's fiction directly. Closes a real gap: the co-discoverer of evolution by natural selection had zero representation on either list." },
+  { title: "The Practice of Management", author: "Peter Drucker", why: "Published in 1954 by Harper & Brothers, this is the book most widely credited with founding management as a distinct discipline in its own right rather than a subset of economics or industrial engineering. Introduced 'management by objectives' and the idea that a business exists to 'create a customer' -- both still default vocabulary in business schools and boardrooms seven decades later. Closes a real gap: this list's business/organizational-theory cluster (Taylor's The Principles of Scientific Management, Brooks' The Mythical Man-Month, Jacobs' The Death and Life of Great American Cities) had no entry for the person routinely called the father of modern management." },
+
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
