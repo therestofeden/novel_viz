@@ -4095,6 +4095,46 @@ export const CLASSIC: ClassicEntry[] = [
   { title: "The Malay Archipelago", author: "Alfred Russel Wallace", why: "Published in 1869 by Macmillan and dedicated to Charles Darwin, this two-volume travel narrative documents the 14,000 miles and roughly 125,000 specimens Wallace collected across Southeast Asia during the same expedition that produced his 1858 letter proposing natural selection independently of (and simultaneously with) Darwin -- whose On the Origin of Species already sits on Must Read, telling only half of that story. Went through ten editions in the 19th century alone and has never been out of print since; introduced the 'Wallace Line,' the biogeographic boundary still used today to divide Asian and Australian fauna across the archipelago, and influenced Joseph Conrad's fiction directly. Closes a real gap: the co-discoverer of evolution by natural selection had zero representation on either list." },
   { title: "The Practice of Management", author: "Peter Drucker", why: "Published in 1954 by Harper & Brothers, this is the book most widely credited with founding management as a distinct discipline in its own right rather than a subset of economics or industrial engineering. Introduced 'management by objectives' and the idea that a business exists to 'create a customer' -- both still default vocabulary in business schools and boardrooms seven decades later. Closes a real gap: this list's business/organizational-theory cluster (Taylor's The Principles of Scientific Management, Brooks' The Mythical Man-Month, Jacobs' The Death and Life of Great American Cities) had no entry for the person routinely called the father of modern management." },
 
+  // ── Round 107 (2026-10-08) ─────────────────────────────────────────────
+  // Scanned both files for authors whose absence is surprising given who's
+  // already present, same method as rounds 105-106, rather than picking a
+  // genre cold. Found three.
+  //
+  // Novum Organum (Francis Bacon, 1620) -- Descartes' Discourse on Method,
+  // rationalism's founding document, is already on Must Read; empiricism's
+  // equally foundational counterpart -- the book that gave the scientific
+  // method its original written case against pure deduction -- had zero
+  // representation on either list.
+  //
+  // The Sociological Imagination (C. Wright Mills, 1959) -- Weber, Durkheim,
+  // Simmel, Goffman, Bourdieu, Foucault, and Gramsci are all already here;
+  // the single volume most often assigned to define what sociology itself
+  // is for (the International Sociological Association's 1998 member
+  // survey ranked it #2 among 20th-century sociology books) was not. A
+  // deliberately easy, well-defended pick given this list's existing
+  // sociology depth.
+  //
+  // Correction (Thomas Bernhard, 1975) -- closes a thread this list itself
+  // left open: round 75 (2026-09-04) explicitly flagged Bernhard as a
+  // genuine zero-hit gap alongside Amado/Capote/Cheever/Welty, picked four
+  // other national-literature gaps that round, and never circled back.
+  // Bernhard is the direct stylistic ancestor of two authors already
+  // present -- Krasznahorkai and Sebald, both of whom cite him as a
+  // formative influence -- making his own absence more conspicuous with
+  // each passing round, not less. Correction, not The Loser or Extinction,
+  // per Wikipedia's own framing of which Bernhard novel critics most often
+  // call his masterpiece -- WebSearch-verified before picking the title.
+  //
+  // All three WebSearch-verified (publisher/year, the specific claims
+  // above) before writing their `why` text. None were close calls for
+  // Must Read. Ratio note: 2 non-fiction + 1 fiction this round, same
+  // shape as round 106's non-fiction-only round -- a function of which
+  // gaps were genuinely open, not a change in curation ratio going
+  // forward (the cumulative list is still fiction-heavy by a wide
+  // margin). Classic count: 509 -> 512.
+  { title: "Novum Organum", author: "Francis Bacon", why: "Published in 1620 as the second part of Bacon's unfinished Instauratio Magna, this is empiricism's founding document: against Aristotelian syllogism and pure deduction, Bacon argued for building knowledge from observation and 'true induction' -- compiling tables of instances where a phenomenon occurs, is absent, or varies in degree, then eliminating candidate explanations that don't fit. Its catalogue of 'idols of the mind' (Tribe, Cave, Market, Theatre) named the biases a careful observer has to guard against three centuries before cognitive science gave them other names; Voltaire called Bacon 'the Father of the Experimental Philosophy.' Closes a real gap: Descartes' Discourse on Method, rationalism's founding document, already sits on Must Read -- empiricism's equally foundational counterpart had zero representation on either list." },
+  { title: "The Sociological Imagination", author: "C. Wright Mills", why: "Published in 1959 by Oxford University Press, this is the book that gave sociology its enduring self-description: the discipline's job is connecting 'the personal troubles of milieu' to 'the public issues of social structure' -- why one unemployed worker is a personal problem but mass unemployment is a structural one. Mills wrote it as a direct polemic against Talcott Parsons' structural-functionalist 'grand theory' and against data-collection-for-its-own-sake 'abstracted empiricism,' and that argument still structures how the discipline fights with itself. The International Sociological Association's 1998 member survey ranked it the second most important sociology book of the 20th century. Closes a real gap: Weber, Durkheim, Simmel, Goffman, Bourdieu, Foucault, and Gramsci are all already on this list; the single volume most commonly assigned to define what the discipline is for was not." },
+  { title: "Correction", author: "Thomas Bernhard", why: "Published in 1975 as Korrektur, this is the novel most often cited as Bernhard's masterpiece: Roithamer, a Cambridge-based scientist modeled loosely on Wittgenstein, builds an obsessively precise cone-shaped house for his beloved sister deep in an Austrian forest; she dies the day she moves in, and the narrator reconstructs Roithamer's unraveling and eventual suicide from his papers. Written in Bernhard's signature cascading, nearly punctuation-free sentences, it's the direct stylistic ancestor of two authors already on this list -- László Krasznahorkai and W.G. Sebald, both of whom named Bernhard a formative influence. Flagged as a genuine gap back in round 75 (2026-09-04) alongside Amado, Capote, Cheever, and Welty, but four other national-literature gaps were prioritized that round and Bernhard was never circled back to -- closing that open thread today.", aka: ["Korrektur"] },
 ];
 
 // ── Lookup ─────────────────────────────────────────────────────────────────
