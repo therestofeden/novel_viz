@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/track";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -75,7 +76,7 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
         .eq("id", shelfId);
       setSaving(false);
       if (error) toast.error("Couldn't save note");
-      else setDirty(false);
+      else { setDirty(false); track("note_saved", { length: value.length }); }
     }, 1200);
   }, [shelfId]);
 

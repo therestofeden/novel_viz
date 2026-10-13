@@ -4,6 +4,7 @@ import { BookmarkPlus, Library, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/track";
 import { useAuth } from "@/hooks/useAuth";
 import { RatingControl } from "@/components/RatingControl";
 import { NovelAnalysis } from "@/lib/novel-types";
@@ -190,6 +191,7 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
         .maybeSingle();
       if (error) throw error;
       setRow((inserted as ShelfRow | null) ?? null);
+      track("shelf_add", { status });
       toast.success(
         status === "finished" ? "Added — marked as read"
         : status === "reading" ? "Added — now reading"
@@ -281,6 +283,8 @@ export const ShelfChip = ({ analysis, cacheKey }: Props) => {
     if (error) {
       setRow(prev);
       toast.error("Couldn't save rating");
+    } else {
+      track("rating_set", { rating });
     }
   };
 

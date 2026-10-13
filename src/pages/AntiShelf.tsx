@@ -5,6 +5,7 @@ import { NovelVizLogo } from "@/components/NovelVizLogo";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/track";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { BuyButton, prewarmBuyLinks } from "@/components/BuyButton";
@@ -126,6 +127,7 @@ const AntiShelf = () => {
         .eq("user_id", session.user.id)
         .eq("rec_key", key);
     } else {
+      track("recommendation_clicked", { signal: String(signal), surface: "anti_shelf" });
       await supabase
         .from("recommendation_feedback")
         .upsert(

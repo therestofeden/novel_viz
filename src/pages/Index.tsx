@@ -64,6 +64,7 @@ import { GeminiKeyDialog } from "@/components/GeminiKeyDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { track } from "@/lib/track";
 import { cn, normalizeForSearch } from "@/lib/utils";
 
 // Bounded timeouts for this page's background/autocomplete fetches — none of
@@ -1082,6 +1083,7 @@ const Index = () => {
           const raw = data?.analysis;
           result = raw ? normalizeAnalysis(raw as Record<string, unknown>) : null;
           setCachedHit(!!data?.cached);
+          if (!isRefine && !isReanalyze) track("analysis_viewed", { cached: !!data?.cached });
           if (data?.cacheKey) setCacheKey(data.cacheKey);
           if (data?.slug) setSlug(data.slug);
           setAnalysisPreview(null); // full analysis supersedes preview
@@ -1210,6 +1212,7 @@ const Index = () => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    track("search_submitted", { length: title.trim().length });
     setActiveRefinement(null);
     fetchAnalysis(title.trim());
   };

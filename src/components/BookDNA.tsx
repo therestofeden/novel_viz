@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { BuyButton } from "@/components/BuyButton";
 import { DnaNeighbourhood } from "@/components/DnaNeighbourhood";
 import { Reveal, ease, useReducedMotion } from "@/lib/motion";
+import { track } from "@/lib/track";
 
 interface BookDNAProps {
   analysis: NovelAnalysis;
@@ -265,6 +266,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   );
 
   const fetchDynamicRec = useCallback(async () => {
+    track("recommendation_clicked", { surface: "book_dna" });
     setRecLoading(true);
     try {
       // Retrieve user's BYOK key from auth metadata (same pattern as AntiShelf/Index).

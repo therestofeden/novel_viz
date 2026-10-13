@@ -5,6 +5,7 @@ import { NovelVizLogo } from "@/components/NovelVizLogo";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/track";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+        track("signup", { method: "email" });
         toast.success("Check your email to confirm your account.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
