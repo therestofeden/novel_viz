@@ -1,3 +1,4 @@
+import { FeedbackButton } from "@/components/FeedbackButton";
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeftRight, Loader2, LogOut, Sparkles, Trash2 } from "lucide-react";
@@ -270,6 +271,7 @@ const Shelf = () => {
             >
               <LogOut className="h-3.5 w-3.5" /> Sign out
             </button>
+            <FeedbackButton page="shelf" className="border-l border-foreground py-4" />
           </div>
         </div>
       </header>

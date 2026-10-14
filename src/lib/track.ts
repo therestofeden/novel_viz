@@ -13,7 +13,7 @@ const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 let queue: { event: TrackEvent; props?: Props }[] = [];
 let timer: ReturnType<typeof setTimeout> | undefined;
 
-function sessionId(): string {
+export function sessionId(): string {
   try {
     let id = sessionStorage.getItem("nv_sid");
     if (!id) {

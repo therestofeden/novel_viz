@@ -55,6 +55,7 @@ import { RatingDistributionSkeleton } from "@/components/RatingDistributionSkele
 const RatingDistribution = lazy(() => import("@/components/RatingDistribution"));
 import { BuyButton } from "@/components/BuyButton";
 import { ShareButton } from "@/components/ShareButton";
+import { FeedbackButton } from "@/components/FeedbackButton";
 import { CoverPlate } from "@/components/CoverPlate";
 import { fetchCoverUrl } from "@/lib/covers";
 import { supabase } from "@/integrations/supabase/client";
@@ -761,7 +762,9 @@ const BookPage = () => {
           </div>
         </section>
       </main>
-
+      <footer className="container mx-auto flex justify-end border-t border-foreground/20 px-4 py-3">
+        <FeedbackButton page="book" slug={slug} />
+      </footer>
     </div>
   );
 };
