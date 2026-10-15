@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
+import { reportError } from "@/lib/reportError";
 
 interface Props {
   children: ReactNode;
@@ -34,6 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
     // similar) later so intermittent crashes like this are actually visible
     // instead of relying on a user noticing and reporting a blank screen.
     console.error("[ErrorBoundary] caught render error:", error, info.componentStack);
+    reportError(error, "boundary");
   }
 
   reset = () => this.setState({ error: null });
