@@ -72,7 +72,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-maintenance-secret",
 };
 
-const PURGE_RPC_TIMEOUT_MS = 15_000;
+// 2026-10-16: 15s -> 12s because two more purges were added (8 x 12s = 96s worst
+// case, still under nightly-maintenance.yml's curl --max-time 110).
+const PURGE_RPC_TIMEOUT_MS = 12_000;
 
 // Races `promise` against a timeout; on timeout, resolves to `fallback`
 // instead of leaving the caller hanging forever. Same pattern as
@@ -153,6 +155,11 @@ Deno.serve(async (req) => {
   await runPurge("dna_recommendation_cache_deleted", "purge_cold_dna_recommendation_cache");
   await runPurge("takeaway_questions_cache_deleted", "purge_cold_takeaway_questions_cache");
   await runPurge("shelf_recommendations_deleted", "purge_cold_shelf_recommendations");
+  // 2026-10-16 (daily_backend): launch telemetry tables had retention functions
+  // (180d app_events, 30d client_errors) that nothing called. A missing function
+  // (migration not yet applied) just reports "error: ..." and the run continues.
+  await runPurge("app_events_deleted", "purge_old_app_events");
+  await runPurge("client_errors_deleted", "purge_client_errors");
 
   console.log(JSON.stringify({ fn: "db-maintenance", ...results }));
 
