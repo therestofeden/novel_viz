@@ -16,7 +16,7 @@ WITH f AS (
   SELECT s.*, EXISTS (
     SELECT 1 FROM public.app_events e
     WHERE COALESCE(e.user_id::text, e.session_id) = s.identity
-      AND e.event IN ('analysis','shelf_add','rating','note')
+      AND e.event IN ('analysis_viewed','shelf_add','rating_set','note_saved')
       AND e.created_at <= s.first_seen_at + interval '24 hours'
   ) AS activated
   FROM public.v_event_identity_first_seen s
