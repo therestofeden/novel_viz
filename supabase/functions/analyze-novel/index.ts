@@ -916,7 +916,55 @@ async function callPreview(
 
 // ---------- Metadata fetch ----------
 
+// K7 (2026-10-20): a bare title ("1984", "Crime and Punishment") used to take
+// Google Books' first intitle: hit as ground truth — frequently a study guide
+// (CliffsNotes, York Notes), so the analysis was attributed to the guide's
+// author ("1984" by Michael Dean). Study aids are now filtered out, the GB pick
+// must agree with Open Library on the author when the reader gave none, and a
+// canon_books match (looked up by the caller) supplies the author up front.
+const STUDY_AID_RE = /\b(cliffs?\s?notes|spark\s?notes|york notes|study guide|reader'?s guide|adaptation|adapted|abridged|retold|graded reader|summary (of|and analysis)|analysis of|notes on|guide to|companion to|workbook|teacher'?s|lesson plans?|bookrags|gradesaver|literature guide)\b/i;
+
+function isStudyAid(v: { title?: string; subtitle?: string; categories?: string[] } | undefined): boolean {
+  if (!v) return true;
+  const text = `${v.title ?? ""} ${v.subtitle ?? ""}`;
+  if (STUDY_AID_RE.test(text)) return true;
+  return (v.categories ?? []).some((c) => /study aids|study guides/i.test(c));
+}
+
+function surname(name: string | undefined): string {
+  const parts = (name ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z\s]/g, " ").trim().split(/\s+/);
+  return parts[parts.length - 1] ?? "";
+}
+
+// Exact, case-insensitive title match against the curated canon. Returns the
+// author only when the canon is unambiguous for that title (one surname).
+async function lookupCanonAuthor(admin: SupabaseClient, title: string): Promise<string | null> {
+  const t = title.trim();
+  if (!t || t.length > 200) return null;
+  try {
+    const { data } = await withTimeout(
+      admin.from("canon_books").select("author").ilike("title", t.replace(/[\\%_]/g, (c) => `\\${c}`)).limit(5),
+      { data: null, error: null } as any,
+      600,
+    ) as { data: { author: string | null }[] | null };
+    const authors = (data ?? []).map((r) => r.author).filter((a): a is string => !!a && a.toLowerCase() !== "anonymous");
+    if (!authors.length) return null;
+    return new Set(authors.map(surname)).size === 1 ? authors[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+// "Nineteen Eighty-Four: A Novel" ≈ "nineteen eighty four"; used to reject
+// loose intitle: hits when the reader gave no author to anchor on.
+function normTitle(t: unknown): string {
+  return String(t ?? "").split(/[:(\[]/)[0].normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/^(the|a|an)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 async function fetchBookMetadata(title: string, author: string): Promise<BookMetadata> {
+  const wantTitle = normTitle(title);
+  const titleOk = (t: unknown) => !!author || normTitle(t) === wantTitle;
   const gbQuery = author
     ? `intitle:${encodeURIComponent(title)}+inauthor:${encodeURIComponent(author)}`
     : `intitle:${encodeURIComponent(title)}`;
@@ -926,41 +974,58 @@ async function fetchBookMetadata(title: string, author: string): Promise<BookMet
 
   const [gbRes, olRes] = await Promise.allSettled([
     fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${gbQuery}&maxResults=3&printType=books`,
+      `https://www.googleapis.com/books/v1/volumes?q=${gbQuery}&maxResults=10&printType=books`,
       { signal: AbortSignal.timeout(4000) },
     ).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     fetch(
-      `https://openlibrary.org/search.json?${olQuery}&fields=title,author_name,first_publish_year,number_of_pages_median,subject&limit=1`,
+      `https://openlibrary.org/search.json?${olQuery}&fields=title,author_name,first_publish_year,number_of_pages_median,subject,edition_count&limit=10`,
       { signal: AbortSignal.timeout(4000) },
     ).then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
 
   const gb = gbRes.status === "fulfilled" ? gbRes.value : null;
   const ol = olRes.status === "fulfilled" ? olRes.value : null;
+  // Open Library's relevance order is weak for short titles ("1984" → a
+  // 4-edition graded-reader adaptation first), so drop study aids/adaptations
+  // and take the most-reprinted remaining work; prefer a doc by the anchor author.
+  const olDocs: Record<string, any>[] = (Array.isArray(ol?.docs) ? ol.docs : [])
+    .filter((d: Record<string, any>) => !STUDY_AID_RE.test(String(d.title ?? "")) && titleOk(d.title))
+    .sort((x: Record<string, any>, y: Record<string, any>) => (y.edition_count ?? 0) - (x.edition_count ?? 0));
+  const olDoc = (author && olDocs.find((d) => (d.author_name ?? []).some((a: string) => surname(a) === surname(author)))) || olDocs[0];
+  const olAuthor: string | undefined = (author && (olDoc?.author_name ?? []).find((a: string) => surname(a) === surname(author)))
+    || olDoc?.author_name?.[0];
+
+  // Google Books — skip study aids; with no reader-supplied author, prefer
+  // the item whose author agrees with Open Library's top (edition-weighted) hit.
+  const items: { volumeInfo?: Record<string, any> }[] = Array.isArray(gb?.items) ? gb.items : [];
+  const candidates = items.map((i) => i.volumeInfo).filter((v) => v && !isStudyAid(v) && titleOk(v.title)) as Record<string, any>[];
+  const anchor = author || olAuthor;
+  const gbItem = (anchor && candidates.find((v) => (v.authors ?? []).some((a: string) => surname(a) === surname(anchor))))
+    || (author ? candidates[0] : (olAuthor ? undefined : candidates[0]));
 
   const meta: BookMetadata = {};
-
-  // Google Books — primary source for description, page count, year, genres
-  const gbItem = gb?.items?.[0]?.volumeInfo;
   if (gbItem) {
     if (gbItem.title) meta.title = gbItem.title;
     if (gbItem.authors?.length) meta.author = gbItem.authors[0];
-    if (gbItem.description) meta.description = gbItem.description.slice(0, 600);
+    if (gbItem.description) meta.description = String(gbItem.description).slice(0, 600);
     if (gbItem.pageCount) meta.pageCount = gbItem.pageCount;
-    if (gbItem.publishedDate) meta.publishedYear = parseInt(gbItem.publishedDate.slice(0, 4), 10) || undefined;
+    if (gbItem.publishedDate) meta.publishedYear = parseInt(String(gbItem.publishedDate).slice(0, 4), 10) || undefined;
     if (gbItem.categories?.length) meta.genres = gbItem.categories.slice(0, 5);
   }
 
-  // OpenLibrary — fills gaps
-  const olDoc = ol?.docs?.[0];
+  // OpenLibrary — fills gaps (its top hit is edition-count weighted, so it is
+  // rarely a study guide, but still guard).
   if (olDoc) {
-    if (!meta.author && olDoc.author_name?.[0]) meta.author = olDoc.author_name[0];
+    if (!meta.author && olAuthor) meta.author = olAuthor;
     if (!meta.publishedYear && olDoc.first_publish_year) meta.publishedYear = olDoc.first_publish_year;
     if (!meta.pageCount && olDoc.number_of_pages_median) meta.pageCount = olDoc.number_of_pages_median;
     if (!meta.genres?.length && olDoc.subject?.length) {
       meta.genres = (olDoc.subject as string[]).slice(0, 5);
     }
   }
+
+  // A reader-supplied or canon author always wins over catalogue guesses.
+  if (author) meta.author = author;
 
   return meta;
 }
@@ -1510,8 +1575,13 @@ Deno.serve(async (req) => {
         let metadataBlock = "";
         if (!isRefine) {
           try {
+            // K7: a bare canon title gets its canonical author before metadata
+            // lookup, so "1984" resolves to Orwell, not a study-guide author.
             const meta = await Promise.race([
-              fetchBookMetadata(cleanTitle, cleanAuthor),
+              (async () => fetchBookMetadata(
+                cleanTitle,
+                cleanAuthor || (await lookupCanonAuthor(supabase, cleanTitle)) || "",
+              ))(),
               new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
             ]);
             if (meta) metadataBlock = buildMetadataBlock(meta);
@@ -1592,25 +1662,48 @@ Deno.serve(async (req) => {
             : cacheKey;
 
         const canonicalSlug = slugify(analysis.title || cleanTitle);
+        // K9 (2026-10-20): the slug is unique, so a second work/edition with
+        // the same title (or an author-spelling variant, e.g. "Thomas Kuhn" vs
+        // "Thomas S. Kuhn") made this whole cache write fail with 23505 — the
+        // analysis was never cached, every later request re-billed Gemini, and
+        // the client got a slug pointing at the OTHER book. Retry with an
+        // author-qualified slug, then with no slug, so the row always lands.
+        let finalSlug: string | null = canonicalSlug;
 
         if ((!isRefine || isReanalyze) && analysis.confidence !== "unknown_work" && isAdequate(analysis)) {
           // isReanalyze: ignoreDuplicates:false → overwrites the stale cached entry.
           // Fresh analyses: ignoreDuplicates:true → races between isolates silently no-op.
-          const { error: upsertErr } = await withTimeout(
-            supabase
-              .from("novel_analyses")
-              .upsert({
-                cache_key: canonicalCacheKey,
-                title: analysis.title || cleanTitle,
-                author: analysis.author || cleanAuthor || "",
-                analysis,
-                model: MODEL,
-                is_validated: true,
-                slug: canonicalSlug,
-              }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze }),
-            { data: null, error: null } as any,
-          );
-          if (upsertErr) console.error("cache write error:", upsertErr);
+          const authorSlug = slugify(analysis.author || cleanAuthor || "");
+          const slugCandidates: (string | null)[] = [
+            canonicalSlug,
+            ...(authorSlug ? [`${canonicalSlug}-${authorSlug}`.slice(0, 120)] : []),
+            // A reanalyze overwrites (DO UPDATE): never null out an existing slug.
+            ...(isReanalyze ? [] : [null]),
+          ];
+          for (const candidate of slugCandidates) {
+            const { error: upsertErr } = await withTimeout(
+              supabase
+                .from("novel_analyses")
+                .upsert({
+                  cache_key: canonicalCacheKey,
+                  title: analysis.title || cleanTitle,
+                  author: analysis.author || cleanAuthor || "",
+                  analysis,
+                  model: MODEL,
+                  is_validated: true,
+                  slug: candidate,
+                }, { onConflict: "cache_key", ignoreDuplicates: !isReanalyze }),
+              { data: null, error: null } as any,
+            );
+            finalSlug = candidate;
+            const slugTaken = upsertErr?.code === "23505" && /slug/.test(`${upsertErr?.message ?? ""} ${upsertErr?.details ?? ""}`);
+            if (slugTaken && candidate !== null) {
+              console.warn(JSON.stringify({ fn: "analyze-novel", outcome: "slug_taken_retry", slug: candidate }));
+              continue;
+            }
+            if (upsertErr) console.error("cache write error:", upsertErr);
+            break;
+          }
 
           // Also write an alias under the raw input key if it differs from
           // the canonical one — ensures this exact search string is a cache
@@ -1644,7 +1737,7 @@ Deno.serve(async (req) => {
 
         // Send the canonical key and slug to the frontend so shelf/compare/DNA always
         // reference the same slot regardless of how the title was typed.
-        send("analysis", { analysis, cached: false, cacheKey: canonicalCacheKey, slug: canonicalSlug });
+        send("analysis", { analysis, cached: false, cacheKey: canonicalCacheKey, ...(finalSlug ? { slug: finalSlug } : {}) });
         send("done", {});
         // bookType-branched rather than a blind `analysis.characters`/`.events` read: those
         // fields don't exist on NonFictionAnalysis (a real deno-check type error, not just
