@@ -1,1 +1,51 @@
 project_id = "ecsublyvcvzdkvggxwlh"
+
+# Edge function deploy settings (added 2026-10-21, daily_backend).
+# Every function is deployed with verify_jwt = false: each one does its own
+# auth (anon-callable endpoints with per-IP rate limits, or a shared secret for
+# seed-cache/db-maintenance). Declaring it here means a bare
+# `supabase functions deploy <name>` (CLI or the deploy-functions workflow)
+# can never silently flip a function to verify_jwt = true and break callers.
+# scripts/check-deploy-config.ts fails CI if a function dir is missing here.
+
+[functions.analyze-novel]
+verify_jwt = false
+
+[functions.db-maintenance]
+verify_jwt = false
+
+[functions.dna-consensus]
+verify_jwt = false
+
+[functions.health]
+verify_jwt = false
+
+[functions.popular-books]
+verify_jwt = false
+
+[functions.recommend-anti-shelf]
+verify_jwt = false
+
+[functions.recommend-by-dna]
+verify_jwt = false
+
+[functions.report-error]
+verify_jwt = false
+
+[functions.resolve-buy-link]
+verify_jwt = false
+
+[functions.search-books]
+verify_jwt = false
+
+[functions.seed-cache]
+verify_jwt = false
+
+[functions.submit-feedback]
+verify_jwt = false
+
+[functions.takeaways]
+verify_jwt = false
+
+[functions.track-event]
+verify_jwt = false

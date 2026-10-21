@@ -108,6 +108,12 @@ jobs:
       - name: Check client-IP trust guards
         run: deno run --allow-read scripts/check-client-ip-trust-guards.ts
 
+      # Added 2026-10-21 (daily_backend): every edge function must be declared
+      # in supabase/config.toml with verify_jwt = false, so deploy-functions.yml
+      # (and any manual CLI deploy) can't flip JWT verification on.
+      - name: Check edge-function deploy config
+        run: deno run --allow-read scripts/check-deploy-config.ts
+
       - name: Test guard-checker scripts (timeout guards + body-limit guards + error-leak guards + safety-net guards + client-ip-trust guards)
         run: deno test --allow-read scripts/
 

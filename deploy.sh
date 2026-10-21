@@ -43,17 +43,16 @@ supabase db push
 echo ""
 
 # ── 5. Deploy edge functions ──────────────────────────────────────────────────
-echo "▸ Deploying analyze-novel..."
-supabase functions deploy analyze-novel --no-verify-jwt
-
-echo "▸ Deploying seed-cache..."
-supabase functions deploy seed-cache --no-verify-jwt
-
-echo "▸ Deploying takeaways..."
-supabase functions deploy takeaways --no-verify-jwt
-
-echo "▸ Deploying recommend-anti-shelf..."
-supabase functions deploy recommend-anti-shelf --no-verify-jwt
+# All functions in supabase/functions (previously only 4 of 14 were listed
+# here, which is how production drifted behind main). verify_jwt = false for
+# each comes from supabase/config.toml; --no-verify-jwt kept as belt and braces.
+for dir in supabase/functions/*/; do
+  name="$(basename "$dir")"
+  case "$name" in _*) continue ;; esac
+  [ -f "$dir/index.ts" ] || continue
+  echo "▸ Deploying $name..."
+  supabase functions deploy "$name" --project-ref "$PROJECT_REF" --no-verify-jwt
+done
 
 echo ""
 echo "✓ All done! Functions are live."

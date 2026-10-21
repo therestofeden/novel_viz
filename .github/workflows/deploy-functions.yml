@@ -1,0 +1,91 @@
+name: Deploy edge functions
+
+# Added 2026-10-21 (daily_backend). Root cause it fixes: edge functions were
+# only ever deployed by hand (deploy.sh covered 4 of 14), so production drifted
+# 6+ weeks behind main. On 2026-10-21 analyze-novel was still v66 from 6 Sep,
+# missing the 3 Oct x-forwarded-for rate-limit spoofing fix, the error-leak
+# and timeout guards, and the K7/K9 cache fixes. Now every merge to main that
+# touches supabase/functions deploys all functions after the guards pass.
+#
+# One-time setup (Stefano): GitHub repo -> Settings -> Secrets and variables
+# -> Actions -> New secret SUPABASE_ACCESS_TOKEN (supabase.com/dashboard/account/tokens).
+# Until it exists this workflow fails loudly instead of skipping silently.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/**"
+      - "supabase/config.toml"
+      - ".github/workflows/deploy-functions.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-edge-functions
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_REF: ecsublyvcvzdkvggxwlh
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Same gates as ci.yml's edge-functions-test job: never ship code that
+      # fails a guard, even if CI hasn't finished yet.
+      - name: Guards
+        run: |
+          deno run --allow-read scripts/check-deploy-config.ts
+          deno run --allow-read scripts/check-timeout-guards.ts
+          deno run --allow-read scripts/check-body-limit-guards.ts
+          deno run --allow-read scripts/check-error-leak-guards.ts
+          deno run --allow-read scripts/check-handler-safety-net-guards.ts
+          deno run --allow-read scripts/check-client-ip-trust-guards.ts
+          deno test --no-check --allow-net --allow-env supabase/functions/_shared
+
+      - name: Require SUPABASE_ACCESS_TOKEN
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN secret is not set; edge functions were NOT deployed and production is drifting from main."
+            exit 1
+          fi
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # verify_jwt comes from supabase/config.toml (all false, enforced by
+      # check-deploy-config.ts), so a plain deploy can't flip it on.
+      - name: Deploy all functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          for dir in supabase/functions/*/; do
+            name="$(basename "$dir")"
+            case "$name" in _*) continue ;; esac
+            [ -f "$dir/index.ts" ] || continue
+            echo "::group::deploy $name"
+            supabase functions deploy "$name" --project-ref "$PROJECT_REF"
+            echo "::endgroup::"
+          done
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/health.json -w '%{http_code}' --max-time 20 \
+            "https://${PROJECT_REF}.supabase.co/functions/v1/health")
+          cat /tmp/health.json; echo
+          if [ "$code" != "200" ]; then echo "::error::health returned $code after deploy"; exit 1; fi
