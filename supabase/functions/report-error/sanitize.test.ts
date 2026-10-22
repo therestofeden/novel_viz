@@ -13,7 +13,8 @@ Deno.test("validateError rejects bad source/fingerprint", () => {
   assertEquals(validateError(null, null), null);
 });
 Deno.test("validateError accepts and caps", () => {
-  const r = validateError({ message: "x".repeat(900), fingerprint: "ABCDEF1234", source: "boundary", page: "bad page!" }, "UA");
+  const r = validateError({ message: "word ".repeat(200), // not "x".repeat: a 32+ char run is scrubbed as a token
+     fingerprint: "ABCDEF1234", source: "boundary", page: "bad page!" }, "UA");
   assertEquals(r?.p_message.length, 500);
   assertEquals(r?.p_page, "unknown");
   assertEquals(r?.p_fingerprint, "abcdef1234");

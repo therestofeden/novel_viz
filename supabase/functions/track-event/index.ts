@@ -17,6 +17,26 @@ async function hashIp(ip: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// DB timeout guard (added 2026-10-22, daily_backend): every awaited Supabase
+// call here must fail fast instead of hanging the request on a stalled
+// Postgres/GoTrue connection. Same fail-open shape as the per-file helpers in
+// analyze-novel/takeaways (not shared by design). Caught by
+// scripts/check-timeout-guards.ts, which had kept CI red since 2026-10-18.
+const DB_TIMEOUT_MS = 4000;
+async function withTimeout<T, F = T>(promise: PromiseLike<T>, fallback: F, timeoutMs = DB_TIMEOUT_MS): Promise<T | F> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<F>((resolve) => { timer = setTimeout(() => resolve(fallback), timeoutMs); }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+const TIMED_OUT = { data: null, error: { message: "db_timeout" } } as const;
+
+// safety-net-ignore: outer try/catch wraps the whole body and returns a CORS-headed response via `cors`/json(cors, 500, ...) (track-event deliberately answers 204 so analytics never breaks the UI); the checker only recognises the literal corsHeaders/new Response shape.
 Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -48,14 +68,14 @@ Deno.serve(async (req) => {
     const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (token) {
       try {
-        const { data } = await admin.auth.getUser(token);
+        const { data } = await withTimeout(admin.auth.getUser(token), { data: { user: null }, error: null } as unknown as Awaited<ReturnType<typeof admin.auth.getUser>>);
         userId = data?.user?.id ?? null;
       } catch { /* anon key or invalid token -> anonymous */ }
     }
 
     await Promise.all([
-      admin.from("rate_limit_events").insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false }),
-      admin.from("app_events").insert(events.map((e) => ({ ...e, user_id: userId }))),
+      withTimeout(admin.from("rate_limit_events").insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false }), TIMED_OUT),
+      withTimeout(admin.from("app_events").insert(events.map((e) => ({ ...e, user_id: userId }))), TIMED_OUT),
     ]);
     return new Response(null, { status: 204, headers: cors });
   } catch (err) {
