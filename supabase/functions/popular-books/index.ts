@@ -248,40 +248,83 @@ Deno.serve(async (req) => {
     // health/index.ts's 2026-09-19 note). Harmless at runtime either way —
     // only `.data`/`.error` are ever read off the result — fixed for type-
     // check hygiene, not a behavior change.
-    const [analysesRes, cacheRes, canonRows, seedRows] = await Promise.all([
-      withTimeout<{ data: { title: string; author: string; hit_count: number }[] | null; error: unknown }>(
-        Promise.resolve(
-          supabase
-            .from("novel_analyses")
-            .select("title, author, hit_count")
-            .order("hit_count", { ascending: false })
-            .limit(6000),
-        ).then(({ data, error }) => ({ data, error })),
-        { data: [], error: null },
-      ),
-      withTimeout<{ data: { results: unknown; hit_count: number }[] | null; error: unknown }>(
-        Promise.resolve(
-          supabase
-            .from("search_cache")
-            .select("results, hit_count")
-            .order("hit_count", { ascending: false })
-            .limit(3000),
-        ).then(({ data, error }) => ({ data, error })),
-        { data: [], error: null },
-      ),
-      withTimeout(
-        fetchAllRows<{ title: string; author: string }>((from, to) =>
-          supabase.from("canon_books").select("title, author").range(from, to)
+    // 2026-10-24 (daily backend audit): ONE round trip instead of up to 7.
+    // Memo misses averaged 2.3 s in edge logs while the same reads take ~38 ms
+    // in Postgres -- the cost was the PostgREST request chain (canon_books is
+    // 2 sequential 1000-row pages, seed_book_list 3, and both grow daily).
+    // get_popular_books_sources() (migration 20261024070000, service_role-only)
+    // returns all four sources as a single jsonb scalar, which db-max-rows
+    // never truncates. If the RPC is missing/fails/times out we fall back to
+    // the original four-way fetch below, so deploy order doesn't matter.
+    type AnalysisRow = { title: string; author: string; hit_count: number };
+    type CacheRow = { results: unknown; hit_count: number };
+    type Sources = {
+      analyses: AnalysisRow[];
+      search_cache: CacheRow[];
+      canon: { title: string; author: string }[];
+      seed: string[];
+    };
+    const rpcSources = await withTimeout<Sources | null>(
+      Promise.resolve(supabase.rpc("get_popular_books_sources")).then(({ data, error }) => {
+        if (error || !data || typeof data !== "object") return null;
+        const d = data as Partial<Sources>;
+        if (!Array.isArray(d.analyses) || !Array.isArray(d.search_cache) ||
+            !Array.isArray(d.canon) || !Array.isArray(d.seed)) return null;
+        return d as Sources;
+      }, () => null),
+      null,
+    );
+
+    let analysesRes: { data: AnalysisRow[] | null; error: unknown };
+    let cacheRes: { data: CacheRow[] | null; error: unknown };
+    let canonRows: { title: string; author: string }[];
+    let seedRows: { entry: string }[];
+    let fetchPath: "rpc" | "legacy";
+
+    if (rpcSources) {
+      fetchPath = "rpc";
+      analysesRes = { data: rpcSources.analyses, error: null };
+      cacheRes = { data: rpcSources.search_cache, error: null };
+      canonRows = rpcSources.canon;
+      seedRows = rpcSources.seed.map((entry) => ({ entry }));
+    } else {
+      fetchPath = "legacy";
+      const legacy = await Promise.all([
+        withTimeout<{ data: { title: string; author: string; hit_count: number }[] | null; error: unknown }>(
+          Promise.resolve(
+            supabase
+              .from("novel_analyses")
+              .select("title, author, hit_count")
+              .order("hit_count", { ascending: false })
+              .limit(6000),
+          ).then(({ data, error }) => ({ data, error })),
+          { data: [], error: null },
         ),
-        [] as { title: string; author: string }[],
-      ),
-      withTimeout(
-        fetchAllRows<{ entry: string }>((from, to) =>
-          supabase.from("seed_book_list").select("entry").range(from, to)
+        withTimeout<{ data: { results: unknown; hit_count: number }[] | null; error: unknown }>(
+          Promise.resolve(
+            supabase
+              .from("search_cache")
+              .select("results, hit_count")
+              .order("hit_count", { ascending: false })
+              .limit(3000),
+          ).then(({ data, error }) => ({ data, error })),
+          { data: [], error: null },
         ),
-        [] as { entry: string }[],
-      ),
-    ]);
+        withTimeout(
+          fetchAllRows<{ title: string; author: string }>((from, to) =>
+            supabase.from("canon_books").select("title, author").range(from, to)
+          ),
+          [] as { title: string; author: string }[],
+        ),
+        withTimeout(
+          fetchAllRows<{ entry: string }>((from, to) =>
+            supabase.from("seed_book_list").select("entry").range(from, to)
+          ),
+          [] as { entry: string }[],
+        ),
+      ]);
+      [analysesRes, cacheRes, canonRows, seedRows] = legacy;
+    }
 
     const dedupe = new Map<string, PopularBook>();
 
@@ -369,6 +412,7 @@ Deno.serve(async (req) => {
       cache_rows: cacheRes.data?.length ?? 0,
       canon_rows: canonRows.length,
       seed_rows: seedRows.length,
+      fetch_path: fetchPath,
       ms: Math.round(performance.now() - t0),
     }));
 
