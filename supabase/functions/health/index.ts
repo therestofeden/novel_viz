@@ -122,6 +122,23 @@ serve(async (req) => {
   // instead of hanging this whole endpoint.
   let db: "ok" | "error" = "ok";
   let dbLatencyMs: number | null = null;
+  let geminiModelsOpen: string[] = [];
+  let circuitCheckOk = true;
+  let geminiBudgetExceeded = false;
+  let budgetCheckOk = true;
+  let geminiAccountAlerts: { reason: string; status: number | null; fail_count: number; first_seen_at: string; last_seen_at: string }[] = [];
+  let accountAlertCheckOk = true;
+
+  // 2026-10-25 (daily backend audit): the four checks below used to run as
+  // four sequential awaits, so this endpoint's latency was the SUM of four
+  // PostgREST round trips (edge logs: avg 1222 ms, max 1790 ms over the last
+  // 24 h — the 2nd-slowest public function). They are fully independent
+  // (each writes only its own locals, each has its own try/catch and its
+  // own withTimeout), so they now run concurrently via Promise.all and the
+  // response time is the MAX of the four instead of the sum. Worst case is
+  // also bounded at ~1x HEALTH_CHECK_TIMEOUT_MS instead of 4x, which matters
+  // because deploy-functions.yml's smoke test calls this with --max-time 20.
+  const dbCheck = (async () => {
   try {
     const t0 = Date.now();
     const { error } = await withTimeout<{ data: unknown; error: unknown }>(
@@ -135,14 +152,14 @@ serve(async (req) => {
   } catch {
     db = "error";
   }
+  })();
 
   const geminiKeyConfigured = !!Deno.env.get("GEMINI_API_KEY");
 
   // AI capacity: which fallback-chain models currently have an open circuit
   // (per gemini_model_circuit, the same table _shared/gemini.ts's
   // geminiFetchWithFallback checks before every call).
-  let geminiModelsOpen: string[] = [];
-  let circuitCheckOk = true;
+  const circuitCheck = (async () => {
   try {
     const { data, error } = await withTimeout<{ data: { model: string }[] | null; error: unknown }>(
       Promise.resolve(
@@ -158,13 +175,12 @@ serve(async (req) => {
   } catch {
     circuitCheckOk = false;
   }
-  const allModelsOpen = circuitCheckOk && GEMINI_FALLBACK_MODELS.every((m) => geminiModelsOpen.includes(m));
+  })();
 
   // Daily Gemini spend guard — same RPC + budget env var analyze-novel and
   // the other 4 AI functions check before every call (see
   // _shared/gemini.ts's attemptFallbackPass).
-  let geminiBudgetExceeded = false;
-  let budgetCheckOk = true;
+  const budgetCheck = (async () => {
   try {
     const { data, error } = await withTimeout<{ data: boolean | null; error: unknown }>(
       Promise.resolve(supabase.rpc("gemini_daily_budget_exceeded", { p_budget: DAILY_BUDGET_USD })).then(
@@ -177,6 +193,7 @@ serve(async (req) => {
   } catch {
     budgetCheckOk = false;
   }
+  })();
 
   // Account-level Gemini failure alert (quota_exhausted / auth_error).
   //
@@ -194,14 +211,22 @@ serve(async (req) => {
   // table written by accountAlertRecord/accountAlertClear in
   // _shared/gemini.ts specifically to close this gap — read directly here,
   // same style as the gemini_model_circuit read above.
-  let geminiAccountAlerts: { reason: string; status: number | null; error: string | null; fail_count: number; first_seen_at: string; last_seen_at: string }[] = [];
-  let accountAlertCheckOk = true;
+  //
+  // 2026-10-25 (daily backend audit): `error` is no longer selected or
+  // returned. That column holds the raw upstream Gemini error body (see
+  // accountAlertRecord in _shared/gemini.ts, p_error: errBody), and this
+  // endpoint is public (verify_jwt=false, CORS *), so on an auth_error it
+  // would hand anyone on the internet Google's verbatim error text — which
+  // can name the GCP project / key status. reason + status + counts +
+  // timestamps are enough for monitoring; the full body stays readable to
+  // operators in the table itself and in the GEMINI_AUTH_ERROR log line.
+  const accountAlertCheck = (async () => {
   try {
     const { data, error } = await withTimeout<{ data: typeof geminiAccountAlerts | null; error: unknown }>(
       Promise.resolve(
         supabase
           .from("gemini_account_alert")
-          .select("reason, status, error, fail_count, first_seen_at, last_seen_at"),
+          .select("reason, status, fail_count, first_seen_at, last_seen_at"),
       ).then(({ data, error }) => ({ data, error })),
       { data: null, error: new Error("health account alert check timed out") },
     );
@@ -210,6 +235,10 @@ serve(async (req) => {
   } catch {
     accountAlertCheckOk = false;
   }
+  })();
+
+  await Promise.all([dbCheck, circuitCheck, budgetCheck, accountAlertCheck]);
+  const allModelsOpen = circuitCheckOk && GEMINI_FALLBACK_MODELS.every((m) => geminiModelsOpen.includes(m));
   const geminiAccountAlertActive = geminiAccountAlerts.length > 0;
 
   const status =
