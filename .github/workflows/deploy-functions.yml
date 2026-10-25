@@ -1,4 +1,5 @@
 name: Deploy edge functions
+# 2026-10-25: SUPABASE_ACCESS_TOKEN secret restored (deploys were failing since ~10-21 for lack of it).
 
 # Added 2026-10-21 (daily_backend). Root cause it fixes: edge functions were
 # only ever deployed by hand (deploy.sh covered 4 of 14), so production drifted
