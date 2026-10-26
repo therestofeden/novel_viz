@@ -489,15 +489,35 @@ const Index = () => {
   const popularIndexRef = useRef<IndexedBook[]>([]);
 
   useEffect(() => {
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/popular-books`;
-    fetch(url, {
-      headers: {
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      signal: AbortSignal.timeout(LOCAL_INDEX_TIMEOUT_MS),
-    })
-      .then((r) => r.json())
+    // 2026-10-26 (daily backend audit): read the CDN snapshot first. The
+    // popular-books function is cold on nearly every page load (~1.6-2.2 s);
+    // it now also writes its payload to a public Storage object
+    // (public-snapshots/popular-books/v1.json) that the Storage CDN serves in
+    // ~100 ms. Falls back to the function if the snapshot is missing,
+    // malformed, older than 48 h, or slower than 2.5 s -- so behaviour is
+    // never worse than before, and the function call also refreshes it.
+    const base = import.meta.env.VITE_SUPABASE_URL;
+    const fnUrl = `${base}/functions/v1/popular-books`;
+    const snapshotUrl = `${base}/storage/v1/object/public/public-snapshots/popular-books/v1.json`;
+    const SNAPSHOT_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+    const fromFunction = () =>
+      fetch(fnUrl, {
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        signal: AbortSignal.timeout(LOCAL_INDEX_TIMEOUT_MS),
+      }).then((r) => r.json());
+    fetch(snapshotUrl, { signal: AbortSignal.timeout(2_500) })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`snapshot ${r.status}`))))
+      .then((j) => {
+        const built = Date.parse(j?.builtAt ?? "");
+        if (!Array.isArray(j?.results) || j.results.length === 0 || !(Date.now() - built < SNAPSHOT_MAX_AGE_MS)) {
+          throw new Error("snapshot stale or empty");
+        }
+        return j;
+      })
+      .catch(() => fromFunction())
       .then((j) => {
         const rows = (j?.results ?? []) as Array<{ title: string; author: string; popularity: number; normTitle?: string; normAuthor?: string }>;
         popularIndexRef.current = rows.map((b) => {

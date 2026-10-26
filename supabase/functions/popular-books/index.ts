@@ -36,9 +36,20 @@ interface PopularBook {
   title: string;
   author: string;
   popularity: number; // 0..1000
-  normTitle: string;
-  normAuthor: string;
 }
+
+// 2026-10-26 (daily backend audit): CDN snapshot. See migration
+// 20261026070000_public_snapshots_bucket.sql. Every memo miss (which in
+// practice is nearly every request: edge logs show ~1.6-2.2 s on all 13
+// calls in the last 24 h) now also uploads the computed payload to a public
+// Storage object, which the client reads from the Storage CDN first. The
+// function stays the source of truth and the fallback; keep-warm.yml's
+// ~12 pings/day keep the snapshot fresh. Upload is best-effort and runs
+// after the response via EdgeRuntime.waitUntil, so it never adds latency.
+const SNAPSHOT_BUCKET = "public-snapshots";
+const SNAPSHOT_PATH = "popular-books/v1.json";
+const SNAPSHOT_UPLOAD_TIMEOUT_MS = 8_000;
+
 
 // Module-scope memo so warm invocations skip the DB entirely.
 let cachedPayload: { results: PopularBook[]; etag: string } | null = null;
@@ -337,7 +348,7 @@ Deno.serve(async (req) => {
       const pop = 600 + Math.min(400, ((row as any).hit_count ?? 0) * 20);
       const existing = dedupe.get(key);
       if (!existing || existing.popularity < pop) {
-        dedupe.set(key, { title, author, popularity: pop, normTitle: normalize(title), normAuthor: normalize(author) });
+        dedupe.set(key, { title, author, popularity: pop });
       }
     }
 
@@ -355,7 +366,7 @@ Deno.serve(async (req) => {
         const key = `${normalize(title)}|${normalize(author)}`;
         const pop = Math.min(550, Math.round((it.score ?? 0) / 2));
         const existing = dedupe.get(key);
-        if (!existing) dedupe.set(key, { title, author, popularity: pop, normTitle: normalize(title), normAuthor: normalize(author) });
+        if (!existing) dedupe.set(key, { title, author, popularity: pop });
         else if (existing.popularity < pop) existing.popularity = pop;
       }
     }
@@ -375,7 +386,7 @@ Deno.serve(async (req) => {
       const key = `${normalize(title)}|${normalize(author)}`;
       const pop = 500;
       const existing = dedupe.get(key);
-      if (!existing) dedupe.set(key, { title, author, popularity: pop, normTitle: normalize(title), normAuthor: normalize(author) });
+      if (!existing) dedupe.set(key, { title, author, popularity: pop });
       else if (existing.popularity < pop) existing.popularity = pop;
     }
 
@@ -392,7 +403,7 @@ Deno.serve(async (req) => {
       const key = `${normalize(title)}|${normalize(author)}`;
       const pop = 480;
       const existing = dedupe.get(key);
-      if (!existing) dedupe.set(key, { title, author, popularity: pop, normTitle: normalize(title), normAuthor: normalize(author) });
+      if (!existing) dedupe.set(key, { title, author, popularity: pop });
       else if (existing.popularity < pop) existing.popularity = pop;
     }
 
@@ -404,6 +415,28 @@ Deno.serve(async (req) => {
     const etag = `W/"pop-${results.length}-${now}"`;
     cachedPayload = { results, etag };
     cachedAt = now;
+
+    // Best-effort snapshot upload (never blocks or fails the response).
+    // Skipped when every source came back empty (e.g. DB outage + legacy
+    // timeouts) so a transient failure can't overwrite a good snapshot with [].
+    if (results.length > 0) {
+      const body = JSON.stringify({ results, builtAt: new Date(now).toISOString(), v: 1 });
+      const upload = withTimeout<{ error: unknown }>(
+        Promise.resolve(
+          supabase.storage.from(SNAPSHOT_BUCKET).upload(
+            SNAPSHOT_PATH,
+            new Blob([body], { type: "application/json" }),
+            { upsert: true, contentType: "application/json", cacheControl: "300" },
+          ),
+        ).then(({ error }) => ({ error }), (e) => ({ error: e })),
+        { error: "timeout" },
+        SNAPSHOT_UPLOAD_TIMEOUT_MS,
+      ).then(({ error }) => {
+        if (error) console.error(JSON.stringify({ fn: "popular-books", stage: "snapshot_upload", error: String((error as { message?: string })?.message ?? error) }));
+      });
+      // @ts-ignore — Deno EdgeRuntime global (same pattern as search-books)
+      if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) EdgeRuntime.waitUntil(upload);
+    }
 
     console.log(JSON.stringify({
       fn: "popular-books",
