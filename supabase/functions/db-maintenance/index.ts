@@ -149,17 +149,19 @@ Deno.serve(async (req) => {
     }
   };
 
-  await runPurge("search_cache_deleted", "purge_old_search_cache");
-  await runPurge("rate_limit_events_deleted", "purge_old_rate_limit_events");
-  await runPurge("novel_analyses_deleted", "purge_cold_novel_analyses");
-  await runPurge("dna_recommendation_cache_deleted", "purge_cold_dna_recommendation_cache");
-  await runPurge("takeaway_questions_cache_deleted", "purge_cold_takeaway_questions_cache");
-  await runPurge("shelf_recommendations_deleted", "purge_cold_shelf_recommendations");
-  // 2026-10-16 (daily_backend): launch telemetry tables had retention functions
-  // (180d app_events, 30d client_errors) that nothing called. A missing function
-  // (migration not yet applied) just reports "error: ..." and the run continues.
-  await runPurge("app_events_deleted", "purge_old_app_events");
-  await runPurge("client_errors_deleted", "purge_client_errors");
+  // 2026-10-27 (daily_backend): the 8 purges are independent, so run them
+  // concurrently (each already has its own timeout and never throws) instead of
+  // serially -- wall time drops from the sum to the slowest single purge.
+  await Promise.all([
+    runPurge("search_cache_deleted", "purge_old_search_cache"),
+    runPurge("rate_limit_events_deleted", "purge_old_rate_limit_events"),
+    runPurge("novel_analyses_deleted", "purge_cold_novel_analyses"),
+    runPurge("dna_recommendation_cache_deleted", "purge_cold_dna_recommendation_cache"),
+    runPurge("takeaway_questions_cache_deleted", "purge_cold_takeaway_questions_cache"),
+    runPurge("shelf_recommendations_deleted", "purge_cold_shelf_recommendations"),
+    runPurge("app_events_deleted", "purge_old_app_events"),
+    runPurge("client_errors_deleted", "purge_client_errors"),
+  ]);
 
   console.log(JSON.stringify({ fn: "db-maintenance", ...results }));
 
