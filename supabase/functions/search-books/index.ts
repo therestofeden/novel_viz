@@ -694,7 +694,12 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const qRaw = (url.searchParams.get("q") ?? "").trim();
-    const limit = Math.min(10, Math.max(1, Number(url.searchParams.get("limit") ?? 6)));
+    // 2026-11-03 (daily_backend): a non-numeric ?limit= (e.g. "abc", "") used to
+    // become NaN, and slice(0, NaN) silently returned zero results. Parse
+    // defensively: anything non-finite falls back to the default of 6, and
+    // fractional values are floored before clamping to 1..10.
+    const limitParsed = Number(url.searchParams.get("limit") ?? 6);
+    const limit = Math.min(10, Math.max(1, Number.isFinite(limitParsed) ? Math.floor(limitParsed) : 6));
 
     if (qRaw.length < 2) {
       return new Response(JSON.stringify({ results: [] }), {
