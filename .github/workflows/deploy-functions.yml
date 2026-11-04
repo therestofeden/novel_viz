@@ -63,9 +63,17 @@ jobs:
             exit 1
           fi
 
+      # Pinned 2026-11-04 (daily_backend). `latest` silently became CLI v3.0.0
+      # on 2026-11-02; v3 removed `--project-ref` and makes every hosted change
+      # prompt for confirmation, so the 11-03 run (7a6c92e) failed in "Deploy
+      # all functions" and search-books stayed on the 10-25 build. Pinning also
+      # closes a supply-chain gap: CI no longer runs whatever binary was
+      # published minutes earlier with the deploy token in its env.
+      # Upgrade deliberately: switch to `--remote --yes` per
+      # https://supabase.com/docs/guides/local-development/cli/migrating-to-v3
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.1
 
       # verify_jwt comes from supabase/config.toml (all false, enforced by
       # check-deploy-config.ts), so a plain deploy can't flip it on.
