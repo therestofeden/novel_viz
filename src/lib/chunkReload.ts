@@ -73,8 +73,22 @@ export const clearChunkReloadFlag = () => {
  *
  * Returns true if a reload was started.
  */
+let reloadInFlight = false;
+
+/**
+ * True between attemptChunkReload() firing and the page actually unloading.
+ * When the vite:preloadError handler below calls preventDefault(), Vite
+ * resolves the failed import() with `undefined` instead of rejecting, so
+ * every `lazy(() => import(...).then((m) => ({ default: m.X })))` throws
+ * "undefined is not an object (evaluating 'm.X')" during that window. Error
+ * boundaries check this to stay quiet instead of flashing an error and
+ * filing a bogus client_errors report for a reload that's already happening.
+ */
+export const isChunkReloadInFlight = (): boolean => reloadInFlight;
+
 export const attemptChunkReload = (): boolean => {
   if (hasAttemptedChunkReload()) return false;
+  reloadInFlight = true;
   try {
     sessionStorage.setItem(RELOAD_FLAG, "1");
   } catch {

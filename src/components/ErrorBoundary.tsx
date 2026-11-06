@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
 import { reportError } from "@/lib/reportError";
+import { isChunkReloadInFlight } from "@/lib/chunkReload";
 
 interface Props {
   children: ReactNode;
@@ -34,6 +35,9 @@ export class ErrorBoundary extends Component<Props, State> {
     // the only record today. Worth piping to real monitoring (Sentry or
     // similar) later so intermittent crashes like this are actually visible
     // instead of relying on a user noticing and reporting a blank screen.
+    // A stale-chunk reload is already under way — this error is its echo,
+    // not a bug. See isChunkReloadInFlight.
+    if (isChunkReloadInFlight()) return;
     console.error("[ErrorBoundary] caught render error:", error, info.componentStack);
     reportError(error, "boundary");
   }
@@ -43,6 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     const { error } = this.state;
     if (error) {
+      if (isChunkReloadInFlight()) return null;
       if (this.props.fallback) return this.props.fallback(error, this.reset);
       return (
         <div className="flex flex-col items-start gap-3 px-4 py-8 md:px-8 md:py-12">

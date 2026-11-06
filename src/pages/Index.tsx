@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense, FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Loader2, Search, RefreshCw, Eye, EyeOff, LogIn, Library, Key } from "lucide-react";
 import { NovelVizLogo } from "@/components/NovelVizLogo";
 import {
@@ -44,6 +44,27 @@ const ConceptMap = lazy(() => import("@/components/ConceptMap").then((m) => ({ d
 const IdeasTab = lazy(() => import("@/components/IdeasTab").then((m) => ({ default: m.IdeasTab })));
 const ChapterBreakdown = lazy(() => import("@/components/ChapterBreakdown").then((m) => ({ default: m.ChapterBreakdown })));
 const TakeawaysTab = lazy(() => import("@/components/TakeawaysTab").then((m) => ({ default: m.TakeawaysTab })));
+
+// 2026-11-06: warm every tab chunk once the page is idle. A phone tab that
+// was opened before a deploy keeps running the old build; the first time it
+// renders an analysis it asks for tab chunks whose hashed filenames no longer
+// exist, the chunk-reload handler reloads the page, and the reader's click is
+// lost (they land back on the empty home page and have to search again).
+// Fetching the chunks while this build is still the live one means they are
+// already in the module map by the time an analysis renders. import() is
+// memoised by the module loader, so lazy() above reuses these same promises.
+const warmTabChunks = () => {
+  const loaders = [
+    () => import("@/components/TimelineView"),
+    () => import("@/components/CharacterNetwork"),
+    () => import("@/components/BookDNA"),
+    () => import("@/components/ConceptMap"),
+    () => import("@/components/IdeasTab"),
+    () => import("@/components/ChapterBreakdown"),
+    () => import("@/components/TakeawaysTab"),
+  ];
+  for (const load of loaders) load().catch(() => { /* best-effort; the real render path handles failures */ });
+};
 const TabFallback = () => (
   <div className="flex min-h-[240px] items-center justify-center">
     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -413,6 +434,23 @@ const Index = () => {
   const [refining, setRefining] = useState(false);
   const [view, setView] = useState<"timeline" | "network" | "dna" | "concepts" | "ideas" | "chapters" | "takeaways">("network");
   const [activeRefinement, setActiveRefinement] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  // The title of the last fresh (non-refine) analysis this page started. The
+  // ?book= deep-link effect compares against it so that our own URL write in
+  // fetchAnalysis doesn't bounce back and trigger a second analysis.
+  const lastRequestedBookRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(warmTabChunks, { timeout: 4000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    // Safari has no requestIdleCallback.
+    const id = window.setTimeout(warmTabChunks, 2000);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Random sample of seed titles, fixed for the lifetime of this mount.
   const seedSuggestions = useMemo(() => sampleSuggestions(6), []);
@@ -992,6 +1030,18 @@ const Index = () => {
     setCachedHit(false);
     if (!isRefine) { setCacheKey(null); setSlug(null); }
 
+    // Mirror the requested book into the URL (?book=…). If anything forces a
+    // reload mid-analysis — above all the stale-chunk recovery after a deploy,
+    // which used to swallow the reader's first click — the deep-link effect
+    // below picks the same book straight back up instead of dropping them on
+    // an empty home page. Also makes refresh and Back behave.
+    if (!isRefine && !isReanalyze) {
+      lastRequestedBookRef.current = bookTitle;
+      if (new URLSearchParams(window.location.search).get("book") !== bookTitle) {
+        navigate({ pathname: "/", search: `?book=${encodeURIComponent(bookTitle)}` }, { replace: true });
+      }
+    }
+
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-novel`;
 
     // Retry transient backend failures (cold starts, 5xx, network blips).
@@ -1247,19 +1297,25 @@ const Index = () => {
   // Also handles /og?book=Title redirects coming back from social share links —
   // the /og edge function redirects to /?book=Title so we only need to check
   // the standard ?book= param here.
-  const deepLinkHandled = useRef(false);
+  //
+  // 2026-11-06: this used to run once on mount only. That broke every in-app
+  // link to /?book=… rendered while Index was already mounted — notably the
+  // DNA panel's "Map this book" CTA under an analysis opened from search:
+  // React Router updated the URL, Index stayed mounted, nothing happened.
+  // It now reacts to every ?book= change and skips the ones fetchAnalysis
+  // wrote itself (lastRequestedBookRef).
   const deepLinkPending = useRef<string | null>(null);
   useEffect(() => {
-    if (deepLinkHandled.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const book = params.get("book");
-    if (!book) return;
-    deepLinkHandled.current = true;
+    const book = new URLSearchParams(location.search).get("book");
+    if (!book || book === lastRequestedBookRef.current) return;
     deepLinkPending.current = book;
+    // Don't let the title change pop the autocomplete open over the analysis.
+    if (book !== title) suppressNextFetchRef.current = true;
     setTitle(book);
+    setSuggestOpen(false);
     fetchAnalysis(book);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location.search]);
 
   // After the deep-linked analysis arrives, scroll the masthead into view.
   // Waiting for `analysis` ensures the anchor element actually exists.
@@ -1316,6 +1372,8 @@ const Index = () => {
             <button
               type="button"
               onClick={() => {
+                lastRequestedBookRef.current = null;
+                if (location.search) navigate({ pathname: "/", search: "" }, { replace: true });
                 setAnalysis(null);
                 setAnalysisPreview(null);
                 setTitle("");
