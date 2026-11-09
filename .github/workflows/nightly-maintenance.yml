@@ -41,3 +41,36 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "x-maintenance-secret: ${{ secrets.MAINTENANCE_SECRET }}" \
             https://ecsublyvcvzdkvggxwlh.supabase.co/functions/v1/db-maintenance
+
+  # 2026-11-09 (daily_backend): public-key exposure guard. Reads every
+  # server-only / per-user table over /rest/v1 with the public anon key and
+  # fails the run if any of them returns rows. Pass = 401/403/404 or `[]`.
+  # Added after the 10-27 private_server_caches migration was reported as
+  # live but was not: this turns that class of mistake into a red nightly run.
+  exposure-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Anon key must not read private tables
+        env:
+          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          BASE: https://ecsublyvcvzdkvggxwlh.supabase.co/rest/v1
+        run: |
+          fail=0
+          for t in search_cache dna_recommendation_cache takeaway_questions_cache \
+                   gemini_daily_spend gemini_model_circuit gemini_account_alert \
+                   rate_limit_events canon_books seed_book_list app_events \
+                   client_errors feedback profiles shelves shelf_books \
+                   shelf_recommendations shelf_clusters shelf_cluster_members \
+                   book_takeaways book_overrides pinned_characters \
+                   recommendation_blocks recommendation_feedback; do
+            code=$(curl -s --max-time 10 -o body.json -w '%{http_code}' \
+              "$BASE/$t?select=*&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+            body=$(tr -d '[:space:]' < body.json)
+            if [ "$code" = "200" ] && [ "$body" != "[]" ]; then
+              echo "::error::EXPOSED: $t is readable with the public key"; fail=1
+            else
+              echo "ok  $t ($code)"
+            fi
+          done
+          exit $fail
