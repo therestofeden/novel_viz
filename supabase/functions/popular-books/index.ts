@@ -201,6 +201,29 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // 2026-11-09 (daily perf pass): the sources RPC is now started BEFORE the
+    // rate-limit check and awaited after it, so the two DB round trips overlap
+    // (was sequential, ~2.0 s memo-miss). Cost: a rate-limited caller with no
+    // stale memo wastes one scan; rate-limited callers are rare and the scan is ~38 ms.
+    type AnalysisRow = { title: string; author: string; hit_count: number };
+    type CacheRow = { results: unknown; hit_count: number };
+    type Sources = {
+      analyses: AnalysisRow[];
+      search_cache: CacheRow[];
+      canon: { title: string; author: string }[];
+      seed: string[];
+    };
+    const rpcSourcesP = withTimeout<Sources | null>(
+      Promise.resolve(supabase.rpc("get_popular_books_sources")).then(({ data, error }) => {
+        if (error || !data || typeof data !== "object") return null;
+        const d = data as Partial<Sources>;
+        if (!Array.isArray(d.analyses) || !Array.isArray(d.search_cache) ||
+            !Array.isArray(d.canon) || !Array.isArray(d.seed)) return null;
+        return d as Sources;
+      }, () => null),
+      null,
+    );
+
     // -------- Memo miss: rate-limit before running the two DB scans --------
     const ip = getClientIp(req);
     const ipHash = await hashIp(ip);
@@ -267,24 +290,8 @@ Deno.serve(async (req) => {
     // returns all four sources as a single jsonb scalar, which db-max-rows
     // never truncates. If the RPC is missing/fails/times out we fall back to
     // the original four-way fetch below, so deploy order doesn't matter.
-    type AnalysisRow = { title: string; author: string; hit_count: number };
-    type CacheRow = { results: unknown; hit_count: number };
-    type Sources = {
-      analyses: AnalysisRow[];
-      search_cache: CacheRow[];
-      canon: { title: string; author: string }[];
-      seed: string[];
-    };
-    const rpcSources = await withTimeout<Sources | null>(
-      Promise.resolve(supabase.rpc("get_popular_books_sources")).then(({ data, error }) => {
-        if (error || !data || typeof data !== "object") return null;
-        const d = data as Partial<Sources>;
-        if (!Array.isArray(d.analyses) || !Array.isArray(d.search_cache) ||
-            !Array.isArray(d.canon) || !Array.isArray(d.seed)) return null;
-        return d as Sources;
-      }, () => null),
-      null,
-    );
+
+    const rpcSources = await rpcSourcesP;
 
     let analysesRes: { data: AnalysisRow[] | null; error: unknown };
     let cacheRes: { data: CacheRow[] | null; error: unknown };
