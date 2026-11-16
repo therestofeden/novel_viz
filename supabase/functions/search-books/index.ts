@@ -123,6 +123,7 @@
 // degrades to an empty canon list, same shape as a genuine RPC failure.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getClientIp } from "../_shared/client-ip.ts";
+import { hashCacheKey } from "../_shared/cache-key.ts";
 
 const ALLOWED_ORIGINS = new Set([
   // Confirmed by Stefano (2026-07-09) as the actual live production origin.
@@ -752,6 +753,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 2026-11-14 (daily_backend): the DB row is keyed by a peppered SHA-256 of
+    // the query, never the plaintext, so search_cache can't reveal what readers
+    // typed even if it is exposed. Memory cache keeps the plaintext key (it
+    // needs prefix matching and never leaves the isolate).
+    const dbKey = await hashCacheKey("search_cache", queryKey);
+
     // 2026-08-07 daily perf pass: this is the FIRST DB call on every single
     // search-books request — cache HITS and cache MISSES alike, unlike the
     // rate-limit RPC (fixed 2026-08-06) and canon RPC (fixed 2026-08-05)
@@ -791,7 +798,7 @@ Deno.serve(async (req) => {
       adminClient
         .from("search_cache")
         .select("results, last_accessed_at")
-        .eq("query_key", queryKey)
+        .eq("query_key", dbKey)
         .maybeSingle(),
     )
       .then(({ data, error }: { data: { results: unknown; last_accessed_at: string } | null; error: unknown }) => {
@@ -828,7 +835,7 @@ Deno.serve(async (req) => {
           adminClient
             .from("search_cache")
             .update({ last_accessed_at: new Date().toISOString() })
-            .eq("query_key", queryKey),
+            .eq("query_key", dbKey),
         );
         // @ts-ignore — Deno EdgeRuntime
         if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
@@ -1512,7 +1519,7 @@ Deno.serve(async (req) => {
         adminClient
           .from("search_cache")
           .upsert(
-            { query_key: queryKey, results: baseResults, hit_count: 0, last_accessed_at: new Date().toISOString() },
+            { query_key: dbKey, results: baseResults, hit_count: 0, last_accessed_at: new Date().toISOString() },
             { onConflict: "query_key" },
           ),
       );

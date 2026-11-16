@@ -11,10 +11,6 @@
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { raceRateLimitCount } from "./rate-limit.ts";
 
-function delay<T>(ms: number, value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
 Deno.test("raceRateLimitCount - returns the count on a fast, successful RPC", async () => {
   const rpc = Promise.resolve({ data: 3, error: null });
   assertEquals(await raceRateLimitCount(rpc, 800), 3);
@@ -33,10 +29,18 @@ Deno.test("raceRateLimitCount - fails open (null) on an RPC error", async () => 
 });
 
 Deno.test("raceRateLimitCount - fails open (null) when the RPC hangs past the timeout", async () => {
-  const hangingRpc = delay(5000, { data: 7, error: null });
+  // Simulated slow RPC. Its timer is ref'd (keeps the event loop alive while
+  // the helper's unref'd timeout fires) and cleared after, so the leak
+  // detector stays happy. A never-settling promise with no ref'd timer makes
+  // Deno abort with "event loop has already resolved".
+  let slowTimer: ReturnType<typeof setTimeout> | undefined;
+  const hangingRpc = new Promise<{ data: number | null; error: unknown }>((resolve) => {
+    slowTimer = setTimeout(() => resolve({ data: 7, error: null }), 5000);
+  });
   const start = performance.now();
   const result = await raceRateLimitCount(hangingRpc, 50);
   const elapsed = performance.now() - start;
+  clearTimeout(slowTimer);
   assertEquals(result, null);
   // The whole point of this helper: the caller gets an answer at ~timeoutMs,
   // not at ~5000ms. Generous upper bound to avoid CI flakiness.

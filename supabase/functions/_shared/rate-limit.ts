@@ -26,16 +26,24 @@ export async function raceRateLimitCount(
     if (error) throw error;
     return data;
   });
+  // 2026-11-14 (daily_backend): clear the timeout once the race settles. It
+  // was never cleared on the fast path, so every rate-limited request left an
+  // orphaned timer alive for up to timeoutMs (same bug class fixed in
+  // search-books on 2026-08-19), and Deno's test leak detector failed all 5
+  // raceRateLimitCount tests in CI.
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       countPromise,
       new Promise<null>((resolve) => {
-        const timer = setTimeout(() => resolve(null), timeoutMs);
+        timer = setTimeout(() => resolve(null), timeoutMs);
         // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
         if (timer?.unref) timer.unref();
       }),
     ]);
   } catch {
     return null;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
   }
 }
