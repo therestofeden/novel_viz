@@ -40,11 +40,21 @@ branch="agent/$name"
 
 cd "$main"
 mkdir -p "$root"
-[ -e "$wt/.git" ] && git worktree repair "$wt" >/dev/null 2>&1 || true
+# 2026-11-16 (daily_backend): repair EVERY agent worktree before pruning, not
+# just our own. Each Cowork session mounts this folder at its own
+# /sessions/<id>/ path, so from one session every other agent's worktree looks
+# missing; a bare `prune` deleted their .git/worktrees/<name> metadata, and the
+# `rm -rf "$wt"` below then wiped any uncommitted work on their next start
+# (lost the backend worktree mid-run on 2026-11-16).
+for d in "$root"/*/; do
+  [ -e "$d.git" ] && git worktree repair "$d" >/dev/null 2>&1 || true
+done
 git worktree prune
 git fetch -q origin main
 
 if ! git -C "$wt" rev-parse --git-dir >/dev/null 2>&1; then
+  # Never discard files an earlier run left behind: park them first.
+  [ -d "$wt" ] && [ -n "$(ls -A "$wt" 2>/dev/null)" ] && mv "$wt" "$root/.orphan-$name-$(date +%Y%m%d-%H%M%S)"
   rm -rf "$wt"
   git worktree add -q --detach "$wt" origin/main
 fi
