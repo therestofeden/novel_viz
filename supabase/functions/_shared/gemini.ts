@@ -25,7 +25,10 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
-export const MODEL = "gemini-3.6-flash";
+// 2026-11-17: moved to Gemini 4 Hydrogen (released 2026-11-12; $1.50/M in, $7.50/M out per
+// Google's launch post, i.e. the same price as 3.6-flash). gemini-3.6-flash stays as the first
+// fallback: same price, proven in prod, and it covers any model-ID or capacity problem.
+export const MODEL = "gemini-4-hydrogen";
 export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 // Fallback chain — rebuilt 2026-08-05, every member now a STABLE (GA) model.
@@ -43,7 +46,7 @@ export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/ope
 // expensive of the family. Note gemini-3.6-flash is actually CHEAPER per
 // output token ($7.50/M) at the same $1.50/M input, and per-call cost is
 // bounded anyway by MAX_OUTPUT_TOKENS + the daily budget guard below.
-export const MODEL_FALLBACKS = [MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+export const MODEL_FALLBACKS = [MODEL, "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
 
 // Per-1M-token pricing (USD), standard tier, as of 2026-08-05 — used to
 // estimate real $ cost per call for the daily spend guard below. Update
@@ -51,6 +54,7 @@ export const MODEL_FALLBACKS = [MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flas
 // not-yet-redeployed function recording spend against an old model still
 // log a real cost instead of $0.
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  "gemini-4-hydrogen": { input: 1.50, output: 7.50 },
   "gemini-3.6-flash": { input: 1.50, output: 7.50 },
   "gemini-3.5-flash": { input: 1.50, output: 9.00 },
   "gemini-3.5-flash-lite": { input: 0.30, output: 2.50 },

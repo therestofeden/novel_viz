@@ -112,6 +112,8 @@ Deno.test("estimateCostUsd - computes cost from per-1M-token pricing", () => {
 
 Deno.test("estimateCostUsd - zero tokens costs zero", () => {
   assertEquals(estimateCostUsd("gemini-3.6-flash", 0, 0), 0);
+  // 2026-11-17: primary model is gemini-4-hydrogen, priced the same as 3.6-flash.
+  assertEquals(estimateCostUsd("gemini-4-hydrogen", 1_000_000, 1_000_000), 9);
 });
 
 Deno.test("estimateCostUsd - unknown model returns 0 instead of throwing", () => {

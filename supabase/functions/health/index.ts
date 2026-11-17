@@ -97,7 +97,7 @@ async function withTimeout<T>(promise: PromiseLike<T>, fallback: T, timeoutMs = 
 // shared module — health is meant to stay a minimal, dependency-light
 // endpoint, so a bug in _shared/gemini.ts can never take the health check
 // itself down.
-const GEMINI_FALLBACK_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]; // stable-chain rebuild 2026-08-05
+const GEMINI_FALLBACK_MODELS = ["gemini-4-hydrogen", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]; // stable-chain rebuild 2026-08-05
 const DAILY_BUDGET_USD = Number(Deno.env.get("DAILY_GEMINI_BUDGET_USD") ?? "5.00");
 
 // safety-net-ignore (2026-09-28 daily_backend audit; still true after the
