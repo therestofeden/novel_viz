@@ -114,6 +114,12 @@ jobs:
       - name: Check edge-function deploy config
         run: deno run --allow-read scripts/check-deploy-config.ts
 
+      # Added 2026-11-17 (daily_backend): two migration files with the same
+      # 14-digit version break `supabase db reset` / `db push` (the CLI keys on
+      # version only). Five such pairs had slipped in.
+      - name: Check migration versions are unique
+        run: deno run --allow-read scripts/check-migration-versions.ts
+
       - name: Test guard-checker scripts (timeout guards + body-limit guards + error-leak guards + safety-net guards + client-ip-trust guards)
         run: deno test --allow-read scripts/
 
