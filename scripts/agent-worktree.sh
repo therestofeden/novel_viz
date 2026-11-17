@@ -49,8 +49,18 @@ mkdir -p "$root"
 for d in "$root"/*/; do
   [ -e "$d.git" ] && git worktree repair "$d" >/dev/null 2>&1 || true
 done
-git worktree prune
 git fetch -q origin main
+# 2026-11-17 (daily_backend): agents start this script from the shared
+# checkout, which nobody pulls, so they kept running a stale copy (the 11-17
+# backend start ran the pre-f3a75af version and pruned + tried to rm -rf its
+# own worktree). Fast-forward the shared checkout when it is clean and on
+# main, then re-exec the fresh script once.
+if [ -z "${AGENT_WT_REEXEC:-}" ] && [ "$(git symbolic-ref -q --short HEAD)" = main ] \
+   && [ -z "$(git status --porcelain --untracked-files=no)" ] \
+   && git merge -q --ff-only origin/main 2>/dev/null; then
+  AGENT_WT_REEXEC=1 exec "$main/scripts/agent-worktree.sh" "$@"
+fi
+git worktree prune
 
 if ! git -C "$wt" rev-parse --git-dir >/dev/null 2>&1; then
   # Never discard files an earlier run left behind: park them first.
