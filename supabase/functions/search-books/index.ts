@@ -1029,9 +1029,47 @@ Deno.serve(async (req) => {
       }),
     ]);
 
+    // 2026-11-17 (daily feat): canon-confident grace window. Live cold-cache
+    // timings for exact classic titles were 0.5-4.8s ("the brothers karamazov"
+    // 4.8s, "the wealth of nations" 3.3s), almost all of it waiting on Open
+    // Library (budget 3500ms) for a book our own canon_books already resolved
+    // in well under 300ms. When the canon RPC returns a row whose title equals
+    // the query (canonForm, article-insensitive, sim >= 0.85) we still let
+    // OL/GB contribute covers/editions/year, but only for CANON_GRACE_MS after
+    // the canon answer instead of their full budgets. A slow OL then yields a
+    // canon-only result in ~1s rather than ~4s. Results shaped by a truncated
+    // wait are NOT written to the memory or DB cache (graceTruncated), so the
+    // next request still gets the full merge when OL is healthy. Non-exact
+    // queries (typos, authors, partial titles) are unaffected.
+    const CANON_GRACE_MS = 600;
+    let graceTruncated = false;
+    const stripArticle = (t: string) => t.replace(/^(the|a|an)\s+/, "");
+    const withCanonGrace = <T>(p: Promise<T>, fallback: T): Promise<T> =>
+      canonPromise.then((rows) => {
+        const qc = stripArticle(canonForm(normalizeForSearch(q)));
+        const confident = qc.length >= 4 && rows.some((r) =>
+          r.sim >= 0.85 && stripArticle(canonForm(normalizeForSearch(r.title))) === qc
+        );
+        if (!confident) return p;
+        return new Promise<T>((resolve, reject) => {
+          let done = false;
+          const timer = setTimeout(() => {
+            if (done) return;
+            done = true;
+            graceTruncated = true;
+            timings.canon_grace = 1;
+            resolve(fallback);
+          }, CANON_GRACE_MS);
+          p.then(
+            (v) => { if (!done) { done = true; clearTimeout(timer); resolve(v); } },
+            (e) => { if (!done) { done = true; clearTimeout(timer); reject(e); } },
+          );
+        });
+      });
+
     const [olResult, gbResult, canonResult, rateLimitResult] = await Promise.allSettled([
-      olFetchPromise,
-      fetchGoogleBooks(q),
+      withCanonGrace(olFetchPromise, [] as OLDoc[]),
+      withCanonGrace(fetchGoogleBooks(q), [] as GBItem[]),
       canonPromise,
       rateLimitPromise,
     ]);
@@ -1511,9 +1549,9 @@ Deno.serve(async (req) => {
       shelfBoost: false,
     }));
 
-    setMemoryCache(queryKey, baseResults);
+    if (!graceTruncated) setMemoryCache(queryKey, baseResults);
 
-    if (baseResults.length > 0) {
+    if (baseResults.length > 0 && !graceTruncated) {
       // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
       const writeCache = Promise.resolve(
         adminClient
