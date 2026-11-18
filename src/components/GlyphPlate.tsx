@@ -36,7 +36,9 @@ export function GlyphPlate({
         <DnaGlyph analysis={analysis} variant="plate" size={140} className="h-auto w-[72%]" />
       </span>
       {showTitle ? (
-        <span className={cn("font-serif italic leading-[1.05]", titleClassName)}>{analysis.title}</span>
+        <span className={cn("line-clamp-4 break-words font-serif italic leading-[1.05]", titleClassName)} title={analysis.title}>
+          {analysis.title}
+        </span>
       ) : (
         <span aria-hidden="true">{" "}</span>
       )}
