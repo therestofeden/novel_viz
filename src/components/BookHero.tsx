@@ -141,6 +141,7 @@ export function BookHero({
             title={analysis.title}
             author={analysis.author || ""}
             signature={analysis.dna?.signature}
+            analysis={analysis}
             slug={slug}
           />
           <BuyButton title={analysis.title} author={analysis.author || ""} variant="ghost" size="sm" />

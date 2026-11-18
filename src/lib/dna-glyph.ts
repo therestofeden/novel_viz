@@ -306,3 +306,65 @@ export function openDnaStrand(): void {
     document.getElementById("dna-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" }),
   );
 }
+
+// ─── Reading shape (the library portrait) ────────────────────────────────────
+
+/** Plain-language axis names for the sentence under the portrait, canonical order. */
+const SHAPE_PHRASES = [
+  "interiority", "plot", "linear time", "scale", "realism", "light tone",
+  "prose density", "moral grey", "character", "politics", "formal play", "open endings",
+] as const;
+
+function listPhrases(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+export interface ReadingShape {
+  /** mean score per axis, canonical order; axes no book measured stay null */
+  avg: Array<number | null>;
+  /** three highest axes, phrased for a sentence ("scale, prose density and politics") */
+  longest: string;
+  /** two lowest axes */
+  shortest: string;
+  /** title of the finished book whose shape is closest to the average */
+  nearest: string | null;
+}
+
+/**
+ * The average shape of a reader's finished fiction. Only fiction: fiction and
+ * non-fiction DNA use different twelve axes, so averaging across them would
+ * mean nothing. Pure, so it is easy to test.
+ */
+export function readingShape(books: Array<{ title: string; scores: Array<number | null> }>): ReadingShape | null {
+  const usable = books.filter((b) => b.scores.filter((s) => s !== null).length >= 6);
+  if (usable.length === 0) return null;
+  const avg: Array<number | null> = Array.from({ length: 12 }, (_, i) => {
+    const vals = usable.map((b) => b.scores[i]).filter((s): s is number => typeof s === "number");
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  });
+  const ranked = avg
+    .map((v, i) => ({ v, i }))
+    .filter((x): x is { v: number; i: number } => x.v !== null)
+    .sort((a, b) => b.v - a.v || a.i - b.i);
+  let nearest: string | null = null;
+  let best = Infinity;
+  for (const b of usable) {
+    let d = 0;
+    for (let i = 0; i < 12; i++) {
+      const a = avg[i];
+      if (a === null) continue;
+      d += Math.pow((b.scores[i] ?? a) - a, 2);
+    }
+    if (d < best) {
+      best = d;
+      nearest = b.title;
+    }
+  }
+  return {
+    avg,
+    longest: listPhrases(ranked.slice(0, 3).map((x) => SHAPE_PHRASES[x.i])),
+    shortest: listPhrases(ranked.slice(-2).reverse().map((x) => SHAPE_PHRASES[x.i])),
+    nearest,
+  };
+}

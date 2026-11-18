@@ -1,13 +1,17 @@
 import { useState } from "react";
-import { Share2, Check, Link2, Twitter } from "lucide-react";
+import { Share2, Check, Link2, Twitter, ImageDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ease } from "@/lib/motion";
+import type { NovelAnalysis } from "@/lib/novel-types";
+import { shareCardSvg, svgToPng } from "@/lib/share-card";
 
 interface ShareButtonProps {
   title: string;
   author?: string;
   signature?: string;
+  /** when given, the panel offers the DNA share card as an image */
+  analysis?: NovelAnalysis;
   /** Slug for the stable /book/:slug URL. Falls back to /?book=title if absent. */
   slug?: string;
   className?: string;
@@ -18,9 +22,10 @@ interface ShareButtonProps {
  * - Mobile: opens the native share sheet (Web Share API) on tap.
  * - Desktop / unsupported: opens an inline panel with copy-link + X share.
  */
-export function ShareButton({ title, author, signature, slug, className }: ShareButtonProps) {
+export function ShareButton({ title, author, signature, analysis, slug, className }: ShareButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [imageState, setImageState] = useState<"idle" | "working" | "failed">("idle");
 
   const buildUrl = () => {
     if (typeof window === "undefined") return "";
@@ -61,6 +66,43 @@ export function ShareButton({ title, author, signature, slug, className }: Share
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
       /* noop */
+    }
+  };
+
+  // The DNA card as a PNG: shared as a file where the OS share sheet takes
+  // files (phones), saved to disk everywhere else.
+  const shareImage = async () => {
+    if (!analysis) return;
+    const svg = shareCardSvg(analysis, typeof window === "undefined" ? "novel-viz.vercel.app" : window.location.host);
+    if (!svg) {
+      setImageState("failed");
+      return;
+    }
+    setImageState("working");
+    try {
+      const blob = await svgToPng(svg);
+      const name = `${(slug ?? title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "book"}-dna.png`;
+      const file = new File([blob], name, { type: "image/png" });
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (nav.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title, text: shareText, url: buildUrl() });
+          setImageState("idle");
+          return;
+        } catch {
+          // dismissed: fall through to a plain download
+        }
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      setImageState("idle");
+    } catch {
+      setImageState("failed");
     }
   };
 
@@ -114,6 +156,19 @@ export function ShareButton({ title, author, signature, slug, className }: Share
                   </span>
                   <span className="font-mono text-[10px] opacity-60">↵</span>
                 </button>
+                {analysis && (
+                  <button
+                    onClick={shareImage}
+                    disabled={imageState === "working"}
+                    className="meta flex min-h-[44px] items-center justify-between gap-3 border-b border-foreground/30 px-3 py-2 text-left transition-colors hover:bg-foreground/10 disabled:opacity-60"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <ImageDown className="h-3.5 w-3.5" />
+                      {imageState === "working" ? "Drawing…" : imageState === "failed" ? "Couldn't make the image" : "Save DNA card"}
+                    </span>
+                    <span className="font-mono text-[10px] opacity-60">PNG</span>
+                  </button>
+                )}
                 <button
                   onClick={tweet}
                   className="meta flex min-h-[44px] items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-foreground/10"

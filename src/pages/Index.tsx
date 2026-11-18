@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense, FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Loader2, Search, RefreshCw, Eye, EyeOff, LogIn, Library, Key } from "lucide-react";
+import { Loader2, Search, RefreshCw, Eye, EyeOff, Key } from "lucide-react";
 import { NovelVizLogo } from "@/components/NovelVizLogo";
-import {
-  Reveal,
-  StaggerGroup,
-  StaggerItem,
-  MagneticButton,
-  motion,
-  ease,
-} from "@/lib/motion";
+import { MagneticButton } from "@/lib/motion";
 
 // Lazy: react-markdown (~70KB) only loads after the user submits a search.
 const ReactMarkdown = lazy(() => import("react-markdown"));
@@ -20,9 +13,6 @@ import {
   NovelAnalysis,
   NonFictionAnalysis,
   PlotEvent,
-  DnaAxisId,
-  DNA_AXIS_IDS,
-  DNA_AXIS_META,
   isFiction,
   isNonFiction,
   normalizeAnalysis,
@@ -75,9 +65,11 @@ import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ReaderNotes } from "@/components/ReaderNotes";
 import { BookHero } from "@/components/BookHero";
 import { DnaTraits } from "@/components/DnaTraits";
+import { GlyphWall } from "@/components/GlyphWall";
+import { HomeLibrary, type ContinueBookView, type LibraryBook } from "@/components/HomeLibrary";
+import { glyphSource } from "@/lib/dna-glyph";
 import { CoverPlate } from "@/components/CoverPlate";
 import { fetchCoverUrl } from "@/lib/covers";
-import { MustReadBadge } from "@/components/MustReadBadge";
 import { GeminiKeyDialog } from "@/components/GeminiKeyDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -820,17 +812,6 @@ const Index = () => {
   const { user, geminiKey } = useAuth();
   const [geminiDialogOpen, setGeminiDialogOpen] = useState(false);
 
-  // Home hero background (design review 09-10): confine the sitewide paper
-  // grid to a small corner patch instead of tiling full-bleed behind the
-  // whole landing page. Scoped to this page only via a body class, added on
-  // mount and always removed on unmount so navigating away (or to the
-  // analysis view further down this same component) never leaks it onto
-  // other routes.
-  useEffect(() => {
-    document.body.classList.add("home-bg-confined");
-    return () => document.body.classList.remove("home-bg-confined");
-  }, []);
-
   // ============================================================
   // Signed-in home dashboard (design review 09-10: "tool, not habitat" —
   // personalize the signed-in landing instead of repeating the signed-out
@@ -840,28 +821,19 @@ const Index = () => {
   // the app. If a section has nothing to show, it renders an honest empty
   // state rather than a fabricated placeholder.
   // ============================================================
-  type ContinueBook = { title: string; author: string; startedAt: string | null };
   type NoteWaiting = { title: string; author: string };
   type HomeRecommendation = { title: string; author: string; why: string };
-  const [continueBook, setContinueBook] = useState<ContinueBook | null>(null);
+  const [continueBook, setContinueBook] = useState<ContinueBookView | null>(null);
   const [shelfCounts, setShelfCounts] = useState<{ total: number; reading: number; finished: number } | null>(null);
   const [notesWaiting, setNotesWaiting] = useState<NoteWaiting[]>([]);
   const [homeRecommendation, setHomeRecommendation] = useState<HomeRecommendation | null>(null);
 
-  // "Your Library" (2026-09-20, replaces the Reading List suggestion grid
-  // for signed-in readers — Stefano's feedback: no suggestions, show a
-  // representation of what's actually on the shelf). Still cost-zero: reads
-  // shelf_books plus already-cached novel_analyses rows for finished books,
-  // never a fresh Gemini call.
-  type RecentBook = { title: string; cacheKey: string };
+  // "Your library": finished books drawn as glyph plates plus the reader's
+  // average reading shape. Still cost-zero: reads shelf_books plus
+  // already-cached novel_analyses rows, never a fresh Gemini call.
   type LibraryProfile = {
     finishedThisYear: number;
-    pace: number[]; // 12 entries, Jan -> Dec of the current calendar year
-    fictionCount: number;
-    nonFictionCount: number;
-    dnaAvg: { id: DnaAxisId; score: number }[] | null;
-    dnaSampleSize: number;
-    recentlyFinished: RecentBook[];
+    books: LibraryBook[];
   };
   const [libraryProfile, setLibraryProfile] = useState<LibraryProfile | null>(null);
 
@@ -877,7 +849,7 @@ const Index = () => {
     let cancelled = false;
     (async () => {
       const [{ data: shelfRows }, { data: takeawayRows }, { data: overrideRows }] = await Promise.all([
-        supabase.from("shelf_books").select("title, author, status, started_at, finished_at, cache_key"),
+        supabase.from("shelf_books").select("title, author, status, started_at, finished_at, cache_key, rating"),
         supabase
           .from("book_takeaways")
           .select("title, author, updated_at")
@@ -901,66 +873,74 @@ const Index = () => {
       const reading = [...rows]
         .filter((r) => r.status === "reading")
         .sort((a, b) => (b.started_at ?? "").localeCompare(a.started_at ?? ""))[0];
-      setContinueBook(reading ? { title: reading.title, author: reading.author, startedAt: reading.started_at } : null);
+      setContinueBook(
+        reading
+          ? { title: reading.title, author: reading.author, startedAt: reading.started_at, slug: null, glyph: null }
+          : null,
+      );
 
-      // Library profile: pace + fiction/non-fiction split come straight off
-      // shelf_books; the DNA average needs one extra read of the (already
-      // cached) novel_analyses rows for this reader's finished books.
       const finishedRows = rows
         .filter((r) => r.status === "finished")
         .sort((a, b) => (b.finished_at ?? "").localeCompare(a.finished_at ?? ""));
       const thisYear = new Date().getFullYear();
-      const pace = Array(12).fill(0) as number[];
-      let finishedThisYear = 0;
-      for (const r of finishedRows) {
-        if (!r.finished_at) continue;
-        const d = new Date(r.finished_at);
-        if (d.getFullYear() === thisYear) {
-          pace[d.getMonth()] += 1;
-          finishedThisYear += 1;
-        }
-      }
-      const recentlyFinished: RecentBook[] = finishedRows
-        .slice(0, 4)
-        .map((r) => ({ title: r.title, cacheKey: r.cache_key }));
+      const finishedThisYear = finishedRows.filter(
+        (r) => r.finished_at && new Date(r.finished_at).getFullYear() === thisYear,
+      ).length;
 
-      const finishedCacheKeys = [...new Set(finishedRows.map((r) => r.cache_key).filter(Boolean))];
-      let fictionCount = 0;
-      let nonFictionCount = 0;
-      let dnaAvg: { id: DnaAxisId; score: number }[] | null = null;
-      let dnaSampleSize = 0;
-      if (finishedCacheKeys.length > 0) {
+      // One read of the (already cached) analyses behind the book in hand and
+      // the finished shelf: enough to draw each glyph and link to its page.
+      const wantKeys = [...new Set([...finishedRows.map((r) => r.cache_key), reading?.cache_key].filter(Boolean))] as string[];
+      const byKey = new Map<string, { slug: string | null; glyph: NovelAnalysis; fiction: boolean }>();
+      if (wantKeys.length > 0) {
         const { data: analysisRows } = await supabase
           .from("novel_analyses")
-          .select("cache_key, analysis")
-          .in("cache_key", finishedCacheKeys);
-        if (!cancelled && analysisRows) {
-          const sums: Partial<Record<DnaAxisId, number>> = {};
-          const counts: Partial<Record<DnaAxisId, number>> = {};
-          for (const row of analysisRows) {
-            const parsed = normalizeAnalysis(row.analysis as Record<string, unknown>);
-            if (isFiction(parsed)) {
-              fictionCount += 1;
-              if (parsed.dna?.axes?.length) {
-                dnaSampleSize += 1;
-                for (const axis of parsed.dna.axes) {
-                  sums[axis.id] = (sums[axis.id] ?? 0) + axis.score;
-                  counts[axis.id] = (counts[axis.id] ?? 0) + 1;
-                }
-              }
-            } else if (isNonFiction(parsed)) {
-              nonFictionCount += 1;
-            }
-          }
-          if (dnaSampleSize > 0) {
-            dnaAvg = DNA_AXIS_IDS
-              .filter((id) => counts[id])
-              .map((id) => ({ id, score: Math.round((sums[id] ?? 0) / (counts[id] ?? 1)) }));
-          }
+          .select("cache_key, slug, analysis")
+          .in("cache_key", wantKeys);
+        if (cancelled) return;
+        for (const row of analysisRows ?? []) {
+          const parsed = normalizeAnalysis(row.analysis as Record<string, unknown>);
+          const fiction = isFiction(parsed);
+          byKey.set(row.cache_key, {
+            slug: row.slug ?? null,
+            fiction,
+            glyph: glyphSource(
+              parsed.title ?? "",
+              fiction ? "fiction" : "nonfiction",
+              parsed.dna?.axes?.map((a) => ({ id: a.id, score: a.score })),
+            ),
+          });
         }
       }
       if (cancelled) return;
-      setLibraryProfile({ finishedThisYear, pace, fictionCount, nonFictionCount, dnaAvg, dnaSampleSize, recentlyFinished });
+      if (reading) {
+        const hit = reading.cache_key ? byKey.get(reading.cache_key) : undefined;
+        setContinueBook({
+          title: reading.title,
+          author: reading.author,
+          startedAt: reading.started_at,
+          slug: hit?.slug ?? null,
+          glyph: hit ? glyphSource(reading.title, hit.fiction ? "fiction" : "nonfiction", hit.glyph.dna?.axes) : null,
+        });
+      }
+      const seen = new Set<string>();
+      const books: LibraryBook[] = [];
+      for (const r of finishedRows) {
+        const k = `${r.cache_key}|${r.title}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        const hit = r.cache_key ? byKey.get(r.cache_key) : undefined;
+        books.push({
+          cacheKey: r.cache_key,
+          slug: hit?.slug ?? null,
+          title: r.title,
+          author: r.author,
+          rating: typeof r.rating === "number" ? r.rating : null,
+          fiction: hit?.fiction ?? false,
+          glyph: hit ? glyphSource(r.title, hit.fiction ? "fiction" : "nonfiction", hit.glyph.dna?.axes) : null,
+        });
+        if (books.length >= 24) break;
+      }
+      setLibraryProfile({ finishedThisYear, books });
 
       setNotesWaiting((takeawayRows ?? []).map((r) => ({ title: r.title, author: r.author })));
 
@@ -987,7 +967,13 @@ const Index = () => {
     return () => { cancelled = true; };
   }, [user]);
 
-  const openBookInline = (b: { title: string; author?: string }) => {
+  const openBookInline = (b: { title: string; author?: string; slug?: string | null }) => {
+    // A book with its own page opens there (stable URL, shareable); anything
+    // else goes through the analyser as before.
+    if (b.slug) {
+      navigate(`/book/${b.slug}`);
+      return;
+    }
     const hint = b.author && b.author !== "Unknown" ? `${b.title} by ${b.author}` : b.title;
     setTitle(b.title);
     setActiveRefinement(null);
@@ -1347,298 +1333,13 @@ const Index = () => {
     return (analysis as FictionAnalysis).events.find((e) => e.id === selectedEventId)?.characterIds ?? [];
   }, [analysis, selectedEventId]);
 
-  return (
-    <div className="min-h-screen">
-
-      {/* ===================== DATELINE STRIP ===================== */}
-      {/* Hidden on mobile: decorative chrome that only added clutter on
-          narrow viewports (design review 09-10 — "everything on top of
-          everything"). */}
-      <div className="dateline-strip hidden items-center justify-center md:flex">
-        <span>NovelViz</span>
-        <span style={{ opacity: 0.4 }}>·</span>
-        <span>Visualize any book</span>
-        <span style={{ opacity: 0.4 }}>·</span>
-        <span>Est. 2024</span>
-      </div>
-
-      {/* ===================== HEADER — editorial masthead ===================== */}
-      <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
-        <div className="container mx-auto flex items-stretch justify-between">
-          <div className="flex items-stretch">
-            <button
-              type="button"
-              onClick={() => {
-                lastRequestedBookRef.current = null;
-                if (location.search) navigate({ pathname: "/", search: "" }, { replace: true });
-                setAnalysis(null);
-                setAnalysisPreview(null);
-                setTitle("");
-                setLoading(false);
-                setStatusText("");
-                setPreambleText("");
-                setCachedHit(false);
-              }}
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
-            >
-              <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
-              <div className="leading-none">
-                <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize any book</div>
-              </div>
-            </button>
-          </div>
-          <div className="flex items-stretch">
-            {user ? (
-              <Link
-                to="/shelf"
-                className="meta flex items-center gap-2 border-l border-foreground px-5 py-5 transition-colors hover:bg-foreground/10"
-              >
-                <Library className="h-3.5 w-3.5" /> My shelf
-              </Link>
-            ) : (
-              <Link
-                to="/auth"
-                className="meta flex items-center gap-2 border-l border-foreground px-5 py-5 transition-colors hover:bg-foreground/10"
-              >
-                <LogIn className="h-3.5 w-3.5" /> Sign in
-              </Link>
-            )}
-            {user && (
-              <button
-                onClick={() => setGeminiDialogOpen(true)}
-                className={`meta flex items-center gap-2 border-l border-foreground px-5 py-5 hover:bg-foreground/10 ${geminiKey ? "text-green-600" : "text-muted-foreground"}`}
-                title={geminiKey ? "Gemini key configured" : "Add your Gemini API key"}
-              >
-                <Key className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{geminiKey ? "Key ✓" : "API Key"}</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </Reveal>
-
-      <main className="container mx-auto px-0">
-        {!analysis && (
-          <section className="grid grid-cols-12 gap-0">
-            {/* Left rail — desktop only. On mobile this was pure decorative
-                chrome (Vol. I / 001 / rotated side label) competing with the
-                ticker and rotated label for the same cramped space (design
-                review 09-10). */}
-            <aside className="relative col-span-12 hidden ink-border-b border-foreground px-4 py-6 md:col-span-2 md:block md:border-b-0 md:border-r md:py-12">
-              <div className="meta text-muted-foreground" style={{ letterSpacing: "0.28em" }}>Vol. I</div>
-              <div className="display-num mt-1 text-5xl md:text-7xl" style={{ opacity: 0.12, letterSpacing: "-0.05em" }}>001</div>
-              <div className="mt-4 h-px w-10 bg-foreground" />
-              <div className="meta mt-4 text-muted-foreground">Book Analysis</div>
-              <div className="hidden md:block absolute bottom-12 left-0 w-full flex items-end justify-center" style={{ paddingLeft: "1.5rem" }}>
-                <span className="side-label text-muted-foreground/50">Visualize any book</span>
-              </div>
-            </aside>
-
-            {/* Hero */}
-            <div className="relative col-span-12 overflow-hidden px-4 py-10 md:col-span-10 md:px-12 md:py-16">
-              {/* Decorative background, desktop only: a confined constellation
-                  motif behind the headline (echoes the logo's node-and-arc
-                  language) plus a small faded grid patch tucked in one
-                  corner — replaces the old full-bleed grid tiling behind the
-                  whole page, which read as an unfinished placeholder
-                  (design review 09-10). Purely decorative: aria-hidden,
-                  no pointer events, confined to this box via overflow-hidden
-                  above rather than bleeding into the rest of the page. */}
-              <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
-                <div className="home-corner-grid absolute right-0 top-0 h-64 w-64" />
-                <svg
-                  className="absolute left-[8%] top-[6%] h-[70%] w-[55%] max-w-[560px] text-foreground/[0.09]"
-                  viewBox="0 0 400 300"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <line x1="24" y1="230" x2="96" y2="40" stroke="currentColor" strokeWidth="1" />
-                  <line x1="24" y1="230" x2="190" y2="70" stroke="currentColor" strokeWidth="1" />
-                  <line x1="24" y1="230" x2="270" y2="120" stroke="currentColor" strokeWidth="1" />
-                  <line x1="24" y1="230" x2="340" y2="190" stroke="currentColor" strokeWidth="1" />
-                  <line x1="96" y1="40" x2="190" y2="70" stroke="currentColor" strokeWidth="0.75" />
-                  <line x1="190" y1="70" x2="270" y2="120" stroke="currentColor" strokeWidth="0.75" />
-                  <line x1="270" y1="120" x2="340" y2="190" stroke="currentColor" strokeWidth="0.75" />
-                  <circle cx="24" cy="230" r="4" fill="currentColor" />
-                  <circle cx="96" cy="40" r="3" fill="currentColor" />
-                  <circle cx="190" cy="70" r="3" fill="currentColor" />
-                  <circle cx="270" cy="120" r="3" fill="currentColor" />
-                  <circle cx="340" cy="190" r="3" fill="currentColor" />
-                </svg>
-              </div>
-
-              {user ? (
-                <>
-                  <Reveal duration={0.7} y={10} className="meta mb-8 hidden items-center gap-3 text-muted-foreground md:flex">
-                    <motion.span
-                      className="inline-block h-2.5 w-2.5 bg-primary"
-                      animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
-                      transition={{ duration: 2.6, repeat: Infinity, ease: ease.inOut }}
-                    />
-                    Welcome back
-                    <span className="hidden md:inline-block h-px w-8 bg-foreground/30" />
-                    <span className="hidden md:inline">Your reading life, in one place</span>
-                  </Reveal>
-
-                  <h1 className="text-balance font-sans text-4xl font-bold leading-[0.95] tracking-[-0.03em] md:text-6xl">
-                    {continueBook ? (
-                      <>Back to <span className="italic font-serif font-normal text-primary">{continueBook.title}</span>?</>
-                    ) : (
-                      <>Your <span className="italic font-serif font-normal text-primary">reading life</span>, in one place.</>
-                    )}
-                  </h1>
-
-                  <Reveal delay={0.3} duration={0.7} y={8}>
-                    <hr className="mt-8 border-foreground/30" />
-                  </Reveal>
-
-                  <Reveal delay={0.4} duration={0.8} y={14} className="mt-8 max-w-3xl">
-                    <StaggerGroup className="ink-border grid grid-cols-1 bg-card md:grid-cols-2">
-                      {[
-                        continueBook ? (
-                          <button
-                            type="button"
-                            onClick={() => openBookInline(continueBook)}
-                            className="group flex h-full min-h-[128px] w-full flex-col items-start gap-1.5 p-5 text-left transition-colors hover:bg-foreground/10"
-                          >
-                            <span className="meta text-accent">Continue Reading</span>
-                            <span className="font-serif text-lg italic leading-tight">{continueBook.title}</span>
-                            <span className="meta text-muted-foreground">
-                              {continueBook.author || "Unknown author"}
-                              {continueBook.startedAt
-                                ? ` · started ${new Date(continueBook.startedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-                                : ""}
-                            </span>
-                            <span className="meta mt-auto pt-2 text-foreground/60 group-hover:text-foreground">→ Resume</span>
-                          </button>
-                        ) : (
-                          <Link
-                            to="/shelf"
-                            className="group flex h-full min-h-[128px] w-full flex-col items-start gap-1.5 p-5 text-left transition-colors hover:bg-foreground/10"
-                          >
-                            <span className="meta text-muted-foreground">Continue Reading</span>
-                            <span className="font-serif text-base italic leading-tight text-muted-foreground">Nothing in progress yet</span>
-                            <span className="meta mt-auto pt-2 text-foreground/60 group-hover:text-foreground">→ Add a book to your shelf</span>
-                          </Link>
-                        ),
-                        <Link
-                          to="/shelf"
-                          className="group flex h-full min-h-[128px] w-full flex-col items-start gap-1.5 p-5 text-left transition-colors hover:bg-foreground/10"
-                        >
-                          <span className="meta text-accent">Your Shelf</span>
-                          <span className="font-serif text-lg italic leading-tight">
-                            {shelfCounts ? `${shelfCounts.total} ${shelfCounts.total === 1 ? "book" : "books"}` : "—"}
-                          </span>
-                          <span className="meta text-muted-foreground">
-                            {shelfCounts ? `${shelfCounts.reading} reading · ${shelfCounts.finished} finished` : "Loading…"}
-                          </span>
-                          <span className="meta mt-auto pt-2 text-foreground/60 group-hover:text-foreground">→ Open shelf</span>
-                        </Link>,
-                        notesWaiting.length > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => openBookInline(notesWaiting[0])}
-                            className="group flex h-full min-h-[128px] w-full flex-col items-start gap-1.5 p-5 text-left transition-colors hover:bg-foreground/10"
-                          >
-                            <span className="meta text-accent">Notes Waiting</span>
-                            <span className="font-serif text-lg italic leading-tight">{notesWaiting[0].title}</span>
-                            <span className="meta text-muted-foreground">
-                              {notesWaiting.length > 1 ? `+${notesWaiting.length - 1} more unfinished` : "Questions ready for you"}
-                            </span>
-                            <span className="meta mt-auto pt-2 text-foreground/60 group-hover:text-foreground">→ Finish your takeaways</span>
-                          </button>
-                        ) : (
-                          <div className="flex h-full min-h-[128px] w-full flex-col items-start gap-1.5 p-5">
-                            <span className="meta text-muted-foreground">Notes Waiting</span>
-                            <span className="font-serif text-base italic leading-tight text-muted-foreground">All caught up</span>
-                          </div>
-                        ),
-                        homeRecommendation ? (
-                          <button
-                            type="button"
-                            onClick={() => openBookInline(homeRecommendation)}
-                            className="group flex h-full min-h-[128px] w-full flex-col items-start gap-1.5 p-5 text-left transition-colors hover:bg-foreground/10"
-                          >
-                            <span className="meta text-accent">Matched to Your DNA</span>
-                            <span className="font-serif text-lg italic leading-tight">{homeRecommendation.title}</span>
-                            <span className="meta line-clamp-2 text-muted-foreground">
-                              {homeRecommendation.why || homeRecommendation.author}
-                            </span>
-                            <span className="meta mt-auto pt-2 text-foreground/60 group-hover:text-foreground">→ Open in NovelViz</span>
-                          </button>
-                        ) : (
-                          <div className="flex h-full min-h-[128px] w-full flex-col items-start gap-1.5 p-5">
-                            <span className="meta text-muted-foreground">Matched to Your DNA</span>
-                            <span className="font-serif text-base italic leading-tight text-muted-foreground">Tune a book's DNA to unlock this</span>
-                          </div>
-                        ),
-                      ].map((content, i, arr) => (
-                        <StaggerItem
-                          key={i}
-                          className={cn(
-                            i < arr.length - 1 && "border-b border-foreground md:border-b-0",
-                            i % 2 === 0 && "md:border-r md:border-foreground",
-                            i < arr.length - 2 && "md:border-b md:border-foreground",
-                          )}
-                        >
-                          {content}
-                        </StaggerItem>
-                      ))}
-                    </StaggerGroup>
-                  </Reveal>
-                </>
-              ) : (
-                <>
-                  <Reveal duration={0.7} y={10} className="meta mb-8 hidden flex-wrap items-center gap-3 text-muted-foreground md:flex">
-                    <motion.span
-                      className="inline-block h-2.5 w-2.5 bg-primary"
-                      animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
-                      transition={{ duration: 2.6, repeat: Infinity, ease: ease.inOut }}
-                    />
-                    A Reading Tool
-                    <span className="hidden md:inline-block h-px w-8 bg-foreground/30" />
-                    <span className="hidden md:inline">Visualize any book</span>
-                  </Reveal>
-
-                  <h1 className="text-balance font-sans text-6xl font-bold leading-[0.88] tracking-[-0.04em] md:text-8xl lg:text-[10.5rem]">
-                    {[
-                      <>See the</>,
-                      <><span className="italic font-serif font-normal" style={{ fontSize: "1.05em" }}>shape</span> of any</>,
-                      <span className="text-primary">book.</span>,
-                    ].map((node, i) => (
-                      <span key={i} className="block overflow-hidden">
-                        <motion.span
-                          className="inline-block"
-                          initial={{ y: "110%" }}
-                          animate={{ y: "0%" }}
-                          transition={{ duration: 0.95, ease: ease.out, delay: 0.15 + i * 0.1 }}
-                        >
-                          {node}
-                        </motion.span>
-                      </span>
-                    ))}
-                  </h1>
-
-                  <Reveal delay={0.5} duration={0.7} y={8}>
-                    <hr className="mt-10 border-foreground/30" />
-                  </Reveal>
-
-                  <Reveal delay={0.55} duration={0.9} y={14}>
-                    <p className="mt-8 max-w-2xl font-serif text-lg leading-[1.55] text-foreground md:text-xl">
-                      Type the title of any book. Fiction unfolds into characters,
-                      relationships, and timelines; non-fiction into concepts, arguments, and chapters.
-                      <span className="italic text-muted-foreground"> One title in, one cartography out.</span>
-                    </p>
-                  </Reveal>
-                </>
-              )}
-
-              <Reveal delay={0.7} duration={0.8} y={16}>
-              <form onSubmit={handleSubmit} className={cn("max-w-2xl", user ? "mt-8" : "mt-12")} autoComplete="off">
+  const searchForm = (
+    <>
+              
+              <form onSubmit={handleSubmit} className="w-full" autoComplete="off">
                 <div className="meta mb-2 flex items-center justify-between text-muted-foreground">
-                  <span>{user ? "Look up another title" : "Title"}</span>
-                  <span className="hidden md:inline">Press <kbd className="border border-foreground bg-card px-1.5 py-0.5 text-foreground">↵</kbd> to visualize</span>
+                  <span>{user ? "Look up another title" : "A title"}</span>
+                  <span className="hidden md:inline">Press <kbd className="border border-foreground bg-card px-1.5 py-0.5 text-foreground">↵</kbd> to map</span>
                 </div>
                 <div ref={wrapRef} className="crop-frame relative">
                   <span className="crop-bl" /><span className="crop-br" />
@@ -1688,7 +1389,7 @@ const Index = () => {
                       disabled={loading || !title.trim()}
                       className="meta flex items-center gap-2 border-l border-foreground bg-primary px-6 text-primary-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-80"
                     >
-                      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <>Visualize</>}
+                      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <>Map it</>}
                     </MagneticButton>
                   </div>
 
@@ -1821,208 +1522,138 @@ const Index = () => {
                   )}
                 </div>
               </form>
-              </Reveal>
+                  </>
+  );
 
-              {/* Your Library (2026-09-20) — replaces the Reading List
-                  suggestion grid for signed-in readers. Stefano's explicit
-                  ask: no suggestions underneath for logged-in users, a real
-                  representation of their own shelf instead. Signed-out
-                  visitors still get the discovery grid below, unchanged. */}
-              {user && libraryProfile && (
-                <Reveal delay={0.85} duration={0.8} y={16} className="mt-12">
-                  <div className="meta mb-4 flex items-center gap-3 text-muted-foreground">
-                    <span className="inline-block h-2 w-2 bg-accent" />
-                    Your Library · {new Date().getFullYear()}
-                    <span className="inline-block h-px w-12 bg-foreground/40" />
-                  </div>
+  return (
+    <div className="min-h-screen">
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_1fr]">
-                    {/* Reading DNA, averaged across this reader's finished fiction — same
-                        bar language as the book page's own DNA strand, so the two feel
-                        like one system. */}
-                    <div className="ink-border bg-card p-5 md:p-6">
-                      <div className="meta text-muted-foreground">
-                        Your Reading DNA
-                        {libraryProfile.dnaSampleSize > 0
-                          ? ` · across ${libraryProfile.dnaSampleSize} finished ${libraryProfile.dnaSampleSize === 1 ? "book" : "books"}`
-                          : ""}
-                      </div>
-                      {libraryProfile.dnaAvg && libraryProfile.dnaAvg.length > 0 ? (
-                        <div className="mt-4">
-                          {libraryProfile.dnaAvg.map((a) => {
-                            const meta = DNA_AXIS_META[a.id];
-                            return (
-                              <div key={a.id} className="mb-2.5">
-                                <div className="mb-1 flex items-center justify-between text-xs">
-                                  <span className="font-sans font-semibold">{meta?.name ?? a.id}</span>
-                                  <span className="font-mono font-bold">{a.score}</span>
-                                </div>
-                                <div className="h-2 bg-foreground/10">
-                                  <div className="h-full bg-primary" style={{ width: `${a.score}%` }} />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <p className="mt-3 font-serif text-sm italic text-muted-foreground">
-                          Finish a few fiction books to see your reading DNA take shape.
-                        </p>
-                      )}
-                    </div>
+      {/* Slim masthead, the same one the book page uses (Paper & ink). */}
+      <header className="border-b border-foreground bg-background">
+        <div className="mx-auto flex max-w-[1280px] items-center gap-2 px-4 py-1.5 md:px-8">
+          <button
+            type="button"
+            onClick={() => {
+              lastRequestedBookRef.current = null;
+              if (location.search) navigate({ pathname: "/", search: "" }, { replace: true });
+              setAnalysis(null);
+              setAnalysisPreview(null);
+              setTitle("");
+              setLoading(false);
+              setStatusText("");
+              setPreambleText("");
+              setCachedHit(false);
+            }}
+            className="flex min-h-[44px] items-center gap-2.5 text-foreground"
+          >
+            <NovelVizLogo size={28} className="text-foreground" />
+            <span className="font-serif text-xl font-medium tracking-[-0.01em]">NovelViz</span>
+          </button>
+          <nav className="ml-auto flex items-center gap-1">
+            {user && (
+              <button
+                onClick={() => setGeminiDialogOpen(true)}
+                className={`flex min-h-[44px] items-center gap-2 px-3 text-sm font-medium hover:underline ${geminiKey ? "text-green-700" : "text-muted-foreground"}`}
+                title={geminiKey ? "Gemini key configured" : "Add your Gemini API key"}
+              >
+                <Key className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">{geminiKey ? "Key ✓" : "API key"}</span>
+              </button>
+            )}
+            {user ? (
+              <Link to="/shelf" className="flex min-h-[44px] items-center px-3 text-sm font-medium hover:underline">
+                Library
+              </Link>
+            ) : (
+              <Link
+                to="/auth"
+                className="flex min-h-[44px] items-center bg-foreground px-4 text-sm font-medium text-background hover:bg-foreground/90"
+              >
+                Sign in
+              </Link>
+            )}
+          </nav>
+        </div>
+      </header>
 
-                    {/* Stat rail */}
-                    <div className="flex flex-col gap-4">
-                      <div className="ink-border bg-card p-5">
-                        <div className="meta text-muted-foreground">Your Shelf</div>
-                        <div className="mt-1 font-sans text-2xl font-bold">
-                          {shelfCounts ? `${shelfCounts.total} ${shelfCounts.total === 1 ? "book" : "books"}` : "—"}
-                        </div>
-                        <div className="meta mt-1 text-muted-foreground">
-                          {shelfCounts ? `${shelfCounts.reading} reading · ${shelfCounts.finished} finished` : ""}
-                        </div>
-                      </div>
-                      <div className="ink-border bg-card p-5">
-                        <div className="meta text-muted-foreground">Finished This Year</div>
-                        <div className="mt-1 font-sans text-2xl font-bold">
-                          {libraryProfile.finishedThisYear} {libraryProfile.finishedThisYear === 1 ? "book" : "books"}
-                        </div>
-                        <div className="mt-2 flex items-end gap-0.5" style={{ height: 22 }}>
-                          {libraryProfile.pace.map((n, i) => {
-                            const max = Math.max(1, ...libraryProfile.pace);
-                            return (
-                              <div
-                                key={i}
-                                className="flex-1 bg-primary/50"
-                                style={{ height: `${Math.max(4, (n / max) * 22)}px` }}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                      {libraryProfile.fictionCount + libraryProfile.nonFictionCount > 0 && (
-                        <div className="ink-border bg-card p-5">
-                          <div className="meta text-muted-foreground">Fiction / Non-fiction</div>
-                          {(() => {
-                            const total = libraryProfile.fictionCount + libraryProfile.nonFictionCount;
-                            const fictionPct = Math.round((libraryProfile.fictionCount / total) * 100);
-                            return (
-                              <>
-                                <div className="mt-2.5 flex h-3.5 border border-foreground/30">
-                                  <div className="bg-foreground" style={{ width: `${fictionPct}%` }} />
-                                  <div className="bg-primary" style={{ width: `${100 - fictionPct}%` }} />
-                                </div>
-                                <div className="meta mt-1.5 flex justify-between text-muted-foreground">
-                                  <span>Fiction {fictionPct}%</span>
-                                  <span>Non-fic {100 - fictionPct}%</span>
-                                </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {libraryProfile.recentlyFinished.length > 0 && (
-                    <div className="ink-border mt-4 bg-card">
-                      <div className="meta bg-foreground px-4 py-2 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))]">
-                        Recently Finished
-                      </div>
-                      <div className="flex gap-4 overflow-x-auto p-4">
-                        {libraryProfile.recentlyFinished.map((b) => (
+      <main>
+        {!analysis && (
+          <section className="mx-auto max-w-[1280px] px-4 py-8 md:px-8 md:py-14">
+            {user ? (
+              <HomeLibrary
+                name={
+                  ((user.user_metadata?.full_name ?? user.user_metadata?.name ?? "") as string).trim().split(/\s+/)[0] || null
+                }
+                search={searchForm}
+                continueBook={continueBook}
+                shelf={shelfCounts}
+                finishedThisYear={libraryProfile ? libraryProfile.finishedThisYear : null}
+                notesCount={notesWaiting.length}
+                recommendation={homeRecommendation}
+                books={libraryProfile?.books ?? []}
+                onOpen={openBookInline}
+              />
+            ) : (
+              <div className="flex flex-col gap-16 md:gap-20">
+                <div className="flex flex-wrap items-center gap-10 md:gap-14 lg:flex-nowrap">
+                  <div className="flex min-w-0 flex-[1_1_460px] flex-col gap-6">
+                    <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                      A reading companion
+                    </span>
+                    <h1 className="text-balance font-serif text-[3.5rem] font-normal leading-[0.95] tracking-[-0.03em] md:text-[5.75rem]">
+                      See the <em className="italic text-[#19629A]">shape</em> of any book.
+                    </h1>
+                    <p className="max-w-[34rem] font-serif text-lg leading-[1.5] text-foreground/90 md:text-[1.3125rem]">
+                      Type a title. Get its characters, its timeline and its DNA: twelve qualities drawn as one shape you
+                      can compare, share and choose your next book by.
+                    </p>
+                    <div className="max-w-[35rem]">{searchForm}</div>
+                    <p className="text-[15px] text-muted-foreground">
+                      Try{" "}
+                      {seedSuggestions.slice(0, 3).map((s, i) => (
+                        <span key={s}>
+                          {i > 0 && (i === 2 ? " or " : ", ")}
                           <button
-                            key={b.cacheKey + b.title}
                             type="button"
-                            onClick={() => openBookInline({ title: b.title })}
-                            className="group w-20 shrink-0 text-left"
+                            onMouseEnter={() => prefetchAnalysis(s)}
+                            onFocus={() => prefetchAnalysis(s)}
+                            onTouchStart={() => prefetchAnalysis(s)}
+                            onClick={() => {
+                              setTitle(s);
+                              fetchAnalysis(s);
+                            }}
+                            disabled={loading}
+                            className="text-[#19629A] underline underline-offset-2 hover:text-foreground"
                           >
-                            <div className="flex h-28 w-20 items-center justify-center bg-foreground text-background">
-                              <span className="font-serif text-2xl italic">{b.title.charAt(0).toUpperCase()}</span>
-                            </div>
-                            <div className="mt-1.5 font-serif text-[11px] italic leading-tight group-hover:text-primary">
-                              {b.title}
-                            </div>
-                          </button>
-                        ))}
-                        <Link
-                          to="/shelf"
-                          className="meta flex shrink-0 items-center self-center text-foreground/60 hover:text-foreground"
-                        >
-                          Open shelf →
-                        </Link>
-                      </div>
-                    </div>
-                  )}
-                </Reveal>
-              )}
-
-              {!user && (
-                <Reveal delay={0.85} duration={0.8} y={16} className="mt-12">
-                  <div className="meta mb-4 flex items-center gap-3 text-muted-foreground">
-                    <span className="inline-block h-2 w-2 bg-accent" />
-                    {`Reading List · No. ${new Date().getFullYear()}`}
-                    <span className="inline-block h-px w-12 bg-foreground/40" />
-                  </div>
-                  <StaggerGroup className="ink-border grid grid-cols-1 bg-card md:grid-cols-3">
-                    {seedSuggestions.map((s, i) => (
-                      <StaggerItem key={s}>
-                        <motion.button
-                          onMouseEnter={() => prefetchAnalysis(s)}
-                          onFocus={() => prefetchAnalysis(s)}
-                          onTouchStart={() => prefetchAnalysis(s)}
-                          onClick={() => {
-                            setTitle(s);
-                            fetchAnalysis(s);
-                          }}
-                          disabled={loading}
-                          whileHover="hover"
-                          initial="rest"
-                          animate="rest"
-                          className={cn(
-                            "group relative flex h-full min-h-[64px] w-full flex-row items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground/10 md:min-h-[120px] md:flex-col md:items-stretch md:py-4",
-                            ((i + 1) % 3 !== 0) && "md:border-r md:border-foreground",
-                            i < seedSuggestions.length - 1 && "border-b border-foreground md:border-b-0",
-                            i < seedSuggestions.length - 3 && "md:border-b md:border-foreground",
-                          )}
-                        >
-                          {/* Mobile: small bordered index chip. Desktop: the
-                              original oversized ghost numeral. Design review
-                              09-10 flagged the giant numerals as part of
-                              mobile's "everything on top of everything." */}
-                          <motion.span
-                            variants={{ rest: { y: 0 }, hover: { y: -2 } }}
-                            transition={{ duration: 0.4, ease: ease.out }}
-                            className="meta inline-flex h-5 w-7 shrink-0 items-center justify-center border border-foreground/30 text-foreground/60 md:h-auto md:w-auto md:border-0 md:font-serif md:text-3xl md:italic md:font-normal md:text-foreground/25 md:tracking-[-0.04em] md:group-hover:text-foreground/40"
-                          >
-                            {String(i + 1).padStart(2, "0")}
-                          </motion.span>
-                          <span className="min-w-0 flex-1 truncate font-serif text-base italic leading-tight md:flex-none md:overflow-visible md:whitespace-normal">
                             {s}
-                            <MustReadBadge
-                              title={s}
-                              className="ml-2 inline-block translate-y-[-2px]"
-                            />
-                          </span>
-                          <motion.span
-                            variants={{ rest: { x: -4, opacity: 0 }, hover: { x: 0, opacity: 1 } }}
-                            transition={{ duration: 0.35, ease: ease.out }}
-                            className="meta absolute right-3 top-3 hidden text-foreground/60 md:block"
-                          >
-                            → Open
-                          </motion.span>
-                        </motion.button>
-                      </StaggerItem>
-                    ))}
-                  </StaggerGroup>
-                  <div className="meta mt-3 text-muted-foreground">
-                    Six titles, freshly shuffled · refresh for more
+                          </button>
+                        </span>
+                      ))}
+                    </p>
                   </div>
-                </Reveal>
-              )}
+                  <div className="min-w-0 flex-[1_1_480px]">
+                    <GlyphWall />
+                  </div>
+                </div>
+
+                <div className="grid gap-10 border-t border-foreground pt-10 sm:grid-cols-3">
+                  {[
+                    ["1", "Map it", "Characters and how they connect, the timeline with spoilers held back, the ideas of a non-fiction book chapter by chapter."],
+                    ["2", "See its shape", "Every book gets a DNA glyph. Books that read alike look alike, so the next one is easy to spot."],
+                    ["3", "Keep it", "Save, rate and take notes. Your library grows a shape of its own: a portrait of how you read."],
+                  ].map(([n, h, body]) => (
+                    <div key={n} className="flex flex-col gap-2.5">
+                      <span className="font-serif text-[2.75rem] leading-none text-[#9A6410]" aria-hidden="true">{n}</span>
+                      <h2 className="font-serif text-[1.75rem] font-normal leading-tight">{h}</h2>
+                      <p className="text-base leading-[1.55] text-foreground/85">{body}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
               {loading && (
-                <div ref={loadingPanelRef} className="mt-12 ink-border bg-card">
+                <div ref={loadingPanelRef} className="mt-10 ink-border bg-card">
                   <div className="flex items-center gap-3 border-b border-foreground/30 px-4 py-3">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     <span className="meta">{cachedHit ? "Library Hit" : "Reading the Book"}</span>
@@ -2047,7 +1678,7 @@ const Index = () => {
                   and it's rendered right under the search form so it's visible
                   without scrolling. */}
               {!loading && lastError && (
-                <div className="mt-12 ink-border border-destructive/50 bg-destructive/5">
+                <div className="mt-10 ink-border border-destructive/50 bg-destructive/5">
                   <div className="flex items-start justify-between gap-4 px-4 py-3">
                     <div>
                       <div className="meta text-destructive">Analysis failed</div>
@@ -2075,7 +1706,6 @@ const Index = () => {
                   </div>
                 </div>
               )}
-            </div>
           </section>
         )}
 

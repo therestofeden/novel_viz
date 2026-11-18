@@ -15,6 +15,7 @@ import {
   inkFor,
   normaliseTitle,
   petalPath,
+  readingShape,
 } from "@/lib/dna-glyph";
 
 const IDS = [
@@ -99,5 +100,40 @@ describe("book ink", () => {
         expect(derived.outline).toBe(contrast(ink, PAPER) < 3);
       }
     }
+  });
+});
+
+describe("readingShape", () => {
+  const books = [
+    { title: "Stoner", scores: [92, 20, 50, 25, 100, 15, 65, 75, 95, 35, 10, 15] },
+    { title: "Solitude", scores: [40, 70, 10, 95, 35, 45, 85, 60, 55, 70, 30, 0] },
+    { title: "Beloved", scores: [80, 45, 25, 40, 40, 15, 85, 85, 85, 90, 75, 65] },
+  ];
+
+  it("returns null when nothing has enough DNA", () => {
+    expect(readingShape([])).toBeNull();
+    expect(readingShape([{ title: "Sparse", scores: [50, 50, null, null, null, null, null, null, null, null, null, null] }])).toBeNull();
+  });
+
+  it("averages each axis across the books", () => {
+    const s = readingShape(books)!;
+    expect(s.avg[0]).toBeCloseTo((92 + 40 + 80) / 3, 5);
+    expect(s.avg[3]).toBeCloseTo((25 + 95 + 40) / 3, 5);
+  });
+
+  it("names the highest and lowest axes in plain words", () => {
+    const s = readingShape(books)!;
+    // averages: prose density 78.3, realism 58.3, politics 65, interiority 70.7, character 78.3
+    expect(s.longest.split(/, | and /)).toHaveLength(3);
+    expect(s.longest).toContain("prose density");
+    expect(s.shortest).toContain("open endings");
+  });
+
+  it("picks the finished book closest to the average", () => {
+    expect(readingShape(books)!.nearest).toBe("Beloved");
+  });
+
+  it("is deterministic", () => {
+    expect(readingShape(books)).toEqual(readingShape(books));
   });
 });
