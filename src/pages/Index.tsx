@@ -63,6 +63,7 @@ const TabFallback = () => (
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ReaderNotes } from "@/components/ReaderNotes";
+import { useMembership } from "@/hooks/useMembership";
 import { BookHero } from "@/components/BookHero";
 import { DnaTraits } from "@/components/DnaTraits";
 import { GlyphWall } from "@/components/GlyphWall";
@@ -810,6 +811,11 @@ const Index = () => {
   const [slug, setSlug] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const { user, geminiKey } = useAuth();
+  // 2026-11-18: "Refine the visualization" is a members' feature. Locked for
+  // guests and non-members once membership has loaded and the paywall switch
+  // is on; analyze-novel enforces the same rule server-side.
+  const membership = useMembership();
+  const refineLocked = !membership.loading && membership.paywall && (!user || !membership.isMember);
   const [geminiDialogOpen, setGeminiDialogOpen] = useState(false);
 
   // ============================================================
@@ -956,8 +962,8 @@ const Index = () => {
           .eq("cache_key", topOverride.cache_key)
           .maybeSingle();
         if (cancelled) return;
-        const rec = consensus?.recommendation as { title?: string; author?: string; why?: string } | null;
-        if (rec?.title) {
+        const rec = consensus?.recommendation as { title?: string; author?: string; why?: string; hidden?: boolean } | null;
+        if (rec?.title && !rec.hidden) {
           setHomeRecommendation({ title: rec.title, author: rec.author ?? "", why: rec.why ?? "" });
         }
       }
@@ -1026,6 +1032,9 @@ const Index = () => {
     }
 
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-novel`;
+    // Refinement is checked against the reader's membership server-side, so it
+    // has to carry their own access token rather than the publishable key.
+    const refineToken = isRefine ? (await supabase.auth.getSession()).data.session?.access_token : undefined;
 
     // Retry transient backend failures (cold starts, 5xx, network blips).
     // Bounded retries with exponential backoff; never retried for client errors
@@ -1074,7 +1083,7 @@ const Index = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${refineToken ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
             title: bookTitle,
@@ -1096,10 +1105,16 @@ const Index = () => {
       if (!resp.ok || !resp.body) {
         clearTimeout(idleTimer);
         let msg = "Something went wrong";
+        let code: string | undefined;
         try {
           const j = await resp.json();
           msg = j?.error ?? msg;
+          code = j?.code;
         } catch { /* ignore */ }
+        if (code === "membership_required") {
+          membership.openMembership("refine");
+          throw new Error(msg);
+        }
         if (resp.status === 429) msg = "Rate limit reached. Please try again in a moment.";
         if (resp.status === 402) msg = user
           ? "This book isn't cached yet and no server API key is configured. Add your Gemini key via the key button above."
@@ -1315,6 +1330,10 @@ const Index = () => {
 
   const handleRefine = (prompt: string) => {
     if (!analysis) return;
+    if (refineLocked) {
+      membership.openMembership("refine");
+      return;
+    }
     fetchAnalysis(analysis.title, prompt);
   };
 
@@ -1990,7 +2009,7 @@ const Index = () => {
 
             {isFiction(analysis) && view !== "takeaways" && (
               <section className="ink-border-b px-4 py-6 md:px-8">
-                <RefinementPrompts onPick={handleRefine} disabled={refining} />
+                <RefinementPrompts onPick={handleRefine} disabled={refining} locked={refineLocked} />
               </section>
             )}
 

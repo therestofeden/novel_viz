@@ -285,7 +285,23 @@ const COUNTRY_VENDORS: Record<string, Vendor[]> = {
   IN: [AMZ_IN],
 };
 
-// Affiliate tag registry. Empty for now — populate via env vars when monetizing.
+// Affiliate tracking (2026-11-18). Two mechanisms, both switched on purely by
+// Edge Function secrets, so joining a programme never needs a code change:
+//
+// 1. A tag in the shop's own URL (Amazon Associates `tag=`, Bookshop.org
+//    `aid=`): set the env var named below to the tag/ID the programme gives you.
+//
+// 2. An Awin deep link, for shops that run their programme on Awin. That is
+//    how most German and UK book shops do it: genialokal (the indie
+//    cooperative, Awin merchant 17358, 60-day cookie), Bookshop.org UK
+//    (merchant 62675). Set AWIN_PUBLISHER_ID once, then AWIN_MID_<VENDOR_KEY>
+//    (e.g. AWIN_MID_GENIALOKAL_DE=17358) for every merchant that has APPROVED
+//    you. Only set a merchant after approval: Awin doesn't credit clicks for
+//    programmes you haven't joined. The shop's normal search URL is wrapped as
+//    https://www.awin1.com/cread.php?awinmid=..&awinaffid=..&ued=<url>, so the
+//    reader still lands on the same search page.
+//
+// Shop order never changes because of commission: indie shops stay first.
 // Vendor key → env var name → if set, passed to vendor.build().
 const AFFILIATE_ENV: Record<string, string> = {
   bookshop_org: "AFFILIATE_BOOKSHOP_ORG",
@@ -306,6 +322,14 @@ const AFFILIATE_ENV: Record<string, string> = {
   amazon_mx: "AFFILIATE_AMAZON_MX",
   amazon_in: "AFFILIATE_AMAZON_IN",
 };
+
+/** Awin deep link around `url`, or null when Awin isn't configured for `vendorKey`. */
+function awinWrap(vendorKey: string, url: string): string | null {
+  const publisher = Deno.env.get("AWIN_PUBLISHER_ID")?.trim();
+  const merchant = Deno.env.get(`AWIN_MID_${vendorKey.toUpperCase()}`)?.trim();
+  if (!publisher || !merchant || !/^\d+$/.test(publisher) || !/^\d+$/.test(merchant)) return null;
+  return `https://www.awin1.com/cread.php?awinmid=${merchant}&awinaffid=${publisher}&clickref=novelviz&ued=${encodeURIComponent(url)}`;
+}
 
 // --- Geo detection -------------------------------------------------------
 
@@ -397,14 +421,17 @@ Deno.serve(async (req) => {
     const vendors = COUNTRY_VENDORS[country] || COUNTRY_VENDORS["US"];
 
     const options = vendors.map((v) => {
+      // An Awin wrapper wins over a URL tag: a shop runs one programme.
+      const plain = v.build(title, author);
+      const viaAwin = awinWrap(v.key, plain);
       const tagEnv = AFFILIATE_ENV[v.key];
-      const tag = tagEnv ? Deno.env.get(tagEnv) || undefined : undefined;
+      const tag = !viaAwin && tagEnv ? Deno.env.get(tagEnv)?.trim() || undefined : undefined;
       return {
         vendor: v.key,
         name: v.name,
         kind: v.kind,
-        url: v.build(title, author, tag),
-        affiliated: !!tag,
+        url: viaAwin ?? v.build(title, author, tag),
+        affiliated: !!viaAwin || !!tag,
       };
     });
 

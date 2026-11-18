@@ -49,3 +49,12 @@ verify_jwt = false
 
 [functions.track-event]
 verify_jwt = false
+
+# 2026-11-18: NovelViz Membership. membership authenticates the reader itself
+# (Bearer access token); stripe-webhook is called by Stripe and verifies the
+# Stripe-Signature header, so neither can sit behind verify_jwt.
+[functions.membership]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

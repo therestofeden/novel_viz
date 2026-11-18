@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { BuyButton } from "@/components/BuyButton";
+import { isHiddenPick, useDiscoveryBlocked } from "@/lib/discovery";
 import { BookPoster, DnaNeighbourhood } from "@/components/DnaNeighbourhood";
 import { GlyphPlate } from "@/components/GlyphPlate";
 import { GLYPH_BOX, OPEN_DNA_EVENT, R_MAX, bookInk, glyphSource, spokePath } from "@/lib/dna-glyph";
@@ -60,6 +61,10 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const { user } = useAuth();
   const dna = analysis.dna;
   const rec = analysis.recommendation;
+  // 2026-11-18 guardrails: a book on the do-not-recommend list gets no
+  // "If you loved this shape" at all, and an AI pick the server marked
+  // hidden is never shown.
+  const discoveryBlocked = useDiscoveryBlocked(cacheKey);
   const nf = isNonFiction(analysis);
   // The book's own ink (Paper & ink): bars, numerals and markers use it.
   const ink = useMemo(() => bookInk(analysis), [analysis]);
@@ -561,6 +566,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   }
 
   const activeRec = dynamicRec ?? rec;
+  const pickVisible = !!activeRec?.title && !isHiddenPick(activeRec);
   const pickLabel = recLoading ? "Our pick" : `Our pick · ${Math.round(activeRec.similarity)}%`;
   const pickTo = kindredSlug ? `/book/${kindredSlug}` : `/?book=${encodeURIComponent(activeRec.title)}`;
   const pickPoster = (
@@ -764,16 +770,25 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           in its own ink. Replaces the navy pick panel and the row list. The
           pick still points inward first: its page if we have one, "Map this
           book" if we don't, with the shop demoted to a small link. */}
-      <DnaNeighbourhood
-        cacheKey={cacheKey}
-        bookType={analysis.bookType}
-        axes={effectiveAxes}
-        isPerturbed={axesArePerturbed}
-        nonFiction={nf}
-        limit={6}
-        lead={pickPoster}
-        subtitle={shelfSubtitle}
-      />
+      {discoveryBlocked ? (
+        <section className="mx-auto max-w-[1280px] px-4 py-8 md:px-8 md:py-12">
+          <p className="max-w-[62ch] border-l-2 border-foreground/40 pl-3 text-sm leading-relaxed text-muted-foreground">
+            NovelViz keeps a map of this book so it can be studied, but never recommends it or links to shops for it.
+          </p>
+        </section>
+      ) : (
+        <DnaNeighbourhood
+          cacheKey={cacheKey}
+          bookType={analysis.bookType}
+          axes={effectiveAxes}
+          isPerturbed={axesArePerturbed}
+          nonFiction={nf}
+          limit={6}
+          lead={pickVisible ? pickPoster : undefined}
+          excludeTitles={pickVisible ? [activeRec.title] : undefined}
+          subtitle={pickVisible ? shelfSubtitle : undefined}
+        />
+      )}
     </div>
   );
 }

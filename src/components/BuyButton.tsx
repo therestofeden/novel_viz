@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { ShoppingBag, Loader2, ExternalLink, ChevronDown, Leaf, Store, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/track";
 
 type Option = {
   vendor: string;
@@ -213,8 +214,12 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
         }
       }
 
-      // Single option → navigate immediately. Multiple → open picker.
-      if (!r.options || r.options.length <= 1) {
+      // Single plain option → navigate immediately. Several options, or any
+      // commission link, → open the picker, so the reader sees the shops and
+      // the disclosure before leaving (2026-11-18).
+      const anyAffiliated = r.options?.some((o) => o.affiliated) || r.primary.affiliated;
+      if ((!r.options || r.options.length <= 1) && !anyAffiliated) {
+        track("buy_click", { vendor: r.primary.vendor, affiliated: false, country: r.country });
         window.open(r.primary.url, "_blank", "noopener,noreferrer");
       } else {
         setOpen((o) => !o);
@@ -242,7 +247,9 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
       ? "border-2 border-foreground bg-primary text-primary-foreground hover:bg-primary-dark hover:text-white hover:-translate-y-[1px]"
       : "border border-primary text-primary hover:bg-primary hover:text-primary-foreground";
 
-  const hasMultiple = resolved && resolved.options.length > 1;
+  const pickerOptions = resolved ? (resolved.options.length ? resolved.options : [resolved.primary]) : [];
+  const anyAffiliated = pickerOptions.some((o) => o.affiliated);
+  const hasMultiple = resolved && (resolved.options.length > 1 || anyAffiliated);
   const iconSize = size === "md" ? "h-3.5 w-3.5" : "h-3 w-3";
 
   return (
@@ -275,18 +282,21 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
         )}
       </button>
 
-      {open && resolved && resolved.options.length > 1 && (
+      {open && resolved && pickerOptions.length > 0 && (
         <div className="absolute left-0 top-full z-50 mt-1 min-w-[220px] border border-foreground bg-background shadow-lg">
           <div className="px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground border-b border-foreground/10">
             Shops in {resolved.country}
           </div>
-          {resolved.options.map((opt) => (
+          {pickerOptions.map((opt) => (
             <a
               key={opt.vendor}
               href={opt.url}
               target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
+              rel={opt.affiliated ? "noopener noreferrer sponsored" : "noopener noreferrer"}
+              onClick={() => {
+                track("buy_click", { vendor: opt.vendor, affiliated: opt.affiliated, country: resolved.country });
+                setOpen(false);
+              }}
               className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-foreground/10 transition-colors group"
             >
               <span className="flex items-center gap-2">
@@ -302,6 +312,12 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
           <div className="px-3 py-1.5 text-[10px] text-muted-foreground border-t border-foreground/10">
             🌱 Indie shops support local bookstores
           </div>
+          {anyAffiliated && (
+            <div className="px-3 pb-2 text-[10px] leading-snug text-muted-foreground">
+              Some of these links earn NovelViz a small commission, at no extra cost to you.{" "}
+              <a href="/privacy#shops" className="underline underline-offset-2">More</a>
+            </div>
+          )}
         </div>
       )}
     </div>

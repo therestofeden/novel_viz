@@ -4,6 +4,7 @@ import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
 import { getClientIp } from "../_shared/client-ip.ts";
+import { DISCOVERY_GUARDRAIL_PROMPT, guardRecommendation } from "../_shared/guardrails.ts";
 
 // previousAnalysis alone is capped at 200KB (MAX_PREV_ANALYSIS_LEN below);
 // this is the ceiling on the whole request body before that field-level
@@ -396,6 +397,7 @@ DNA AXES — score each 0–100. Be specific, calibrated against the canon of li
 For the 'signature' field, write a 3–6 word poetic descriptor capturing the book's essence (e.g. 'Slow interior haunted recursion', 'Dry epistolary moral comedy').
 
 RECOMMENDATION (fiction):
+- ${DISCOVERY_GUARDRAIL_PROMPT}
 - Suggest ONE other novel (NOT the same book, NOT by the same author if avoidable) whose DNA is closest. Prefer well-known works the reader could actually find.
 - 'similarity' is a 0–100 estimate. Most good matches land 70–88.
 - 'shared_axes': 3–5 axis ids where both books score within ~15 of each other.
@@ -464,6 +466,7 @@ AXIS DEFINITIONS:
 For 'signature': 3-7 word intellectual fingerprint. E.g. "rigorous empiricism wearing a storytelling mask", "sweeping grand theory, thin on evidence", "polemical framework, wildly digressive execution".
 
 RECOMMENDATION (non-fiction):
+- ${DISCOVERY_GUARDRAIL_PROMPT}
 - Suggest ONE other non-fiction book (different author) with the closest DNA.
 - 'why': explain the intellectual kinship in one or two human sentences.
 - shared_axes and divergent_axes MUST use these axis IDs: accessibility, idea_density, structure, scope, evidence_rigor, tone, prose_density, certainty, theory_vs_case, political_charge, structural_innovation, actionability.`;
@@ -1292,6 +1295,44 @@ Deno.serve(async (req) => {
   const { title: cleanTitle, author: cleanAuthor } = splitTitleAuthor(title);
   const cacheKey = buildCacheKey(cleanTitle, cleanAuthor);
 
+  // ---------- Membership gate: "Refine the visualization" ----------
+  // 2026-11-18: refining is part of NovelViz Membership (EUR 2.20/month, see
+  // supabase/functions/membership). Enforced here, not only in the UI, so the
+  // client-side lock can't be bypassed. public.membership_allows() is true
+  // while the paywall switch (app_settings.paywall_enabled) is off, and for
+  // members and admins (public.app_admins) always, so Stefano's account is
+  // never affected.
+  if (isRefine) {
+    const bearer = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+    let uid: string | null = null;
+    if (bearer && bearer !== SUPABASE_SERVICE_ROLE_KEY) {
+      const { data: who } = await withTimeout(
+        supabase.auth.getUser(bearer),
+        { data: { user: null }, error: null } as any,
+      );
+      uid = (who?.user?.id as string | undefined) ?? null;
+    }
+    const verdict = await withTimeout(
+      Promise.resolve(supabase.rpc("membership_allows", { p_user: uid })).then(
+        ({ data, error }) => (error ? null : data === true),
+        () => null,
+      ),
+      null as boolean | null,
+    );
+    const checked = verdict !== null;
+    const allowed = verdict === true;
+    if (!allowed) {
+      return new Response(
+        JSON.stringify(
+          checked
+            ? { error: "Refining a map is part of NovelViz Membership.", code: "membership_required" }
+            : { error: "Couldn't check your membership just now. Please try again.", code: "membership_check_failed" },
+        ),
+        { status: checked ? 402 : 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+  }
+
   // ---------- Cache-first: skip rate limiting entirely on hits ----------
   // ~90% of requests for popular books are cache hits. Checking the cache
   // before rate-limiting saves 2 DB RPC round-trips on every hit.
@@ -1650,6 +1691,13 @@ Deno.serve(async (req) => {
           send("error", { error: "AI did not return structured output", status: 500 });
           controller.close();
           return;
+        }
+
+        // 2026-11-18: discovery guardrails. A pick that names a blocked book
+        // is kept but marked hidden (the client skips it); the stored copy is
+        // flagged the same way by a database trigger.
+        if (analysis.recommendation) {
+          analysis.recommendation = (await guardRecommendation(supabase, analysis.recommendation)) as typeof analysis.recommendation;
         }
 
         // -------- Cache write (only fresh analyses with real content) --------

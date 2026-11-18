@@ -10,6 +10,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { ShelfChip } from "@/components/ShelfChip";
 import { type NovelAnalysis, type NonFictionAnalysis, isNonFiction } from "@/lib/novel-types";
 import { bookInk, glyphAxes, hasEnoughDna, openDnaStrand } from "@/lib/dna-glyph";
+import { useDiscoveryBlocked } from "@/lib/discovery";
 
 /**
  * BookHero: the top of every book view, shared by the /book/:slug route
@@ -36,6 +37,7 @@ export function BookHero({
   extraActions?: ReactNode;
 }) {
   const ink = useMemo(() => bookInk(analysis), [analysis]);
+  const discoveryBlocked = useDiscoveryBlocked(cacheKey);
   const showGlyph = useMemo(() => hasEnoughDna(glyphAxes(analysis)), [analysis]);
   const nf = isNonFiction(analysis);
   const author = analysis.author && analysis.author !== "Unknown" ? analysis.author : null;
@@ -144,7 +146,8 @@ export function BookHero({
             analysis={analysis}
             slug={slug}
           />
-          <BuyButton title={analysis.title} author={analysis.author || ""} variant="ghost" size="sm" />
+          {/* No shop link for books NovelViz never recommends (2026-11-18). */}
+          {!discoveryBlocked && <BuyButton title={analysis.title} author={analysis.author || ""} variant="ghost" size="sm" />}
           {extraActions}
         </div>
       </div>

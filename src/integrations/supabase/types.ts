@@ -274,6 +274,7 @@ export type Database = {
           author: string
           cache_key: string
           created_at: string
+          discovery_blocked: boolean
           hit_count: number
           id: string
           is_validated: boolean
@@ -287,6 +288,7 @@ export type Database = {
           author?: string
           cache_key: string
           created_at?: string
+          discovery_blocked?: boolean
           hit_count?: number
           id?: string
           is_validated?: boolean
@@ -300,6 +302,7 @@ export type Database = {
           author?: string
           cache_key?: string
           created_at?: string
+          discovery_blocked?: boolean
           hit_count?: number
           id?: string
           is_validated?: boolean
@@ -808,6 +811,7 @@ export type Database = {
           p_axes?: Json
           p_book_type?: string
           p_cache_key: string
+          p_exclude_titles?: string[]
           p_limit?: number
         }
         Returns: {
@@ -820,6 +824,11 @@ export type Database = {
           title: string
         }[]
       }
+      is_discovery_blocked: {
+        Args: { p_author?: string; p_title: string }
+        Returns: boolean
+      }
+      my_membership: { Args: never; Returns: Json }
       purge_cold_dna_recommendation_cache: { Args: never; Returns: number }
       purge_cold_novel_analyses: { Args: never; Returns: number }
       purge_cold_shelf_recommendations: { Args: never; Returns: number }

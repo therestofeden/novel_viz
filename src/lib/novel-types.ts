@@ -91,6 +91,8 @@ export interface Recommendation {
   why: string;
   shared_axes: DnaAxisId[];
   divergent_axes: DnaAxisId[];
+  /** Set by the server when the pick names a book NovelViz never recommends. */
+  hidden?: boolean;
 }
 
 // ─── Fiction ─────────────────────────────────────────────────────────────────

@@ -25,6 +25,7 @@ import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
 import { getClientIp } from "../_shared/client-ip.ts";
+import { DISCOVERY_GUARDRAIL_PROMPT, guardRecommendation } from "../_shared/guardrails.ts";
 
 // Body is just {cacheKey, gemini_key} — generous but tight.
 const MAX_BODY_BYTES = 8_000;
@@ -319,7 +320,7 @@ Deno.serve(async (req) => {
         if (GEMINI_API_KEY) {
           const axesStr = consensusAxesForSignature.map((a) => `  ${a.id}: ${Math.round(a.score)}/100`).join("\n");
           const type = bookType === "nonfiction" ? "non-fiction" : "fiction";
-          const systemPrompt = `You are a literary scholar and expert book recommender covering both fiction and non-fiction. Given a book's 12-axis DNA profile, recommend ONE different book (different author if possible) from the literary canon whose DNA best matches. The recommendation must be a real, verifiable book.`;
+          const systemPrompt = `You are a literary scholar and expert book recommender covering both fiction and non-fiction. Given a book's 12-axis DNA profile, recommend ONE different book (different author if possible) from the literary canon whose DNA best matches. The recommendation must be a real, verifiable book. ${DISCOVERY_GUARDRAIL_PROMPT}`;
           const userPrompt = `Book: "${book.title}"${book.author ? ` by ${book.author}` : ""} (${type})
 
 DNA profile (0 = low pole, 100 = high pole) — this is the crowd-consensus profile after reader adjustments, not the original AI-only read:
@@ -363,6 +364,10 @@ Recommend the single best DNA neighbour from the canon.`;
         }
       }
     }
+
+    // 2026-11-18: discovery guardrails. A blocked pick is returned with
+    // hidden: true (and the table trigger flags the stored copy the same way).
+    recommendation = await guardRecommendation(admin, recommendation as { title?: unknown; author?: unknown } | null);
 
     // ---------- 5. Persist ----------
     const { error: upsertErr } = await withTimeout(

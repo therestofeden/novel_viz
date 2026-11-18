@@ -3,7 +3,8 @@
 // Never throws, never blocks UI. Session id lives in sessionStorage only.
 export type TrackEvent =
   | "signup" | "search_submitted" | "analysis_viewed" | "shelf_add" | "rating_set"
-  | "note_saved" | "recommendation_clicked" | "feedback_sent" | "session_start";
+  | "note_saved" | "recommendation_clicked" | "feedback_sent" | "session_start"
+  | "buy_click" | "membership_viewed" | "membership_checkout";
 
 type Props = Record<string, string | number | boolean | null>;
 

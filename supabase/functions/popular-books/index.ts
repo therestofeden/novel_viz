@@ -31,6 +31,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { getClientIp } from "../_shared/client-ip.ts";
+import { filterBlocked } from "../_shared/guardrails.ts";
 
 interface PopularBook {
   title: string;
@@ -414,10 +415,17 @@ Deno.serve(async (req) => {
       else if (existing.popularity < pop) existing.popularity = pop;
     }
 
-    const results = Array.from(dedupe.values())
-      .filter((b) => b.title.length > 1)
-      .sort((a, b) => b.popularity - a.popularity)
-      .slice(0, 10000);
+    // 2026-11-18: discovery guardrails. This index drives type-ahead
+    // suggestions and background prefetch, so blocked books (Mein Kampf etc.)
+    // stay out of it. They remain findable through search-books, which is
+    // what an explicit search uses.
+    const results = await filterBlocked(
+      supabase,
+      Array.from(dedupe.values())
+        .filter((b) => b.title.length > 1)
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 10000),
+    );
 
     const etag = `W/"pop-${results.length}-${now}"`;
     cachedPayload = { results, etag };

@@ -46,12 +46,21 @@ export class PayloadTooLargeError extends Error {
  * blocks and only need one extra `instanceof PayloadTooLargeError` branch.
  */
 export async function readJsonBodyBounded(req: Request, maxBytes: number): Promise<unknown> {
+  return JSON.parse(await readTextBodyBounded(req, maxBytes));
+}
+
+/**
+ * The same byte-capped read, returning the raw text. For callers that must
+ * see the exact bytes before parsing, e.g. stripe-webhook, whose signature
+ * is computed over the unparsed payload. (Added 2026-11-18.)
+ */
+export async function readTextBodyBounded(req: Request, maxBytes: number): Promise<string> {
   const declaredLen = req.headers.get("content-length");
   if (declaredLen && Number(declaredLen) > maxBytes) {
     throw new PayloadTooLargeError(maxBytes);
   }
 
-  if (!req.body) return JSON.parse("");
+  if (!req.body) return "";
 
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -80,6 +89,5 @@ export async function readJsonBodyBounded(req: Request, maxBytes: number): Promi
     buf.set(c, offset);
     offset += c.byteLength;
   }
-  const text = new TextDecoder().decode(buf);
-  return JSON.parse(text);
+  return new TextDecoder().decode(buf);
 }

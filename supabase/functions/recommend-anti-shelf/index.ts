@@ -10,6 +10,7 @@ import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
 import { getClientIp } from "../_shared/client-ip.ts";
+import { DISCOVERY_GUARDRAIL_PROMPT, filterBlocked } from "../_shared/guardrails.ts";
 
 // liked/disliked (100*300) + blocked_authors (100*200) + blocked_tags
 // (100*100) legitimately tops out ~90KB; rounded up for JSON overhead.
@@ -519,7 +520,9 @@ TASK: ${modeBrief}
 
 Use the DNA profiles above as the primary signal for matching. Books marked ★ have reader-adjusted DNA — weight those axes more heavily as they reflect the reader's actual perception, not just the text's surface properties.
 
-Return 6–10 recommendations via the render_recommendations tool. For each pick, fill 'echoes' with the 1–3 shelf titles it most directly relates to (similar mode) or contrasts against (stretch mode).`;
+Return 6–10 recommendations via the render_recommendations tool. For each pick, fill 'echoes' with the 1–3 shelf titles it most directly relates to (similar mode) or contrasts against (stretch mode).
+
+${DISCOVERY_GUARDRAIL_PROMPT}`;
 
     // Call Gemini
     const aiRes = await geminiFetchWithFallback(admin, lovableKey, {
@@ -593,6 +596,8 @@ Return 6–10 recommendations via the render_recommendations tool. For each pick
         if (tags.some((t) => blockedTagSet.has((t || "").toLowerCase().trim()))) return false;
         return true;
       });
+      // 2026-11-18: discovery guardrails. Never suggest a blocked book.
+      parsed.recommendations = await filterBlocked(admin, parsed.recommendations);
     }
 
     // Upsert cache

@@ -453,7 +453,7 @@ const AntiShelf = () => {
               </div>
 
               <div className="ink-border grid grid-cols-1 md:grid-cols-2">
-                {current.payload.recommendations.map((rec, i) => {
+                {current.payload.recommendations.filter((r) => !(r as { hidden?: boolean }).hidden).map((rec, i) => {
                   const key = recKeyOf(rec.title, rec.author);
                   const sig = feedback[key];
                   return (

@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Lock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PROMPTS = [
@@ -15,14 +15,21 @@ const PROMPTS = [
 interface Props {
   onPick: (prompt: string) => void;
   disabled?: boolean;
+  /** Members' feature (2026-11-18): picks still call onPick, which opens the membership sheet. */
+  locked?: boolean;
 }
 
-export const RefinementPrompts = ({ onPick, disabled }: Props) => {
+export const RefinementPrompts = ({ onPick, disabled, locked }: Props) => {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
         <Sparkles className="h-3 w-3" />
         Refine the visualization
+        {locked && (
+          <span className="inline-flex items-center gap-1 normal-case tracking-normal">
+            <Lock className="h-3 w-3" aria-hidden="true" /> Members
+          </span>
+        )}
       </div>
       <div className="flex flex-wrap gap-2">
         {PROMPTS.map((p) => (

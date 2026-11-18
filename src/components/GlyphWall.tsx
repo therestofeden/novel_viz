@@ -6,7 +6,7 @@ import { glyphAxes, glyphSource, hasEnoughDna } from "@/lib/dna-glyph";
 
 // PostgREST select with JSON-path aliases (title, book type, DNA only).
 const WALL_QUERY =
-  "select=slug,title,kind:analysis->>bookType,dna:analysis->dna&is_validated=eq.true&slug=not.is.null&limit=80";
+  "select=slug,title,kind:analysis->>bookType,dna:analysis->dna&is_validated=eq.true&slug=not.is.null&discovery_blocked=is.false&limit=80";
 const WALL_SIZE = 12;
 
 type WallBook = {

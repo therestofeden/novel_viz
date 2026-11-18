@@ -1,12 +1,13 @@
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeftRight, Loader2, LogOut, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Loader2, LogOut, Sparkles, Trash2, BadgeCheck } from "lucide-react";
 import { NovelVizLogo } from "@/components/NovelVizLogo";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useMembership } from "@/hooks/useMembership";
 import { cn } from "@/lib/utils";
 import Constellation from "@/components/Constellation";
 import { RatingControl } from "@/components/RatingControl";
@@ -36,6 +37,7 @@ type ShelfBook = {
 
 const Shelf = () => {
   const { session, user, loading, signOut } = useAuth();
+  const membership = useMembership();
   const navigate = useNavigate();
   const [books, setBooks] = useState<ShelfBook[]>([]);
   const [busy, setBusy] = useState(true);
@@ -262,6 +264,17 @@ const Shelf = () => {
             >
               <ArrowLeftRight className="h-3.5 w-3.5" /> Compare
             </Link>
+            {/* 2026-11-18: membership lives here, next to the account's other
+                controls, so cancelling is one tap from the shelf. */}
+            {(membership.paywall || membership.hasBilling) && (
+              <button
+                type="button"
+                onClick={() => membership.openMembership()}
+                className="meta flex items-center gap-2 border-l border-foreground px-4 py-4 hover:bg-foreground/10"
+              >
+                <BadgeCheck className="h-3.5 w-3.5" /> {membership.isMember ? "Member" : "Membership"}
+              </button>
+            )}
             <button
               onClick={async () => {
                 await signOut();

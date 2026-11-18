@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { GlyphPlate } from "@/components/GlyphPlate";
 import { glyphSource } from "@/lib/dna-glyph";
+import { normTitle } from "@/lib/dna-similarity";
 
 /**
  * DnaNeighbourhood — the books nearest this one in 12-axis DNA space.
@@ -34,6 +35,10 @@ import { glyphSource } from "@/lib/dna-glyph";
  */
 
 const COLLAPSED_ROWS = 3; // plus the judged pick = one row of four on desktop
+
+/** The public write-up of how neighbours are measured (2026-11-18). */
+export const SIMILARITY_DOC_URL = "https://github.com/therestofeden/novel_viz/blob/main/docs/dna-similarity.md";
+
 
 // Widened to `string` on purpose: supabase-js's typed select parser recurses
 // too deeply on a JSON-path alias and trips TS2589.
@@ -59,6 +64,7 @@ export function DnaNeighbourhood({
   className,
   lead,
   subtitle,
+  excludeTitles,
 }: {
   cacheKey?: string | null;
   bookType: string;
@@ -73,6 +79,8 @@ export function DnaNeighbourhood({
   lead?: ReactNode;
   /** replaces the default line beside the heading */
   subtitle?: string;
+  /** titles already shown beside the list (the judged pick), never repeated */
+  excludeTitles?: string[];
 }) {
   const [rows, setRows] = useState<DnaNeighbour[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -97,6 +105,8 @@ export function DnaNeighbourhood({
     [axes],
   );
 
+  const excludeKey = (excludeTitles ?? []).filter(Boolean).join("|");
+
   useEffect(() => {
     if (!cacheKey) return;
     const id = ++reqId.current;
@@ -112,6 +122,7 @@ export function DnaNeighbourhood({
           // NULL lets the function use the book's own stored axes
           p_axes: isPerturbed ? axes.map((a) => ({ id: a.id, score: a.score })) : null,
           p_limit: limit,
+          p_exclude_titles: excludeKey ? excludeKey.split("|") : undefined,
         });
         // a slower earlier request must never overwrite a newer result
         if (cancelled || id !== reqId.current) return;
@@ -131,7 +142,7 @@ export function DnaNeighbourhood({
       window.clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey, bookType, limit, isPerturbed, axesSig]);
+  }, [cacheKey, bookType, limit, isPerturbed, axesSig, excludeKey]);
 
   // Each neighbour's own DNA, so its poster can carry its glyph and ink.
   // One small public read per result set (slug-keyed, validated rows only).
@@ -163,9 +174,13 @@ export function DnaNeighbourhood({
   // Nothing to say if the corpus has no neighbours for this book yet: better
   // silence than an empty rail (the review's "never render an empty slot").
   // The lead (the judged pick) still renders on its own.
-  const visible = rows === null ? [] : showAll ? rows : rows.slice(0, COLLAPSED_ROWS);
+  // Belt and braces: never list the judged pick a second time, even if a
+  // cached response from before the exclusion existed comes back.
+  const excludeNorms = new Set(excludeKey ? excludeKey.split("|").map(normTitle) : []);
+  const shown = rows === null ? null : rows.filter((r) => !excludeNorms.has(normTitle(r.title)));
+  const visible = shown === null ? [] : showAll ? shown : shown.slice(0, COLLAPSED_ROWS);
 
-  if (rows !== null && rows.length === 0 && !lead) return null;
+  if (shown !== null && shown.length === 0 && !lead) return null;
 
   return (
     <section className={cn("mx-auto max-w-[1280px] px-4 py-8 md:px-8 md:py-12", className)}>
@@ -176,6 +191,14 @@ export function DnaNeighbourhood({
         <span className="flex items-center gap-2 text-sm text-muted-foreground">
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
           {subtitle ?? (isPerturbed ? "Re-ranked for your take" : "Measured across twelve axes")}
+          <a
+            href={SIMILARITY_DOC_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            How we measure
+          </a>
         </span>
       </div>
 
@@ -219,14 +242,14 @@ export function DnaNeighbourhood({
             })}
       </ol>
 
-      {rows !== null && rows.length > COLLAPSED_ROWS && (
+      {shown !== null && shown.length > COLLAPSED_ROWS && (
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
           aria-expanded={showAll}
           className="mt-4 min-h-[44px] text-sm text-[hsl(var(--primary-dark))] underline-offset-4 hover:underline"
         >
-          {showAll ? "Show fewer" : `Show all ${rows.length} neighbours`}
+          {showAll ? "Show fewer" : `Show all ${shown.length} neighbours`}
         </button>
       )}
     </section>

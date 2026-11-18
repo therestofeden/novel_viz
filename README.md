@@ -47,6 +47,13 @@ They are client-side keys — no service-role or Gemini key belongs in `.env`.
 If analysis fails with "AI service is overloaded", that's upstream Gemini
 load-shedding — the backend already retries across three models; just try again.
 
+## How recommendations are measured
+
+"If you loved this shape" ranks books by plain Euclidean distance between their
+12-axis DNA scores. The method, with the reasons for it, is written up in
+[docs/dna-similarity.md](docs/dna-similarity.md); a reference implementation
+with tests lives in `src/lib/dna-similarity.ts`.
+
 ## Architecture
 
 ```

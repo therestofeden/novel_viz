@@ -2,6 +2,7 @@
 export const ALLOWED_EVENTS = new Set([
   "signup", "search_submitted", "analysis_viewed", "shelf_add", "rating_set",
   "note_saved", "recommendation_clicked", "feedback_sent", "session_start",
+  "buy_click", "membership_viewed", "membership_checkout",
 ]);
 export const MAX_EVENTS_PER_REQUEST = 20;
 export const MAX_PROPS_BYTES = 1024;

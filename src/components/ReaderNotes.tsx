@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookOpen, ChevronDown, ChevronUp, Loader2, LogIn, PenLine, Save } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Loader2, Lock, LogIn, PenLine, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/track";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMembership } from "@/hooks/useMembership";
 
 interface Props {
   cacheKey: string | null;
@@ -24,6 +25,11 @@ interface Props {
  */
 export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
   const { user } = useAuth();
+  const membership = useMembership();
+  // 2026-11-18: writing notes is a members' feature (the shelf_books trigger
+  // enforces it server-side). A reader who isn't a member still sees any note
+  // they already wrote, read-only, and can always clear it from the shelf.
+  const locked = !!user && !membership.loading && membership.paywall && !membership.isMember;
   const isMobile = useIsMobile();
   // 2026-09-19: defaults to open — reader notes are the app's own
   // "note taking" feature and used to lose the default-open slot to the
@@ -75,10 +81,11 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
         .update({ note: value })
         .eq("id", shelfId);
       setSaving(false);
-      if (error) toast.error("Couldn't save note");
+      if (error && /membership_required/.test(error.message ?? "")) membership.openMembership("notes");
+      else if (error) toast.error("Couldn't save note");
       else { setDirty(false); track("note_saved", { length: value.length }); }
     }, 1200);
-  }, [shelfId]);
+  }, [shelfId, membership]);
 
   const handleChange = (value: string) => {
     setNote(value);
@@ -96,7 +103,8 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
       .update({ note })
       .eq("id", shelfId);
     setSaving(false);
-    if (error) toast.error("Couldn't save note");
+    if (error && /membership_required/.test(error.message ?? "")) membership.openMembership("notes");
+    else if (error) toast.error("Couldn't save note");
     else setDirty(false);
   };
 
@@ -215,8 +223,36 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
             </div>
           )}
 
+          {/* Signed in, not a member: keep what they wrote visible, offer the way in */}
+          {locked && !loading && (
+            <div className="space-y-3">
+              {note.trim() && (
+                <p className="whitespace-pre-wrap border-l-2 border-foreground/30 pl-3 font-serif text-sm leading-relaxed text-foreground/80">
+                  {note}
+                </p>
+              )}
+              <div className="flex items-start gap-3">
+                <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <div>
+                  <p className="font-sans text-sm text-foreground">
+                    {note.trim()
+                      ? "Editing notes is part of NovelViz Membership."
+                      : "Keep your thoughts, quotes and questions on every book with NovelViz Membership."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => membership.openMembership("notes")}
+                    className="meta mt-2 inline-flex min-h-[44px] items-center gap-1.5 border border-foreground bg-foreground px-3 py-1.5 text-background transition-colors hover:brightness-90"
+                  >
+                    <PenLine className="h-3 w-3" /> See membership
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Signed in, not shelved */}
-          {user && !loading && shelfId === null && (
+          {user && !locked && !loading && shelfId === null && (
             <div className="flex items-start gap-3">
               <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <div>
@@ -232,7 +268,7 @@ export function ReaderNotes({ cacheKey, bookTitle, bookAuthor }: Props) {
           )}
 
           {/* Signed in, shelved — show editable notes */}
-          {user && !loading && shelfId !== null && (
+          {user && !locked && !loading && shelfId !== null && (
             <div className="space-y-2">
               <textarea
                 value={note}

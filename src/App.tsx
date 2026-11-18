@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
+import { MembershipProvider } from "@/hooks/useMembership";
 import Index from "./pages/Index.tsx";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { PageScrollRule } from "@/lib/motion";
@@ -35,6 +36,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <MembershipProvider>
           <SmoothScroll>
             <PageScrollRule />
             {/* Catches lazy-route chunk-load failures (stale tab after a
@@ -58,6 +60,7 @@ const App = () => (
               </Suspense>
             </ErrorBoundary>
           </SmoothScroll>
+          </MembershipProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

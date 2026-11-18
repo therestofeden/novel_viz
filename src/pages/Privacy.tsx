@@ -23,7 +23,7 @@ const Privacy = () => (
         Privacy Policy
       </h1>
       <p className="meta mt-3 text-muted-foreground">
-        Last updated: June 27, 2026
+        Last updated: November 18, 2026
       </p>
 
       <div className="mt-12 space-y-10 font-serif text-base leading-relaxed text-foreground/90">
@@ -103,7 +103,30 @@ const Privacy = () => (
                 Privacy policy →
               </a>
             </li>
+            <li>
+              <strong>Stripe</strong> — payments for NovelViz Membership. When you become a member, Stripe
+              processes your card and billing details; NovelViz only stores your Stripe customer reference and
+              the status of your membership, never your card number.{" "}
+              <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                Privacy policy →
+              </a>
+            </li>
           </ul>
+        </section>
+
+        <section id="shops">
+          <h2 className="mb-3 font-sans text-lg font-bold tracking-tight">Shops and commissions</h2>
+          <p>
+            &ldquo;Find at a shop&rdquo; links to bookshops in your country, independent shops first. Some of these
+            links are affiliate links: if you buy something after following one, the shop pays NovelViz a small
+            commission, at no extra cost to you. It never changes which shops we show or in what order. As an Amazon
+            Associate NovelViz earns from qualifying purchases. The shop you visit may set its own cookies; NovelViz
+            records only which shop was clicked, not what you buy.
+          </p>
+          <p className="mt-3">
+            NovelViz never recommends, features or links to shops for hate propaganda or extremist manifestos, even
+            when you can search for them.
+          </p>
         </section>
 
         <section>

@@ -9,6 +9,7 @@ import { buildCorsHeaders } from "../_shared/cors.ts";
 import { raceRateLimitCount } from "../_shared/rate-limit.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
 import { getClientIp } from "../_shared/client-ip.ts";
+import { DISCOVERY_GUARDRAIL_PROMPT, guardRecommendation } from "../_shared/guardrails.ts";
 
 // title/author/bookType (<=300/200/100 chars) + up to 30 axes — small.
 const MAX_BODY_BYTES = 20_000;
@@ -308,7 +309,7 @@ Deno.serve(async (req) => {
 
   const type = bookType === "nonfiction" ? "non-fiction" : "fiction";
 
-  const systemPrompt = `You are a literary scholar and expert book recommender covering both fiction and non-fiction. Given a book's 12-axis DNA profile, recommend ONE different book (different author if possible) from the literary canon whose DNA best matches. The recommendation must be a real, verifiable book.`;
+  const systemPrompt = `You are a literary scholar and expert book recommender covering both fiction and non-fiction. Given a book's 12-axis DNA profile, recommend ONE different book (different author if possible) from the literary canon whose DNA best matches. The recommendation must be a real, verifiable book. ${DISCOVERY_GUARDRAIL_PROMPT}`;
 
   const userPrompt = `Book: "${title}"${author ? ` by ${author}` : ""} (${type})
 
@@ -360,6 +361,11 @@ Recommend the single best DNA neighbour from the canon.`;
     .from("rate_limit_events")
     .insert({ ip_hash: ipHash, route: ROUTE, is_prefetch: false })
     .then(() => {});
+
+  // 2026-11-18: discovery guardrails. A pick that names a blocked book comes
+  // back with hidden: true (the client skips it). The cache write below is
+  // guarded again by a database trigger.
+  recommendation = await guardRecommendation(admin, recommendation as { title?: unknown; author?: unknown });
 
   // Write-through: the NEXT visitor (or the consensus recompute) who lands on
   // this exact quantized DNA point for this book skips Gemini entirely.
