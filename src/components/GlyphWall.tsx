@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 
 import { GlyphPlate } from "@/components/GlyphPlate";
 import { glyphAxes, glyphSource, hasEnoughDna } from "@/lib/dna-glyph";
-import { supabase } from "@/integrations/supabase/client";
 
-// Widened to `string` on purpose: supabase-js's typed select parser recurses
-// too deeply on a JSON-path alias and trips TS2589.
-const WALL_SELECT: string = "slug, title, kind:analysis->>bookType, dna:analysis->dna";
+// PostgREST select with JSON-path aliases (title, book type, DNA only).
+const WALL_QUERY =
+  "select=slug,title,kind:analysis->>bookType,dna:analysis->dna&is_validated=eq.true&slug=not.is.null&limit=80";
 const WALL_SIZE = 12;
 
 type WallBook = {
@@ -38,26 +37,37 @@ export function GlyphWall({ className }: { className?: string }) {
   const [books, setBooks] = useState<WallBook[] | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    supabase
-      .from("novel_analyses")
-      .select(WALL_SELECT)
-      .eq("is_validated", true)
-      .not("slug", "is", null)
-      .limit(80)
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error || !data) {
-          setBooks([]);
-          return;
-        }
-        const usable = (data as unknown as WallBook[]).filter(
+    const ctrl = new AbortController();
+    let timedOut = false;
+    // Plain setTimeout+abort (not AbortSignal.any/timeout) for older Safari.
+    const timer = window.setTimeout(() => {
+      timedOut = true;
+      ctrl.abort();
+    }, 8000);
+    // A plain fetch to the public REST endpoint, not supabase-js: the client
+    // queues every call behind the auth-session lock, which on a cold home
+    // load can hold reads back for ~5s, and a signed-out visitor needs no
+    // session for a public, validated-rows-only read.
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    fetch(`${url}/rest/v1/novel_analyses?${WALL_QUERY}`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: ctrl.signal,
+    })
+      .then((r) => (r.ok ? (r.json() as Promise<WallBook[]>) : Promise.reject(new Error(String(r.status)))))
+      .then((data) => {
+        const usable = data.filter(
           (b) => b.slug && b.title && hasEnoughDna(glyphAxes(glyphSource(b.title, b.kind, b.dna?.axes))),
         );
         setBooks(sample(usable, WALL_SIZE));
-      });
+      })
+      .catch(() => {
+        if (timedOut || !ctrl.signal.aborted) setBooks([]);
+      })
+      .finally(() => window.clearTimeout(timer));
     return () => {
-      cancelled = true;
+      window.clearTimeout(timer);
+      ctrl.abort();
     };
   }, []);
 
