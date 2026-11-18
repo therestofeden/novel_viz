@@ -20,8 +20,8 @@ import { cn } from "@/lib/utils";
 import { BuyButton } from "@/components/BuyButton";
 import { BookPoster, DnaNeighbourhood } from "@/components/DnaNeighbourhood";
 import { GlyphPlate } from "@/components/GlyphPlate";
-import { OPEN_DNA_EVENT, glyphSource } from "@/lib/dna-glyph";
-import { ease, useReducedMotion } from "@/lib/motion";
+import { GLYPH_BOX, OPEN_DNA_EVENT, R_MAX, bookInk, glyphSource, spokePath } from "@/lib/dna-glyph";
+import { ease } from "@/lib/motion";
 import { track } from "@/lib/track";
 
 // Widened to `string`: supabase-js's typed select parser trips TS2589 on a
@@ -47,84 +47,22 @@ interface BookDNAProps {
 // `recLoading` silently freezes that whole interaction.
 const RECOMMEND_TIMEOUT_MS = 100_000;
 
-/* -------------------------------------------------------------
- * Kinetic spine — a thin decorative double-helix that animates
- * in the left gutter. Pure ornament; the data lives in the rows.
- * ------------------------------------------------------------*/
-function KineticSpine({ activeIdx }: { activeIdx: number }) {
-  const reduced = useReducedMotion();
-  const [phase, setPhase] = useState(0);
-  useEffect(() => {
-    if (reduced) return;
-    let raf = 0;
-    let last = performance.now();
-    const tick = (now: number) => {
-      const dt = (now - last) / 1000;
-      last = now;
-      setPhase((p) => p + dt * 0.5);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [reduced]);
-
-  const VB_W = 32;
-  const VB_H = 600;
-  const AMP = 11;
-  const CENTER = VB_W / 2;
-  const TURNS = 3;
-  const SAMPLES = 60;
-  const path = (offset: number) => {
-    let d = "";
-    for (let i = 0; i <= SAMPLES; i++) {
-      const t = i / SAMPLES;
-      const y = t * VB_H;
-      const x = CENTER + AMP * Math.sin(t * Math.PI * 2 * TURNS + phase + offset);
-      d += i === 0 ? `M ${x.toFixed(2)} ${y.toFixed(2)}` : ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
-    }
-    return d;
-  };
-  const activeT = (activeIdx + 0.5) / 12;
-  const activeY = activeT * VB_H;
-  const xA = CENTER + AMP * Math.sin(activeT * Math.PI * 2 * TURNS + phase);
-  const xB = CENTER + AMP * Math.sin(activeT * Math.PI * 2 * TURNS + phase + Math.PI);
-
-  return (
-    <svg
-      viewBox={`0 0 ${VB_W} ${VB_H}`}
-      preserveAspectRatio="none"
-      className="absolute inset-y-0 left-0 hidden h-full w-8 md:block"
-      aria-hidden
-    >
-      <path d={path(0)} fill="none" stroke="hsl(var(--foreground) / 0.35)" strokeWidth={0.8} />
-      <path d={path(Math.PI)} fill="none" stroke="hsl(var(--primary))" strokeWidth={0.8} />
-      <line
-        x1={Math.min(xA, xB)}
-        y1={activeY}
-        x2={Math.max(xA, xB)}
-        y2={activeY}
-        stroke="hsl(var(--foreground))"
-        strokeWidth={1.2}
-        style={{ transition: "y1 250ms, y2 250ms" }}
-      />
-    </svg>
-  );
-}
-
 /**
  * Book DNA — readable strand of 12 axes.
  *
- * Each axis is a horizontal row with: name, always-visible bar (solid
- * --primary fill, width alone encodes the 0-100 score), draggable square
- * marker, numeric score.
+ * Opens from "See Book DNA" (or the hero glyph). Each axis is a quiet row
+ * in the book's own ink: name, serif score, a thin rule and a round marker.
  * Drag any marker to register your take; absolute scores autosave per book.
- * A decorative kinetic helix runs in the left gutter as a brand motif.
+ * Evidence sits in a sticky card on desktop and inline under the pinned row
+ * on a phone.
  */
 export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const { user } = useAuth();
   const dna = analysis.dna;
   const rec = analysis.recommendation;
   const nf = isNonFiction(analysis);
+  // The book's own ink (Paper & ink): bars, numerals and markers use it.
+  const ink = useMemo(() => bookInk(analysis), [analysis]);
 
   // Use non-fiction axis IDs and meta when applicable
   const AXIS_IDS = nf ? (NF_DNA_AXIS_IDS as unknown as readonly DnaAxisId[]) : DNA_AXIS_IDS;
@@ -196,8 +134,6 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     return m;
   }, [dna]);
 
-  const sharedSet = useMemo(() => new Set(rec?.shared_axes ?? []), [rec]);
-  const divergentSet = useMemo(() => new Set(rec?.divergent_axes ?? []), [rec]);
 
   // Consensus expressed as deltas-from-Gemini-original, same shape as
   // `perturbations`, so it can slot into effectiveScore as a fallback layer
@@ -476,157 +412,142 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     };
   }, [perturbations, hydrated, user, cacheKey, axesById]);
 
-  // Renders one axis, always at the same size — full track+fill bar and
-  // draggable marker for every one of the twelve. Hover (or tap on touch)
-  // sets hoveredAxis, click sets pinnedAxis; both already drove the
-  // evidence panel on the right before this fix, so the only change here
-  // is dropping the old "lg vs sm" size branch entirely.
+  // 2026-11-18 (Paper & ink): one quiet row per measurement, in the book's
+  // own ink: a thin rule, a round marker you can drag, the score as a serif
+  // numeral. The active row lifts onto card paper instead of inverting to
+  // navy. On a phone the pinned row carries its evidence inline, because
+  // the evidence panel would otherwise sit twelve rows away.
   const renderAxisRow = (id: DnaAxisId) => {
     const meta = AXIS_META[id] ?? DNA_AXIS_META[id as DnaAxisId];
     const score = effectiveScore(id);
+    const base = axesById.get(id)?.score ?? 50;
     const isPinned = pinnedAxis === id;
-    const isHover = activeAxis === id;
-    const isShared = sharedSet.has(id);
-    const isDivergent = divergentSet.has(id);
+    const isActive = activeAxis === id;
     const idx = AXIS_IDS.indexOf(id);
-    const fillColor = "hsl(var(--primary))";
+    const moved = Object.prototype.hasOwnProperty.call(perturbations, id);
+    const evidenceText = axesById.get(id)?.evidence;
+    const at = (v: number) => `calc(0.75rem + ((100% - 1.5rem) * ${v / 100}))`;
 
     return (
-      <div
+      <li
         key={id}
         onMouseEnter={() => setHoveredAxis(id)}
         onMouseLeave={() => setHoveredAxis((h) => (h === id ? null : h))}
         onClick={() => setPinnedAxis((p) => (p === id ? null : id))}
         className={cn(
-          "cursor-pointer border-b border-foreground/30 px-4 py-3 transition-colors md:px-8",
-          isHover && "bg-[hsl(var(--ink-blue))] text-background",
+          "cursor-pointer border-b border-foreground/15 px-3 pb-2 pt-3 transition-colors md:px-4",
+          isActive ? "bg-card" : "hover:bg-card/60",
         )}
       >
-        <div className="flex items-center justify-between gap-3">
-          <span
-            className={cn(
-              "flex min-w-0 items-center gap-1.5 font-sans font-semibold text-sm md:text-base",
-              isHover && "text-background",
-            )}
-          >
-            <span className={cn("meta shrink-0", isHover ? "text-background/60" : "text-muted-foreground")}>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span className="w-5 shrink-0 font-mono text-[11px] text-muted-foreground">
               {String(idx + 1).padStart(2, "0")}
             </span>
-            <span className="truncate">{meta.name}</span>
+            <span className="truncate text-[15px] font-semibold md:text-base">{meta.name}</span>
             {isPinned && (
-              <Pin
-                className={cn("h-3 w-3 shrink-0", isHover ? "text-background" : "text-primary")}
-                aria-label="Pinned"
-              />
-            )}
-            {isShared && !isHover && (
-              <span title="Shared with recommendation" className="h-1.5 w-1.5 shrink-0 bg-primary" />
-            )}
-            {isDivergent && !isHover && (
-              <span title="Divergent" className="h-1.5 w-1.5 shrink-0 bg-accent" />
+              <Pin className="h-3 w-3 shrink-0 self-center" style={{ color: ink.inkText }} aria-label="Pinned" />
             )}
           </span>
-          <span
-            className={cn(
-              "shrink-0 font-mono text-sm font-bold",
-              isHover && "text-background/80",
-            )}
-          >
+          <span className="shrink-0 font-serif text-2xl leading-none tabular-nums" style={{ color: ink.inkText }}>
             {Math.round(score)}
           </span>
         </div>
 
-        <div
-          data-row
-          className={cn(
-            "relative mt-1.5 h-4 select-none",
-            isHover ? "bg-background/15" : "bg-foreground/10",
-          )}
-        >
+        <div data-row className="relative mt-1 h-7 select-none">
+          <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 bg-foreground/15" />
           <div
-            className={cn("absolute inset-y-0 left-0", isDivergent && "outline outline-1 outline-accent")}
-            style={{
-              width: `calc(0.75rem + ((100% - 1.5rem) * ${score / 100}))`,
-              backgroundColor: fillColor,
-            }}
+            className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2"
+            style={{ width: at(score), backgroundColor: ink.inkText }}
           />
-          <div
-              aria-label={`${meta.name}: ${Math.round(score)}`}
-              role="slider"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(score)}
-              tabIndex={0}
-              className={cn(
-                "absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 border touch-none cursor-grab transition-transform active:scale-110 active:cursor-grabbing hover:scale-110",
-                isHover && "scale-110",
-              )}
-              style={{
-                left: `calc(0.75rem + ((100% - 1.5rem) * ${score / 100}))`,
-                backgroundColor: fillColor,
-                borderColor: "hsl(var(--background))",
-              }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                const handle = e.currentTarget as HTMLDivElement;
-                const row = handle.closest("[data-row]") as HTMLDivElement | null;
-                if (!row) return;
-                const baseScore = axesById.get(id)?.score ?? 50;
-                const startX = e.clientX;
-                const startScore = effectiveScore(id);
-                // Mouse input is precise; touch/pen input has natural thumb/finger
-                // jitter, so use a larger engagement threshold for non-mouse pointers
-                // to avoid premature/twitchy engagement on touch devices.
-                const THRESHOLD = e.pointerType === "mouse" ? 4 : 9;
-                let engaged = false;
-                setHoveredAxis(id);
-                try { handle.setPointerCapture(e.pointerId); } catch { /* noop */ }
-                const onMove = (ev: PointerEvent) => {
-                  if (!engaged && Math.abs(ev.clientX - startX) < THRESHOLD) return;
-                  if (!engaged) {
-                    console.log({ ui: "book_dna_slider", event: "drag_engaged", pointerType: ev.pointerType });
-                  }
-                  engaged = true;
-                  const rect = row.getBoundingClientRect();
-                  const inner = rect.width - 24;
-                  const deltaPct = ((ev.clientX - startX) / inner) * 100;
-                  const next = Math.max(0, Math.min(100, startScore + deltaPct));
-                  setPerturbations((p) => ({ ...p, [id]: next - baseScore }));
-                };
-                const onUp = (ev: PointerEvent) => {
-                  handle.removeEventListener("pointermove", onMove);
-                  handle.removeEventListener("pointerup", onUp);
-                  handle.removeEventListener("pointercancel", onUp);
-                  try { handle.releasePointerCapture(ev.pointerId); } catch { /* noop */ }
-                };
-                handle.addEventListener("pointermove", onMove);
-                handle.addEventListener("pointerup", onUp);
-                handle.addEventListener("pointercancel", onUp);
-              }}
-              onKeyDown={(e) => {
-                const step = e.shiftKey ? 5 : 1;
-                const baseScore = axesById.get(id)?.score ?? 50;
-                const cur = effectiveScore(id);
-                if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setPerturbations((p) => ({ ...p, [id]: Math.max(0, cur - step) - baseScore }));
-                } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-                  e.preventDefault();
-                  setPerturbations((p) => ({ ...p, [id]: Math.min(100, cur + step) - baseScore }));
-                }
-              }}
+          {moved && (
+            <div
+              className="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-foreground/50"
+              style={{ left: at(base) }}
+              title={`Original score: ${Math.round(base)}`}
             />
+          )}
+          <div
+            aria-label={`${meta.name}: ${Math.round(score)}`}
+            role="slider"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(score)}
+            tabIndex={0}
+            className="absolute top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+            style={{ left: at(score) }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              const handle = e.currentTarget as HTMLDivElement;
+              const row = handle.closest("[data-row]") as HTMLDivElement | null;
+              if (!row) return;
+              const startX = e.clientX;
+              const startScore = effectiveScore(id);
+              // Mouse input is precise; touch/pen has natural jitter, so use a
+              // larger engagement threshold for non-mouse pointers.
+              const THRESHOLD = e.pointerType === "mouse" ? 4 : 9;
+              let engaged = false;
+              setHoveredAxis(id);
+              try { handle.setPointerCapture(e.pointerId); } catch { /* noop */ }
+              const onMove = (ev: PointerEvent) => {
+                if (!engaged && Math.abs(ev.clientX - startX) < THRESHOLD) return;
+                if (!engaged) {
+                  console.log({ ui: "book_dna_slider", event: "drag_engaged", pointerType: ev.pointerType });
+                }
+                engaged = true;
+                const rect = row.getBoundingClientRect();
+                const inner = rect.width - 24;
+                const deltaPct = ((ev.clientX - startX) / inner) * 100;
+                const next = Math.max(0, Math.min(100, startScore + deltaPct));
+                setPerturbations((p) => ({ ...p, [id]: next - base }));
+              };
+              const onUp = (ev: PointerEvent) => {
+                handle.removeEventListener("pointermove", onMove);
+                handle.removeEventListener("pointerup", onUp);
+                handle.removeEventListener("pointercancel", onUp);
+                try { handle.releasePointerCapture(ev.pointerId); } catch { /* noop */ }
+              };
+              handle.addEventListener("pointermove", onMove);
+              handle.addEventListener("pointerup", onUp);
+              handle.addEventListener("pointercancel", onUp);
+            }}
+            onKeyDown={(e) => {
+              const step = e.shiftKey ? 5 : 1;
+              const cur = effectiveScore(id);
+              if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                e.preventDefault();
+                setPerturbations((p) => ({ ...p, [id]: Math.max(0, cur - step) - base }));
+              } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                e.preventDefault();
+                setPerturbations((p) => ({ ...p, [id]: Math.min(100, cur + step) - base }));
+              }
+            }}
+          >
+            <span
+              className={cn("block h-3.5 w-3.5 rounded-full transition-transform", isActive && "scale-125")}
+              style={{ backgroundColor: ink.inkText, boxShadow: "0 0 0 3px hsl(var(--background))" }}
+            />
+          </div>
         </div>
 
-        {isHover && (
-          <div className="mt-2 flex items-center justify-between border-t border-background/20 pt-1.5">
-            <span className="meta text-background/70">← {meta.low}</span>
-            <span className="meta text-background/70">{meta.high} →</span>
+        {isActive && (
+          <div className="flex justify-between gap-4 text-xs text-muted-foreground">
+            <span>{meta.low}</span>
+            <span className="text-right">{meta.high}</span>
           </div>
         )}
-      </div>
+        {isPinned && evidenceText && (
+          <p
+            className="mb-1 mt-3 border-l-2 pl-3 font-serif text-[15px] leading-relaxed text-foreground/80 md:hidden"
+            style={{ borderColor: ink.inkText }}
+          >
+            {evidenceText}
+          </p>
+        )}
+      </li>
     );
   };
+
 
   if (!dna || !rec || !dna.axes || dna.axes.length === 0) {
     return (
@@ -660,12 +581,38 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
             titleClassName="text-[15px] md:text-xl"
           />
         ) : (
+          // The pick isn't in NovelViz yet, so there is no DNA to draw. Show
+          // an empty, dashed ring of the twelve axes (honest: unmeasured)
+          // in the same frame as its neighbours, with the way to map it.
           <div className="flex h-full w-full flex-col justify-between bg-secondary p-[9%] text-foreground">
             <span className="font-mono text-[11px] leading-none tracking-tight">{pickLabel}</span>
-            <span className="self-center border border-foreground px-2.5 py-1.5 text-xs font-medium md:text-sm">
-              {kindredChecked ? "Map this book" : "Checking\u2026"}
+            <span className="relative flex flex-1 items-center justify-center py-[6%]">
+              <svg viewBox={`0 0 ${GLYPH_BOX} ${GLYPH_BOX}`} className="h-auto w-[72%]" aria-hidden="true">
+                <circle
+                  cx={GLYPH_BOX / 2}
+                  cy={GLYPH_BOX / 2}
+                  r={R_MAX}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeOpacity={0.35}
+                  strokeDasharray="3 5"
+                />
+                <path d={spokePath()} fill="none" stroke="currentColor" strokeOpacity={0.25} strokeDasharray="2 4" />
+              </svg>
+              <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+                <span className="bg-secondary px-2 text-xs text-muted-foreground">
+                  {kindredChecked ? "Shape not mapped yet" : "Checking\u2026"}
+                </span>
+                {kindredChecked && (
+                  <span className="border border-foreground bg-secondary px-2.5 py-1.5 text-xs font-medium md:text-sm">
+                    Map this book
+                  </span>
+                )}
+              </span>
             </span>
-            <span className="font-serif text-[15px] italic leading-[1.05] md:text-xl">{activeRec.title}</span>
+            <span className="line-clamp-4 break-words font-serif text-[15px] italic leading-[1.05] md:text-xl">
+              {activeRec.title}
+            </span>
           </div>
         )
       }
@@ -692,7 +639,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           className="mx-auto flex min-h-[64px] w-full max-w-[1280px] items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-foreground/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:px-8 md:py-5"
         >
           <span className="flex min-w-0 flex-col gap-1">
-            <span className="font-serif text-xl leading-tight md:text-2xl">All twelve measurements</span>
+            <span className="font-serif text-xl leading-tight md:text-2xl">See Book DNA</span>
             <span className="text-sm text-muted-foreground">
               {totalDrift > 0
                 ? `Your take differs by ${Math.round(totalDrift)} points`
@@ -706,124 +653,110 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         </button>
       </div>
       {open && (
-      <div id="dna-strand" className="mx-auto grid max-w-[1280px] grid-cols-12 gap-0 px-4 py-6 md:px-8 md:py-10">
-      {/* ============== LEFT — THE STRAND ============== */}
-      <div className="relative col-span-12 ink-border md:col-span-7">
-        <KineticSpine activeIdx={focusIdx} />
-
-        {/* Strand header */}
-        <div className="grid grid-cols-12 border-b border-foreground md:pl-8">
-          <div className="col-span-3 border-r border-foreground p-4">
-            <div className="meta text-muted-foreground">Specimen</div>
-            <div className="display-num mt-2 text-3xl">{AXIS_IDS.length}</div>
-            <div className="meta mt-1 text-muted-foreground">Axes</div>
-          </div>
-          <div className="col-span-9 p-4">
-            <div className="meta text-muted-foreground">How to read this</div>
-            <div className="mt-2 font-serif text-base leading-snug md:text-lg">
-              Click an axis to pin its evidence.{" "}
-              <span className="italic">Drag any marker to register your take</span> — the
-              neighbourhood below re-ranks as you move.
-            </div>
-            <div className="meta mt-3 text-muted-foreground">
-              {user && cacheKey ? "Saved to your reading fingerprint" : "Your changes stay on this page"}
-              {maxVoteCount > 0 ? ` · shaped by ${maxVoteCount} reader${maxVoteCount === 1 ? "" : "s"}` : ""}
-            </div>
-          </div>
-        </div>
-
-        {/* The strand — all twelve axes, one bar size, canonical order.
-            Hover or tap any row for its evidence in the panel to the right. */}
-        <div className="md:pl-8">
-          {AXIS_IDS.map((id) => renderAxisRow(id))}
-        </div>
-
-        {(totalDrift > 0 || saveState !== "idle") && (
-          <div className="flex items-center justify-between border-t border-foreground bg-background px-4 py-3 md:pl-11">
-            <div className="meta flex items-center gap-3 text-muted-foreground">
-              {totalDrift > 0 && (
-                <span>Your take diverges by{" "}<span className="text-foreground">{Math.round(totalDrift)} units</span></span>
-              )}
-              {user && cacheKey && saveState === "saving" && (
-                <span className="inline-flex items-center gap-1 text-foreground/60">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Saving
-                </span>
-              )}
-              {user && cacheKey && saveState === "saved" && (
-                <span className="inline-flex items-center gap-1 text-primary">
-                  <Check className="h-3 w-3" /> Saved
-                </span>
-              )}
-            </div>
-            {totalDrift > 0 && (
-              <button
-                onClick={() => { setPerturbations({}); setDynamicRec(null); setRecSource(null); }}
-                className="meta border border-foreground bg-card px-3 py-1.5 hover:bg-foreground/10"
-              >
-                ↺ Reset
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ============== RIGHT — EVIDENCE + RECOMMENDATION ============== */}
-      <div className="col-span-12 ink-border mt-4 md:col-span-5 md:ml-[-1px] md:mt-0">
-        <div className="border-b border-foreground p-5">
-          <div className="meta flex items-center justify-between text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              {pinnedAxis ? (
-                <>
-                  <Pin className="h-3 w-3 text-primary" /> Pinned
-                </>
-              ) : hoveredAxis ? (
-                "Evidence"
-              ) : (
-                "Default focus"
-              )}
-            </span>
-            <span className="flex items-center gap-3">
-              {pinnedAxis && (
-                <button
-                  type="button"
-                  onClick={() => setPinnedAxis(null)}
-                  className="flex items-center gap-1 text-foreground/60 transition-colors hover:text-foreground"
-                >
-                  <X className="h-3 w-3" /> Unpin
-                </button>
-              )}
-              {String(focusIdx + 1).padStart(2, "0")} / 12
-            </span>
-          </div>
-          <motion.div
-            key={focusAxis}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: ease.out }}
-          >
-            <div className="mt-2 font-sans text-xl font-bold leading-tight md:text-2xl">
-              {focusAxisMeta.name}
-            </div>
-            <div className="meta mt-2 flex items-center justify-between text-muted-foreground">
-              <span>{focusAxisMeta.low}</span>
-              <span className="display-num text-foreground text-lg">
-                {Math.round(effectiveScore(focusAxis))}
-              </span>
-              <span>{focusAxisMeta.high}</span>
-            </div>
-            <p className="mt-3 font-serif text-sm leading-relaxed text-muted-foreground">
-              {focusAxisMeta.description}
+        <div
+          id="dna-strand"
+          className="mx-auto grid max-w-[1280px] gap-6 px-4 py-6 md:grid-cols-12 md:gap-10 md:px-8 md:py-10"
+        >
+          <div className="md:col-span-7">
+            <p className="mb-3 text-sm text-muted-foreground">
+              {user && cacheKey ? "Your take is saved to your reading fingerprint." : "Your changes stay on this page."}
+              {maxVoteCount > 0 ? ` Shaped by ${maxVoteCount} reader${maxVoteCount === 1 ? "" : "s"}.` : ""}
             </p>
-            {focusAxisData?.evidence && (
-              <blockquote className="mt-4 border-l-2 border-foreground pl-3 font-serif text-sm italic leading-relaxed">
-                {focusAxisData.evidence}
-              </blockquote>
-            )}
-          </motion.div>
-        </div>
-      </div>
-      </div>
+            <ul className="border-t border-foreground/15">{AXIS_IDS.map((id) => renderAxisRow(id))}</ul>
 
+            {(totalDrift > 0 || saveState !== "idle") && (
+              <div className="mt-4 flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                <span className="flex items-center gap-3">
+                  {totalDrift > 0 && (
+                    <span>
+                      Your take differs by <span className="text-foreground">{Math.round(totalDrift)} points</span>
+                    </span>
+                  )}
+                  {user && cacheKey && saveState === "saving" && (
+                    <span className="inline-flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Saving
+                    </span>
+                  )}
+                  {user && cacheKey && saveState === "saved" && (
+                    <span className="inline-flex items-center gap-1" style={{ color: ink.inkText }}>
+                      <Check className="h-3 w-3" /> Saved
+                    </span>
+                  )}
+                </span>
+                {totalDrift > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setPerturbations({}); setDynamicRec(null); setRecSource(null); }}
+                    className="border border-foreground px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-foreground hover:bg-foreground/5"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Evidence for the hovered or pinned measurement. Desktop only: on a
+              phone the pinned row shows its evidence inline. */}
+          <aside className="hidden md:col-span-5 md:block">
+            <div className="sticky top-20 border border-foreground/20 bg-card p-6">
+              <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  {pinnedAxis ? (
+                    <>
+                      <Pin className="h-3 w-3" style={{ color: ink.inkText }} /> Pinned
+                    </>
+                  ) : (
+                    "Why this score"
+                  )}
+                </span>
+                <span className="flex items-center gap-3">
+                  {pinnedAxis && (
+                    <button
+                      type="button"
+                      onClick={() => setPinnedAxis(null)}
+                      className="flex items-center gap-1 transition-colors hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" /> Unpin
+                    </button>
+                  )}
+                  {String(focusIdx + 1).padStart(2, "0")} / 12
+                </span>
+              </div>
+              <motion.div
+                key={focusAxis}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: ease.out }}
+              >
+                <div
+                  className="mt-4 font-serif text-[3.5rem] leading-[0.9] tabular-nums"
+                  style={{ color: ink.inkText }}
+                >
+                  {Math.round(effectiveScore(focusAxis))}
+                </div>
+                <div className="mt-2 text-lg font-semibold leading-snug">
+                  {focusAxisMeta.name}
+                  <span className="font-normal text-muted-foreground">
+                    {" "}· {effectiveScore(focusAxis) >= 50 ? focusAxisMeta.high : focusAxisMeta.low}
+                  </span>
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {focusAxisMeta.low} ↔ {focusAxisMeta.high}
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{focusAxisMeta.description}</p>
+                {focusAxisData?.evidence && (
+                  <p
+                    className="mt-4 border-l-2 pl-3 font-serif text-base leading-relaxed text-foreground/80"
+                    style={{ borderColor: ink.inkText }}
+                  >
+                    {focusAxisData.evidence}
+                  </p>
+                )}
+              </motion.div>
+            </div>
+          </aside>
+        </div>
       )}
 
       {/* 2026-11-18: "If you loved this shape". The judged pick (Gemini, with
