@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Search } from "lucide-react";
 import { NovelVizLogo } from "@/components/NovelVizLogo";
-import { Reveal, motion, ease } from "@/lib/motion";
 
 const ReactMarkdown = lazy(() => import("react-markdown"));
 const MarkdownFallback = () => <span className="meta text-muted-foreground">…</span>;
@@ -42,10 +41,6 @@ const TabFallback = () => (
   </div>
 );
 import { ReaderNotes } from "@/components/ReaderNotes";
-import { DnaSignature } from "@/components/DnaSignature";
-import { ShelfChip } from "@/components/ShelfChip";
-import { MustReadBadge } from "@/components/MustReadBadge";
-import { ClassicBadge } from "@/components/ClassicBadge";
 import { densifyRatingCounts } from "@/lib/rating-counts";
 import { RatingDistributionSkeleton } from "@/components/RatingDistributionSkeleton";
 // recharts + d3 is ~333 kB raw / 84 kB gzip and the chart sits below the
@@ -53,15 +48,41 @@ import { RatingDistributionSkeleton } from "@/components/RatingDistributionSkele
 // until that chunk had downloaded and parsed; lazy() moves it off the
 // critical path so the page paints first and the chart fills in.
 const RatingDistribution = lazy(() => import("@/components/RatingDistribution"));
-import { BuyButton } from "@/components/BuyButton";
-import { ShareButton } from "@/components/ShareButton";
 import { FeedbackButton } from "@/components/FeedbackButton";
-import { CoverPlate } from "@/components/CoverPlate";
+import { BookHero } from "@/components/BookHero";
+import { DnaTraits } from "@/components/DnaTraits";
 import { fetchCoverUrl } from "@/lib/covers";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 type LoadState = "loading" | "found" | "not-found";
+
+/**
+ * 2026-11-18 (Paper & ink redesign): one slim header for every state of the
+ * page. Replaces the dateline ticker + double-ruled masthead header, the
+ * "apparatus" the redesign set out to remove.
+ */
+function BookPageHeader() {
+  return (
+    <header className="border-b border-foreground bg-background">
+      <div className="mx-auto flex max-w-[1280px] items-center gap-2 px-4 py-1.5 md:px-8">
+        <Link to="/" className="flex min-h-[44px] items-center gap-2.5 text-foreground">
+          <NovelVizLogo size={28} className="text-foreground" />
+          <span className="font-serif text-xl font-medium tracking-[-0.01em]">NovelViz</span>
+        </Link>
+        <nav className="ml-auto flex items-center gap-1">
+          <Link to="/" className="flex min-h-[44px] items-center gap-2 px-3 text-sm font-medium hover:underline">
+            <Search className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only sm:not-sr-only">Map another book</span>
+          </Link>
+          <Link to="/shelf" className="flex min-h-[44px] items-center px-3 text-sm font-medium hover:underline">
+            Library
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+}
 
 const BookPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -185,72 +206,33 @@ const BookPage = () => {
   // Supabase round trip is still in flight, instead of reading as broken.
   if (loadState === "loading") {
     const bar = (w: string, extra = "") => (
-      <div className={cn("h-3 animate-pulse rounded bg-muted-foreground/20", extra)} style={{ width: w }} />
+      <div className={cn("h-3 animate-pulse bg-foreground/10", extra)} style={{ width: w }} />
     );
     return (
       <div className="min-h-screen">
-        <div className="dateline-strip">
-          <span>NovelViz</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span>Visualize any book</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span>Est. 2024</span>
-        </div>
-        <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
-          <div className="container mx-auto flex items-stretch justify-between">
-            <Link
-              to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
-            >
-              <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
-              <div className="leading-none">
-                <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize any book</div>
-              </div>
-            </Link>
-          </div>
-        </Reveal>
-
-        <main className="container mx-auto px-0">
-          <section className="grid grid-cols-12 gap-0 ink-border-b">
-            <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
-              <div className="meta text-muted-foreground">Subject</div>
-              {bar("2.5rem", "mt-3 h-8")}
-              {bar("60%", "mt-2")}
-            </div>
-            <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
-              {bar("30%")}
-              {bar("70%", "mt-3 h-9")}
-              {bar("95%", "mt-4")}
-              {bar("85%", "mt-2")}
-              {bar("40%", "mt-2")}
-              <div className="mt-4 flex flex-wrap gap-3">
-                {bar("5rem", "h-8")}
-                {bar("6rem", "h-8")}
-                {bar("4rem", "h-8")}
-              </div>
-            </div>
-            <div className="col-span-12 grid grid-cols-2 border-foreground md:col-span-3 md:border-l">
-              {[0, 1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "border-foreground p-4",
-                    i < 2 && "md:border-b",
-                    i % 2 === 1 && "border-l",
-                    i >= 2 && "border-t",
-                  )}
-                >
-                  <div className="meta text-muted-foreground">&nbsp;</div>
-                  {bar("2rem", "mt-2 h-7")}
+        <BookPageHeader />
+        <main>
+          <section className="border-b border-foreground">
+            <div className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 py-6 md:px-8 md:py-12 lg:flex-row lg:items-center lg:gap-14">
+              <div className="mx-auto aspect-square w-full max-w-[360px] animate-pulse rounded-full bg-foreground/[0.06] lg:mx-0 lg:max-w-[460px] lg:flex-[1_1_480px]" />
+              <div className="flex min-w-0 flex-col gap-3 lg:flex-[1_1_440px]">
+                <div className="flex items-end gap-4">
+                  <div className="aspect-[2/3] w-[64px] animate-pulse bg-foreground/10 md:w-[88px]" />
+                  <div className="flex flex-1 flex-col gap-2">{bar("40%")}{bar("25%")}</div>
                 </div>
-              ))}
+                {bar("85%", "mt-2 h-10")}
+                {bar("60%", "h-10")}
+                {bar("70%", "mt-2 h-5")}
+                {bar("95%", "mt-2")}
+                {bar("90%")}
+                {bar("50%")}
+              </div>
             </div>
           </section>
-          <section className="ink-border-b flex items-center justify-center px-4 py-3 text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            <span className="meta">Loading…</span>
-          </section>
+          <div className="flex items-center justify-center gap-2 px-4 py-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            Loading the book…
+          </div>
         </main>
       </div>
     );
@@ -263,27 +245,7 @@ const BookPage = () => {
       : "";
     return (
       <div className="flex min-h-screen flex-col">
-        <div className="dateline-strip">
-          <span>NovelViz</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span>Visualize any book</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span>Est. 2024</span>
-        </div>
-        <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
-          <div className="container mx-auto flex items-stretch justify-between">
-            <Link
-              to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
-            >
-              <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
-              <div className="leading-none">
-                <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize any book</div>
-              </div>
-            </Link>
-          </div>
-        </Reveal>
+        <BookPageHeader />
         <div className="container mx-auto px-4 py-20 text-center">
           <div className="display-num mb-4 text-6xl text-muted-foreground/30">404</div>
           <h1 className="font-sans text-3xl font-bold tracking-tight">
@@ -317,189 +279,11 @@ const BookPage = () => {
   // ── Full analysis display ──────────────────────────────────────────────────
   return (
     <div className="min-h-screen">
-      {/* ===================== DATELINE STRIP ===================== */}
-      <div className="dateline-strip">
-        <span>NovelViz</span>
-        <span style={{ opacity: 0.4 }}>·</span>
-        <span>Visualize any book</span>
-        <span style={{ opacity: 0.4 }}>·</span>
-        <span>Est. 2024</span>
-      </div>
-      {/* ===================== HEADER ===================== */}
-      <Reveal as="header" duration={0.7} y={12} className="rule-double-b bg-background">
-        <div className="container mx-auto flex items-stretch justify-between">
-          <div className="flex items-stretch">
-            <Link
-              to="/"
-              className="group flex items-center gap-3 border-r border-foreground px-4 py-5 transition-colors hover:bg-foreground/10"
-            >
-              <NovelVizLogo size={56} className="text-foreground transition-colors group-hover:text-[#5ba3d9]" />
-              <div className="leading-none">
-                <div className="font-sans text-2xl font-bold tracking-[-0.03em]">NovelViz</div>
-                <div className="meta mt-1.5 text-muted-foreground">Visualize any book</div>
-              </div>
-            </Link>
-          </div>
-          <div className="flex items-stretch">
-            <Link
-              to="/"
-              className="meta flex items-center gap-2 border-l border-foreground px-5 py-5 transition-colors hover:bg-foreground/10"
-            >
-              ← Search another book
-            </Link>
-          </div>
-        </div>
-      </Reveal>
+      <BookPageHeader />
 
-      <main className="container mx-auto px-0">
-        {/* ===================== ANALYSIS MASTHEAD ===================== */}
-        <section id="analysis-anchor" className="grid grid-cols-12 gap-0 ink-border-b scroll-mt-20">
-          <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
-            <div className="flex items-start gap-4 md:flex-col md:gap-0">
-              <CoverPlate
-                coverUrl={coverUrl}
-                title={analysis.title}
-                author={analysis.author}
-                className="w-14 md:mb-4 md:w-full md:max-w-[108px]"
-              />
-              <div>
-                <div className="meta text-muted-foreground">Subject</div>
-                <div className="display-num mt-2 text-4xl md:text-6xl">
-                  {isFiction(analysis)
-                    ? String(analysis.events?.length ?? 0).padStart(2, "0")
-                    : String((analysis as NonFictionAnalysis).concepts?.length ?? 0).padStart(2, "0")}
-                </div>
-                <div className="meta mt-2 text-muted-foreground">
-                  {isFiction(analysis) ? "Events Mapped" : "Concepts"}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
-            <div className={analysis.author && analysis.author !== "Unknown" ? "font-serif italic text-lg text-muted-foreground" : "meta text-muted-foreground"}>
-              {analysis.author && analysis.author !== "Unknown"
-                ? `By ${analysis.author}`
-                : "Visualization"}
-            </div>
-            <h1 className="mt-2 font-sans text-3xl font-extrabold leading-[1] tracking-tight md:text-6xl">
-              {analysis.title}
-            </h1>
-            <MustReadBadge title={analysis.title} author={analysis.author} size="md" className="mt-3" />
-            <ClassicBadge title={analysis.title} author={analysis.author} size="md" className="mt-3" />
-            {isNonFiction(analysis) && (analysis as NonFictionAnalysis).thesis && (
-              <p className="mt-2 font-sans text-sm font-medium text-primary/80 italic">
-                "{(analysis as NonFictionAnalysis).thesis}"
-              </p>
-            )}
-            {/* 2026-09-07: the DNA signature moved above the fold so a
-                bouncing first-time visitor would see it at all (it used to
-                live buried behind tab 03). 2026-10-04: it stayed above the
-                fold but moved out of this badge/tagline stack and into the
-                action row below, next to Shelf/Buy/Share -- stacked between
-                the Classic badge and the summary paragraph it read as one
-                more badge fighting for attention, and it pushed the actual
-                "what is this book" copy down past three other UI elements
-                first. It's functionally a nav shortcut (always was -- see
-                the onClick below), so it now looks like one. */}
-            <p className="mt-3 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
-              {analysis.summary}
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <ShelfChip analysis={analysis} cacheKey={cacheKey} />
-              <BuyButton title={analysis.title} author={analysis.author || ""} variant="primary" size="md" />
-              <ShareButton
-                title={analysis.title}
-                author={analysis.author || ""}
-                signature={analysis.dna?.signature}
-                slug={slug}
-              />
-              {/* 2026-10-04: DNA signature teaser, relocated here from the
-                  header's badge/tagline stack (see comment above the summary
-                  paragraph). Same onClick-scrolls-to-dna-anchor shortcut it
-                  always was, now styled to match its action-row siblings
-                  instead of floating as an unstyled caption above the fold. */}
-              {analysis.dna?.axes?.length ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    document
-                      .getElementById("dna-anchor")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  }
-                  className="group meta inline-flex min-h-[44px] items-center gap-2 border border-foreground bg-card px-3 py-2 text-left transition-colors hover:bg-foreground/10"
-                >
-                  <DnaSignature analysis={analysis} height={20} barWidth={3} />
-                  <span className="flex flex-col gap-0.5">
-                    <span className="meta text-muted-foreground">DNA signature</span>
-                    {analysis.dna?.signature && (
-                      <span className="font-serif text-xs italic leading-snug normal-case group-hover:underline md:text-sm">
-                        {analysis.dna.signature}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              ) : null}
-            </div>
-          </div>
-          <div className="col-span-12 grid grid-cols-2 border-foreground md:col-span-3 md:border-l">
-            <div className="border-foreground p-4 md:border-b">
-              <div className="meta text-muted-foreground">
-                {isFiction(analysis) ? "Characters" : "Chapters"}
-              </div>
-              <div className="display-num mt-1 text-3xl md:text-4xl">
-                {isFiction(analysis)
-                  ? String(analysis.characters?.length ?? 0).padStart(2, "0")
-                  : String((analysis as NonFictionAnalysis).chapters?.length ?? 0).padStart(2, "0")}
-              </div>
-            </div>
-            <div className="border-l border-foreground p-4 md:border-b">
-              <div className="meta text-muted-foreground">
-                {isFiction(analysis) ? "Threads" : "Type"}
-              </div>
-              <div className="display-num mt-1 text-3xl md:text-4xl">
-                {isFiction(analysis)
-                  ? String(analysis.lanes?.length ?? 0).padStart(2, "0")
-                  : <span className="font-sans text-sm font-semibold uppercase">Nonfiction</span>}
-              </div>
-            </div>
-            <div className="border-t border-foreground p-4">
-              <div className="meta text-muted-foreground">Confidence</div>
-              <div className="mt-1 font-sans text-sm font-semibold capitalize">
-                {analysis.confidence === "unknown_work"
-                  ? "Unverified"
-                  : analysis.confidence ?? "—"}
-              </div>
-            </div>
-            <div className="border-l border-t border-foreground p-4">
-              <div className="meta text-muted-foreground">
-                {isFiction(analysis) ? "Progress" : "DNA"}
-              </div>
-              <div className="mt-1 font-sans text-sm font-semibold">
-                {isFiction(analysis)
-                  ? `${Math.round(effectiveProgress)}%`
-                  : analysis.dna?.signature ?? "—"}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {ratingStats && (
-          <section className="ink-border-b">
-            <div className="meta bg-foreground px-4 py-2 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))] md:px-8">
-              02 · Reader Ratings
-            </div>
-            <div className="px-4 py-6 md:px-8">
-              <Suspense fallback={<RatingDistributionSkeleton />}>
-                <RatingDistribution
-                  counts={ratingStats.counts}
-                  total={ratingStats.total}
-                  avg={ratingStats.avg}
-                  label="Reader ratings"
-                />
-              </Suspense>
-            </div>
-          </section>
-        )}
+      <main>
+        <BookHero analysis={analysis} cacheKey={cacheKey} coverUrl={coverUrl} slug={slug} />
+        <DnaTraits analysis={analysis} />
 
         {/* ===================== DNA — no longer a tab =====================
             Lifted out of the tab strip on 2026-09-07. DNA is the book's
@@ -513,19 +297,30 @@ const BookPage = () => {
             so it should read as the star of the page, not one more item in
             an undifferentiated list of sections. */}
         {analysis.dna?.axes?.length ? (
-          <section id="dna-anchor" className="ink-border-b scroll-mt-20 bg-card">
-            <div className="bg-foreground px-4 py-5 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))] md:px-8 md:py-6">
-              <div className="meta text-primary">Feature 01</div>
-              <div className="mt-1 font-sans text-2xl font-bold md:text-3xl">Book DNA</div>
-              <div className="mt-1 max-w-md font-serif text-sm italic text-background/70">
-                Twelve axes, measured. Tap any bar — drag to make it yours.
-              </div>
-            </div>
+          <section id="dna-anchor" className="scroll-mt-4 border-b border-foreground">
             <Suspense fallback={<TabFallback />}>
               <BookDNA analysis={analysis} cacheKey={cacheKey} />
             </Suspense>
           </section>
         ) : null}
+
+        {ratingStats && (
+          <section className="border-b border-foreground">
+            <div className="mx-auto max-w-[1280px] px-4 py-8 md:px-8 md:py-12">
+              <h2 className="mb-5 font-serif text-[1.75rem] font-normal leading-tight tracking-[-0.015em] md:text-[2.5rem]">
+                What readers rated it
+              </h2>
+              <Suspense fallback={<RatingDistributionSkeleton />}>
+                <RatingDistribution
+                  counts={ratingStats.counts}
+                  total={ratingStats.total}
+                  avg={ratingStats.avg}
+                  label="Reader ratings"
+                />
+              </Suspense>
+            </div>
+          </section>
+        )}
 
         {/* ===================== EXPLORE THE STORY =====================
             2026-09-19: the spoiler control, the view toggle and the active
@@ -533,9 +328,14 @@ const BookPage = () => {
             no shared label — on mobile they read as three more undifferentiated
             rows in the same long list as everything else. Grouping them under
             one eyebrow says plainly "these three controls are one feature." */}
-        <section className="ink-border-b bg-card">
-          <div className="meta bg-foreground px-4 py-2 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))] md:px-8">
-            03 · Explore the Story
+        <section className="mx-auto max-w-[1280px] border-b border-foreground md:border-x md:border-foreground/20">
+          <div className="px-4 pb-4 pt-8 md:px-8 md:pt-12">
+            <h2 className="font-serif text-[1.75rem] font-normal leading-tight tracking-[-0.015em] md:text-[2.5rem]">
+              Inside the book
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isFiction(analysis) ? "Who is who, what happens when, and what to take away." : "The ideas, chapter by chapter, and what to take away."}
+            </p>
           </div>
 
         {/* ===================== SPOILER STRIP — fiction only ===================== */}
@@ -622,10 +422,10 @@ const BookPage = () => {
                     )}
                   >
                     {v === "network"
-                      ? "01 · Network"
+                      ? "Network"
                       : v === "timeline"
-                        ? "02 · Timeline"
-                        : "03 · Takeaways"}
+                        ? "Timeline"
+                        : "Takeaways"}
                   </button>
                 ))
               ) : (
@@ -642,10 +442,10 @@ const BookPage = () => {
                     )}
                   >
                     {v === "ideas"
-                      ? "01 · Ideas"
+                      ? "Ideas"
                       : v === "chapters"
-                        ? "02 · Chapters"
-                        : "03 · Takeaways"}
+                        ? "Chapters"
+                        : "Takeaways"}
                   </button>
                 ))
               )}
@@ -730,10 +530,10 @@ const BookPage = () => {
         </section>
 
         {/* ===================== MY NOTES ===================== */}
-        <section className="ink-border-b">
-          <div className="meta bg-foreground px-4 py-2 text-background shadow-[0_3px_0_-1px_hsl(var(--primary))] md:px-8">
-            04 · My Notes
-          </div>
+        <section className="mx-auto max-w-[1280px] border-b border-foreground">
+          <h2 className="px-4 pb-4 pt-8 font-serif text-[1.75rem] font-normal leading-tight tracking-[-0.015em] md:px-8 md:pt-12 md:text-[2.5rem]">
+            Your notes
+          </h2>
           <ReaderNotes cacheKey={cacheKey} bookTitle={analysis.title} bookAuthor={analysis.author} />
         </section>
 
@@ -744,16 +544,16 @@ const BookPage = () => {
             My Notes section above). Same naming collision flagged in the
             09-07 and 09-10 design reviews; fixed here. Always the very last
             section on the page — the long-form read, after every feature. */}
-        <section className="grid grid-cols-12 gap-0">
-          <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-10">
-            <div className="meta text-muted-foreground">05 · The Reading</div>
-            <div className="display-num mt-2 text-4xl md:text-6xl">05</div>
-            <div className="meta mt-2 text-primary">AI Read</div>
-            <div className="mt-1 font-serif text-xs italic text-muted-foreground">
-              {isFiction(analysis) ? "A critical reading" : "A critical essay"}
-            </div>
+        <section className="mx-auto grid max-w-[1280px] grid-cols-12 gap-0">
+          <div className="col-span-12 px-4 pt-8 md:col-span-3 md:px-8 md:py-12">
+            <h2 className="font-serif text-[1.75rem] font-normal leading-tight tracking-[-0.015em] md:text-[2.5rem]">
+              The reading
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Written by AI · {isFiction(analysis) ? "a critical reading" : "a critical essay"}
+            </p>
           </div>
-          <div className="col-span-12 px-4 py-6 md:col-span-10 md:px-10 md:py-10">
+          <div className="col-span-12 px-4 py-6 md:col-span-9 md:px-8 md:py-12">
             <div className="prose prose-sm max-w-3xl font-serif text-foreground prose-headings:font-sans prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline md:prose-base">
               <Suspense fallback={<MarkdownFallback />}>
                 <ReactMarkdown>{analysis.explanation}</ReactMarkdown>
@@ -762,7 +562,7 @@ const BookPage = () => {
           </div>
         </section>
       </main>
-      <footer className="container mx-auto flex justify-end border-t border-foreground/20 px-4 py-3">
+      <footer className="mx-auto flex max-w-[1280px] justify-end border-t border-foreground/20 px-4 py-3">
         <FeedbackButton page="book" slug={slug} />
       </footer>
     </div>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Loader2, Pin, RefreshCw, Sparkles, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, Pin, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 import {
@@ -18,9 +18,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { BuyButton } from "@/components/BuyButton";
-import { DnaNeighbourhood } from "@/components/DnaNeighbourhood";
-import { Reveal, ease, useReducedMotion } from "@/lib/motion";
+import { BookPoster, DnaNeighbourhood } from "@/components/DnaNeighbourhood";
+import { GlyphPlate } from "@/components/GlyphPlate";
+import { OPEN_DNA_EVENT, glyphSource } from "@/lib/dna-glyph";
+import { ease, useReducedMotion } from "@/lib/motion";
 import { track } from "@/lib/track";
+
+// Widened to `string`: supabase-js's typed select parser trips TS2589 on a
+// JSON-path alias.
+const KINDRED_DNA_SELECT: string = "dna:analysis->dna";
 
 interface BookDNAProps {
   analysis: NovelAnalysis;
@@ -153,6 +159,17 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   // bar size for all twelve axes, with evidence surfaced on hover/click.
   const [kindredSlug, setKindredSlug] = useState<string | null>(null);
   const [kindredChecked, setKindredChecked] = useState(false);
+  const [kindredAxes, setKindredAxes] = useState<Array<{ id: string; score: number }> | null>(null);
+
+  // 2026-11-18 (Paper & ink redesign): the strand is one tap away instead of
+  // always open. The glyph above the fold is the at-a-glance read; this is
+  // the instrument. BookHero's glyph fires OPEN_DNA_EVENT to open it.
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_DNA_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_DNA_EVENT, onOpen);
+  }, []);
 
   // Dynamic recommendation — re-fetched from recommend-by-dna whenever the
   // user adjusts DNA sliders. Null means "use the original inline rec".
@@ -314,10 +331,23 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     setKindredChecked(false);
     supabase
       .rpc("resolve_book_page", { p_title: t, p_author: activeRecForPage?.author ?? undefined })
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (cancelled) return;
-        setKindredSlug(!error && data && data.length > 0 ? data[0].slug : null);
+        const found = !error && data && data.length > 0 ? data[0].slug : null;
+        setKindredSlug(found);
         setKindredChecked(true);
+        setKindredAxes(null);
+        if (!found) return;
+        // its DNA, so the pick's poster can carry its glyph and ink
+        const { data: row } = await supabase
+          .from("novel_analyses")
+          .select(KINDRED_DNA_SELECT)
+          .eq("slug", found)
+          .eq("is_validated", true)
+          .maybeSingle();
+        if (cancelled) return;
+        const axes = (row as unknown as { dna?: { axes?: Array<{ id: string; score: number }> } } | null)?.dna?.axes;
+        setKindredAxes(axes?.length ? axes : null);
       });
     return () => { cancelled = true; };
   }, [activeRecForPage?.title, activeRecForPage?.author]);
@@ -609,9 +639,74 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     );
   }
 
+  const activeRec = dynamicRec ?? rec;
+  const pickLabel = recLoading ? "Our pick" : `Our pick · ${Math.round(activeRec.similarity)}%`;
+  const pickTo = kindredSlug ? `/book/${kindredSlug}` : `/?book=${encodeURIComponent(activeRec.title)}`;
+  const pickPoster = (
+    <BookPoster
+      key="pick"
+      to={pickTo}
+      title={activeRec.title}
+      author={activeRec.author}
+      plate={
+        recLoading ? (
+          <div className="flex h-full w-full items-center justify-center bg-secondary">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-label="Finding your match" />
+          </div>
+        ) : kindredAxes ? (
+          <GlyphPlate
+            analysis={glyphSource(activeRec.title, analysis.bookType, kindredAxes)}
+            label={pickLabel}
+            titleClassName="text-[15px] md:text-xl"
+          />
+        ) : (
+          <div className="flex h-full w-full flex-col justify-between bg-secondary p-[9%] text-foreground">
+            <span className="font-mono text-[11px] leading-none tracking-tight">{pickLabel}</span>
+            <span className="self-center border border-foreground px-2.5 py-1.5 text-xs font-medium md:text-sm">
+              {kindredChecked ? "Map this book" : "Checking\u2026"}
+            </span>
+            <span className="font-serif text-[15px] italic leading-[1.05] md:text-xl">{activeRec.title}</span>
+          </div>
+        )
+      }
+      caption={<span className="line-clamp-3">{activeRec.why}</span>}
+      footer={<BuyButton title={activeRec.title} author={activeRec.author} variant="ghost" size="sm" />}
+    />
+  );
+  const shelfSubtitle = recLoading
+    ? "Finding your match\u2026"
+    : recSource === "personal"
+      ? "Re-ranked for your take"
+      : recSource === "consensus" && maxVoteCount > 0
+        ? `Shaped by ${maxVoteCount} reader${maxVoteCount === 1 ? "" : "s"}`
+        : "Our pick first, then the nearest books by DNA";
+
   return (
     <div>
-      <div className="grid grid-cols-12 gap-0 px-4 py-6 md:px-8 md:py-10">
+      <div className="border-b border-foreground/20">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls="dna-strand"
+          className="mx-auto flex min-h-[64px] w-full max-w-[1280px] items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-foreground/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:px-8 md:py-5"
+        >
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="font-serif text-xl leading-tight md:text-2xl">All twelve measurements</span>
+            <span className="text-sm text-muted-foreground">
+              {totalDrift > 0
+                ? `Your take differs by ${Math.round(totalDrift)} points`
+                : "Tap one to see why. Drag a bar to register your take."}
+            </span>
+          </span>
+          <ChevronDown
+            className={cn("h-5 w-5 shrink-0 transition-transform duration-200", open && "rotate-180")}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
+      {open && (
+      <div id="dna-strand" className="mx-auto grid max-w-[1280px] grid-cols-12 gap-0 px-4 py-6 md:px-8 md:py-10">
       {/* ============== LEFT — THE STRAND ============== */}
       <div className="relative col-span-12 ink-border md:col-span-7">
         <KineticSpine activeIdx={focusIdx} />
@@ -729,152 +824,13 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
       </div>
       </div>
 
-      {/* 2026-09-07: the recommendation used to sit inside the right-hand
-          column. Once the strand collapsed to four rows that column became the
-          tallest thing in a height-matched grid, opening a ~225px void beside
-          the strand — shortening one column bought nothing. It runs full width
-          now, which removes the void and gives the pick the presence it should
-          have had anyway: the evidence panel belongs next to the strand
-          (it tracks the pinned axis), the recommendation never did. */}
-      <Reveal className="bg-foreground text-background">
-          {(() => {
-            const activeRec = dynamicRec ?? rec;
-            const isDynamic = !!dynamicRec;
-            return (
-              <>
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-background/30 px-4 py-3 md:px-8">
-                  <div className="meta flex min-w-0 items-center gap-2 text-background/70">
-                    {recLoading
-                      ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
-                      : <Sparkles className="h-3 w-3 shrink-0" />}
-                    <span className="break-words">
-                      {recLoading
-                        ? "Finding your DNA match…"
-                        : recSource === "consensus"
-                          ? `Reader consensus · ${maxVoteCount} adjustment${maxVoteCount === 1 ? "" : "s"}`
-                          : isDynamic
-                            ? "Your DNA, your match"
-                            : "Canon match · drag sliders to personalise"}
-                    </span>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    {isDynamic && !recLoading && (
-                      <button
-                        onClick={fetchDynamicRec}
-                        title="Refresh recommendation"
-                        className="meta text-background/50 hover:text-background transition-colors"
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                      </button>
-                    )}
-                    <div className="display-num text-2xl">
-                      {recLoading ? "—" : Math.round(activeRec.similarity)}
-                      <span className="meta ml-1 text-background/60">% MATCH</span>
-                    </div>
-                  </div>
-                </div>
+      )}
 
-                {recLoading ? (
-                  <div className="flex items-center justify-center px-4 py-12 md:px-8">
-                    <Loader2 className="h-5 w-5 animate-spin text-background/40" />
-                  </div>
-                ) : (
-                  <motion.div
-                    key={activeRec.title}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: ease.out }}
-                    className="px-4 py-6 md:px-8"
-                  >
-                    <div className="meta text-background/60">Our pick · reasoned, not measured</div>
-                    <div className="mt-2 font-serif text-2xl italic leading-tight md:text-3xl">{activeRec.title}</div>
-                    <div className="meta mt-2 text-background/70">By {activeRec.author}</div>
-                    <p className="mt-4 max-w-[62ch] font-serif text-base leading-relaxed text-background/90">{activeRec.why}</p>
-
-                    <div className="mt-5 grid gap-1.5">
-                      {activeRec.shared_axes.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          <span className="meta text-background/60">Shared</span>
-                          {activeRec.shared_axes.map((id) => (
-                            <button
-                              key={id}
-                              type="button"
-                              onMouseEnter={() => setHoveredAxis(id as DnaAxisId)}
-                              onMouseLeave={() => setHoveredAxis(null)}
-                              onClick={() => setPinnedAxis((p) => (p === id ? null : (id as DnaAxisId)))}
-                              className="meta border border-primary bg-primary px-1.5 py-0.5 text-primary-foreground transition-transform hover:-translate-y-[1px]"
-                            >
-                              {DNA_AXIS_META[id as DnaAxisId]?.name ?? id}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {activeRec.divergent_axes.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          <span className="meta text-background/60">Differs</span>
-                          {activeRec.divergent_axes.map((id) => (
-                            <button
-                              key={id}
-                              type="button"
-                              onMouseEnter={() => setHoveredAxis(id as DnaAxisId)}
-                              onMouseLeave={() => setHoveredAxis(null)}
-                              onClick={() => setPinnedAxis((p) => (p === id ? null : (id as DnaAxisId)))}
-                              className="meta border border-accent bg-accent px-1.5 py-0.5 text-accent-foreground transition-transform hover:-translate-y-[1px]"
-                            >
-                              {DNA_AXIS_META[id as DnaAxisId]?.name ?? id}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 2026-09-07: this used to be a lone BuyButton, which
-                        sent the reader off-site at the highest-intent moment
-                        in the product. Now the primary action always keeps
-                        them inside — opening the book if we have it, or
-                        offering to map it if we don't (which is how the
-                        corpus grows). The shop link stays, demoted. */}
-                    <div className="mt-5 flex flex-wrap items-center gap-3">
-                      {kindredSlug ? (
-                        <Link
-                          to={`/book/${kindredSlug}`}
-                          className="meta inline-flex items-center gap-2 border border-primary bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white"
-                        >
-                          Open its map →
-                        </Link>
-                      ) : kindredChecked ? (
-                        <Link
-                          to={`/?book=${encodeURIComponent(activeRec.title)}`}
-                          className="meta inline-flex items-center gap-2 border border-primary bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary-dark hover:text-white"
-                        >
-                          <Sparkles className="h-3 w-3" />
-                          Map this book
-                        </Link>
-                      ) : (
-                        <span className="meta inline-flex items-center gap-2 border border-background/30 px-4 py-2 text-background/50">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Checking…
-                        </span>
-                      )}
-                      <BuyButton
-                        title={activeRec.title}
-                        author={activeRec.author}
-                        size="sm"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </>
-            );
-          })()}
-      </Reveal>
-
-      {/* The measured half of the answer. Free (no Gemini call), instant, and
-          every row is guaranteed to have a page — which is what lets the
-          recommendation finally point back into the app instead of out of it.
-          Re-ranks as the reader drags an axis, so the cheap layer gives
-          immediate feedback while the Gemini pick above catches up on its
-          own 1s debounce. */}
+      {/* 2026-11-18: "If you loved this shape". The judged pick (Gemini, with
+          reasons) leads, then the measured neighbours; every book is a poster
+          in its own ink. Replaces the navy pick panel and the row list. The
+          pick still points inward first: its page if we have one, "Map this
+          book" if we don't, with the shop demoted to a small link. */}
       <DnaNeighbourhood
         cacheKey={cacheKey}
         bookType={analysis.bookType}
@@ -882,6 +838,8 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         isPerturbed={axesArePerturbed}
         nonFiction={nf}
         limit={6}
+        lead={pickPoster}
+        subtitle={shelfSubtitle}
       />
     </div>
   );

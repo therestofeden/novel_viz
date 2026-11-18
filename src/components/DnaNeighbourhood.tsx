@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
@@ -9,6 +9,8 @@ import {
 } from "@/lib/novel-types";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { GlyphPlate } from "@/components/GlyphPlate";
+import { glyphSource } from "@/lib/dna-glyph";
 
 /**
  * DnaNeighbourhood — the books nearest this one in 12-axis DNA space.
@@ -31,7 +33,11 @@ import { cn } from "@/lib/utils";
  * meaning; the number is a footnote.
  */
 
-const COLLAPSED_ROWS = 3;
+const COLLAPSED_ROWS = 3; // plus the judged pick = one row of four on desktop
+
+// Widened to `string` on purpose: supabase-js's typed select parser recurses
+// too deeply on a JSON-path alias and trips TS2589.
+const DNA_SELECT: string = "slug, dna:analysis->dna";
 
 export interface DnaNeighbour {
   cache_key: string;
@@ -51,6 +57,8 @@ export function DnaNeighbourhood({
   nonFiction,
   limit = 6,
   className,
+  lead,
+  subtitle,
 }: {
   cacheKey?: string | null;
   bookType: string;
@@ -61,6 +69,10 @@ export function DnaNeighbourhood({
   nonFiction: boolean;
   limit?: number;
   className?: string;
+  /** rendered first in the poster row (BookDNA passes the judged pick) */
+  lead?: ReactNode;
+  /** replaces the default line beside the heading */
+  subtitle?: string;
 }) {
   const [rows, setRows] = useState<DnaNeighbour[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -121,90 +133,141 @@ export function DnaNeighbourhood({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey, bookType, limit, isPerturbed, axesSig]);
 
-  // Nothing to say if the corpus has no neighbours for this book yet — better
+  // Each neighbour's own DNA, so its poster can carry its glyph and ink.
+  // One small public read per result set (slug-keyed, validated rows only).
+  const [dnaBySlug, setDnaBySlug] = useState<Record<string, Array<{ id: string; score: number }>>>({});
+  const slugKey = rows?.map((r) => r.slug).join("|") ?? "";
+  useEffect(() => {
+    const slugs = rows?.map((r) => r.slug).filter((s) => s && !dnaBySlug[s]) ?? [];
+    if (slugs.length === 0) return;
+    let cancelled = false;
+    supabase
+      .from("novel_analyses")
+      .select(DNA_SELECT)
+      .in("slug", slugs)
+      .eq("is_validated", true)
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const next: Record<string, Array<{ id: string; score: number }>> = {};
+        for (const row of data as unknown as Array<{ slug: string; dna: { axes?: Array<{ id: string; score: number }> } | null }>) {
+          if (row.slug && row.dna?.axes) next[row.slug] = row.dna.axes;
+        }
+        setDnaBySlug((m) => ({ ...m, ...next }));
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slugKey]);
+
+  // Nothing to say if the corpus has no neighbours for this book yet: better
   // silence than an empty rail (the review's "never render an empty slot").
-  if (rows !== null && rows.length === 0) return null;
+  // The lead (the judged pick) still renders on its own.
+  const visible = rows === null ? [] : showAll ? rows : rows.slice(0, COLLAPSED_ROWS);
+
+  if (rows !== null && rows.length === 0 && !lead) return null;
 
   return (
-    <section className={cn("ink-border-t", className)}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-foreground/20 px-4 py-3 md:px-8">
-        <div className="meta flex items-center gap-2 text-muted-foreground">
-          {loading && <Loader2 className="h-3 w-3 animate-spin" />}
-          <span>
-            {isPerturbed ? "Nearest to your DNA" : "Nearest in DNA space"}
-          </span>
-        </div>
-        <div className="meta text-muted-foreground/70">
-          Measured across {nonFiction ? "12 non-fiction" : "12"} axes · every title has a map
-        </div>
+    <section className={cn("mx-auto max-w-[1280px] px-4 py-8 md:px-8 md:py-12", className)}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 className="font-serif text-[1.75rem] font-normal leading-tight tracking-[-0.015em] md:text-[2.5rem]">
+          If you loved this shape
+        </h2>
+        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+          {subtitle ?? (isPerturbed ? "Re-ranked for your take" : "Measured across twelve axes")}
+        </span>
       </div>
 
-      {rows === null ? (
-        <div className="grid gap-px">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 px-4 py-3 md:px-8">
-              <div className="h-4 w-6 animate-pulse bg-foreground/10" />
-              <div className="h-4 w-48 animate-pulse bg-foreground/10" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <ol className="grid">
-          {(showAll ? rows : rows.slice(0, COLLAPSED_ROWS)).map((n, i) => (
-            <li key={n.cache_key} className="border-b border-foreground/20 last:border-b-0">
-              <Link
-                to={`/book/${n.slug}`}
-                className="group flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-3 transition-colors hover:bg-foreground/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:px-8"
-              >
-                <span className="meta w-6 shrink-0 tabular-nums text-muted-foreground">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-
-                <span className="min-w-0 font-serif text-base italic leading-snug group-hover:underline md:text-lg">
-                  {n.title}
-                </span>
-
-                <span className="meta shrink-0 text-muted-foreground">{n.author}</span>
-
-                {n.shared_axes?.length > 0 && (
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    <span className="meta text-muted-foreground/70">Closest on</span>
-                    {n.shared_axes.map((id) => (
-                      <span
-                        key={id}
-                        className="meta border border-foreground/20 px-1.5 py-0.5 text-muted-foreground"
-                      >
-                        {AXIS_META[id as DnaAxisId]?.name ?? id}
-                      </span>
-                    ))}
-                  </span>
-                )}
-
-                <span className="meta ml-auto shrink-0 tabular-nums text-muted-foreground/70">
-                  {n.match_pct}%
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ol>
-      )}
+      <ol className="-mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:mx-0 md:mt-7 md:grid md:grid-cols-4 md:gap-x-5 md:gap-y-8 md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden">
+        {lead}
+        {rows === null
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <li key={i} className="w-[148px] shrink-0 md:w-auto">
+                <div className="aspect-[2/3] w-full animate-pulse border border-foreground/20 bg-foreground/[0.06]" />
+              </li>
+            ))
+          : visible.map((n) => {
+              const axes = dnaBySlug[n.slug];
+              return (
+                <BookPoster
+                  key={n.cache_key}
+                  to={`/book/${n.slug}`}
+                  title={n.title}
+                  author={n.author}
+                  plate={
+                    axes ? (
+                      <GlyphPlate
+                        analysis={glyphSource(n.title, bookType, axes)}
+                        label={`${n.match_pct}% match`}
+                        titleClassName="text-[15px] md:text-xl"
+                      />
+                    ) : (
+                      <div className="h-full w-full animate-pulse bg-foreground/[0.06]" />
+                    )
+                  }
+                  caption={
+                    n.shared_axes?.length
+                      ? `Closest on ${n.shared_axes
+                          .slice(0, 3)
+                          .map((id) => (AXIS_META[id as DnaAxisId]?.name ?? id).toLowerCase())
+                          .join(", ")}`
+                      : undefined
+                  }
+                />
+              );
+            })}
+      </ol>
 
       {rows !== null && rows.length > COLLAPSED_ROWS && (
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
           aria-expanded={showAll}
-          className="meta flex w-full items-center justify-between border-t border-foreground/20 px-4 py-3 text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:px-8"
+          className="mt-4 min-h-[44px] text-sm text-[hsl(var(--primary-dark))] underline-offset-4 hover:underline"
         >
-          <span>
-            {showAll
-              ? "Show fewer"
-              : `Show all ${rows.length} neighbours`}
-          </span>
-          <span aria-hidden="true">{showAll ? "\u2191" : "\u2193"}</span>
+          {showAll ? "Show fewer" : `Show all ${rows.length} neighbours`}
         </button>
       )}
     </section>
+  );
+}
+
+/**
+ * One book drawn as a poster: a 2:3 plate (its glyph, in its ink) with the
+ * title on it, then author and a one-line reason underneath. The plate and
+ * title are the link; anything in `footer` sits outside it.
+ */
+export function BookPoster({
+  to,
+  title,
+  author,
+  plate,
+  caption,
+  footer,
+}: {
+  to: string;
+  title: string;
+  author?: string | null;
+  plate: ReactNode;
+  caption?: ReactNode;
+  footer?: ReactNode;
+}) {
+  return (
+    <li className="flex w-[148px] shrink-0 snap-start flex-col gap-2 md:w-auto">
+      <Link
+        to={to}
+        className="group flex flex-col gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <div className="aspect-[2/3] w-full overflow-hidden border border-foreground transition-transform duration-200 group-hover:-translate-y-0.5">
+          {plate}
+        </div>
+        <span className="sr-only">{title}</span>
+        {author && <span className="text-sm font-medium leading-snug">{author}</span>}
+      </Link>
+      {caption && <span className="text-[13px] leading-snug text-muted-foreground">{caption}</span>}
+      {footer}
+    </li>
   );
 }
 

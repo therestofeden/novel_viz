@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -23,11 +23,14 @@ export function CoverPlate({
   title,
   author,
   className,
+  fallback,
 }: {
   coverUrl: string | null | undefined;
   title: string;
   author?: string | null;
   className?: string;
+  /** shown instead of the typeset dropcap when there is no usable cover art */
+  fallback?: ReactNode;
 }) {
   const [errored, setErrored] = useState(false);
 
@@ -55,6 +58,8 @@ export function CoverPlate({
           className="h-full w-full object-cover"
           onError={() => setErrored(true)}
         />
+      ) : fallback ? (
+        fallback
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-1 text-center text-background">
           <div className="font-serif text-3xl italic leading-none md:text-4xl" aria-hidden="true">

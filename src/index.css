@@ -6,8 +6,12 @@
   NovelViz — "Navy ink" brand system  (#0F2B4D · #5ba3d9 · #eef4f9)
   Final brand: The Fan logo, cool blue-white paper, navy ink, sky-blue accent.
 
+  2026-11-18 "Paper & ink": the paper turned warm (#F4EFE6) and every book
+  now brings its own ink (src/lib/dna-glyph.ts). Navy ink, the sky-blue
+  accent, zero radius and the type trio are unchanged.
+
   Principles:
-  - Cool blue-tinted paper (#eef4f9), navy ink (#0F2B4D). Crisp contrast.
+  - Warm paper (#F4EFE6; cool #eef4f9 until 2026-11-18), navy ink (#0F2B4D). Crisp contrast.
   - One sky-blue accent (#5ba3d9). Nothing else loud.
   - Hard 1px rules. Zero rounded corners. No soft drop shadows.
   - Oversized numerals as anchor. Tiny uppercase metadata.
@@ -56,13 +60,13 @@
 
 @layer base {
   :root {
-    --background: 207 48% 96%;         /* #eef4f9 — cool blue-white paper */
+    --background: 39 39% 93%;          /* #F4EFE6 — warm paper (2026-11-18 "Paper & ink"; was 207 48% 96% / #eef4f9 cool blue-white) */
     --foreground: 213 67% 18%;         /* #0F2B4D — dark navy ink, 7° from primary's hue. Replaces warm charcoal (was 22 16% 20% / #3b312b); see 2026-07-16 note above. */
 
-    --card: 0 0% 100%;                 /* clean white card */
+    --card: 40 52% 97%;                /* #FBF8F2 — card one step lighter than the paper (was pure white) */
     --card-foreground: 213 67% 18%;
 
-    --popover: 0 0% 100%;
+    --popover: 40 52% 97%;
     --popover-foreground: 213 67% 18%;
 
     --primary: 206 63% 60%;            /* #5ba3d9 — sky blue accent */
@@ -79,10 +83,10 @@
        lower lightness — same color, richer, not a hue-and-chroma jump. */
     --primary-dark: 206 72% 35%;       /* #19629a — same hue as --primary, deeper. 6.45:1 vs white. */
 
-    --secondary: 207 40% 90%;
+    --secondary: 38 30% 88%;
     --secondary-foreground: 213 67% 18%;
 
-    --muted: 207 30% 92%;
+    --muted: 38 25% 89%;
     --muted-foreground: 214 18% 40%;
 
     --accent: 175 70% 38%;             /* deep teal — divergent / counter-signal */
@@ -98,7 +102,7 @@
     --classic-foreground: 213 67% 18%;
 
     --border: 213 67% 18%;             /* navy ink borders */
-    --border-soft: 207 30% 82%;
+    --border-soft: 36 20% 80%;
     --input: 213 67% 18%;
     --ring: 206 63% 60%;
 
@@ -129,11 +133,11 @@
 
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-background: 207 48% 96%;
+    --sidebar-background: 39 39% 93%;
     --sidebar-foreground: 213 67% 18%;
     --sidebar-primary: 206 63% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 207 30% 90%;
+    --sidebar-accent: 38 25% 89%;
     --sidebar-accent-foreground: 213 67% 18%;
     --sidebar-border: 213 67% 18%;
     --sidebar-ring: 206 63% 60%;
@@ -181,11 +185,10 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "ss01", "cv11", "tnum";
-    /* Subtle paper grain via tiny dot grid */
-    background-image:
-      linear-gradient(to right, hsl(var(--foreground) / 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
-    background-size: 56px 56px;
+    /* 2026-11-18 ("Paper & ink"): the sitewide graph-paper grid is gone. It
+       read as an unfinished Miro board (09-10 feedback) and as a technical
+       drawing rather than a book (11-18 review). The paper colour carries
+       the texture now; the home hero keeps its small confined corner grid. */
   }
 
   .font-serif {

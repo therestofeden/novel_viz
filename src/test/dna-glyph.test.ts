@@ -8,6 +8,7 @@ import {
   WARM_INKS,
   bookInk,
   contrast,
+  definingAxes,
   describeGlyph,
   glyphAxes,
   hasEnoughDna,
@@ -58,6 +59,13 @@ describe("glyph geometry", () => {
     const label = describeGlyph(glyphAxes(SOLITUDE));
     expect(label).toContain("Longest: Scale 95");
     expect(label).toContain("Ending openness 0");
+  });
+});
+
+describe("defining axes", () => {
+  it("picks the three furthest from the middle, strongest first", () => {
+    // Solitude: Ending openness 0 (50 away), Scale 95 (45), Time linearity 10 (40)
+    expect(definingAxes(SOLITUDE).map((a) => a.id)).toEqual(["ending_openness", "scale", "time_linearity"]);
   });
 });
 

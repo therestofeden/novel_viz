@@ -73,14 +73,11 @@ const TabFallback = () => (
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RefinementPrompts } from "@/components/RefinementPrompts";
 import { ReaderNotes } from "@/components/ReaderNotes";
-import { DnaSignature } from "@/components/DnaSignature";
+import { BookHero } from "@/components/BookHero";
+import { DnaTraits } from "@/components/DnaTraits";
 import { CoverPlate } from "@/components/CoverPlate";
 import { fetchCoverUrl } from "@/lib/covers";
-import { ShelfChip } from "@/components/ShelfChip";
 import { MustReadBadge } from "@/components/MustReadBadge";
-import { ClassicBadge } from "@/components/ClassicBadge";
-import { BuyButton } from "@/components/BuyButton";
-import { ShareButton } from "@/components/ShareButton";
 import { GeminiKeyDialog } from "@/components/GeminiKeyDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -2136,135 +2133,27 @@ const Index = () => {
         {analysis && (
           <div>
             {/* ===================== ANALYSIS MASTHEAD ===================== */}
-            <section id="analysis-anchor" className="grid grid-cols-12 gap-0 ink-border-b scroll-mt-20">
-              <div className="col-span-12 border-foreground px-4 py-6 md:col-span-2 md:border-r md:py-8">
-                <div className="flex items-start gap-4 md:flex-col md:gap-0">
-                  <CoverPlate
-                    coverUrl={coverUrl}
-                    title={analysis.title}
-                    author={analysis.author}
-                    className="w-14 md:mb-4 md:w-full md:max-w-[108px]"
-                  />
-                  <div>
-                    <div className="meta text-muted-foreground">Subject</div>
-                    <div className="display-num mt-2 text-4xl md:text-6xl">
-                      {isFiction(analysis)
-                        ? String(analysis.events?.length ?? 0).padStart(2, "0")
-                        : String((analysis as NonFictionAnalysis).concepts?.length ?? 0).padStart(2, "0")}
-                    </div>
-                    <div className="meta mt-2 text-muted-foreground">
-                      {isFiction(analysis) ? "Events Mapped" : "Concepts"}
-                    </div>
+            <BookHero
+              analysis={analysis}
+              cacheKey={cacheKey}
+              coverUrl={coverUrl}
+              slug={slug ?? undefined}
+              extraActions={
+                activeRefinement ? (
+                  <div className="meta inline-flex items-center gap-2 border border-foreground bg-foreground px-3 py-1.5 text-background">
+                    <RefreshCw className="h-3 w-3" /> Refined · "{activeRefinement}"
                   </div>
-                </div>
-              </div>
-              <div className="col-span-12 px-4 py-6 md:col-span-7 md:px-8 md:py-8">
-                <div className={analysis.author && analysis.author !== "Unknown" ? "font-serif italic text-lg text-muted-foreground" : "meta text-muted-foreground"}>
-                  {analysis.author && analysis.author !== "Unknown"
-                    ? `By ${analysis.author}`
-                    : "Visualization"}
-                </div>
-                <h1 className="mt-2 font-sans text-3xl font-extrabold leading-[1] tracking-tight md:text-6xl">
-                  {analysis.title}
-                </h1>
-                <MustReadBadge title={analysis.title} author={analysis.author} size="md" className="mt-3" />
-                <ClassicBadge title={analysis.title} author={analysis.author} size="md" className="mt-3" />
-                {isNonFiction(analysis) && (analysis as NonFictionAnalysis).thesis && (
-                  <p className="mt-2 font-sans text-sm font-medium text-primary/80 italic">
-                    "{(analysis as NonFictionAnalysis).thesis}"
-                  </p>
-                )}
-                {/* 2026-10-04: DNA signature teaser relocated into the action
-                    row below as a compact chip, matching BookPage.tsx (see
-                    the matching note there). This mirrors Index.tsx's own
-                    copy of the book masthead — Index.tsx renders results
-                    inline without navigating to BookPage.tsx's dedicated
-                    route, so each surface needs the same fix applied
-                    separately. */}
-                <p className="mt-3 max-w-3xl font-serif text-sm leading-relaxed text-muted-foreground md:text-base">
-                  {analysis.summary}
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <ShelfChip analysis={analysis} cacheKey={cacheKey} />
-                  <BuyButton title={analysis.title} author={analysis.author || ""} variant="primary" size="md" />
-                  <ShareButton
-                    title={analysis.title}
-                    author={analysis.author || ""}
-                    signature={analysis.dna?.signature}
-                    slug={slug ?? undefined}
-                  />
-                  {analysis.dna?.axes?.length ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        document
-                          .getElementById("dna-anchor")
-                          ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                      }
-                      className="group meta inline-flex min-h-[44px] items-center gap-2 border border-foreground bg-card px-3 py-2 text-left transition-colors hover:bg-foreground/10"
-                    >
-                      <DnaSignature analysis={analysis} height={20} barWidth={3} />
-                      <span className="flex flex-col gap-0.5">
-                        <span className="meta text-muted-foreground">DNA signature</span>
-                        {analysis.dna?.signature && (
-                          <span className="font-serif text-xs italic leading-snug normal-case group-hover:underline md:text-sm">
-                            {analysis.dna.signature}
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  ) : null}
-                  {activeRefinement && (
-                    <div className="meta inline-flex items-center gap-2 border border-foreground bg-foreground px-3 py-1.5 text-background">
-                      <RefreshCw className="h-3 w-3" /> Refined · "{activeRefinement}"
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="col-span-12 grid grid-cols-2 border-foreground md:col-span-3 md:border-l">
-                <div className="border-foreground p-4 md:border-b">
-                  <div className="meta text-muted-foreground">
-                    {isFiction(analysis) ? "Characters" : "Chapters"}
-                  </div>
-                  <div className="display-num mt-1 text-3xl md:text-4xl">
-                    {isFiction(analysis)
-                      ? String(analysis.characters?.length ?? 0).padStart(2, "0")
-                      : String((analysis as NonFictionAnalysis).chapters?.length ?? 0).padStart(2, "0")}
-                  </div>
-                </div>
-                <div className="border-l border-foreground p-4 md:border-b">
-                  <div className="meta text-muted-foreground">
-                    {isFiction(analysis) ? "Lanes" : "Type"}
-                  </div>
-                  <div className="display-num mt-1 text-3xl md:text-4xl">
-                    {isFiction(analysis)
-                      ? String(analysis.lanes?.length ?? 0).padStart(2, "0")
-                      : <span className="font-sans text-sm font-semibold uppercase">Nonfiction</span>}
-                  </div>
-                </div>
-                <div className="border-t border-foreground p-4">
-                  <div className="meta text-muted-foreground">Mode</div>
-                  <div className="mt-1 font-sans text-sm font-semibold capitalize">{view}</div>
-                </div>
-                <div className="border-l border-t border-foreground p-4">
-                  <div className="meta text-muted-foreground">
-                    {isFiction(analysis) ? "Progress" : "DNA"}
-                  </div>
-                  <div className="mt-1 font-sans text-sm font-semibold">
-                    {isFiction(analysis)
-                      ? `${Math.round(effectiveProgress)}%`
-                      : analysis.dna?.signature ?? "—"}
-                  </div>
-                </div>
-              </div>
-            </section>
+                ) : null
+              }
+            />
+            <DnaTraits analysis={analysis} />
 
             {/* ===================== DNA — no longer a tab =====================
                 See the matching note in BookPage.tsx (2026-09-07): DNA is the
                 book's identity, not one view among four, so it runs full width
                 under the header instead of competing for a tab slot. */}
             {analysis.dna?.axes?.length ? (
-              <section id="dna-anchor" className="ink-border-b scroll-mt-20 bg-card">
+              <section id="dna-anchor" className="scroll-mt-4 border-b border-foreground">
                 <Suspense fallback={<TabFallback />}>
                   <BookDNA analysis={analysis} cacheKey={cacheKey} />
                 </Suspense>

@@ -260,9 +260,49 @@ export function inkFor(title: string, tone: number | null, nonFiction = false): 
   return deriveInk(set[hashKey(normaliseTitle(title)) % set.length], family);
 }
 
+/**
+ * Minimal analysis-shaped object for drawing a glyph from bare DNA rows
+ * (neighbour lists, recommendations) without loading the full analysis.
+ */
+export function glyphSource(
+  title: string,
+  bookType: string | null | undefined,
+  axes: Array<{ id: string; score: number }> | null | undefined,
+): NovelAnalysis {
+  return {
+    bookType: bookType === "nonfiction" ? "nonfiction" : "fiction",
+    title,
+    dna: { signature: "", axes: (axes ?? []).map((a) => ({ id: a.id, score: a.score, evidence: "" })) },
+  } as unknown as NovelAnalysis;
+}
+
+/** The three most defining axes: furthest from the midpoint, strongest first. */
+export function definingAxes(analysis: NovelAnalysis, count = 3): Array<GlyphAxis & { score: number }> {
+  return glyphAxes(analysis)
+    .filter((a): a is GlyphAxis & { score: number } => a.score !== null)
+    .map((a, i) => ({ a, i, pull: Math.abs(a.score - 50) }))
+    .sort((x, y) => y.pull - x.pull || x.i - y.i)
+    .slice(0, count)
+    .map(({ a }) => a);
+}
+
 export function bookInk(analysis: NovelAnalysis): BookInk {
   const nf = isNonFiction(analysis);
   const toneId = nf ? "tone" : "tonal_register";
   const tone = analysis.dna?.axes?.find((a) => a?.id === toneId)?.score;
   return inkFor(analysis.title ?? "", typeof tone === "number" ? tone : null, nf);
+}
+
+// ─── Page wiring ─────────────────────────────────────────────────────────────
+
+/** Fired when something above the fold asks the strand (BookDNA) to open. */
+export const OPEN_DNA_EVENT = "nv:open-dna";
+
+/** Open the twelve-bar strand and bring it into view. */
+export function openDnaStrand(): void {
+  window.dispatchEvent(new CustomEvent(OPEN_DNA_EVENT));
+  // let BookDNA render the opened strand before scrolling to it
+  window.requestAnimationFrame(() =>
+    document.getElementById("dna-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+  );
 }
