@@ -1002,7 +1002,11 @@ const Index = () => {
   useEffect(() => {
     if (!loading) return;
     const id = window.requestAnimationFrame(() => {
-      loadingPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      // A book opened from a link elsewhere on the page ("Map this book" in
+      // "If you loved this shape", deep links) starts loading while the
+      // reader is scrolled far down; "nearest" left the panel peeking at the
+      // bottom edge on phones, so it looked like nothing happened. Centre it.
+      loadingPanelRef.current?.scrollIntoView({ behavior: "smooth", block: deepLinkPending.current ? "center" : "nearest" });
     });
     return () => window.cancelAnimationFrame(id);
   }, [loading]);

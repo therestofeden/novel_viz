@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { ShoppingBag, Loader2, ExternalLink, ChevronDown, Leaf, Store, Package } from "lucide-react";
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
+import { ShoppingBag, Loader2, ExternalLink, ChevronDown, Leaf, Store, Package, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/track";
@@ -158,13 +159,34 @@ type Props = {
   variant?: "primary" | "ghost";
   size?: "sm" | "md";
   className?: string;
+  /** narrow slots (a 148px poster on a phone): no trailing icon, no wrapping */
+  compact?: boolean;
 };
 
-export const BuyButton = ({ title, author, variant = "primary", size = "sm", className }: Props) => {
+// Phones get the shop list as a bottom sheet; wider screens as a popover.
+const SHEET_QUERY = "(max-width: 639px)";
+const POPOVER_WIDTH = 260;
+
+export const BuyButton = ({ title, author, variant = "primary", size = "sm", className, compact = false }: Props) => {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [resolved, setResolved] = useState<Resolved | null>(() => memo.get(cacheKey(title, author)) ?? null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // 2026-11-18: the shop list renders in a portal on <body>. It used to be an
+  // absolutely positioned child of the button, so inside a horizontally
+  // scrolling row (the "If you loved this shape" posters on a phone) it was
+  // clipped by the row's overflow and never visible.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null);
+  const [asSheet, setAsSheet] = useState(false);
+
+  const place = useCallback(() => {
+    const r = buttonRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - POPOVER_WIDTH - 8));
+    setAnchor({ top: r.bottom + 4, left });
+  }, []);
 
   // Pre-resolve on hover — so the first click is always instant.
   const onMouseEnter = useCallback(() => {
@@ -186,16 +208,35 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
     }
   }, [title, author, resolved]);
 
-  // Close dropdown when clicking outside.
+  // Position on open; close on outside tap, Escape, or (popover only) when
+  // the page scrolls or resizes underneath it.
+  useLayoutEffect(() => {
+    if (!open) return;
+    setAsSheet(window.matchMedia(SHEET_QUERY).matches);
+    place();
+  }, [open, place]);
+
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    const outside = (e: Event) => {
+      const t = e.target as Node;
+      if (dropdownRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onMove = () => { if (!window.matchMedia(SHEET_QUERY).matches) setOpen(false); };
+    document.addEventListener("mousedown", outside);
+    document.addEventListener("touchstart", outside, { passive: true });
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onMove, { passive: true, capture: true });
+    window.addEventListener("resize", onMove);
+    return () => {
+      document.removeEventListener("mousedown", outside);
+      document.removeEventListener("touchstart", outside);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onMove, { capture: true });
+      window.removeEventListener("resize", onMove);
+    };
   }, [open]);
 
   const onClick = useCallback(
@@ -241,7 +282,9 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
   const sizing =
     size === "md"
       ? "gap-2 px-4 py-2.5 text-[11px] font-bold tracking-[0.14em]"
-      : "meta gap-1.5 px-2 py-1";
+      : compact
+        ? "meta min-h-[36px] gap-1.5 whitespace-nowrap px-2 py-1 !tracking-[0.06em]"
+        : "meta gap-1.5 whitespace-nowrap px-2 py-1";
   const skin =
     variant === "primary"
       ? "border-2 border-foreground bg-primary text-primary-foreground hover:bg-primary-dark hover:text-white hover:-translate-y-[1px]"
@@ -252,9 +295,89 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
   const hasMultiple = resolved && (resolved.options.length > 1 || anyAffiliated);
   const iconSize = size === "md" ? "h-3.5 w-3.5" : "h-3 w-3";
 
+  const options = (
+    <>
+      {pickerOptions.map((opt) => (
+        <a
+          key={opt.vendor}
+          href={opt.url}
+          target="_blank"
+          rel={opt.affiliated ? "noopener noreferrer sponsored" : "noopener noreferrer"}
+          onClick={() => {
+            track("buy_click", { vendor: opt.vendor, affiliated: opt.affiliated, country: resolved?.country ?? null });
+            setOpen(false);
+          }}
+          className="group flex min-h-[48px] items-center justify-between gap-3 px-4 py-2 text-sm transition-colors hover:bg-foreground/10 sm:min-h-0 sm:px-3"
+        >
+          <span className="flex items-center gap-2">
+            <KindIcon kind={opt.kind} />
+            <span className="font-medium">{opt.name}</span>
+          </span>
+          <span className="flex items-center gap-1.5 text-[10px]">
+            <KindLabel kind={opt.kind} />
+            <ExternalLink className="h-2.5 w-2.5 opacity-40 group-hover:opacity-70" />
+          </span>
+        </a>
+      ))}
+      <div className="border-t border-foreground/10 px-4 py-2 text-[11px] text-muted-foreground sm:px-3 sm:py-1.5 sm:text-[10px]">
+        🌱 Indie shops support local bookstores
+      </div>
+      {anyAffiliated && (
+        <div className="px-4 pb-3 text-[11px] leading-snug text-muted-foreground sm:px-3 sm:pb-2 sm:text-[10px]">
+          Some of these links earn NovelViz a small commission, at no extra cost to you.{" "}
+          <a href="/privacy#shops" className="underline underline-offset-2">More</a>
+        </div>
+      )}
+    </>
+  );
+
+  const panel =
+    open && resolved && pickerOptions.length > 0
+      ? asSheet
+        ? (
+          <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label={`Shops in ${resolved.country}`}>
+            <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+            <div
+              ref={panelRef}
+              className="absolute inset-x-0 bottom-0 border-t-2 border-foreground bg-background"
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              <div className="flex items-center justify-between border-b border-foreground/10 pl-4">
+                <div className="min-w-0 py-3">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Shops in {resolved.country}</div>
+                  <div className="truncate font-serif text-base italic">{title}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              {options}
+            </div>
+          </div>
+        )
+        : anchor && (
+          <div
+            ref={panelRef}
+            className="fixed z-[70] border border-foreground bg-background shadow-lg"
+            style={{ top: anchor.top, left: anchor.left, width: POPOVER_WIDTH }}
+          >
+            <div className="border-b border-foreground/10 px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+              Shops in {resolved.country}
+            </div>
+            {options}
+          </div>
+        )
+      : null;
+
   return (
     <div ref={dropdownRef} className="relative inline-block">
       <button
+        ref={buttonRef}
         type="button"
         onClick={onClick}
         onMouseEnter={onMouseEnter}
@@ -268,6 +391,7 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
         className={cn(base, sizing, skin, className)}
         aria-label="Find at a shop"
         aria-expanded={open}
+        aria-haspopup="dialog"
       >
         {loading ? (
           <Loader2 className={cn(iconSize, "animate-spin")} />
@@ -275,51 +399,14 @@ export const BuyButton = ({ title, author, variant = "primary", size = "sm", cla
           <ShoppingBag className={iconSize} />
         )}
         <span>Find at a shop</span>
-        {hasMultiple ? (
-          <ChevronDown className={cn(iconSize, "opacity-60 transition-transform", open && "rotate-180")} />
-        ) : (
-          <ExternalLink className={cn(iconSize, "opacity-60")} />
-        )}
-      </button>
-
-      {open && resolved && pickerOptions.length > 0 && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-[220px] border border-foreground bg-background shadow-lg">
-          <div className="px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground border-b border-foreground/10">
-            Shops in {resolved.country}
-          </div>
-          {pickerOptions.map((opt) => (
-            <a
-              key={opt.vendor}
-              href={opt.url}
-              target="_blank"
-              rel={opt.affiliated ? "noopener noreferrer sponsored" : "noopener noreferrer"}
-              onClick={() => {
-                track("buy_click", { vendor: opt.vendor, affiliated: opt.affiliated, country: resolved.country });
-                setOpen(false);
-              }}
-              className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-foreground/10 transition-colors group"
-            >
-              <span className="flex items-center gap-2">
-                <KindIcon kind={opt.kind} />
-                <span className="font-medium">{opt.name}</span>
-              </span>
-              <span className="flex items-center gap-1.5 text-[10px]">
-                <KindLabel kind={opt.kind} />
-                <ExternalLink className="h-2.5 w-2.5 opacity-40 group-hover:opacity-70" />
-              </span>
-            </a>
+        {!compact &&
+          (hasMultiple ? (
+            <ChevronDown className={cn(iconSize, "opacity-60 transition-transform", open && "rotate-180")} />
+          ) : (
+            <ExternalLink className={cn(iconSize, "opacity-60")} />
           ))}
-          <div className="px-3 py-1.5 text-[10px] text-muted-foreground border-t border-foreground/10">
-            🌱 Indie shops support local bookstores
-          </div>
-          {anyAffiliated && (
-            <div className="px-3 pb-2 text-[10px] leading-snug text-muted-foreground">
-              Some of these links earn NovelViz a small commission, at no extra cost to you.{" "}
-              <a href="/privacy#shops" className="underline underline-offset-2">More</a>
-            </div>
-          )}
-        </div>
-      )}
+      </button>
+      {panel && createPortal(panel, document.body)}
     </div>
   );
 };

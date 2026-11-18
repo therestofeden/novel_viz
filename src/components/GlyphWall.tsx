@@ -5,8 +5,10 @@ import { GlyphPlate } from "@/components/GlyphPlate";
 import { glyphAxes, glyphSource, hasEnoughDna } from "@/lib/dna-glyph";
 
 // PostgREST select with JSON-path aliases (title, book type, DNA only).
+// 2026-11-18: also skips placeholder titles (a row literally titled
+// "Unknown" was showing on the signed-out home page).
 const WALL_QUERY =
-  "select=slug,title,kind:analysis->>bookType,dna:analysis->dna&is_validated=eq.true&slug=not.is.null&discovery_blocked=is.false&limit=80";
+  "select=slug,title,kind:analysis->>bookType,dna:analysis->dna&is_validated=eq.true&slug=not.is.null&discovery_blocked=is.false&title=not.in.(Unknown,Untitled)&limit=80";
 const WALL_SIZE = 12;
 
 type WallBook = {

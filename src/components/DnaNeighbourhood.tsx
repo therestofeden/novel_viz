@@ -188,21 +188,21 @@ export function DnaNeighbourhood({
         <h2 className="font-serif text-[1.75rem] font-normal leading-tight tracking-[-0.015em] md:text-[2.5rem]">
           If you loved this shape
         </h2>
-        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-muted-foreground">
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
           {subtitle ?? (isPerturbed ? "Re-ranked for your take" : "Measured across twelve axes")}
           <a
             href={SIMILARITY_DOC_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline underline-offset-4 hover:text-foreground"
+            className="whitespace-nowrap underline underline-offset-4 hover:text-foreground"
           >
             How we measure
           </a>
         </span>
       </div>
 
-      <ol className="-mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:mx-0 md:mt-7 md:grid md:grid-cols-4 md:gap-x-5 md:gap-y-8 md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden">
+      <ol className="relative -mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:mx-0 md:mt-7 md:grid md:grid-cols-4 md:gap-x-5 md:gap-y-8 md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden">
         {lead}
         {rows === null
           ? Array.from({ length: 3 }).map((_, i) => (
@@ -277,7 +277,11 @@ export function BookPoster({
   footer?: ReactNode;
 }) {
   return (
-    <li className="flex w-[148px] shrink-0 snap-start flex-col gap-2 md:w-auto">
+    // `relative`: the sr-only title below is absolutely positioned; without a
+    // positioned ancestor inside the scrolling row it escaped the row's
+    // overflow and widened the whole page to ~500px on phones, which made
+    // mobile browsers zoom the page out (2026-11-18).
+    <li className="relative flex w-[148px] shrink-0 snap-start flex-col gap-2 md:w-auto">
       <Link
         to={to}
         className="group flex flex-col gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

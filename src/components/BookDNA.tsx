@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { BuyButton } from "@/components/BuyButton";
 import { isHiddenPick, useDiscoveryBlocked } from "@/lib/discovery";
+import { mapBookInBackground } from "@/lib/map-book";
 import { BookPoster, DnaNeighbourhood } from "@/components/DnaNeighbourhood";
 import { GlyphPlate } from "@/components/GlyphPlate";
 import { GLYPH_BOX, OPEN_DNA_EVENT, R_MAX, bookInk, glyphSource, spokePath } from "@/lib/dna-glyph";
@@ -103,6 +104,12 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
   const [kindredSlug, setKindredSlug] = useState<string | null>(null);
   const [kindredChecked, setKindredChecked] = useState(false);
   const [kindredAxes, setKindredAxes] = useState<Array<{ id: string; score: number }> | null>(null);
+  // 2026-11-18: an unmapped pick is mapped in the background once its poster
+  // scrolls into view (see lib/map-book.ts), then re-resolved via mapNonce.
+  const [mapState, setMapState] = useState<"idle" | "mapping" | "failed">("idle");
+  const [mapNonce, setMapNonce] = useState(0);
+  const mappedSlugRef = useRef<string | null>(null);
+  const pickPlateRef = useRef<HTMLDivElement | null>(null);
 
   // 2026-11-18 (Paper & ink redesign): the strand is one tap away instead of
   // always open. The glyph above the fold is the at-a-glance read; this is
@@ -269,12 +276,12 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
     const t = activeRecForPage?.title;
     if (!t) { setKindredSlug(null); setKindredChecked(true); return; }
     let cancelled = false;
-    setKindredChecked(false);
+    if (mapNonce === 0) setKindredChecked(false);
     supabase
       .rpc("resolve_book_page", { p_title: t, p_author: activeRecForPage?.author ?? undefined })
       .then(async ({ data, error }) => {
         if (cancelled) return;
-        const found = !error && data && data.length > 0 ? data[0].slug : null;
+        const found = (!error && data && data.length > 0 ? data[0].slug : null) ?? mappedSlugRef.current;
         setKindredSlug(found);
         setKindredChecked(true);
         setKindredAxes(null);
@@ -291,7 +298,40 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         setKindredAxes(axes?.length ? axes : null);
       });
     return () => { cancelled = true; };
-  }, [activeRecForPage?.title, activeRecForPage?.author]);
+  }, [activeRecForPage?.title, activeRecForPage?.author, mapNonce]);
+
+  // A new pick starts from scratch.
+  useEffect(() => {
+    setMapState("idle");
+    setMapNonce(0);
+    mappedSlugRef.current = null;
+  }, [activeRecForPage?.title]);
+
+  // Map an unmapped pick once its poster is actually on screen, so a reader
+  // who never scrolls this far costs nothing.
+  useEffect(() => {
+    const t = activeRecForPage?.title;
+    const el = pickPlateRef.current;
+    if (!t || !el || !kindredChecked || kindredSlug || mapState !== "idle" || discoveryBlocked) return;
+    if (isHiddenPick(activeRecForPage)) return;
+    if (typeof IntersectionObserver === "undefined") return;
+    const author = activeRecForPage?.author;
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      setMapState("mapping");
+      mapBookInBackground(t, author).then((slug) => {
+        // null: it failed. "": cached, but without a page to link to.
+        if (!slug) { setMapState("failed"); return; }
+        mappedSlugRef.current = slug || null;
+        setMapState("idle");
+        setMapNonce((n) => n + 1);
+      });
+    }, { rootMargin: "200px" });
+    io.observe(el);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRecForPage?.title, kindredChecked, kindredSlug, mapState, discoveryBlocked]);
 
   // 2026-09-20: dropped the "defining axes render bigger" idea — Stefano's
   // feedback was that two bar sizes made a reader decode a hierarchy before
@@ -590,7 +630,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
           // The pick isn't in NovelViz yet, so there is no DNA to draw. Show
           // an empty, dashed ring of the twelve axes (honest: unmeasured)
           // in the same frame as its neighbours, with the way to map it.
-          <div className="flex h-full w-full flex-col justify-between bg-secondary p-[9%] text-foreground">
+          <div ref={pickPlateRef} className="flex h-full w-full flex-col justify-between bg-secondary p-[9%] text-foreground">
             <span className="font-mono text-[11px] leading-none tracking-tight">{pickLabel}</span>
             <span className="relative flex flex-1 items-center justify-center py-[6%]">
               <svg viewBox={`0 0 ${GLYPH_BOX} ${GLYPH_BOX}`} className="h-auto w-[72%]" aria-hidden="true">
@@ -606,13 +646,24 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
                 <path d={spokePath()} fill="none" stroke="currentColor" strokeOpacity={0.25} strokeDasharray="2 4" />
               </svg>
               <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
-                <span className="bg-secondary px-2 text-xs text-muted-foreground">
-                  {kindredChecked ? "Shape not mapped yet" : "Checking\u2026"}
-                </span>
-                {kindredChecked && (
-                  <span className="border border-foreground bg-secondary px-2.5 py-1.5 text-xs font-medium md:text-sm">
-                    Map this book
-                  </span>
+                {mapState === "mapping" ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+                    <span className="bg-secondary px-2 text-xs text-muted-foreground" role="status">
+                      Mapping its shape&hellip;
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="bg-secondary px-2 text-xs text-muted-foreground">
+                      {kindredChecked ? "Shape not mapped yet" : "Checking\u2026"}
+                    </span>
+                    {kindredChecked && (
+                      <span className="border border-foreground bg-secondary px-2.5 py-1.5 text-xs font-medium md:text-sm">
+                        Map this book
+                      </span>
+                    )}
+                  </>
                 )}
               </span>
             </span>
@@ -623,7 +674,7 @@ export function BookDNA({ analysis, cacheKey }: BookDNAProps) {
         )
       }
       caption={<span className="line-clamp-3">{activeRec.why}</span>}
-      footer={<BuyButton title={activeRec.title} author={activeRec.author} variant="ghost" size="sm" />}
+      footer={<BuyButton title={activeRec.title} author={activeRec.author} variant="ghost" size="sm" compact className="w-full justify-center" />}
     />
   );
   const shelfSubtitle = recLoading

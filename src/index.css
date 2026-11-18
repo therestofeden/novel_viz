@@ -182,6 +182,15 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* 2026-11-18: nothing may make the page wider than the screen. One stray
+     absolutely-positioned element did, and phones then zoomed the whole site
+     out (and back out again after the reader zoomed in). `clip`, unlike
+     `hidden`, doesn't create a scroll container, so sticky headers still work. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "ss01", "cv11", "tnum";
