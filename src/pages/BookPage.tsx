@@ -213,19 +213,18 @@ const BookPage = () => {
         <BookPageHeader />
         <main>
           <section className="border-b border-foreground">
-            <div className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 py-6 md:px-8 md:py-12 lg:flex-row lg:items-center lg:gap-14">
-              <div className="mx-auto aspect-square w-full max-w-[360px] animate-pulse rounded-full bg-foreground/[0.06] lg:mx-0 lg:max-w-[460px] lg:flex-[1_1_480px]" />
-              <div className="flex min-w-0 flex-col gap-3 lg:flex-[1_1_440px]">
+            <div className="mx-auto grid max-w-[1280px] grid-cols-[42%_minmax(0,1fr)] items-center gap-4 px-4 py-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] md:gap-10 md:px-8 md:py-12 lg:gap-14">
+              <div className="mx-auto aspect-square w-full max-w-[460px] animate-pulse rounded-full bg-foreground/[0.06]" />
+              <div className="flex min-w-0 flex-col gap-3">
                 <div className="flex items-end gap-4">
-                  <div className="aspect-[2/3] w-[64px] animate-pulse bg-foreground/10 md:w-[88px]" />
+                  <div className="hidden aspect-[2/3] w-[88px] animate-pulse bg-foreground/10 md:block" />
                   <div className="flex flex-1 flex-col gap-2">{bar("40%")}{bar("25%")}</div>
                 </div>
-                {bar("85%", "mt-2 h-10")}
-                {bar("60%", "h-10")}
+                {bar("85%", "mt-2 h-8 md:h-10")}
+                {bar("60%", "h-8 md:h-10")}
                 {bar("70%", "mt-2 h-5")}
-                {bar("95%", "mt-2")}
-                {bar("90%")}
-                {bar("50%")}
+                {bar("95%", "mt-2 hidden md:block")}
+                {bar("90%", "hidden md:block")}
               </div>
             </div>
           </section>
