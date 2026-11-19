@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
-import { formEncode, membershipColumns, signPayload, verifyStripeSignature } from "./stripe.ts";
+import { formEncode, membershipColumns, shouldApplySubscription, signPayload, verifyStripeSignature } from "./stripe.ts";
 
 Deno.test("formEncode uses Stripe's bracket syntax", () => {
   const s = formEncode({
@@ -38,4 +38,20 @@ Deno.test("membershipColumns reads the period end from either API shape", () => 
   assertEquals(neu.current_period_end, new Date(1_800_000_000_000).toISOString());
   assertEquals(neu.price_id, "price_9");
   assertEquals(neu.cancel_at_period_end, true);
+});
+
+Deno.test("shouldApplySubscription: a dead duplicate never overwrites a live subscription", () => {
+  const live = { stripe_subscription_id: "sub_live", status: "active" };
+  assertEquals(shouldApplySubscription(live, { id: "sub_dup", status: "canceled" }), false);
+  assertEquals(shouldApplySubscription(live, { id: "sub_dup", status: "incomplete_expired" }), false);
+  assertEquals(shouldApplySubscription({ stripe_subscription_id: "sub_live", status: "past_due" }, { id: "sub_dup", status: "canceled" }), false);
+});
+
+Deno.test("shouldApplySubscription: same subscription, entitling newcomer, or empty row always apply", () => {
+  assert(shouldApplySubscription(null, { id: "sub_1", status: "canceled" }));
+  assert(shouldApplySubscription({ stripe_subscription_id: null, status: "none" }, { id: "sub_1", status: "active" }));
+  assert(shouldApplySubscription({ stripe_subscription_id: "sub_1", status: "active" }, { id: "sub_1", status: "canceled" }));
+  assert(shouldApplySubscription({ stripe_subscription_id: "sub_old", status: "canceled" }, { id: "sub_new", status: "active" }));
+  assert(shouldApplySubscription({ stripe_subscription_id: "sub_old", status: "active" }, { id: "sub_new", status: "trialing" }));
+  assert(shouldApplySubscription({ stripe_subscription_id: "sub_old", status: "canceled" }, { id: "sub_new", status: "incomplete" }));
 });

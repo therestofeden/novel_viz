@@ -20,7 +20,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { readJsonBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
-import { stripeRequest, StripeError } from "../_shared/stripe.ts";
+import { ENTITLING_STATUSES, stripeRequest, StripeError } from "../_shared/stripe.ts";
 
 const MAX_BODY_BYTES = 2_000;
 const DB_TIMEOUT_MS = 4000;
@@ -131,6 +131,21 @@ Deno.serve(async (req) => {
         { error: { message: "timeout" } } as { error: unknown },
       );
       if (upsertErr) console.error(JSON.stringify({ fn: "membership", stage: "customer_upsert", error: String((upsertErr as { message?: string })?.message ?? upsertErr).slice(0, 200) }));
+    }
+
+    // The webhook can lag a few seconds behind payment, so has_membership may
+    // still say no right after a reader paid. Ask Stripe before opening a
+    // second checkout: a double click must not become a double subscription.
+    if (row?.stripe_customer_id) {
+      const subs = await stripeRequest<{ data?: Array<{ status?: string }> }>(secretKey, "GET", "/subscriptions", {
+        customer: customerId,
+        status: "all",
+        limit: 10,
+      });
+      if ((subs.data ?? []).some((s) => ENTITLING_STATUSES.has(s.status ?? ""))) {
+        console.log(JSON.stringify({ fn: "membership", stage: "checkout", problem: "already_subscribed_webhook_pending" }));
+        return json(200, { url: null, already_member: true });
+      }
     }
 
     const automaticTax = Deno.env.get("STRIPE_AUTOMATIC_TAX") === "true";

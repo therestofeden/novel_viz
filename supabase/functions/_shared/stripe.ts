@@ -136,3 +136,24 @@ export function membershipColumns(sub: StripeSubscription) {
     updated_at: new Date().toISOString(),
   };
 }
+
+/** Subscription statuses that grant (or briefly keep) membership; mirrors has_membership(). */
+export const ENTITLING_STATUSES = new Set(["active", "trialing", "past_due"]);
+
+/**
+ * memberships has one row per reader, but a reader can end up with two Stripe
+ * subscriptions (two checkout tabs, a retry after a declined card). Events for
+ * the dead one must not overwrite the live one, or a paying reader loses
+ * access when the duplicate is cancelled or expires. Rule: a non-entitling
+ * subscription never replaces a row that points at a *different*,
+ * still-entitling subscription. Same subscription, or an entitling one, wins.
+ */
+export function shouldApplySubscription(
+  existing: { stripe_subscription_id?: string | null; status?: string | null } | null | undefined,
+  incoming: { id: string; status: string },
+): boolean {
+  if (!existing?.stripe_subscription_id) return true;
+  if (existing.stripe_subscription_id === incoming.id) return true;
+  if (ENTITLING_STATUSES.has(incoming.status)) return true;
+  return !ENTITLING_STATUSES.has(existing.status ?? "");
+}

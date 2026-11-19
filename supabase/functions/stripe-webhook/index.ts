@@ -15,7 +15,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { readTextBodyBounded, PayloadTooLargeError } from "../_shared/body-limit.ts";
-import { membershipColumns, stripeRequest, type StripeSubscription, verifyStripeSignature } from "../_shared/stripe.ts";
+import { membershipColumns, shouldApplySubscription, stripeRequest, type StripeSubscription, verifyStripeSignature } from "../_shared/stripe.ts";
 
 const MAX_BODY_BYTES = 256_000;
 const DB_TIMEOUT_MS = 4000;
@@ -103,6 +103,21 @@ Deno.serve(async (req) => {
       console.error(JSON.stringify({ fn: "stripe-webhook", event: event.type, id: event.id, problem: "no_user_for_subscription" }));
       // 200: retrying will never find a user either; logged for a human.
       return new Response(JSON.stringify({ received: true, unmatched: true }), { status: 200, headers: HEADERS });
+    }
+
+    // Never let a dead duplicate subscription overwrite the reader's live one.
+    const { data: current, error: readErr } = await withTimeout(
+      admin.from("memberships").select("stripe_subscription_id, status").eq("user_id", userId).maybeSingle(),
+      TIMED_OUT,
+    );
+    if (readErr) {
+      // 500 so Stripe retries: deciding blind could revoke a paying reader.
+      console.error(JSON.stringify({ fn: "stripe-webhook", event: event.type, id: event.id, stage: "read", error: String((readErr as { message?: string })?.message ?? readErr).slice(0, 200) }));
+      return new Response(JSON.stringify({ error: "storage failed" }), { status: 500, headers: HEADERS });
+    }
+    if (!shouldApplySubscription(current as { stripe_subscription_id?: string | null; status?: string | null } | null, { id: sub.id, status: sub.status })) {
+      console.warn(JSON.stringify({ fn: "stripe-webhook", event: event.type, id: event.id, problem: "stale_duplicate_subscription", sub: sub.id, status: sub.status }));
+      return new Response(JSON.stringify({ received: true, skipped: "duplicate_subscription" }), { status: 200, headers: HEADERS });
     }
 
     const { error } = await withTimeout(
