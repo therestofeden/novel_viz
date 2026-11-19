@@ -1038,8 +1038,8 @@ Deno.serve(async (req) => {
     // OL/GB contribute covers/editions/year, but only for CANON_GRACE_MS after
     // the canon answer instead of their full budgets. A slow OL then yields a
     // canon-only result in ~1s rather than ~4s. Results shaped by a truncated
-    // wait are NOT written to the memory or DB cache (graceTruncated), so the
-    // next request still gets the full merge when OL is healthy. Non-exact
+    // wait are cached for a shorter window (see GRACE_CACHE_FRESH_MS below,
+    // changed 2026-11-19), so the full merge is retried a few hours later. Non-exact
     // queries (typos, authors, partial titles) are unaffected.
     const CANON_GRACE_MS = 600;
     let graceTruncated = false;
@@ -1549,15 +1549,30 @@ Deno.serve(async (req) => {
       shelfBoost: false,
     }));
 
-    if (!graceTruncated) setMemoryCache(queryKey, baseResults);
+    // 2026-11-19 (daily feat): grace-truncated results are now cached too.
+    // Before, the canon-confident path (exact classic titles: "the iliad",
+    // "crime and punishment", "war and peace") skipped both caches, so the
+    // most common searches paid ~1.2-1.5s on EVERY request (measured live:
+    // "the iliad" 2.6s, 1.5s, 1.4s on three consecutive calls) while
+    // non-grace queries like "walden" dropped to ~0.2s on repeat. The canon
+    // row is the right answer for an exact title, so a truncated result is
+    // still correct, only thinner. It goes into memory and into search_cache
+    // with last_accessed_at backdated so it is fresh for GRACE_CACHE_FRESH_MS
+    // (the read path treats rows older than 24h as stale); after that the
+    // next miss re-runs the full OL/GB merge.
+    const GRACE_CACHE_FRESH_MS = 6 * 60 * 60 * 1000;
+    setMemoryCache(queryKey, baseResults);
 
-    if (baseResults.length > 0 && !graceTruncated) {
+    if (baseResults.length > 0) {
+      const accessedAt = graceTruncated
+        ? new Date(Date.now() - (24 * 60 * 60 * 1000 - GRACE_CACHE_FRESH_MS)).toISOString()
+        : new Date().toISOString();
       // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
       const writeCache = Promise.resolve(
         adminClient
           .from("search_cache")
           .upsert(
-            { query_key: dbKey, results: baseResults, hit_count: 0, last_accessed_at: new Date().toISOString() },
+            { query_key: dbKey, results: baseResults, hit_count: 0, last_accessed_at: accessedAt },
             { onConflict: "query_key" },
           ),
       );
