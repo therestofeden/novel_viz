@@ -753,6 +753,57 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 2026-11-20 (daily feat): the canon lookup now starts BEFORE the
+    // search_cache read instead of after it. On a miss the two DB round trips
+    // used to run back to back (live: cache_read 115-360ms, then canon
+    // 150-380ms); now they overlap. On a DB cache hit the canon result is just
+    // dropped: one cheap trigram RPC, and memory hits never reach this point.
+    // 2026-08-05 daily perf pass: every OTHER upstream call in this pipeline
+    // has an explicit ceiling (OL primary+fanout+fuzzy share OL_TOTAL_BUDGET_MS
+    // =3500ms total, GB is capped at 1200ms) — but this RPC to our own DB had
+    // none. Since it's awaited via the same Promise.allSettled as OL/GB, an
+    // unbounded canon lookup sets an unbounded floor on cache-miss latency
+    // regardless of how tight the other budgets are, which is the most likely
+    // explanation for prod log entries (e.g. a 5.5s "a culture of growth" call)
+    // that exceed the ~4s worst case the 2026-07-30 OL budget math implies.
+    // search_canon runs against canon_books' trigram indexes and is normally
+    // fast; 1000ms is generous headroom while still bounding the worst case.
+    // Times out to an empty canon list (same graceful-degradation shape as a
+    // genuine RPC failure below) rather than blocking the whole response.
+    const CANON_RPC_TIMEOUT_MS = 1000;
+
+    // 2026-08-19: same uncleared-timer telemetry bug as cache_read/rate-limit
+    // above — fixed the same way.
+    let canonTimer: ReturnType<typeof setTimeout> | undefined;
+    // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
+    const canonRpcPromise: Promise<CanonRow[]> = Promise.resolve(
+      adminClient.rpc("search_canon", { p_q: buildSearchCacheKey(q) }),
+    )
+      .then(({ data, error }: { data: CanonRow[] | null; error: unknown }) => {
+        if (error) throw error;
+        return data ?? [];
+      })
+      .finally(() => {
+        if (canonTimer) clearTimeout(canonTimer);
+      });
+    // Prevent an unhandled-rejection warning if this loses the race below.
+    canonRpcPromise.catch(() => {});
+
+    const canonPromise: Promise<CanonRow[]> = Promise.race([
+      canonRpcPromise,
+      new Promise<CanonRow[]>((resolve) => {
+        canonTimer = setTimeout(() => {
+          timings.canon_timed_out = 1;
+          resolve([]);
+        }, CANON_RPC_TIMEOUT_MS);
+        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+        if (canonTimer?.unref) canonTimer.unref();
+      }),
+    ]);
+    // 2026-11-20 (daily feat): never let the speculative canon lookup
+    // surface as an unhandled rejection on the cache-hit return paths.
+    canonPromise.catch(() => {});
+
     // 2026-11-14 (daily_backend): the DB row is keyed by a peppered SHA-256 of
     // the query, never the plaintext, so search_cache can't reveal what readers
     // typed even if it is exposed. Memory cache keeps the plaintext key (it
@@ -986,48 +1037,6 @@ Deno.serve(async (req) => {
       return result;
     })();
 
-    // 2026-08-05 daily perf pass: every OTHER upstream call in this pipeline
-    // has an explicit ceiling (OL primary+fanout+fuzzy share OL_TOTAL_BUDGET_MS
-    // =3500ms total, GB is capped at 1200ms) — but this RPC to our own DB had
-    // none. Since it's awaited via the same Promise.allSettled as OL/GB, an
-    // unbounded canon lookup sets an unbounded floor on cache-miss latency
-    // regardless of how tight the other budgets are, which is the most likely
-    // explanation for prod log entries (e.g. a 5.5s "a culture of growth" call)
-    // that exceed the ~4s worst case the 2026-07-30 OL budget math implies.
-    // search_canon runs against canon_books' trigram indexes and is normally
-    // fast; 1000ms is generous headroom while still bounding the worst case.
-    // Times out to an empty canon list (same graceful-degradation shape as a
-    // genuine RPC failure below) rather than blocking the whole response.
-    const CANON_RPC_TIMEOUT_MS = 1000;
-
-    // 2026-08-19: same uncleared-timer telemetry bug as cache_read/rate-limit
-    // above — fixed the same way.
-    let canonTimer: ReturnType<typeof setTimeout> | undefined;
-    // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
-    const canonRpcPromise: Promise<CanonRow[]> = Promise.resolve(
-      adminClient.rpc("search_canon", { p_q: buildSearchCacheKey(q) }),
-    )
-      .then(({ data, error }: { data: CanonRow[] | null; error: unknown }) => {
-        if (error) throw error;
-        return data ?? [];
-      })
-      .finally(() => {
-        if (canonTimer) clearTimeout(canonTimer);
-      });
-    // Prevent an unhandled-rejection warning if this loses the race below.
-    canonRpcPromise.catch(() => {});
-
-    const canonPromise: Promise<CanonRow[]> = Promise.race([
-      canonRpcPromise,
-      new Promise<CanonRow[]>((resolve) => {
-        canonTimer = setTimeout(() => {
-          timings.canon_timed_out = 1;
-          resolve([]);
-        }, CANON_RPC_TIMEOUT_MS);
-        // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
-        if (canonTimer?.unref) canonTimer.unref();
-      }),
-    ]);
 
     // 2026-11-17 (daily feat): canon-confident grace window. Live cold-cache
     // timings for exact classic titles were 0.5-4.8s ("the brothers karamazov"
@@ -1041,7 +1050,16 @@ Deno.serve(async (req) => {
     // wait are cached for a shorter window (see GRACE_CACHE_FRESH_MS below,
     // changed 2026-11-19), so the full merge is retried a few hours later. Non-exact
     // queries (typos, authors, partial titles) are unaffected.
-    const CANON_GRACE_MS = 600;
+    // 2026-11-20 (daily feat): 600 -> 0. Even with the 11-19 grace cache,
+    // every cold exact-title search still paid canon RPC + 600ms + overhead
+    // (live 11-20: middlemarch 1.7s, the decameron 2.0s, anna karenina 1.9s,
+    // the iliad 3.3s), and OL almost never answered inside 600ms anyway, so
+    // the reader got the canon-only row regardless. Now the canon answer is
+    // returned as soon as the canon RPC resolves, and the full OL/GB merge
+    // keeps running in the background (EdgeRuntime.waitUntil, see
+    // buildResults below) and overwrites the cache with the richer,
+    // fully-fresh result for the next reader.
+    const CANON_GRACE_MS = 0;
     let graceTruncated = false;
     const stripArticle = (t: string) => t.replace(/^(the|a|an)\s+/, "");
     const withCanonGrace = <T>(p: Promise<T>, fallback: T): Promise<T> =>
@@ -1067,9 +1085,11 @@ Deno.serve(async (req) => {
         });
       });
 
+    const gbPromise = fetchGoogleBooks(q);
+    gbPromise.catch(() => {});
     const [olResult, gbResult, canonResult, rateLimitResult] = await Promise.allSettled([
       withCanonGrace(olFetchPromise, [] as OLDoc[]),
-      withCanonGrace(fetchGoogleBooks(q), [] as GBItem[]),
+      withCanonGrace(gbPromise, [] as GBItem[]),
       canonPromise,
       rateLimitPromise,
     ]);
@@ -1097,494 +1117,540 @@ Deno.serve(async (req) => {
       timings.canon_failed = 1;
     }
 
-    let docs: OLDoc[];
-    if (olResult.status === "fulfilled") {
-      docs = olResult.value;
-    } else {
-      console.error(JSON.stringify({ fn: "search-books", error: "ol_fetch_failed", message: String(olResult.reason) }));
-      docs = [];
-      timings.ol_fetch_failed = 1;
-    }
-    const gbItems: GBItem[] = gbResult.status === "fulfilled" ? gbResult.value : [];
-    timings.ol_fetch = Math.round(performance.now() - olT0);
-
-    const descriptionMap = new Map<string, string>();
-    for (const item of gbItems) {
-      const vi = item.volumeInfo;
-      if (!vi.title || !vi.description) continue;
-      const gbTitle = vi.title.toLowerCase().trim();
-      const gbAuthor = (vi.authors?.[0] ?? "").toLowerCase().trim();
-      const gbKey = `${gbTitle}|${gbAuthor}`;
-      if (!descriptionMap.has(gbKey)) {
-        descriptionMap.set(gbKey, vi.description);
+    // Ranking + cache write, factored out 2026-11-20 so the canon-grace path
+    // can run it twice: once on the truncated inputs (the response) and once
+    // in the background on the full OL/GB inputs (cache only).
+    const buildResults = async (
+      olResult: PromiseSettledResult<OLDoc[]>,
+      gbResult: PromiseSettledResult<GBItem[]>,
+      truncated: boolean,
+    ) => {
+      let docs: OLDoc[];
+      if (olResult.status === "fulfilled") {
+        docs = olResult.value;
+      } else {
+        console.error(JSON.stringify({ fn: "search-books", error: "ol_fetch_failed", message: String(olResult.reason) }));
+        docs = [];
+        timings.ol_fetch_failed = 1;
       }
-    }
+      const gbItems: GBItem[] = gbResult.status === "fulfilled" ? gbResult.value : [];
+      timings.ol_fetch = Math.round(performance.now() - olT0);
 
-    const seen = new Set<string>();
-    const candidates: Ranked[] = [];
-
-    const addOlCandidate = (d: OLDoc) => {
-      const displayTitle = pickDisplayTitle(q, d);
-      if (!displayTitle) return;
-      const author = pickLatinAuthor(d.author_name?.[0], d.author_alternative_name, q);
-      const dedupKey = `${normalizeForSearch(displayTitle)}::${normalizeForSearch(author)}`;
-      if (seen.has(dedupKey)) return;
-      seen.add(dedupKey);
-      const descKey = `${displayTitle.toLowerCase().trim()}|${author.toLowerCase().trim()}`;
-      candidates.push({
-        key: d.key,
-        title: displayTitle,
-        author,
-        year: d.first_publish_year,
-        score: lexicalScore(q, displayTitle, author) + popularityScore(d),
-        cached: false,
-        shelfBoost: false,
-        description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
-      });
-    };
-
-    for (const d of docs) addOlCandidate(d);
-
-    for (const item of gbItems) {
-      const vi = item.volumeInfo;
-      if (!vi.title || !isLatin(vi.title)) continue;
-      const gbAuthor = normalizeAuthorCasing(vi.authors?.[0] ?? "Unknown");
-      const dedupKey = `${normalizeForSearch(vi.title)}::${normalizeForSearch(gbAuthor)}`;
-      if (seen.has(dedupKey)) continue;
-      seen.add(dedupKey);
-      const descKey = `${vi.title.toLowerCase().trim()}|${gbAuthor.toLowerCase().trim()}`;
-      candidates.push({
-        key: `gb:${encodeURIComponent(vi.title)}`,
-        title: vi.title,
-        author: gbAuthor,
-        year: vi.publishedDate ? parseInt(vi.publishedDate.slice(0, 4), 10) : undefined,
-        score: lexicalScore(q, vi.title, gbAuthor) + 200,
-        cached: false,
-        shelfBoost: false,
-        description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
-      });
-    }
-
-    const qNorm = normalizeForSearch(q);
-    const qTokCount = qNorm.split(" ").filter(Boolean).length;
-
-    // Compound "Author - Title" queries (2026-07-17, found live: Stefano's
-    // exact phrase "Homer - The odissey" still returned nothing after the
-    // fixes above). Confirmed Open Library's own full-text search returns
-    // ZERO results for a literal "X - Y" query (doesn't parse the dash
-    // as a separator), and testing qNorm as one whole blob against a canon
-    // row's (both individually much shorter) never hits either. Split on
-    // common "author / title" separators so each side gets tested
-    // independently — "homer" then exact-matches the author, "the odissey"
-    // then fuzzy-matches the title, either one is enough to inject the work.
-    const qSegments = qNorm
-      .split(/\s*[-:,/&]\s*| by /)
-      .map((s) => s.trim())
-      .filter((s) => s.length >= 3);
-    const qCandidates = qSegments.length > 1 ? [qNorm, ...qSegments] : [qNorm];
-
-    // Canon injection (2026-07-17): external APIs cannot spell-correct to
-    // canonical works ("odissey" gets junk from OL fuzzy and nothing from
-    // Google Books), so inject what the user most plausibly meant from our
-    // own canon. The gate below re-verifies each RPC row with the same
-    // bounded-edit-distance helpers used in scoring, so trigram recall noise
-    // never reaches results. Dedup favors the richer OL/GB doc when the same
-    // work is already present.
-    let canonInjected = false;
-    for (const row of canonRows) {
-      const tNorm = normalizeForSearch(row.title);
-      const aNorm = normalizeForSearch(row.author);
-      const authorTokens = aNorm.split(" ").filter(Boolean);
-      // 2026-07-28: plain "title + author" queries typed with just a space
-      // and no punctuation ("cosmos sagan", "the waves woolf") fell through
-      // both gates below — qNorm as a whole is neither the bare title nor
-      // the bare author, and bestFuzzySim penalizes the length mismatch too
-      // much to clear FUZZY_MIN_SIM. Deliberately NOT using generic substring
-      // containment (qNorm.includes(tNorm)) to fix this: several canon
-      // titles are common English words ("Night", "Quiet", "Hunger",
-      // "Chaos") that appear as substrings of unrelated popular queries
-      // (e.g. "the hunger games" contains "hunger"), so containment alone
-      // would wrongly canon-boost Knut Hamsun's "Hunger" for that search.
-      // Requiring the FULL title plus a FULL author token to concatenate
-      // exactly avoids that — "hunger games" never equals "hunger hamsun".
-      // Verified live: "cosmos sagan"/"the waves woolf"/"das kapital marx"/
-      // "bleak house dickens" now canon-boost correctly (score jumps
-      // ~130-190 -> ~835-895), while "hunger games" still correctly does
-      // NOT canon-boost toward Knut Hamsun's "Hunger" (score unchanged, no
-      // canonWork flag).
-      // 2026-07-29: same-day follow-up to the fix above — it required the
-      // FULL title text to concatenate exactly with the author, but never
-      // accounted for users dropping a leading article when they type a
-      // "title author" query without punctuation ("great gatsby fitzgerald",
-      // "logic of scientific discovery popper" — both drop "The"). tNorm
-      // keeps the article (normalizeForSearch doesn't strip it), so neither
-      // combo above nor a straight tNorm/qc comparison ever matched. Found
-      // live: "logic of scientific discovery popper" returned zero canon
-      // boost (ranked #3, no canonWork flag) despite the exact row existing
-      // in canon_books. Adding a second, article-stripped title variant to
-      // the combo set (and to the direct comparisons) fixes this without
-      // reopening the "hunger games" false-positive the prior fix guarded
-      // against — this only strips a fixed leading "the/a/an" from the
-      // canon row's OWN title, it doesn't loosen matching to arbitrary
-      // substrings of the query, so a bare common-word title still can't
-      // match unless the query is (article-stripped-title + full author
-      // token), exactly as strict as before.
-      const tNormNoArticle = tNorm.replace(/^(the|a|an)\s+/, "");
-      const titleAuthorCombos = aNorm.length > 0
-        ? [
-          `${tNorm} ${aNorm}`,
-          `${aNorm} ${tNorm}`,
-          ...authorTokens.map((tok) => `${tNorm} ${tok}`),
-          ...authorTokens.map((tok) => `${tok} ${tNorm}`),
-          ...(tNormNoArticle !== tNorm
-            ? [
-              `${tNormNoArticle} ${aNorm}`,
-              `${aNorm} ${tNormNoArticle}`,
-              ...authorTokens.map((tok) => `${tNormNoArticle} ${tok}`),
-              ...authorTokens.map((tok) => `${tok} ${tNormNoArticle}`),
-            ]
-            : []),
-        ]
-        : [];
-      let literalHit = false;
-      let fuzzyHit = false;
-      for (const qc of qCandidates) {
-        if (
-          tNorm === qc || tNorm.includes(qc) ||
-          tNormNoArticle === qc ||
-          (aNorm.length > 0 && (aNorm === qc || authorTokens.includes(qc))) ||
-          titleAuthorCombos.includes(qc)
-        ) {
-          literalHit = true;
-          break;
+      const descriptionMap = new Map<string, string>();
+      for (const item of gbItems) {
+        const vi = item.volumeInfo;
+        if (!vi.title || !vi.description) continue;
+        const gbTitle = vi.title.toLowerCase().trim();
+        const gbAuthor = (vi.authors?.[0] ?? "").toLowerCase().trim();
+        const gbKey = `${gbTitle}|${gbAuthor}`;
+        if (!descriptionMap.has(gbKey)) {
+          descriptionMap.set(gbKey, vi.description);
         }
-        // 2026-08-24: found live — "qed strange theory of light and
-        // matter" (embedded, non-leading "the" dropped) and "what is life
-        // erwin schrodinger" (full title + full first+last author name)
-        // both returned zero canon boost despite the exact rows existing
-        // in canon_books, confirmed via search_canon RPC directly
-        // (sim=0.975 for the QED case, so the DB layer was never the
-        // problem). Root cause in both cases: tNorm/titleAuthorCombos still
-        // carry the canon title's own punctuation ("qed:", "life?") that a
-        // plain-typed query never reproduces, and the QED case additionally
-        // has "the" mid-title rather than leading (tNormNoArticle only
-        // strips a LEADING article). canonForm() strips both, scoped to
-        // this comparison only. Verified live: both queries now
-        // canon-boost correctly; "hunger games" still does NOT canon-boost
-        // toward Hamsun's "Hunger" (canonForm preserves the
-        // tNorm-must-be-the-longer-side containment direction).
-        const qcCanon = canonForm(qc);
-        if (
-          canonForm(tNorm) === qcCanon || canonForm(tNorm).includes(qcCanon) ||
-          (aNorm.length > 0 &&
-            (canonForm(`${tNorm} ${aNorm}`) === qcCanon ||
-              canonForm(`${aNorm} ${tNorm}`) === qcCanon))
-        ) {
-          literalHit = true;
-          break;
-        }
-        // 2026-07-31: found live — "twenty love poems neruda" (Pablo
-        // Neruda's actual title is "Twenty Love Poems and a Song of
-        // Despair") returned zero canon boost despite the row existing in
-        // canon_books, confirmed via search_canon RPC directly (sim=0.72,
-        // so the DB layer was never the problem). Root cause: every check
-        // above requires either the FULL title or an exact substring/combo
-        // of it, but here the user truncated a long subtitle clause off
-        // the end — a different failure mode than the leading-article drop
-        // fixed on 07-29. bestFuzzySim also fails this case by design:
-        // comparing the whole query to the whole (much longer) title
-        // tanks the similarity score on length mismatch alone. Fix: strip
-        // one matched author token from qc, and if what's left is a real
-        // LITERAL PREFIX of the canon title (not fuzzy — an actual
-        // substring anchored at position 0) of at least two words / 6
-        // chars, count it as a literalHit. Deliberately prefix-anchored
-        // and length-gated so this can't degrade into the same
-        // "hunger games" false-positive the 07-28 fix guarded against —
-        // a short/common opening word ("the", "night") won't clear the
-        // length gate, and non-prefix substrings still don't match.
-        if (aNorm.length > 0 && !literalHit) {
-          for (const tok of authorTokens) {
-            if (tok.length < 3) continue;
-            const tokRe = new RegExp(`(^|\\s)${tok}(\\s|$)`);
-            if (!tokRe.test(qc)) continue;
-            const remainder = qc.replace(tokRe, " ").trim().replace(/\s+/g, " ");
-            if (
-              remainder.length >= 6 &&
-              remainder.split(" ").length >= 2 &&
-              (tNorm.startsWith(remainder) || tNormNoArticle.startsWith(remainder) ||
-                // 2026-08-24 round 63 follow-up: the two raw startsWith
-                // checks above fail whenever the canon title has internal
-                // punctuation the query naturally drops (e.g. "St. Agnes"
-                // vs "st agnes") — same root cause as the canonForm fix
-                // added to the equality/combo checks earlier in this loop,
-                // just needed here too for the truncated-subtitle path.
-                canonForm(tNorm).startsWith(canonForm(remainder)))
-            ) {
-              literalHit = true;
-              break;
+      }
+
+      const seen = new Set<string>();
+      const candidates: Ranked[] = [];
+
+      const addOlCandidate = (d: OLDoc) => {
+        const displayTitle = pickDisplayTitle(q, d);
+        if (!displayTitle) return;
+        const author = pickLatinAuthor(d.author_name?.[0], d.author_alternative_name, q);
+        const dedupKey = `${normalizeForSearch(displayTitle)}::${normalizeForSearch(author)}`;
+        if (seen.has(dedupKey)) return;
+        seen.add(dedupKey);
+        const descKey = `${displayTitle.toLowerCase().trim()}|${author.toLowerCase().trim()}`;
+        candidates.push({
+          key: d.key,
+          title: displayTitle,
+          author,
+          year: d.first_publish_year,
+          score: lexicalScore(q, displayTitle, author) + popularityScore(d),
+          cached: false,
+          shelfBoost: false,
+          description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
+        });
+      };
+
+      for (const d of docs) addOlCandidate(d);
+
+      for (const item of gbItems) {
+        const vi = item.volumeInfo;
+        if (!vi.title || !isLatin(vi.title)) continue;
+        const gbAuthor = normalizeAuthorCasing(vi.authors?.[0] ?? "Unknown");
+        const dedupKey = `${normalizeForSearch(vi.title)}::${normalizeForSearch(gbAuthor)}`;
+        if (seen.has(dedupKey)) continue;
+        seen.add(dedupKey);
+        const descKey = `${vi.title.toLowerCase().trim()}|${gbAuthor.toLowerCase().trim()}`;
+        candidates.push({
+          key: `gb:${encodeURIComponent(vi.title)}`,
+          title: vi.title,
+          author: gbAuthor,
+          year: vi.publishedDate ? parseInt(vi.publishedDate.slice(0, 4), 10) : undefined,
+          score: lexicalScore(q, vi.title, gbAuthor) + 200,
+          cached: false,
+          shelfBoost: false,
+          description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
+        });
+      }
+
+      const qNorm = normalizeForSearch(q);
+      const qTokCount = qNorm.split(" ").filter(Boolean).length;
+
+      // Compound "Author - Title" queries (2026-07-17, found live: Stefano's
+      // exact phrase "Homer - The odissey" still returned nothing after the
+      // fixes above). Confirmed Open Library's own full-text search returns
+      // ZERO results for a literal "X - Y" query (doesn't parse the dash
+      // as a separator), and testing qNorm as one whole blob against a canon
+      // row's (both individually much shorter) never hits either. Split on
+      // common "author / title" separators so each side gets tested
+      // independently — "homer" then exact-matches the author, "the odissey"
+      // then fuzzy-matches the title, either one is enough to inject the work.
+      const qSegments = qNorm
+        .split(/\s*[-:,/&]\s*| by /)
+        .map((s) => s.trim())
+        .filter((s) => s.length >= 3);
+      const qCandidates = qSegments.length > 1 ? [qNorm, ...qSegments] : [qNorm];
+
+      // Canon injection (2026-07-17): external APIs cannot spell-correct to
+      // canonical works ("odissey" gets junk from OL fuzzy and nothing from
+      // Google Books), so inject what the user most plausibly meant from our
+      // own canon. The gate below re-verifies each RPC row with the same
+      // bounded-edit-distance helpers used in scoring, so trigram recall noise
+      // never reaches results. Dedup favors the richer OL/GB doc when the same
+      // work is already present.
+      let canonInjected = false;
+      // 2026-11-20 (daily feat): the fuzzy-only bonus exists to rescue typo
+      // queries ("odissey") where no canon title matches literally. It must not
+      // outrank a canon work that DOES match literally. Live bug: "the
+      // metamorphosis" ranked Ovid's "Metamorphoses" (fuzzy-only, +1150) above
+      // Kafka's "The Metamorphosis" (exact title, +700). Fuzzy-only rows now
+      // lose the extra bonus whenever any canon row is a literal hit.
+      let anyCanonLiteral = false;
+      const fuzzyOnlyCanon: Ranked[] = [];
+      for (const row of canonRows) {
+        const tNorm = normalizeForSearch(row.title);
+        const aNorm = normalizeForSearch(row.author);
+        const authorTokens = aNorm.split(" ").filter(Boolean);
+        // 2026-07-28: plain "title + author" queries typed with just a space
+        // and no punctuation ("cosmos sagan", "the waves woolf") fell through
+        // both gates below — qNorm as a whole is neither the bare title nor
+        // the bare author, and bestFuzzySim penalizes the length mismatch too
+        // much to clear FUZZY_MIN_SIM. Deliberately NOT using generic substring
+        // containment (qNorm.includes(tNorm)) to fix this: several canon
+        // titles are common English words ("Night", "Quiet", "Hunger",
+        // "Chaos") that appear as substrings of unrelated popular queries
+        // (e.g. "the hunger games" contains "hunger"), so containment alone
+        // would wrongly canon-boost Knut Hamsun's "Hunger" for that search.
+        // Requiring the FULL title plus a FULL author token to concatenate
+        // exactly avoids that — "hunger games" never equals "hunger hamsun".
+        // Verified live: "cosmos sagan"/"the waves woolf"/"das kapital marx"/
+        // "bleak house dickens" now canon-boost correctly (score jumps
+        // ~130-190 -> ~835-895), while "hunger games" still correctly does
+        // NOT canon-boost toward Knut Hamsun's "Hunger" (score unchanged, no
+        // canonWork flag).
+        // 2026-07-29: same-day follow-up to the fix above — it required the
+        // FULL title text to concatenate exactly with the author, but never
+        // accounted for users dropping a leading article when they type a
+        // "title author" query without punctuation ("great gatsby fitzgerald",
+        // "logic of scientific discovery popper" — both drop "The"). tNorm
+        // keeps the article (normalizeForSearch doesn't strip it), so neither
+        // combo above nor a straight tNorm/qc comparison ever matched. Found
+        // live: "logic of scientific discovery popper" returned zero canon
+        // boost (ranked #3, no canonWork flag) despite the exact row existing
+        // in canon_books. Adding a second, article-stripped title variant to
+        // the combo set (and to the direct comparisons) fixes this without
+        // reopening the "hunger games" false-positive the prior fix guarded
+        // against — this only strips a fixed leading "the/a/an" from the
+        // canon row's OWN title, it doesn't loosen matching to arbitrary
+        // substrings of the query, so a bare common-word title still can't
+        // match unless the query is (article-stripped-title + full author
+        // token), exactly as strict as before.
+        const tNormNoArticle = tNorm.replace(/^(the|a|an)\s+/, "");
+        const titleAuthorCombos = aNorm.length > 0
+          ? [
+            `${tNorm} ${aNorm}`,
+            `${aNorm} ${tNorm}`,
+            ...authorTokens.map((tok) => `${tNorm} ${tok}`),
+            ...authorTokens.map((tok) => `${tok} ${tNorm}`),
+            ...(tNormNoArticle !== tNorm
+              ? [
+                `${tNormNoArticle} ${aNorm}`,
+                `${aNorm} ${tNormNoArticle}`,
+                ...authorTokens.map((tok) => `${tNormNoArticle} ${tok}`),
+                ...authorTokens.map((tok) => `${tok} ${tNormNoArticle}`),
+              ]
+              : []),
+          ]
+          : [];
+        let literalHit = false;
+        let fuzzyHit = false;
+        for (const qc of qCandidates) {
+          if (
+            tNorm === qc || tNorm.includes(qc) ||
+            tNormNoArticle === qc ||
+            (aNorm.length > 0 && (aNorm === qc || authorTokens.includes(qc))) ||
+            titleAuthorCombos.includes(qc)
+          ) {
+            literalHit = true;
+            break;
+          }
+          // 2026-08-24: found live — "qed strange theory of light and
+          // matter" (embedded, non-leading "the" dropped) and "what is life
+          // erwin schrodinger" (full title + full first+last author name)
+          // both returned zero canon boost despite the exact rows existing
+          // in canon_books, confirmed via search_canon RPC directly
+          // (sim=0.975 for the QED case, so the DB layer was never the
+          // problem). Root cause in both cases: tNorm/titleAuthorCombos still
+          // carry the canon title's own punctuation ("qed:", "life?") that a
+          // plain-typed query never reproduces, and the QED case additionally
+          // has "the" mid-title rather than leading (tNormNoArticle only
+          // strips a LEADING article). canonForm() strips both, scoped to
+          // this comparison only. Verified live: both queries now
+          // canon-boost correctly; "hunger games" still does NOT canon-boost
+          // toward Hamsun's "Hunger" (canonForm preserves the
+          // tNorm-must-be-the-longer-side containment direction).
+          const qcCanon = canonForm(qc);
+          if (
+            canonForm(tNorm) === qcCanon || canonForm(tNorm).includes(qcCanon) ||
+            (aNorm.length > 0 &&
+              (canonForm(`${tNorm} ${aNorm}`) === qcCanon ||
+                canonForm(`${aNorm} ${tNorm}`) === qcCanon))
+          ) {
+            literalHit = true;
+            break;
+          }
+          // 2026-07-31: found live — "twenty love poems neruda" (Pablo
+          // Neruda's actual title is "Twenty Love Poems and a Song of
+          // Despair") returned zero canon boost despite the row existing in
+          // canon_books, confirmed via search_canon RPC directly (sim=0.72,
+          // so the DB layer was never the problem). Root cause: every check
+          // above requires either the FULL title or an exact substring/combo
+          // of it, but here the user truncated a long subtitle clause off
+          // the end — a different failure mode than the leading-article drop
+          // fixed on 07-29. bestFuzzySim also fails this case by design:
+          // comparing the whole query to the whole (much longer) title
+          // tanks the similarity score on length mismatch alone. Fix: strip
+          // one matched author token from qc, and if what's left is a real
+          // LITERAL PREFIX of the canon title (not fuzzy — an actual
+          // substring anchored at position 0) of at least two words / 6
+          // chars, count it as a literalHit. Deliberately prefix-anchored
+          // and length-gated so this can't degrade into the same
+          // "hunger games" false-positive the 07-28 fix guarded against —
+          // a short/common opening word ("the", "night") won't clear the
+          // length gate, and non-prefix substrings still don't match.
+          if (aNorm.length > 0 && !literalHit) {
+            for (const tok of authorTokens) {
+              if (tok.length < 3) continue;
+              const tokRe = new RegExp(`(^|\\s)${tok}(\\s|$)`);
+              if (!tokRe.test(qc)) continue;
+              const remainder = qc.replace(tokRe, " ").trim().replace(/\s+/g, " ");
+              if (
+                remainder.length >= 6 &&
+                remainder.split(" ").length >= 2 &&
+                (tNorm.startsWith(remainder) || tNormNoArticle.startsWith(remainder) ||
+                  // 2026-08-24 round 63 follow-up: the two raw startsWith
+                  // checks above fail whenever the canon title has internal
+                  // punctuation the query naturally drops (e.g. "St. Agnes"
+                  // vs "st agnes") — same root cause as the canonForm fix
+                  // added to the equality/combo checks earlier in this loop,
+                  // just needed here too for the truncated-subtitle path.
+                  canonForm(tNorm).startsWith(canonForm(remainder)))
+              ) {
+                literalHit = true;
+                break;
+              }
             }
           }
+          if (literalHit) break;
+          if (
+            qc.length >= 4 &&
+            (bestFuzzySim(qc, tNorm) >= FUZZY_MIN_SIM ||
+              (aNorm.length > 0 && bestFuzzySim(qc, aNorm) >= FUZZY_MIN_SIM))
+          ) {
+            fuzzyHit = true;
+          }
         }
-        if (literalHit) break;
-        if (
-          qc.length >= 4 &&
-          (bestFuzzySim(qc, tNorm) >= FUZZY_MIN_SIM ||
-            (aNorm.length > 0 && bestFuzzySim(qc, aNorm) >= FUZZY_MIN_SIM))
-        ) {
-          fuzzyHit = true;
-        }
-      }
-      if (!literalHit && !fuzzyHit) continue;
-      canonInjected = true;
-      const bonus = CANON_BONUS + (literalHit ? 0 : CANON_FUZZY_ONLY_BONUS);
-      const dedupKey = `${tNorm}::${aNorm}`;
-      if (seen.has(dedupKey)) {
-        // The work already came in via OL/GB (richer doc wins the slot) —
-        // still mark it as canon and credit it.
-        const existing = candidates.find(
-          (c) => `${normalizeForSearch(c.title)}::${normalizeForSearch(c.author)}` === dedupKey,
-        );
-        if (existing && !existing.canonWork) {
-          existing.canonWork = true;
-          existing.score += bonus;
-        }
-        continue;
-      }
-      seen.add(dedupKey);
-      const descKey = `${row.title.toLowerCase().trim()}|${row.author.toLowerCase().trim()}`;
-      candidates.push({
-        key: `canon:${row.title}|${row.author}`,
-        title: row.title,
-        author: row.author,
-        year: undefined,
-        score: lexicalScore(q, row.title, row.author) + bonus,
-        cached: false,
-        shelfBoost: false,
-        description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
-        canonWork: true,
-      });
-    }
-
-    // Fuzzy escalation (2026-07-17): the fuzzy retry inside olFetchPromise
-    // only fires when literally NOTHING displayable came back — but a
-    // misspelling like "odissey" gets buried under literal junk matches
-    // (comics, product names) that DO come back, so the canonical work the
-    // user meant never even enters the candidate set. If nothing here looks
-    // like a confident hit for the query, do one bounded fuzzy OL pass and
-    // merge through the same pipeline. Cache-miss-only cost, ≤2.5s, and the
-    // merged result set gets cached like any other.
-    const hasConfidentMatch = candidates.some((c) => {
-      const t = normalizeForSearch(c.title);
-      const a = normalizeForSearch(c.author);
-      if (t === qNorm || a === qNorm) return true;
-      if (a.split(" ").filter(Boolean).includes(qNorm)) return true;
-      if (qTokCount > 1 && (t.startsWith(qNorm) || t.includes(` ${qNorm}`))) return true;
-      return false;
-    });
-    // 2026-08-05 daily perf pass: this block was a FOURTH sequential await
-    // (after primary+fanout, olFetchPromise's own internal fuzzy sub-stage,
-    // and the Promise.allSettled wait for GB/canon) with its own independent
-    // FUZZY_ESCALATION_TIMEOUT_MS=2500ms budget, completely uncoordinated
-    // with OL_TOTAL_BUDGET_MS above — the exact same stacking-timeouts bug
-    // pattern already fixed twice before (2026-07-25 GB timeout, 2026-07-30
-    // the OTHER fuzzy stage inside olFetchPromise), just never applied here.
-    // Found live: "a culture of growth" (real, obscure, non-canon nonfiction
-    // — no confident OL/GB match, triggers this exact branch) logged a
-    // 5489ms cache-miss response, consistent with ~3s OL pipeline + up to
-    // 2.5s more stacked on top. Fixed the same way as the 07-30 precedent:
-    // this stage only gets whatever's left of the shared OL_TOTAL_BUDGET_MS
-    // wall clock (tracked from olT0, the whole OL pipeline's start), capped
-    // at its old 2500ms ceiling — typical case (primary resolves fast, this
-    // branch usually doesn't even need to run) is unaffected; true worst
-    // case drops from ~5.5-6s to ~3.5s, matching the OL pipeline's own
-    // documented budget.
-    if (!canonInjected && (qTokCount > 1 || qNorm.length >= 5) && !hasConfidentMatch) {
-      const escalationBudgetMs = OL_TOTAL_BUDGET_MS - (performance.now() - olT0);
-      if (escalationBudgetMs > 300) {
-        try {
-          const fuzzyDocs = await olFetch(
-            `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`,
-            Math.min(FUZZY_ESCALATION_TIMEOUT_MS, escalationBudgetMs),
+        if (!literalHit && !fuzzyHit) continue;
+        canonInjected = true;
+        if (literalHit) anyCanonLiteral = true;
+        const bonus = CANON_BONUS + (literalHit ? 0 : CANON_FUZZY_ONLY_BONUS);
+        const dedupKey = `${tNorm}::${aNorm}`;
+        if (seen.has(dedupKey)) {
+          // The work already came in via OL/GB (richer doc wins the slot) —
+          // still mark it as canon and credit it.
+          const existing = candidates.find(
+            (c) => `${normalizeForSearch(c.title)}::${normalizeForSearch(c.author)}` === dedupKey,
           );
-          timings.fuzzy_escalated = 1;
-          for (const d of fuzzyDocs) addOlCandidate(d);
-        } catch (_e) { /* best-effort */ }
-      } else {
-        timings.fuzzy_escalation_skipped_budget = 1;
-      }
-    }
-
-    // Author-query result-set fix (2026-07-13): a coincidentally same-titled
-    // or same-named book by an UNRELATED author can carry an unusually high
-    // OL popularity score and still out-total an individual work by the real
-    // author. Decidable only at the RESULT-SET level: if the query genuinely
-    // matches an author with real work present among these candidates, boost
-    // that author's own books and knock down any OTHER candidate whose title
-    // matches the query but whose own author has nothing to do with it (the
-    // signature of a book ABOUT, not BY, that person) — exact title match
-    // gets a harder penalty, title merely CONTAINING the query (e.g. a
-    // biography subtitle) gets a softer one. Handles both single-word
-    // surnames ("pirandello", whole-token match) and multi-word full names
-    // ("garcia marquez", substring-of-author-name match). Scoped so it can't
-    // demote a genuinely titled novel like "Ulysses" or "Emma": no author by
-    // that name exists among real results for those queries, so it's a no-op.
-    //
-    // Guard found live while verifying this fix: "The Odyssey World Atlas"
-    // has a data-quality quirk (from OL/GB source data) where its author
-    // field is literally the same text as its own title — a mis-tagged
-    // publisher/product name, not a person. Without excluding that, its
-    // "author" field CONTAINED the query "the odyssey" as a substring, which
-    // falsely satisfied the multi-word author-match branch below and
-    // demoted the real "The Odyssey" by Homer underneath it. Any candidate
-    // whose author string is identical to its own title is excluded from
-    // ever counting as an author match.
-    const isCandidateByMatchedAuthor = (c: Ranked) => {
-      const authorNorm = normalizeForSearch(c.author);
-      const titleNormForGuard = normalizeForSearch(c.title);
-      if (qNorm.length < 3 || authorNorm === titleNormForGuard) return false;
-      if (authorNorm === qNorm) return true;
-      if (qTokCount === 1) {
-        return authorNorm.split(" ").filter(Boolean).includes(qNorm);
-      }
-      return authorNorm.includes(qNorm);
-    };
-    if (candidates.some(isCandidateByMatchedAuthor)) {
-      for (const c of candidates) {
-        if (isCandidateByMatchedAuthor(c)) {
-          c.score += 150;
+          if (existing && !existing.canonWork) {
+            existing.canonWork = true;
+            existing.score += bonus;
+            if (!literalHit) fuzzyOnlyCanon.push(existing);
+          }
           continue;
         }
-        if (c.canonWork) continue; // canon works are never "about the author" junk
-        const titleNorm = normalizeForSearch(c.title);
-        if (titleNorm === qNorm) c.score -= 300;
-        else if (titleNorm.includes(qNorm)) c.score -= 150;
+        seen.add(dedupKey);
+        const descKey = `${row.title.toLowerCase().trim()}|${row.author.toLowerCase().trim()}`;
+        candidates.push({
+          key: `canon:${row.title}|${row.author}`,
+          title: row.title,
+          author: row.author,
+          year: undefined,
+          score: lexicalScore(q, row.title, row.author) + bonus,
+          cached: false,
+          shelfBoost: false,
+          description: descriptionMap.get(descKey)?.slice(0, 250) ?? "",
+          canonWork: true,
+        });
+        if (!literalHit) fuzzyOnlyCanon.push(candidates[candidates.length - 1]);
       }
-    }
+      if (anyCanonLiteral) {
+        for (const c of fuzzyOnlyCanon) c.score -= CANON_FUZZY_ONLY_BONUS;
+      }
 
-    // 2026-08-08 daily perf pass: this "is it already analyzed" badge lookup
-    // (drives the `cached: true` / +18 score boost only — never gates
-    // results) is the LAST DB call on every single cache-miss request, and
-    // was the one remaining stage in this pipeline with no timeout at all,
-    // despite sitting after five other calls (cache read, rate-limit RPC,
-    // OL primary/fanout/fuzzy, GB, canon RPC) that were each independently
-    // bounded across the 2026-07-25 through 2026-08-07 perf passes. A DB-side
-    // stall here (lock contention, load spike) would add its full unbounded
-    // delay right before the response is finally sent, after all that other
-    // tuning. Same fail-open Promise.race pattern as the rest of this file:
-    // cache_key has a unique index, so a plain IN() lookup is normally
-    // sub-50ms; 800ms is generous headroom. On timeout, degrades to "nothing
-    // is cached" — every candidate just misses the cosmetic badge/score
-    // boost for this one response, never a correctness or availability bug.
-    // 2026-08-19: same uncleared-timer telemetry bug as the three timeouts
-    // above — fixed the same way.
-    const ANALYSIS_LOOKUP_TIMEOUT_MS = 800;
-    const analysisT0 = performance.now();
-    const analysisKeys = candidates.map((c) => buildAnalysisCacheKey(c.title, c.author));
-    let analysisTimer: ReturnType<typeof setTimeout> | undefined;
-    const cachedAnalysisRows = analysisKeys.length > 0
-      ? await Promise.race([
-        Promise.resolve(
-          adminClient
-            .from("novel_analyses")
-            .select("cache_key")
-            .in("cache_key", analysisKeys)
-            .then(({ data, error }: { data: Array<{ cache_key: string }> | null; error: unknown }) => {
-              if (error) throw error;
-              return data ?? [];
+      // Fuzzy escalation (2026-07-17): the fuzzy retry inside olFetchPromise
+      // only fires when literally NOTHING displayable came back — but a
+      // misspelling like "odissey" gets buried under literal junk matches
+      // (comics, product names) that DO come back, so the canonical work the
+      // user meant never even enters the candidate set. If nothing here looks
+      // like a confident hit for the query, do one bounded fuzzy OL pass and
+      // merge through the same pipeline. Cache-miss-only cost, ≤2.5s, and the
+      // merged result set gets cached like any other.
+      const hasConfidentMatch = candidates.some((c) => {
+        const t = normalizeForSearch(c.title);
+        const a = normalizeForSearch(c.author);
+        if (t === qNorm || a === qNorm) return true;
+        if (a.split(" ").filter(Boolean).includes(qNorm)) return true;
+        if (qTokCount > 1 && (t.startsWith(qNorm) || t.includes(` ${qNorm}`))) return true;
+        return false;
+      });
+      // 2026-08-05 daily perf pass: this block was a FOURTH sequential await
+      // (after primary+fanout, olFetchPromise's own internal fuzzy sub-stage,
+      // and the Promise.allSettled wait for GB/canon) with its own independent
+      // FUZZY_ESCALATION_TIMEOUT_MS=2500ms budget, completely uncoordinated
+      // with OL_TOTAL_BUDGET_MS above — the exact same stacking-timeouts bug
+      // pattern already fixed twice before (2026-07-25 GB timeout, 2026-07-30
+      // the OTHER fuzzy stage inside olFetchPromise), just never applied here.
+      // Found live: "a culture of growth" (real, obscure, non-canon nonfiction
+      // — no confident OL/GB match, triggers this exact branch) logged a
+      // 5489ms cache-miss response, consistent with ~3s OL pipeline + up to
+      // 2.5s more stacked on top. Fixed the same way as the 07-30 precedent:
+      // this stage only gets whatever's left of the shared OL_TOTAL_BUDGET_MS
+      // wall clock (tracked from olT0, the whole OL pipeline's start), capped
+      // at its old 2500ms ceiling — typical case (primary resolves fast, this
+      // branch usually doesn't even need to run) is unaffected; true worst
+      // case drops from ~5.5-6s to ~3.5s, matching the OL pipeline's own
+      // documented budget.
+      if (!canonInjected && (qTokCount > 1 || qNorm.length >= 5) && !hasConfidentMatch) {
+        const escalationBudgetMs = OL_TOTAL_BUDGET_MS - (performance.now() - olT0);
+        if (escalationBudgetMs > 300) {
+          try {
+            const fuzzyDocs = await olFetch(
+              `https://openlibrary.org/search.json?q=${encodeURIComponent(q + "~")}&limit=20&fields=${OL_FIELDS}`,
+              Math.min(FUZZY_ESCALATION_TIMEOUT_MS, escalationBudgetMs),
+            );
+            timings.fuzzy_escalated = 1;
+            for (const d of fuzzyDocs) addOlCandidate(d);
+          } catch (_e) { /* best-effort */ }
+        } else {
+          timings.fuzzy_escalation_skipped_budget = 1;
+        }
+      }
+
+      // Author-query result-set fix (2026-07-13): a coincidentally same-titled
+      // or same-named book by an UNRELATED author can carry an unusually high
+      // OL popularity score and still out-total an individual work by the real
+      // author. Decidable only at the RESULT-SET level: if the query genuinely
+      // matches an author with real work present among these candidates, boost
+      // that author's own books and knock down any OTHER candidate whose title
+      // matches the query but whose own author has nothing to do with it (the
+      // signature of a book ABOUT, not BY, that person) — exact title match
+      // gets a harder penalty, title merely CONTAINING the query (e.g. a
+      // biography subtitle) gets a softer one. Handles both single-word
+      // surnames ("pirandello", whole-token match) and multi-word full names
+      // ("garcia marquez", substring-of-author-name match). Scoped so it can't
+      // demote a genuinely titled novel like "Ulysses" or "Emma": no author by
+      // that name exists among real results for those queries, so it's a no-op.
+      //
+      // Guard found live while verifying this fix: "The Odyssey World Atlas"
+      // has a data-quality quirk (from OL/GB source data) where its author
+      // field is literally the same text as its own title — a mis-tagged
+      // publisher/product name, not a person. Without excluding that, its
+      // "author" field CONTAINED the query "the odyssey" as a substring, which
+      // falsely satisfied the multi-word author-match branch below and
+      // demoted the real "The Odyssey" by Homer underneath it. Any candidate
+      // whose author string is identical to its own title is excluded from
+      // ever counting as an author match.
+      const isCandidateByMatchedAuthor = (c: Ranked) => {
+        const authorNorm = normalizeForSearch(c.author);
+        const titleNormForGuard = normalizeForSearch(c.title);
+        if (qNorm.length < 3 || authorNorm === titleNormForGuard) return false;
+        if (authorNorm === qNorm) return true;
+        if (qTokCount === 1) {
+          return authorNorm.split(" ").filter(Boolean).includes(qNorm);
+        }
+        return authorNorm.includes(qNorm);
+      };
+      if (candidates.some(isCandidateByMatchedAuthor)) {
+        for (const c of candidates) {
+          if (isCandidateByMatchedAuthor(c)) {
+            c.score += 150;
+            continue;
+          }
+          if (c.canonWork) continue; // canon works are never "about the author" junk
+          const titleNorm = normalizeForSearch(c.title);
+          if (titleNorm === qNorm) c.score -= 300;
+          else if (titleNorm.includes(qNorm)) c.score -= 150;
+        }
+      }
+
+      // 2026-08-08 daily perf pass: this "is it already analyzed" badge lookup
+      // (drives the `cached: true` / +18 score boost only — never gates
+      // results) is the LAST DB call on every single cache-miss request, and
+      // was the one remaining stage in this pipeline with no timeout at all,
+      // despite sitting after five other calls (cache read, rate-limit RPC,
+      // OL primary/fanout/fuzzy, GB, canon RPC) that were each independently
+      // bounded across the 2026-07-25 through 2026-08-07 perf passes. A DB-side
+      // stall here (lock contention, load spike) would add its full unbounded
+      // delay right before the response is finally sent, after all that other
+      // tuning. Same fail-open Promise.race pattern as the rest of this file:
+      // cache_key has a unique index, so a plain IN() lookup is normally
+      // sub-50ms; 800ms is generous headroom. On timeout, degrades to "nothing
+      // is cached" — every candidate just misses the cosmetic badge/score
+      // boost for this one response, never a correctness or availability bug.
+      // 2026-08-19: same uncleared-timer telemetry bug as the three timeouts
+      // above — fixed the same way.
+      const ANALYSIS_LOOKUP_TIMEOUT_MS = 800;
+      const analysisT0 = performance.now();
+      const analysisKeys = candidates.map((c) => buildAnalysisCacheKey(c.title, c.author));
+      let analysisTimer: ReturnType<typeof setTimeout> | undefined;
+      const cachedAnalysisRows = analysisKeys.length > 0
+        ? await Promise.race([
+          Promise.resolve(
+            adminClient
+              .from("novel_analyses")
+              .select("cache_key")
+              .in("cache_key", analysisKeys)
+              .then(({ data, error }: { data: Array<{ cache_key: string }> | null; error: unknown }) => {
+                if (error) throw error;
+                return data ?? [];
+              }),
+          ).catch(() => [] as Array<{ cache_key: string }>)
+            .finally(() => {
+              if (analysisTimer) clearTimeout(analysisTimer);
             }),
-        ).catch(() => [] as Array<{ cache_key: string }>)
-          .finally(() => {
-            if (analysisTimer) clearTimeout(analysisTimer);
+          new Promise<Array<{ cache_key: string }>>((resolve) => {
+            analysisTimer = setTimeout(() => {
+              timings.analysis_lookup_timed_out = 1;
+              resolve([]);
+            }, ANALYSIS_LOOKUP_TIMEOUT_MS);
+            // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
+            if (analysisTimer?.unref) analysisTimer.unref();
           }),
-        new Promise<Array<{ cache_key: string }>>((resolve) => {
-          analysisTimer = setTimeout(() => {
-            timings.analysis_lookup_timed_out = 1;
-            resolve([]);
-          }, ANALYSIS_LOOKUP_TIMEOUT_MS);
-          // @ts-ignore — Deno's setTimeout return type isn't a Node Timer
-          if (analysisTimer?.unref) analysisTimer.unref();
-        }),
-      ])
-      : ([] as Array<{ cache_key: string }>);
-    timings.analysis_lookup = Math.round(performance.now() - analysisT0);
+        ])
+        : ([] as Array<{ cache_key: string }>);
+      timings.analysis_lookup = Math.round(performance.now() - analysisT0);
 
-    const cachedSet = new Set<string>();
-    for (const r of (cachedAnalysisRows ?? [])) cachedSet.add(r.cache_key as string);
+      const cachedSet = new Set<string>();
+      for (const r of (cachedAnalysisRows ?? [])) cachedSet.add(r.cache_key as string);
 
-    for (const c of candidates) {
-      const ck = buildAnalysisCacheKey(c.title, c.author);
-      if (cachedSet.has(ck)) {
-        c.cached = true;
-        c.score += 18;
+      for (const c of candidates) {
+        const ck = buildAnalysisCacheKey(c.title, c.author);
+        if (cachedSet.has(ck)) {
+          c.cached = true;
+          c.score += 18;
+        }
       }
-    }
 
-    candidates.sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return (b.year ?? 0) - (a.year ?? 0);
-    });
+      candidates.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (b.year ?? 0) - (a.year ?? 0);
+      });
 
-    const titlesWithRealAuthor = new Set(
-      candidates
-        .filter((c) => c.author && c.author !== "Unknown")
-        .map((c) => c.title.toLowerCase()),
-    );
-    const deduped = candidates.filter(
-      (c) => !(c.author === "Unknown" && titlesWithRealAuthor.has(c.title.toLowerCase())),
-    );
-
-    function normalizeTitleForDedup(title: string): string {
-      return normalizeForSearch(title).replace(/^(the|a|an)\s+/, "");
-    }
-    const seenTitles = new Set<string>();
-    const titleDeduped = deduped.filter((c) => {
-      const normTitle = normalizeTitleForDedup(c.title);
-      if (seenTitles.has(normTitle)) return false;
-      seenTitles.add(normTitle);
-      return true;
-    });
-
-    const baseResults = titleDeduped.slice(0, Math.max(limit, 8)).map((c) => ({
-      ...c,
-      shelfBoost: false,
-    }));
-
-    // 2026-11-19 (daily feat): grace-truncated results are now cached too.
-    // Before, the canon-confident path (exact classic titles: "the iliad",
-    // "crime and punishment", "war and peace") skipped both caches, so the
-    // most common searches paid ~1.2-1.5s on EVERY request (measured live:
-    // "the iliad" 2.6s, 1.5s, 1.4s on three consecutive calls) while
-    // non-grace queries like "walden" dropped to ~0.2s on repeat. The canon
-    // row is the right answer for an exact title, so a truncated result is
-    // still correct, only thinner. It goes into memory and into search_cache
-    // with last_accessed_at backdated so it is fresh for GRACE_CACHE_FRESH_MS
-    // (the read path treats rows older than 24h as stale); after that the
-    // next miss re-runs the full OL/GB merge.
-    const GRACE_CACHE_FRESH_MS = 6 * 60 * 60 * 1000;
-    setMemoryCache(queryKey, baseResults);
-
-    if (baseResults.length > 0) {
-      const accessedAt = graceTruncated
-        ? new Date(Date.now() - (24 * 60 * 60 * 1000 - GRACE_CACHE_FRESH_MS)).toISOString()
-        : new Date().toISOString();
-      // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
-      const writeCache = Promise.resolve(
-        adminClient
-          .from("search_cache")
-          .upsert(
-            { query_key: dbKey, results: baseResults, hit_count: 0, last_accessed_at: accessedAt },
-            { onConflict: "query_key" },
-          ),
+      const titlesWithRealAuthor = new Set(
+        candidates
+          .filter((c) => c.author && c.author !== "Unknown")
+          .map((c) => c.title.toLowerCase()),
       );
+      const deduped = candidates.filter(
+        (c) => !(c.author === "Unknown" && titlesWithRealAuthor.has(c.title.toLowerCase())),
+      );
+
+      function normalizeTitleForDedup(title: string): string {
+        return normalizeForSearch(title).replace(/^(the|a|an)\s+/, "");
+      }
+      const seenTitles = new Set<string>();
+      const titleDeduped = deduped.filter((c) => {
+        const normTitle = normalizeTitleForDedup(c.title);
+        if (seenTitles.has(normTitle)) return false;
+        seenTitles.add(normTitle);
+        return true;
+      });
+
+      const baseResults = titleDeduped.slice(0, Math.max(limit, 8)).map((c) => ({
+        ...c,
+        shelfBoost: false,
+      }));
+
+      // 2026-11-19 (daily feat): grace-truncated results are now cached too.
+      // Before, the canon-confident path (exact classic titles: "the iliad",
+      // "crime and punishment", "war and peace") skipped both caches, so the
+      // most common searches paid ~1.2-1.5s on EVERY request (measured live:
+      // "the iliad" 2.6s, 1.5s, 1.4s on three consecutive calls) while
+      // non-grace queries like "walden" dropped to ~0.2s on repeat. The canon
+      // row is the right answer for an exact title, so a truncated result is
+      // still correct, only thinner. It goes into memory and into search_cache
+      // with last_accessed_at backdated so it is fresh for GRACE_CACHE_FRESH_MS
+      // (the read path treats rows older than 24h as stale); after that the
+      // next miss re-runs the full OL/GB merge.
+      const GRACE_CACHE_FRESH_MS = 6 * 60 * 60 * 1000;
+      setMemoryCache(queryKey, baseResults);
+
+      if (baseResults.length > 0) {
+        const accessedAt = truncated
+          ? new Date(Date.now() - (24 * 60 * 60 * 1000 - GRACE_CACHE_FRESH_MS)).toISOString()
+          : new Date().toISOString();
+        // Promise.resolve()-wrapped — see 2026-09-19 note above cacheReadPromise.
+        const writeCache = Promise.resolve(
+          adminClient
+            .from("search_cache")
+            .upsert(
+              { query_key: dbKey, results: baseResults, hit_count: 0, last_accessed_at: accessedAt },
+              { onConflict: "query_key" },
+            ),
+        );
+        // @ts-ignore — Deno EdgeRuntime
+        if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
+          // @ts-ignore
+          EdgeRuntime.waitUntil(writeCache.then(() => {}).catch((e: unknown) => console.error("cache write:", e)));
+        } else {
+          writeCache.then(() => {}).catch((e: unknown) => console.error("cache write:", e));
+        }
+      }
+
+      return baseResults;
+    };
+
+    const baseResults = await buildResults(olResult, gbResult, graceTruncated);
+    if (graceTruncated) {
+      const fullMerge = Promise.allSettled([olFetchPromise, gbPromise]).then(([o, g]) => {
+        const olOk = o.status === "fulfilled" && o.value.length > 0;
+        const gbOk = g.status === "fulfilled" && g.value.length > 0;
+        // Nothing new from upstream: keep the short-lived grace cache row so
+        // the merge is retried later instead of pinning a thin result for 24h.
+        if (!olOk && !gbOk) return;
+        return buildResults(o, g, false).then(() => {
+          timings.bg_full_merge = 1;
+          console.log(JSON.stringify({ fn: "search-books", cache: "bg_full_merge", q: queryKey, ms: Math.round(performance.now() - t0) }));
+        });
+      });
       // @ts-ignore — Deno EdgeRuntime
       if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
         // @ts-ignore
-        EdgeRuntime.waitUntil(writeCache.then(() => {}).catch((e: unknown) => console.error("cache write:", e)));
+        EdgeRuntime.waitUntil(fullMerge.catch((e: unknown) => console.error("bg full merge:", e)));
       } else {
-        writeCache.then(() => {}).catch((e: unknown) => console.error("cache write:", e));
+        fullMerge.catch((e: unknown) => console.error("bg full merge:", e));
       }
     }
-
     const finalResults = baseResults.slice(0, limit);
 
     if (Math.random() < 0.01) {
