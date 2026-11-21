@@ -1,0 +1,59 @@
+name: DB migrations
+# Added 2026-11-21 (daily_backend). Migrations on main were silently not live:
+# private_server_caches (search history readable with the anon key) sat
+# unapplied for 25 days because agents' apply_migration calls need a live
+# approval. This workflow makes drift loud and gives a one-click apply.
+#
+#  - On every push touching supabase/migrations and every morning: CHECK only.
+#    Fails (GitHub emails you) when a schema/security migration is not live.
+#  - Actions -> "DB migrations" -> Run workflow, type the names in "apply":
+#    applies exactly those, in file order. Nothing is ever applied without
+#    that click. Uses the existing SUPABASE_ACCESS_TOKEN secret.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "scripts/migration-drift.ts"
+      - ".github/workflows/db-migrations.yml"
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Comma-separated migration names to apply (empty = check only)"
+        required: false
+        default: ""
+
+concurrency:
+  group: db-migrations
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_REF: ecsublyvcvzdkvggxwlh
+
+jobs:
+  migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Unit tests
+        run: deno test --allow-read scripts/migration-drift.test.ts
+      - name: Apply selected migrations
+        if: github.event_name == 'workflow_dispatch' && inputs.apply != ''
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          APPLY: ${{ inputs.apply }}
+        run: deno run --allow-read=supabase/migrations --allow-net=api.supabase.com --allow-env scripts/migration-drift.ts --apply "$APPLY"
+      - name: Drift check
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: deno run --allow-read=supabase/migrations --allow-net=api.supabase.com --allow-env scripts/migration-drift.ts
